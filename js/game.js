@@ -122,20 +122,11 @@ function setScreen(id) {
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
 }
+let lastTap = null;
+document.addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]; }, { passive: true, capture: true });
 async function unrollTo(id) {
-  const u = $('#unroll'), paper = u.querySelector('.unroll-paper'), roll = u.querySelector('.unroll-roller');
-  const H = window.innerHeight;
-  u.classList.add('on');
-  const ease1 = 'cubic-bezier(.55,.05,.7,.4)', ease2 = 'cubic-bezier(.2,.7,.2,1)';
-  const a1 = paper.animate([{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)' }], { duration: 520, easing: ease1, fill: 'forwards' });
-  roll.animate([{ transform: 'translate3d(0,0,0)' }, { transform: `translate3d(0,${H}px,0)` }], { duration: 520, easing: ease1, fill: 'forwards' });
-  await a1.finished.catch(() => {});
-  setScreen(id);
-  await sleep(120);
-  const a2 = paper.animate([{ clipPath: 'inset(0 0 0% 0)' }, { clipPath: 'inset(0 0 100% 0)' }], { duration: 900, easing: ease2, fill: 'forwards' });
-  roll.animate([{ transform: `translate3d(0,${H}px,0)` }, { transform: 'translate3d(0,-30px,0)' }], { duration: 900, easing: ease2, fill: 'forwards' });
-  await a2.finished.catch(() => {});
-  u.classList.remove('on');
+  const t = lastTap; lastTap = null;
+  await FX.wash(async () => { setScreen(id); await sleep(60); }, t && t[0], t && t[1]);
 }
 
 function toast(msg) {
@@ -150,11 +141,13 @@ function initTitle() {
     $('#btn-continue').hidden = false;
     $('#continue-sub').textContent = `${s.name} · ${realmStr(s)}`;
   }
+  FX.setSeason(s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0);
   $('#btn-new').onclick = () => {
+    FX.requestTilt();
     if (s && !s.dead && !s.ascended && !confirm('另开新卷，旧卷将被覆盖。确定么？')) return;
     resetCreate(); unrollTo('create');
   };
-  $('#btn-continue').onclick = () => { S = load(); if (!S) return; enterMain(true); };
+  $('#btn-continue').onclick = () => { FX.requestTilt(); S = load(); if (!S) return; enterMain(true); };
 }
 
 /* ================= 入道 ================= */
@@ -309,7 +302,10 @@ function render() {
   const inc = $('.incense'); inc.style.setProperty('--life', (Math.max(0.02, lifeLeft) * 100).toFixed(1) + '%');
   setText('#life-num', `${S.age} / ${S.lifespan}`);
   $('.bar-life').classList.toggle('low', S.lifespan - S.age <= Math.max(6, r.life * 0.12));
-  setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][Math.floor((S.months % 12) / 3)]);
+  const season = Math.floor((S.months % 12) / 3);
+  setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
+  FX.setSeason(season);
+  document.body.dataset.realm = S.ascended ? 5 : S.realm;
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
   setText('#dur-tuna', cnDur(r.T * 3)); setText('#dur-biguan', cnDur(r.T * 12));
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
@@ -377,15 +373,24 @@ function act(kind) {
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
-    lock(420);
+    lock(900);
     const mul = gainMul();
     const g = Math.round(unit() * 0.22 * (0.9 + Math.random() * 0.2) * mul);
     const tags = []; const ups = bottleneck() ? (tags.push({ t: '瓶颈难破，修为难进' }), []) : addXw(g, tags);
     passTime(r.T * 3);
-    pushLog({ text: pick(TEXT.tuna).replace('{d}', cnDur(r.T * 3)), tags });
-    afterGain(ups);
+    const text = pick(TEXT.tuna).replace('{d}', cnDur(r.T * 3));
+    save();
+    // 灵气旋入丹田之后，才落笔记下这一季
+    const sp = $('.scroll-paper').getBoundingClientRect();
+    FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, () => {
+      const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
+      if (!S) return;
+      pushLog({ text, tags }); afterGain(ups); render(); save(); checkEnd();
+    });
+    return;
   } else if (kind === 'biguan') {
-    lock(700);
+    lock(1100);
+    FX.cave();
     const mul = gainMul();
     const pXm = clamp(0.06 + (50 - S.xj) / 400, 0.02, 0.22), pDw = clamp(0.08 + S.luck * 0.006 + (S.wx - 5) * 0.012, 0.03, 0.25);
     const roll = Math.random(); const tags = []; let text = pick(TEXT.biguan).replace(/\{d\}/g, cnDur(r.T * 12)); let cls = '', ups = [];
@@ -403,7 +408,6 @@ function act(kind) {
     pushLog({ text, tags, cls });
     afterGain(ups);
   } else if (kind === 'youli') {
-    lock(900);
     passTime(r.T * 3);
     if (S.dead) { render(); save(); return checkEnd(); }
     const pool = EVENTS.filter(e => !e.cond || e.cond(S));
@@ -413,7 +417,12 @@ function act(kind) {
     for (const e of use) { if ((x -= e.w) < 0) { ev = e; break; } }
     S.recent = [...recent, ev.id].slice(-5);
     render(); save();
-    return openEvent(ev);
+    busy = true; $$('.act').forEach(b => b.classList.add('busy'));
+    FX.inkPath($('.scroll-paper').getBoundingClientRect()).then(() => {
+      busy = false; $$('.act').forEach(b => b.classList.remove('busy'));
+      openEvent(ev);
+    });
+    return;
   }
   render(); save(); checkEnd();
 }
@@ -438,7 +447,7 @@ async function closeModal() {
 }
 function openEvent(ev) {
   S.events++;
-  $('#ev-title').textContent = ev.title;
+  FX.vtext($('#ev-title'), ev.title);
   $('#ev-seal').textContent = pick(['缘', '遇', '奇', '机']);
   const text = ev.text(S);
   $('#ev-result').innerHTML = '';
@@ -488,7 +497,7 @@ const chanceWord = p => { const n = Math.round(p * 10); return n <= 1 ? '九死�
 function openBreak() {
   if (!bottleneck() || busy) return;
   const r = R(), next = NEXT_REALM_NAME[S.realm], pill = r.pill, has = S.items[pill] > 0;
-  $('#ev-title').textContent = S.realm === 4 ? '渡劫' : '破境';
+  FX.vtext($('#ev-title'), S.realm === 4 ? '渡劫' : '破境');
   $('#ev-seal').textContent = '劫';
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
@@ -534,7 +543,11 @@ async function runBreak(usePill) {
   await sleep(1900);
   bt.classList.remove('charge');
   bt.classList.add('reveal');
-  await sleep(1300);
+  if (ok) {
+    await sleep(500); bt.classList.add('glory');
+    const bb = $('#bt-big').getBoundingClientRect(); FX.goldMotes(bb.left + bb.width / 2, bb.top + bb.height / 2);
+    await sleep(800);
+  } else await sleep(1300);
   if (!ok) { bt.classList.add('fail', 'crack'); bt.classList.add('shake'); await sleep(500); }
   bt.classList.add('stamped');
   await sleep(500);
@@ -645,8 +658,16 @@ $$('.act').forEach(b => b.addEventListener('click', () => {
 }));
 $('#btn-break').onclick = openBreak;
 $('#btn-menu').onclick = openMenu;
-initVisuals();
-initTitle(); initCreate();
+FX.initPress(); FX.initParallax();
 setScreen('title');
+initTitle(); initCreate();
+// 视觉素材与字体都就绪后再开卷，避免字体替换造成的半截状态
+Promise.all([
+  initVisuals(),
+  Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
+]).catch(() => {}).then(() => {
+  requestAnimationFrame(() => document.body.classList.add('go'));
+  setTimeout(() => document.body.classList.add('intro-done'), 4200);
+});
 window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak };
 })();

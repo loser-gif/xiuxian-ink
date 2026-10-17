@@ -1,0 +1,293 @@
+/* 墨仙录 · 动效层：视差、季节飘落、动作反馈、墨染转场 */
+'use strict';
+const FX = (() => {
+  const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => !!(RM && RM.matches);
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const $ = s => document.querySelector(s);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  /* ---------- 竖排文字（逐字堆叠，不依赖 writing-mode） ---------- */
+  function vtext(el, text) {
+    el.textContent = '';
+    const cols = String(text).split('\n');
+    cols.forEach(t => {
+      const c = document.createElement('span'); c.className = 'vcol';
+      for (const ch of t) { const i = document.createElement('i'); if (ch === '　' || ch === ' ') i.className = 'sp'; else i.textContent = ch; c.appendChild(i); }
+      el.appendChild(c);
+    });
+    el.setAttribute('aria-label', text.replace(/\n/g, ''));
+  }
+
+  /* ---------- 视差：陀螺仪 / 触摸拖动 / 鼠标 ---------- */
+  const PX = { tx: 0, ty: 0, x: 0, y: 0, running: false, layers: [], gyro: false, base: null };
+  function initParallax() {
+    const spec = [['.m1', .16], ['.mist1', .26], ['.m2', .36], ['.mist2', .52], ['.m3', .62], ['.mist3', .8], ['.m4', 1], ['.sun', .08], ['.birds', .12]];
+    PX.layers = spec.map(([s, d]) => ({ el: $('#scenery ' + s), d })).filter(l => l.el);
+    // 触摸拖动：手指相对按下点的位移，松手后缓缓回中
+    let sx = 0, sy = 0, touching = false;
+    window.addEventListener('touchstart', e => { if (PX.gyro) return; const t = e.touches[0]; sx = t.clientX; sy = t.clientY; touching = true; }, { passive: true });
+    window.addEventListener('touchmove', e => {
+      if (PX.gyro || !touching) return; const t = e.touches[0];
+      setTarget((t.clientX - sx) / (innerWidth * 0.5), (t.clientY - sy) / (innerHeight * 0.5));
+    }, { passive: true });
+    const end = () => { touching = false; if (!PX.gyro) setTarget(0, 0); };
+    window.addEventListener('touchend', end, { passive: true }); window.addEventListener('touchcancel', end, { passive: true });
+    window.addEventListener('mousemove', e => { if (PX.gyro) return; setTarget((e.clientX / innerWidth - .5) * 1.4, (e.clientY / innerHeight - .5) * 1.4); }, { passive: true });
+  }
+  function setTarget(x, y) {
+    if (reduced()) return;
+    PX.tx = Math.max(-1, Math.min(1, x)); PX.ty = Math.max(-1, Math.min(1, y));
+    if (!PX.running) { PX.running = true; requestAnimationFrame(pxTick); }
+  }
+  function pxTick() {
+    const k = PX.gyro ? 0.07 : 0.06;
+    PX.x += (PX.tx - PX.x) * k; PX.y += (PX.ty - PX.y) * k;
+    const done = Math.abs(PX.tx - PX.x) < 0.002 && Math.abs(PX.ty - PX.y) < 0.002;
+    if (done) { PX.x = PX.tx; PX.y = PX.ty; }
+    for (const l of PX.layers) l.el.style.translate = `${(-PX.x * 18 * l.d).toFixed(2)}px ${(-PX.y * 7 * l.d).toFixed(2)}px`;
+    if (done) PX.running = false; else requestAnimationFrame(pxTick);
+  }
+  function onOrient(e) {
+    if (e.gamma == null || e.beta == null) return;
+    if (!PX.base) PX.base = { b: e.beta, g: e.gamma };
+    // 基准缓慢跟随，避免手机姿势改变后永远偏在一边
+    PX.base.b += (e.beta - PX.base.b) * 0.004; PX.base.g += (e.gamma - PX.base.g) * 0.004;
+    setTarget((e.gamma - PX.base.g) / 18, (e.beta - PX.base.b) / 22);
+  }
+  // 必须在用户手势（点击“开卷”）里同步调用
+  function requestTilt() {
+    if (reduced() || PX.gyro || PX.asked) return; PX.asked = true;
+    const D = window.DeviceOrientationEvent; if (!D) return;
+    const on = () => { PX.gyro = true; window.addEventListener('deviceorientation', onOrient); };
+    if (typeof D.requestPermission === 'function') D.requestPermission().then(r => { if (r === 'granted') on(); }).catch(() => {});
+    else if ('ontouchstart' in window) on();
+  }
+
+  /* ---------- 季节飘落 ---------- */
+  const W = { cv: null, c: null, parts: [], season: -1, raf: 0, last: 0, w: 0, h: 0, sprites: {} };
+  function sprite(kind) {
+    if (W.sprites[kind]) return W.sprites[kind];
+    const s = 32, cv = document.createElement('canvas'); cv.width = cv.height = s; const c = cv.getContext('2d');
+    c.translate(s / 2, s / 2);
+    if (kind === 'petal') {
+      const g = c.createRadialGradient(-2, 0, 1, 0, 0, 13); g.addColorStop(0, 'rgba(232,170,168,.95)'); g.addColorStop(1, 'rgba(206,120,118,.75)');
+      c.fillStyle = g; c.beginPath(); c.moveTo(-12, 0); c.bezierCurveTo(-6, -10, 8, -9, 12, -1); c.lineTo(9, 0); c.lineTo(12, 2); c.bezierCurveTo(8, 9, -6, 9, -12, 0); c.fill();
+    } else if (kind === 'leaf') {
+      c.fillStyle = 'rgba(150,92,40,.85)'; c.beginPath(); c.moveTo(-13, 0); c.quadraticCurveTo(0, -9, 13, 0); c.quadraticCurveTo(0, 9, -13, 0); c.fill();
+      c.strokeStyle = 'rgba(90,50,20,.6)'; c.lineWidth = 1; c.beginPath(); c.moveTo(-13, 0); c.lineTo(11, 0); c.stroke();
+    } else if (kind === 'snow') {
+      const g = c.createRadialGradient(0, 0, 0, 0, 0, 9); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.55, 'rgba(250,250,248,.9)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = 'rgba(70,82,94,.34)'; c.beginPath(); c.arc(.8, 1.1, 6.6, 0, 7); c.fill();
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill();
+    }
+    return (W.sprites[kind] = cv);
+  }
+  function resizeWeather() {
+    if (!W.cv) return; W.w = innerWidth; W.h = innerHeight;
+    W.cv.width = Math.round(W.w * DPR); W.cv.height = Math.round(W.h * DPR); W.c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  function spawn(p, init) {
+    const s = W.season;
+    p.x = rnd(-20, W.w + 20); p.y = init ? rnd(-W.h * .1, W.h) : rnd(-40, -10);
+    p.z = rnd(.45, 1); p.rot = rnd(0, 6.28); p.spin = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.flip = rnd(1.2, 3);
+    if (s === 1) { p.vy = rnd(520, 760) * p.z; p.vx = -p.vy * .2; p.len = rnd(10, 20) * p.z; }
+    else if (s === 3) { p.vy = rnd(18, 42) * p.z; p.vx = rnd(-8, 8); p.size = rnd(4.5, 9) * p.z; }
+    else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(9, 15) * p.z; }
+    else { p.vy = rnd(26, 46) * p.z; p.vx = rnd(12, 30); p.size = rnd(7, 12) * p.z; }
+  }
+  function setSeason(s) {
+    if (reduced()) return;
+    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
+    if (s === W.season) return;
+    W.season = s;
+    const n = [16, 46, 14, 40][s];
+    W.parts = Array.from({ length: n }, () => { const p = {}; spawn(p, true); return p; });
+    if (!W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
+  }
+  function wTick(t) {
+    if (document.hidden) { W.raf = 0; return; }
+    const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
+    const c = W.c, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
+    const wind = Math.sin(time * 0.23) * 14 + Math.sin(time * 0.071) * 10;
+    if (s === 1) { c.strokeStyle = 'rgba(52,62,70,.26)'; c.lineWidth = 1; c.beginPath(); }
+    for (const p of W.parts) {
+      p.y += p.vy * dt; p.x += (p.vx + wind * p.z) * dt;
+      if (s === 1) {
+        c.moveTo(p.x, p.y); c.lineTo(p.x - p.len * 0.2, p.y - p.len);
+      } else {
+        p.x += Math.sin(time * 1.1 + p.ph) * 12 * dt * p.z; p.rot += p.spin * dt;
+        const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : 'petal'), sz = p.size;
+        const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
+        c.globalAlpha = (s === 3 ? 0.85 : 0.75) * (0.55 + p.z * 0.45);
+        c.setTransform(DPR * Math.cos(p.rot), DPR * Math.sin(p.rot), -DPR * Math.sin(p.rot) * fl, DPR * Math.cos(p.rot) * fl, p.x * DPR, p.y * DPR);
+        c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
+      }
+      if (p.y > W.h + 30 || p.x < -60 || p.x > W.w + 60) spawn(p, false);
+    }
+    if (s === 1) c.stroke(); else { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.globalAlpha = 1; }
+    W.raf = requestAnimationFrame(wTick);
+  }
+
+  /* ---------- 一次性粒子（吐纳聚气 / 破境金屑） ---------- */
+  // 画布只覆盖粒子所在区域（而非全屏），减少每帧合成面积
+  const P = { cv: null, c: null, list: [], raf: 0, x: 0, y: 0, w: 0, h: 0 };
+  function pInit() { if (!P.cv) { P.cv = $('#fx'); P.c = P.cv.getContext('2d'); } }
+  function pBounds(b) {
+    const x = Math.max(0, Math.floor(b[0])), y = Math.max(0, Math.floor(b[1]));
+    const w = Math.min(innerWidth, Math.ceil(b[0] + b[2])) - x, h = Math.min(innerHeight, Math.ceil(b[1] + b[3])) - y;
+    Object.assign(P, { x, y, w, h });
+    const st = P.cv.style; st.left = x + 'px'; st.top = y + 'px'; st.width = w + 'px'; st.height = h + 'px';
+    P.cv.width = Math.round(w * DPR); P.cv.height = Math.round(h * DPR);
+  }
+  function pRun(sys, bounds) {
+    pInit();
+    if (!P.list.length) pBounds(bounds || [0, 0, innerWidth, innerHeight]);
+    else if (bounds) { // 合并区域
+      const x0 = Math.min(P.x, bounds[0]), y0 = Math.min(P.y, bounds[1]);
+      const x1 = Math.max(P.x + P.w, bounds[0] + bounds[2]), y1 = Math.max(P.y + P.h, bounds[1] + bounds[3]);
+      if (x0 < P.x || y0 < P.y || x1 > P.x + P.w || y1 > P.y + P.h) pBounds([x0, y0, x1 - x0, y1 - y0]);
+    }
+    P.list.push(sys); if (!P.raf) P.raf = requestAnimationFrame(pTick);
+  }
+  function pTick(t) {
+    const c = P.c; c.setTransform(DPR, 0, 0, DPR, -P.x * DPR, -P.y * DPR); c.clearRect(P.x, P.y, P.w, P.h);
+    P.list = P.list.filter(s => { if (!s.t0) s.t0 = t; return s.draw(c, (t - s.t0) / 1000) !== false; });
+    if (P.list.length) P.raf = requestAnimationFrame(pTick); else { P.raf = 0; c.clearRect(P.x, P.y, P.w, P.h); }
+  }
+  const easeIn = x => x * x * x, easeOut = x => 1 - Math.pow(1 - x, 3);
+  // 吐纳：淡墨灵气自四方旋入丹田（柔边墨点 + 渐隐拖尾）
+  let mote = null;
+  function moteSprite() {
+    if (mote) return mote;
+    const cv = document.createElement('canvas'); cv.width = cv.height = 48; const c = cv.getContext('2d');
+    const g = c.createRadialGradient(24, 24, 0, 24, 24, 24);
+    g.addColorStop(0, 'rgba(27,24,20,.9)'); g.addColorStop(.25, 'rgba(27,24,20,.55)'); g.addColorStop(.6, 'rgba(27,24,20,.12)'); g.addColorStop(1, 'rgba(27,24,20,0)');
+    c.fillStyle = g; c.fillRect(0, 0, 48, 48); return (mote = cv);
+  }
+  function qiSwirl(cx, cy, done) {
+    if (reduced()) { done && done(); return; }
+    const img = moteSprite();
+    const N = 26, parts = Array.from({ length: N }, (_, i) => ({ a: (i / N) * 6.283 + rnd(-.2, .2), r: rnd(150, 260), d: rnd(0, .25), s: rnd(3.5, 7), w: rnd(2.4, 3.2) }));
+    const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const pos = (p, k) => { const e = ease(Math.max(0, Math.min(1, k))), r = p.r * (1 - e), a = p.a + e * p.w; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r * .55, e]; };
+    let fired = false;
+    pRun({ draw(c, t) {
+      const dur = 1.0;
+      for (const p of parts) {
+        const k = (t - p.d) / dur; if (k <= 0 || k >= 1.02) continue;
+        const fade = Math.sin(Math.PI * Math.min(1, k)) * .62;
+        for (let j = 5; j >= 0; j--) {          // 拖尾：越往后越淡越小
+          const [x, y, e] = pos(p, k - j * .022);
+          const sz = p.s * (1 - e * .55) * (1 - j * .13);
+          c.globalAlpha = fade * (1 - j * .17);
+          c.drawImage(img, x - sz, y - sz, sz * 2, sz * 2);
+        }
+      }
+      c.globalAlpha = 1;
+      const g = (t - 1.12) / .9;
+      if (g > 0) {
+        if (!fired) { fired = true; done && done(); }
+        if (g < 1) {   // 丹田一圈墨晕
+          const rr = 8 + easeOut(g) * 54, gr = c.createRadialGradient(cx, cy, rr * .55, cx, cy, rr);
+          gr.addColorStop(0, 'rgba(27,24,20,0)'); gr.addColorStop(.7, `rgba(27,24,20,${.16 * (1 - g)})`); gr.addColorStop(1, 'rgba(27,24,20,0)');
+          c.fillStyle = gr; c.beginPath(); c.ellipse(cx, cy, rr, rr * .6, 0, 0, 7); c.fill();
+          c.globalAlpha = .5 * (1 - g); c.drawImage(img, cx - 10, cy - 10, 20, 20); c.globalAlpha = 1;
+        }
+      }
+      return t < 2.1;
+    } }, [cx - 290, cy - 170, 580, 340]);
+  }
+  // 破境成功：金屑升腾
+  function goldMotes(cx, cy, n = 46) {
+    if (reduced()) return;
+    const parts = Array.from({ length: n }, () => ({ x: cx + rnd(-120, 120), y: cy + rnd(-40, 160), vy: rnd(-60, -18), vx: rnd(-10, 10), r: rnd(.8, 2.4), d: rnd(0, 1.6), ph: rnd(0, 6.28), life: rnd(2.2, 3.6) }));
+    pRun({ draw(c, t) {
+      let alive = false;
+      for (const p of parts) {
+        const k = (t - p.d) / p.life; if (k < 0) { alive = true; continue; } if (k > 1) continue; alive = true;
+        const x = p.x + p.vx * (t - p.d) + Math.sin(t * 2 + p.ph) * 6, y = p.y + p.vy * (t - p.d);
+        const al = Math.sin(Math.PI * k) * .9;
+        const g = c.createRadialGradient(x, y, 0, x, y, p.r * 4); g.addColorStop(0, `rgba(255,236,180,${al})`); g.addColorStop(.35, `rgba(246,200,110,${al * .5})`); g.addColorStop(1, 'rgba(246,200,110,0)');
+        c.fillStyle = g; c.beginPath(); c.arc(x, y, p.r * 4, 0, 7); c.fill();
+      }
+      return alive || t < .2;
+    } }, [cx - 200, cy - 240, 400, 460]);
+  }
+
+  /* ---------- 闭关：洞府渐暗 ---------- */
+  async function cave() {
+    if (reduced()) return;
+    const el = $('#cave'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    await sleep(2350); el.classList.remove('on');
+  }
+
+  /* ---------- 游历：山路一笔 ---------- */
+  async function inkPath(rect) {
+    if (reduced()) return;
+    const svg = $('#path-fx'); svg.classList.remove('out'); svg.style.opacity = '';
+    const { width: Wd, height: H } = rect, L = 0, T = 0;
+    Object.assign(svg.style, { left: rect.left + 'px', top: rect.top + 'px', width: Wd + 'px', height: H + 'px' });
+    // 山路沿卷底的远山蜿蜒而上：起于左下，止于右侧山腰
+    const pts = [[L + Wd * .06, T + H * .97], [L + Wd * .3, T + H * rnd(.86, .9)], [L + Wd * .52, T + H * rnd(.9, .94)], [L + Wd * .72, T + H * rnd(.78, .82)], [L + Wd * .86, T + H * rnd(.7, .74)]];
+    let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], mx = (x0 + x1) / 2;
+      d += ` C${mx.toFixed(1)} ${y0.toFixed(1)} ${mx.toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+    }
+    const end = pts[pts.length - 1];
+    svg.innerHTML = `<path class="p1" d="${d}"/><path class="p2" d="${d}" transform="translate(0 5)" opacity="0"/><circle cx="${end[0]}" cy="${end[1]}" r="4.5" opacity="0"/>`;
+    const p1 = svg.querySelector('.p1'), p2 = svg.querySelector('.p2'), dot = svg.querySelector('circle');
+    const len = p1.getTotalLength();
+    p1.style.strokeDasharray = `${len} ${len}`; p1.style.strokeDashoffset = len;
+    const anim = [p1.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 1000, easing: 'cubic-bezier(.4,.1,.3,1)', fill: 'forwards' }),
+      p2.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: 1150, fill: 'forwards' })];
+    await sleep(900);
+    dot.animate([{ opacity: 0 }, { opacity: .7 }], { duration: 300, fill: 'forwards' });
+    await Promise.all(anim.map(a => a.finished.catch(() => {})));
+    await sleep(150);
+    svg.classList.add('out');
+    setTimeout(() => { svg.innerHTML = ''; svg.classList.remove('out'); }, 800);
+  }
+
+  /* ---------- 墨染转场 ---------- */
+  let washBusy = false;
+  async function wash(swap, x, y) {
+    const u = $('#wash');
+    if (washBusy) { await swap(); return; }
+    washBusy = true;
+    if (reduced()) {
+      u.classList.add('on'); const f = u.querySelector('.wash-full');
+      await f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: 'forwards' }).finished.catch(() => {});
+      await swap();
+      await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.catch(() => {});
+      u.classList.remove('on'); washBusy = false; return;
+    }
+    const ink = u.querySelector('.wash-ink'), paper = u.querySelector('.wash-paper'), full = u.querySelector('.wash-full');
+    u.style.setProperty('--wx', (x ?? innerWidth / 2) + 'px'); u.style.setProperty('--wy', (y ?? innerHeight * .55) + 'px');
+    u.classList.add('on');
+    const ease = 'cubic-bezier(.3,.1,.2,1)';
+    ink.animate([{ transform: 'scale(.02) rotate(0deg)', opacity: .9 }, { transform: 'scale(1.8) rotate(20deg)', opacity: .65 }], { duration: 760, easing: ease, fill: 'forwards' });
+    paper.animate([{ transform: 'scale(0) rotate(0deg)' }, { transform: 'scale(.02) rotate(0deg)', offset: .12 }, { transform: 'scale(1.85) rotate(-14deg)' }], { duration: 860, easing: ease, fill: 'forwards' });
+    const f1 = full.animate([{ opacity: 0 }, { opacity: 0, offset: .55 }, { opacity: 1 }], { duration: 900, easing: 'ease-in', fill: 'forwards' });
+    await f1.finished.catch(() => {});
+    await swap();
+    ink.getAnimations().forEach(a => a.cancel()); paper.getAnimations().forEach(a => a.cancel());
+    await sleep(80);
+    await full.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 760, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished.catch(() => {});
+    full.getAnimations().forEach(a => a.cancel());
+    u.classList.remove('on'); washBusy = false;
+  }
+
+  /* ---------- iOS 按压态 ---------- */
+  function initPress() {
+    document.addEventListener('touchstart', () => {}, { passive: true }); // 让 :active 在 iOS 生效
+    const on = e => { const b = e.target.closest && e.target.closest('.brush-btn,.act'); if (b && !b.disabled) b.classList.add('pressed'); };
+    const off = () => document.querySelectorAll('.pressed').forEach(b => b.classList.remove('pressed'));
+    document.addEventListener('pointerdown', on, { passive: true });
+    ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(ev => window.addEventListener(ev, off, { passive: true }));
+  }
+
+  return { vtext, initParallax, requestTilt, setSeason, qiSwirl, goldMotes, cave, inkPath, wash, initPress, reduced };
+})();
