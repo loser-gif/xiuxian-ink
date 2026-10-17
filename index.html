@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="墨仙录">
+<meta name="theme-color" content="#efe6d3">
+<meta name="format-detection" content="telephone=no">
+<title>墨仙录 · 水墨修仙</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preload" href="fonts/wenkai-game.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- SVG 滤镜：印章斑驳、笔触毛边 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="f-seal" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -7 4.75" result="holes"/>
+      <feComposite in="SourceGraphic" in2="holes" operator="in" result="pitted"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="8" result="w"/>
+      <feDisplacementMap in="pitted" in2="w" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="f-rough" x="-5%" y="-20%" width="110%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04 0.4" numOctaves="3" seed="2" result="w"/>
+      <feDisplacementMap in="SourceGraphic" in2="w" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div id="paper" aria-hidden="true"></div>
+<div id="scenery" aria-hidden="true">
+  <div class="sun"></div>
+  <div class="birds"><svg viewBox="0 0 100 40"><g fill="none" stroke="#2a2621" stroke-width="1.6" stroke-linecap="round"><path class="w" d="M2 14 Q8 6 14 13 Q20 6 27 12"/><path class="w" d="M40 4 Q45 -1 50 4 Q55 -1 61 3" opacity=".8"/><path class="w" d="M66 24 Q70 20 74 24 Q78 20 83 23" opacity=".6"/></g></svg></div>
+  <canvas class="mtn m1"></canvas>
+  <div class="mist mist1"></div>
+  <canvas class="mtn m2"></canvas>
+  <div class="mist mist2"></div>
+  <canvas class="mtn m3"></canvas>
+  <div class="mist mist3"></div>
+  <canvas class="mtn m4"></canvas>
+</div>
+<div id="vignette" aria-hidden="true"></div>
+
+<main id="app">
+  <!-- 卷首 -->
+  <section id="scr-title" class="screen">
+    <div class="title-block">
+      <h1 class="title-v"><span>墨</span><span>仙</span><span>录</span></h1>
+      <div class="title-side">
+        <div class="title-sub">一卷水墨　半世长生</div>
+        <div class="seal seal-title"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="4" y="4" width="92" height="92" rx="6" fill="#b3302a"/><rect x="11" y="11" width="78" height="78" rx="3" fill="none" stroke="#f3ead6" stroke-width="3"/><text x="50" y="47" text-anchor="middle" font-size="34" fill="#f3ead6" class="seal-font">问</text><text x="50" y="82" text-anchor="middle" font-size="34" fill="#f3ead6" class="seal-font">道</text></g></svg></div>
+    </div>
+    </div>
+    <div class="title-poem">
+      <p>大道五十　天衍四九</p><p>人遁其一</p>
+    </div>
+    <nav class="title-menu">
+      <button class="brush-btn" id="btn-new"><span class="bb-ink"></span><span class="bb-text">开卷</span><small>初入仙途</small></button>
+      <button class="brush-btn" id="btn-continue" hidden><span class="bb-ink"></span><span class="bb-text">续卷</span><small id="continue-sub">接续前缘</small></button>
+    </nav>
+  </section>
+
+  <!-- 入道 -->
+  <section id="scr-create" class="screen" hidden>
+    <header class="create-head">
+      <div class="chapter">第一卷</div>
+      <h2 class="ch-title">入道</h2>
+    </header>
+    <div class="create-body">
+      <label class="field">
+        <span class="field-label">题名</span>
+        <div class="name-row">
+          <input id="inp-name" maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="汝名为何">
+          <button id="btn-randname" class="mini-seal" aria-label="随机姓名">随缘</button>
+        </div>
+        <span class="field-line"></span>
+      </label>
+
+      <div class="stone-wrap">
+        <div class="stone" id="stone">
+          <div class="stone-ink"></div>
+          <div class="stone-glow" id="stone-glow"></div>
+          <span class="el el-0">金</span><span class="el el-1">木</span><span class="el el-2">水</span><span class="el el-3">火</span><span class="el el-4">土</span>
+          <div class="stone-center" id="stone-center">测</div>
+        </div>
+      </div>
+      <div class="lg-result" id="lg-result">
+        <div class="lg-name" id="lg-name"></div>
+        <p class="lg-flavor" id="lg-flavor">以指触石，可知灵根。</p>
+        <div class="lg-stats" id="lg-stats"></div>
+      </div>
+    </div>
+    <nav class="create-actions">
+      <button class="brush-btn small" id="btn-test"><span class="bb-ink"></span><span class="bb-text">测灵根</span></button>
+      <button class="brush-btn small primary" id="btn-start" hidden><span class="bb-ink"></span><span class="bb-text">踏入仙途</span></button>
+    </nav>
+  </section>
+
+  <!-- 主界面 -->
+  <section id="scr-main" class="screen" hidden>
+    <header class="hud">
+      <div class="hud-top">
+        <div class="realm-block">
+          <div class="realm-name" id="h-realm">炼气</div>
+          <div class="realm-stage" id="h-stage">一层</div>
+        </div>
+        <div class="who">
+          <div class="who-name" id="h-name">无名</div>
+          <div class="who-sub" id="h-sub">外门弟子 · 三灵根</div>
+        </div>
+        <button class="menu-seal" id="btn-menu" aria-label="卷首"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font">卷</text></g></svg></button>
+      </div>
+      <div class="bars">
+        <div class="bar bar-xw">
+          <span class="bar-label">修为</span>
+          <div class="bar-track"><div class="bar-bg"></div><div class="bar-fill" id="xw-fill"></div><div class="bar-tip" id="xw-tip"></div></div>
+          <span class="bar-num" id="xw-num">0</span>
+        </div>
+        <div class="bar bar-life">
+          <span class="bar-label">寿元</span>
+          <div class="incense"><div class="stick" id="life-stick"></div><div class="ember" id="life-ember"></div><div class="smoke" id="life-smoke"><i></i><i></i></div></div>
+          <span class="bar-num" id="life-num">16/80</span>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip"><b>岁</b><em id="c-age">十六</em><i id="c-season">春</i></span>
+        <span class="chip"><b>悟性</b><em id="c-wx">七</em></span>
+        <span class="chip"><b>心境</b><em id="c-xj">平和</em></span>
+        <span class="chip"><b>灵石</b><em id="c-ls">十</em></span>
+      </div>
+    </header>
+
+    <div class="scroll">
+      <div class="roller roller-top"></div>
+      <div class="scroll-paper">
+        <div class="log" id="log"></div>
+      </div>
+      <div class="roller roller-bot"></div>
+    </div>
+
+    <div class="status-line" id="status-line"></div>
+
+    <nav class="actions">
+      <button class="act" data-act="tuna"><span class="act-ink"></span><span class="act-t">吐纳</span><small id="dur-tuna">一季</small></button>
+      <button class="act" data-act="biguan"><span class="act-ink"></span><span class="act-t">闭关</span><small id="dur-biguan">一年</small></button>
+      <button class="act" data-act="youli"><span class="act-ink"></span><span class="act-t">游历</span><small>寻机缘</small></button>
+      <button class="act" data-act="bag"><span class="act-ink"></span><span class="act-t">行囊</span><small id="bag-count">空</small></button>
+    </nav>
+    <button class="break-seal" id="btn-break" hidden aria-label="破境">
+      <svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="5" fill="#b3302a"/><rect x="12" y="12" width="76" height="76" fill="none" stroke="#f3ead6" stroke-width="2.5"/><text x="50" y="47" text-anchor="middle" font-size="32" fill="#f3ead6" class="seal-font">破</text><text x="50" y="81" text-anchor="middle" font-size="32" fill="#f3ead6" class="seal-font">境</text></g></svg>
+    </button>
+  </section>
+</main>
+
+<!-- 奇遇卷轴 -->
+<div id="modal" class="modal" hidden>
+  <div class="modal-shade"></div>
+  <div class="hscroll" id="hscroll">
+    <div class="hroller left"></div>
+    <div class="hpaper">
+      <div class="hpaper-inner">
+        <aside class="ev-side">
+          <h3 class="ev-title" id="ev-title">奇遇</h3>
+          <div class="seal seal-small"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="4" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="50" fill="#f3ead6" class="seal-font" id="ev-seal">缘</text></g></svg></div>
+        </aside>
+        <div class="ev-main">
+          <div class="ev-text" id="ev-text"></div>
+          <div class="ev-choices" id="ev-choices"></div>
+          <div class="ev-result" id="ev-result"></div>
+        </div>
+      </div>
+    </div>
+    <div class="hroller right"></div>
+  </div>
+</div>
+
+<!-- 行囊 / 卷首 抽屉 -->
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-shade"></div>
+  <div class="sheet-panel">
+    <div class="sheet-handle"></div>
+    <h3 class="sheet-title" id="sheet-title">行囊</h3>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</div>
+
+<!-- 破境 -->
+<div id="bt" class="bt" hidden>
+  <div class="bt-shade"></div><div class="bt-ink" id="bt-ink"></div>
+  <div class="bt-ring"></div>
+  <div class="bt-lines" id="bt-lines"></div>
+  <div class="bt-big" id="bt-big"><span class="bt-half a" id="bt-a"></span><span class="bt-half b" id="bt-b"></span></div>
+  <div class="bt-stamp" id="bt-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="bt-stamp-t">成</text></g></svg></div>
+  <p class="bt-text" id="bt-text"></p>
+  <button class="bt-close brush-btn small light" id="bt-close" hidden><span class="bb-ink"></span><span class="bb-text">收卷</span></button>
+</div>
+
+<!-- 终卷 -->
+<div id="end" class="end" hidden>
+  <div class="end-paper">
+    <div class="end-title" id="end-title">坐化</div>
+    <div class="end-epitaph" id="end-epitaph"></div>
+    <div class="end-stats" id="end-stats"></div>
+    <button class="brush-btn small" id="btn-reborn"><span class="bb-ink"></span><span class="bb-text">再入轮回</span></button>
+  </div>
+</div>
+
+<div id="unroll" aria-hidden="true"><div class="unroll-paper"></div><div class="unroll-roller"></div></div>
+<div id="toast" aria-live="polite"></div>
+
+<script src="js/data.js"></script>
+<script src="js/ink.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
