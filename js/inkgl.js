@@ -1,0 +1,262 @@
+/* 墨仙录 · 活墨：一个共享 WebGL 着色器，渲染会呼吸、会洇开的湿墨（按钮墨团）与全屏墨染（转场/破境） */
+'use strict';
+const InkGL = (() => {
+  const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => !!(RM && RM.matches);
+  const NOISE = `
+    precision highp float;
+    float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+    float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3. - 2. * f);
+      return mix(mix(hash(i), hash(i + vec2(1., 0.)), u.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), u.x), u.y); }
+    float fbm(vec2 p){ float v = 0., a = .5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6); for (int i = 0; i < 4; i++){ v += a * noise(p); p = m * p; a *= .5; } return v; }
+    float fbm3(vec2 p){ float v = 0., a = .5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6); for (int i = 0; i < 3; i++){ v += a * noise(p); p = m * p; a *= .5; } return v; }
+    // 宣纸纤维：两组被拉长的噪声，取最大值，得到细长交错的纤维走向
+    float fibre(vec2 p){
+      vec2 a = mat2(.8, .6, -.6, .8) * p, b = mat2(.4, -.9, .9, .4) * p;
+      return max(noise(a * vec2(30., 3.)), noise(b * vec2(3., 34.)));
+    }`;
+  const VERT = `attribute vec2 aPos; varying vec2 vUv; void main(){ vUv = aPos * .5 + .5; gl_Position = vec4(aPos, 0., 1.); }`;
+
+  // ---- 按钮墨团：笔触(kind 0) / 圆墨(kind 1)
+  const BLOT_FRAG = NOISE + `
+    varying vec2 vUv;
+    uniform vec2 uRes; uniform float uTime, uSeed, uKind, uAlpha, uSurge, uSheen; uniform vec3 uInk;
+    void main(){
+      float A = uRes.x / uRes.y;
+      vec2 p = vec2((vUv.x - .5) * A, vUv.y - .5);
+      float t = uTime;
+      // 低频域扭曲：墨在湿纸上缓慢蠕动、呼吸
+      vec2 q = p + (vec2(fbm3(p * 1.7 + vec2(uSeed, t * .035)), fbm3(p * 1.7 + vec2(uSeed + 5.2, -t * .03))) - .5) * .16;
+      float d, tt = 0., cy = 0.;
+      if (uKind < .5) {
+        float x0 = -A * .35, x1 = A * .41;
+        tt = clamp((q.x - x0) / (x1 - x0), 0., 1.);
+        cy = .03 * sin(tt * 2.6 + uSeed) - .012 + .05 * tt * tt;          // 笔势略向上挑
+        float th = .2 * (1. - .3 * tt) * (.92 + .16 * fbm3(vec2(tt * 3., uSeed))) * (1. - smoothstep(.7, 1.02, tt)) + .004;
+        float th0 = .2 * (.92 + .16 * fbm3(vec2(0., uSeed)));
+        if (q.x < x0) d = length(vec2((q.x - x0) * 1.25, q.y - cy)) - th0;  // 圆润起笔
+        else d = abs(q.y - cy) - th;
+        d -= .035 * smoothstep(.16, 0., tt);                                 // 起笔按压，略肥
+        d += (fbm(q * vec2(5., 9.) + uSeed) - .5) * .06 + (noise(q * 46. + uSeed) - .5) * .01;  // 毛边
+      } else {
+        d = length(q) - .3 + (fbm(q * 2.2 + uSeed) - .5) * .2;
+      }
+      d -= .008 * sin(t * .55 + uSeed * 3.) + uSurge * .07;  // 呼吸 + 按下时墨势外涌
+      // 洇：沿纸纤维向外渗，渗出量随时间缓慢起伏
+      float fib = fibre(p * 1.4 + uSeed);
+      float creep = .55 + .45 * sin(t * .16 + fbm3(p * 2.5 + uSeed) * 6.28);
+      float bleed = smoothstep(.06 + .07 * creep + uSurge * .05, 0., d - fib * .03) * (.18 + .22 * fib);
+      // 墨芯：边缘清晰，内部有积墨浓淡
+      float core = 1. - smoothstep(-.012, .008, d);
+      float inner = .93 + .07 * fbm(p * 3.6 + vec2(uSeed, t * .02));
+      float rim = exp(-pow((d + .012) / .012, 2.)) * .12 * (.5 + fbm3(p * 8. + uSeed));  // 墨聚于边，深浅不一
+      // 飞白：笔尾出现干笔丝缕
+      float sk = noise(vec2(q.x * 3.2, q.y * 38. + fbm3(q * 4.) * 6.) + uSeed) * (.7 + .5 * noise(vec2(q.x * 9., q.y * 3.) + uSeed));
+      float dry = smoothstep(.3 + .35 * tt, .55 + .35 * tt, sk);
+      core *= mix(1., dry, smoothstep(.55, .95, tt) * (1. - uKind));
+      float a = max(core * inner + rim * core, bleed);
+      // 尾端偶尔甩出一粒小墨点
+      float P = 9.;
+      float ph = fract(t / P + uSeed * .137);
+      vec2 tip = uKind < .5 ? vec2(A * .35, cy + .02) : vec2(.24 * cos(uSeed * 7.), .24 * sin(uSeed * 7.));
+      vec2 dir = uKind < .5 ? vec2(.9, .35) : normalize(tip);
+      vec2 dp = tip + dir * (.02 + ph * .1);
+      float dr = .022 * (1. - ph * .45);
+      float drop = (1. - smoothstep(dr * .55, dr, length(p - dp) + (noise(p * 60.) - .5) * .006))
+                   * smoothstep(0., .06, ph) * (1. - smoothstep(.55, .95, ph)) * step(.45, fract(uSeed * 3.7 + floor(t / P) * .618));
+      a = max(a, drop * .9);
+      // 湿光：一道极淡的高光缓缓滑过墨面
+      float sx = (fract(t * .045 + uSeed * .3) * 1.8 - .9) * A;
+      float sh = exp(-pow((p.x + p.y * .7 - sx) / (.16 * A), 2.)) * core * (.45 + .55 * fbm3(p * 5. + t * .05)) * uSheen;
+      vec3 col = mix(uInk, uInk + vec3(.30, .29, .27), sh * .35);
+      a *= uAlpha * smoothstep(0., .07, vUv.x) * smoothstep(1., .93, vUv.x) * smoothstep(0., .1, vUv.y) * smoothstep(1., .9, vUv.y);
+      gl_FragColor = vec4(col * a, a);
+    }`;
+
+  // ---- 全屏墨染：mode 0 = 转场（纸面自中心洇开，墨晕为边），mode 1 = 破境（浓墨洇满全屏）
+  const SPREAD_FRAG = NOISE + `
+    varying vec2 vUv;
+    uniform vec2 uRes, uC; uniform float uTime, uK, uMode, uSeed; uniform vec3 uInk, uPaper; uniform sampler2D uTex; uniform vec2 uTexScale;
+    void main(){
+      vec2 px = vUv * uRes;
+      vec2 p = (px - uC) / uRes.y;
+      float R = uK * (length(uRes) / uRes.y) * 1.08;
+      vec2 w = vec2(fbm(p * 2.4 + vec2(uSeed, uTime * .1)), fbm(p * 2.4 + vec2(uSeed + 4.1, -uTime * .1))) - .5;
+      float d = length(p + w * .22) - R + (fbm(p * 7. + uSeed) - .5) * .06;
+      float fib = fibre(p * 1.2 + uSeed);
+      if (uMode < .5) {
+        float paper = 1. - smoothstep(-.01, .015, d + fib * .02);
+        float fringe = exp(-pow((d - .03) / .05, 2.)) * (.45 + .4 * fib) * (1. - smoothstep(.85, 1., uK));
+        vec3 tex = texture2D(uTex, vUv * uTexScale).rgb;
+        float a = max(paper, fringe);
+        vec3 col = mix(uInk, tex, paper / max(a, .001));
+        gl_FragColor = vec4(col * a, a);
+      } else {
+        float core = 1. - smoothstep(-.02, .03, d);
+        float bleed = (1. - smoothstep(0., .09 + .05 * fib, d)) * .55;
+        float inner = .93 + .07 * fbm(p * 2.5 + uTime * .03);
+        float rim = exp(-pow((d + .03) / .025, 2.)) * .12;
+        float a = clamp(max(core * inner + rim, bleed), 0., 1.);
+        gl_FragColor = vec4(uInk * a, a);
+      }
+    }`;
+
+  function mkGL(canvas) {
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true }) ;
+    if (!gl) return null;
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    return gl;
+  }
+  function prog(gl, fs) {
+    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+    const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, VERT)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const loc = gl.getAttribLocation(p, 'aPos'); const U = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const u = gl.getActiveUniform(p, i); U[u.name] = gl.getUniformLocation(p, u.name); }
+    return { p, loc, U };
+  }
+  function draw(gl, P) {
+    gl.useProgram(P.p); gl.enableVertexAttribArray(P.loc); gl.vertexAttribPointer(P.loc, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
+
+  /* ================= 活墨按钮 ================= */
+  const B = { gl: null, P: null, list: [], raf: 0, frame: 0, ok: false, t0: performance.now() };
+  function initBlots() {
+    try {
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+      B.gl = mkGL(cv); if (!B.gl) return false;
+      B.P = prog(B.gl, BLOT_FRAG); B.ok = true;
+    } catch (e) { console.warn('InkGL blot disabled:', e.message); B.ok = false; }
+    return B.ok;
+  }
+  function variant(host) {
+    const btn = host.closest('button');
+    if (host.classList.contains('act-ink')) return { kind: 1, ink: '#1b1814', alpha: 1, sheen: .5 };
+    if (btn && btn.classList.contains('light')) return { kind: 0, ink: '#f3ead6', alpha: .95, sheen: 0 };
+    if (btn && (btn.id === 'btn-continue' || (btn.closest('.create-actions') && !btn.classList.contains('primary')))) return { kind: 0, ink: '#1b1814', alpha: .15, sheen: 0 };
+    return { kind: 0, ink: '#1b1814', alpha: .95, sheen: 1 };
+  }
+  function register(host) {
+    if (host.__live) return;
+    const cv = document.createElement('canvas'); cv.className = 'live-ink'; host.appendChild(cv); host.classList.add('live');
+    const v = variant(host);
+    host.__live = { host, cv, c: cv.getContext('2d'), seed: Math.random() * 10 + 1, surge: 0, surgeT: 0, ...v, w: 0, h: 0, rgb: hex(v.ink), drawn: false };
+    B.list.push(host.__live);
+  }
+  function scan() {
+    if (!B.ok) return;
+    document.querySelectorAll('.bb-ink:not(.live), .act-ink:not(.live)').forEach(register);
+    B.list = B.list.filter(b => b.host.isConnected);
+    start();
+  }
+  function visible(b) {
+    if (!b.host.offsetParent) return false;
+    const r = b.cv.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight || r.width < 2) return false;
+    b.rect = r; return true;
+  }
+  function renderBlot(b, t) {
+    const gl = B.gl, P = B.P, dpr = Math.min(devicePixelRatio || 1, 2) * .7;
+    const w = Math.max(8, Math.round(b.rect.width * dpr)), h = Math.max(8, Math.round(b.rect.height * dpr));
+    if (w !== b.w || h !== b.h) { b.cv.width = b.w = w; b.cv.height = b.h = h; }
+    if (gl.canvas.width < w || gl.canvas.height < h) { gl.canvas.width = Math.max(gl.canvas.width, w); gl.canvas.height = Math.max(gl.canvas.height, h); }
+    gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(P.p);
+    gl.uniform2f(P.U.uRes, w, h); gl.uniform1f(P.U.uTime, t + b.seed * 13); gl.uniform1f(P.U.uSeed, b.seed);
+    gl.uniform1f(P.U.uKind, b.kind); gl.uniform1f(P.U.uAlpha, b.alpha); gl.uniform1f(P.U.uSurge, b.surge); gl.uniform1f(P.U.uSheen, b.sheen);
+    gl.uniform3f(P.U.uInk, ...b.rgb);
+    draw(gl, P);
+    // WebGL 画布原点在左下，读取区域在底部
+    b.c.clearRect(0, 0, w, h);
+    b.c.drawImage(gl.canvas, 0, gl.canvas.height - h, w, h, 0, 0, w, h);
+    b.drawn = true;
+  }
+  function tick(now) {
+    B.raf = 0;
+    if (document.hidden) return;
+    const vis = B.list.filter(visible);
+    if (!vis.length) return;                      // 无可见墨团：停下，等下一次 scan
+    B.raf = requestAnimationFrame(tick);
+    const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
+    if (!surging && (++B.frame % 3)) return;      // 平时 20fps（墨很慢，足够顺滑），按压时 60fps
+    const t = (now - B.t0) / 1000;
+    for (const b of vis) {
+      b.surge += (b.surgeT - b.surge) * (b.surgeT > b.surge ? .22 : .07);
+      if (reduced() && b.drawn && !surging) continue;
+      renderBlot(b, reduced() ? 0 : t);
+    }
+  }
+  function start() { if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick); }
+  function press(btn, on) {
+    const host = btn && btn.querySelector('.live'); if (!host || !host.__live) return;
+    host.__live.surgeT = on ? 1 : 0; start();
+  }
+
+  /* ================= 全屏墨染 ================= */
+  const S = { gl: null, P: null, cv: null, tex: null, ok: false };
+  function initSpread() {
+    try {
+      S.cv = document.getElementById('inkfx'); if (!S.cv) return false;
+      S.gl = mkGL(S.cv); if (!S.gl) return false;
+      S.P = prog(S.gl, SPREAD_FRAG); S.ok = true;
+    } catch (e) { console.warn('InkGL spread disabled:', e.message); S.ok = false; }
+    return S.ok;
+  }
+  function setPaper(url) {
+    if (!S.ok) return;
+    const img = new Image(); img.onload = () => {
+      const gl = S.gl; S.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, S.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+      S.texSize = img.width;
+    }; img.src = url;
+  }
+  // 播放一次墨染：k 从 k0→k1，返回 Promise；hold=true 时停在最后一帧
+  function spread({ mode = 0, x, y, from = 0, to = 1, dur = 900, ease = 'inOut', scale = .5, z = 41 }) {
+    return new Promise(res => {
+      if (!S.ok) return res(false);
+      const cv = S.cv, gl = S.gl, P = S.P;
+      const W = innerWidth, H = innerHeight;
+      cv.width = Math.round(W * scale); cv.height = Math.round(H * scale);
+      cv.style.zIndex = z; cv.classList.add('on');
+      gl.viewport(0, 0, cv.width, cv.height);
+      const seed = Math.random() * 9 + 1, t0 = performance.now();
+      const E = { inOut: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, out: k => 1 - Math.pow(1 - k, 3), in: k => k * k * k }[ease];
+      const frame = now => {
+        const k = Math.min(1, (now - t0) / dur), kk = from + (to - from) * E(k);
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(P.p);
+        gl.uniform2f(P.U.uRes, cv.width, cv.height);
+        gl.uniform2f(P.U.uC, (x ?? W / 2) * scale, (H - (y ?? H / 2)) * scale);
+        gl.uniform1f(P.U.uTime, (now - t0) / 1000); gl.uniform1f(P.U.uK, kk); gl.uniform1f(P.U.uMode, mode); gl.uniform1f(P.U.uSeed, seed);
+        gl.uniform3f(P.U.uInk, .106, .094, .078); gl.uniform3f(P.U.uPaper, .937, .902, .827);
+        if (S.tex) { gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, S.tex); gl.uniform1i(P.U.uTex, 0); }
+        gl.uniform2f(P.U.uTexScale, W / (S.texSize ? S.texSize / 2 : 256), H / (S.texSize ? S.texSize / 2 : 256));
+        draw(gl, P);
+        if (k < 1) requestAnimationFrame(frame); else res(true);
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+  function hide() { if (S.cv) S.cv.classList.remove('on'); }
+
+  function init() {
+    if (initBlots()) {
+      scan();
+      new MutationObserver(() => { clearTimeout(init.t); init.t = setTimeout(scan, 60); })
+        .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'data-screen'] });
+      document.addEventListener('visibilitychange', start);
+      addEventListener('resize', start);
+      const on = e => { const b = e.target.closest && e.target.closest('.brush-btn,.act'); if (b && !b.disabled) { press(b, true); B.pressed = b; } };
+      const off = () => { if (B.pressed) { press(B.pressed, false); B.pressed = null; } };
+      document.addEventListener('pointerdown', on, { passive: true });
+      ['pointerup', 'pointercancel', 'blur'].forEach(ev => addEventListener(ev, off, { passive: true }));
+    }
+    initSpread();
+  }
+  return { init, scan, spread, hide, setPaper, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
+})();

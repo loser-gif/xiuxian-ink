@@ -61,6 +61,14 @@ async function initVisuals() {
   root.style.setProperty('--blot3', `url(${b3})`); root.style.setProperty('--blot4', `url(${b4})`);
   root.style.setProperty('--blot-stone', `url(${stone})`); root.style.setProperty('--blot-big', `url(${big})`);
   try { Wallpaper.init(); wallpaperOn = true; } catch (e) { console.warn(e); }
+  root.style.setProperty('--grain-img', `url(${grainTile()})`);
+  try { InkGL.init(); InkGL.setPaper(paper); } catch (e) { console.warn(e); }
+}
+function grainTile() {
+  const s = 180, cv = document.createElement('canvas'); cv.width = cv.height = s; const c = cv.getContext('2d');
+  const img = c.createImageData(s, s), d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const v = Math.random(); const dark = v < .5; d[i] = d[i + 1] = d[i + 2] = dark ? 20 : 255; d[i + 3] = Math.pow(Math.random(), 3) * 120; }
+  c.putImageData(img, 0, 0); return cv.toDataURL();
 }
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => drawMountains(false), 250); });
@@ -144,7 +152,7 @@ function initTitle() {
     $('#btn-continue').hidden = false;
     $('#continue-sub').textContent = `${s.name} · ${realmStr(s)}`;
   }
-  FX.setSeason(s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0);
+  FX.setSeason(s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0); FX.setGold(0);
   $('#btn-new').onclick = () => {
     FX.requestTilt();
     if (s && !s.dead && !s.ascended && !confirm('另开新卷，旧卷将被覆盖。确定么？')) return;
@@ -291,13 +299,23 @@ function fitLine(el, max, min) {
   while (el.scrollWidth > el.clientWidth + 0.5 && f > min) { f -= 0.5; el.style.fontSize = f + 'px'; el.style.letterSpacing = '0.02em'; }
 }
 const prev = {};
+const tweens = {};
 function setText(sel, v) {
   const el = $(sel); if (!el) return; v = String(v);
-  if (el.textContent !== v) {
-    el.textContent = v;
-    const chip = el.closest('.chip'); if (chip && prev[sel] !== undefined) { chip.classList.remove('flash'); void chip.offsetWidth; chip.classList.add('flash'); }
-    prev[sel] = v;
+  if (prev[sel] === v) return;
+  const old = prev[sel]; prev[sel] = v;
+  if (old === undefined || FX.reduced() || document.body.dataset.screen !== 'main') { el.textContent = v; return; }
+  // 阿拉伯数字（如 修为 31 / 160）：数值滚动递增
+  const na = old.match(/^(\d+)( \/ .*)$/), nb = v.match(/^(\d+)( \/ .*)$/);
+  if (na && nb && na[2] === nb[2]) {
+    const a = +na[1], b = +nb[1], t0 = performance.now(), D = 900;
+    cancelAnimationFrame(tweens[sel]);
+    const step = now => { const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(a + (b - a) * e) + nb[2]; if (k < 1) tweens[sel] = requestAnimationFrame(step); };
+    tweens[sel] = requestAnimationFrame(step); return;
   }
+  // 汉字数值：自下而上翻入
+  el.innerHTML = ''; const sp = document.createElement('span'); sp.className = 'roll-in'; sp.textContent = v; el.appendChild(sp);
 }
 function render() {
   if (!S) return; sync();
@@ -314,7 +332,7 @@ function render() {
   $('.bar-life').classList.toggle('low', S.lifespan - S.age <= Math.max(6, r.life * 0.12));
   const season = Math.floor((S.months % 12) / 3);
   setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
-  FX.setSeason(season);
+  FX.setSeason(season); FX.setGold(S.realm || 0);
   document.body.dataset.realm = S.ascended ? 5 : S.realm;
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
   setText('#dur-tuna', cnDur(r.T * 3)); setText('#dur-biguan', cnDur(r.T * 12));
@@ -548,6 +566,10 @@ async function runBreak(usePill) {
   a.textContent = b.textContent = target;
   $('#bt-stamp-t').textContent = ok ? '成' : '败';
   await sleep(30); bt.classList.add('go');
+  if (InkGL.spreadOk && !FX.reduced()) {   // 浓墨以扭曲的边缘自中心洇满全屏
+    const cv = $('#inkfx'); cv.classList.remove('fade'); bt.insertBefore(cv, $('#bt-ink')); bt.classList.add('gl');
+    InkGL.spread({ mode: 1, y: innerHeight * .44, from: 0, to: 1.08, dur: 2600, ease: 'inOut', scale: .5, z: 'auto' });
+  }
   await sleep(1000);
   const l1 = document.createElement('div'); lines.appendChild(l1);
   inkWrite(l1, usePill ? `服下${r.pill}，凝神静气` : '凝神静气，抱元守一', { immediate: true, step: 60 });
@@ -587,6 +609,7 @@ async function runBreak(usePill) {
   close.hidden = false; close.classList.add('bleed-in');
   close.onclick = async () => {
     bt.classList.add('leave'); await sleep(900); bt.hidden = true; bt.className = 'bt';
+    const cv = $('#inkfx'); if (cv.parentNode === bt) { InkGL.hide(); document.body.insertBefore(cv, $('#grain')); }
     busy = false;
     pushLog({ title: ok ? (from === 4 ? '飞升' : `破境 · ${NEXT_REALM_NAME[from]}`) : '破境未果', text: logText, cls: ok ? 'gold' : 'warn', div: true });
     render(); save();

@@ -544,7 +544,7 @@ body.intro-done[data-screen=title] #scenery{animation-delay:0s!important;animati
 .wake.w2{animation-delay:-2.4s}
 @keyframes wake{0%{opacity:.8;transform:scale(.6,.5)}100%{opacity:0;transform:scale(2.4,1.6)}}
 /* 前景松枝，绕根部轻摆 */
-.pine{position:absolute;right:-5%;bottom:-2%;width:54%;height:42%;transform-origin:100% 100%;animation:sway 9s ease-in-out infinite alternate}
+.pine{position:absolute;right:-4%;bottom:-1%;width:47%;height:37%;opacity:.82;transform-origin:100% 100%;animation:sway 9s ease-in-out infinite alternate}
 @keyframes sway{0%{transform:rotate(-.5deg) skewX(.3deg)}100%{transform:rotate(.9deg) skewX(-.5deg)}}
 /* 仙鹤 */
 .cranes{position:absolute;inset:0;pointer-events:none}
@@ -568,3 +568,73 @@ body:not([data-screen=title]) .cam,body:not([data-screen=title]) .cam *,body:not
 }
 
 .log-spacer{flex:none;pointer-events:none}
+
+/* =========================================================
+   v0.4 活墨 · 高级感
+   ========================================================= */
+:root{--ease-silk:cubic-bezier(.16,.84,.24,1);--ease-breath:cubic-bezier(.45,.05,.35,1)}
+/* 活墨按钮：WebGL 渲染的湿墨取代静态图 */
+.bb-ink.live,.act-ink.live{background:none!important}
+.bb-ink.live{opacity:1}
+.live-ink{position:absolute;pointer-events:none;display:block}
+.bb-ink .live-ink{left:-9%;right:-9%;top:-26%;bottom:-26%;width:118%;height:152%}
+.act-ink .live-ink{left:-18%;top:-18%;width:136%;height:136%}
+.brush-btn .bb-ink{transition:transform .9s var(--ease-silk),opacity .4s}
+.brush-btn:active .bb-ink.live,.brush-btn.pressed .bb-ink.live{transform:scale(1.02,1.06)}
+.act-ink.live{opacity:.2}
+.act:active .act-ink.live,.act.pressed .act-ink.live{opacity:.36;transform:scale(1.08) rotate(6deg)}
+/* 全屏墨染画布（转场 / 破境） */
+#inkfx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;display:none;opacity:1;transition:opacity .8s var(--ease-silk)}
+#inkfx.on{display:block}
+#inkfx.fade{opacity:0}
+.bt.gl .bt-ink{display:none}
+/* 胶片 / 纸面颗粒：极淡，统一质感 */
+#grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:70;pointer-events:none;opacity:.07;background:var(--grain-img) 0 0/180px 180px;animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate3d(0,0,0)}17%{transform:translate3d(-3%,2%,0)}33%{transform:translate3d(2%,-4%,0)}50%{transform:translate3d(-5%,1%,0)}67%{transform:translate3d(4%,3%,0)}83%{transform:translate3d(-1%,-3%,0)}100%{transform:translate3d(0,0,0)}}
+
+/* 文字墨晕：更克制 —— 小幅缩放、短模糊、略下沉后落定 */
+.ink-ch{animation:bleed2 1.25s var(--ease-silk) both}
+@keyframes bleed2{0%{opacity:0;filter:blur(3.2px);transform:translate3d(0,2px,0) scale(1.07)}40%{opacity:.8;filter:blur(.9px)}100%{opacity:1;filter:blur(0);transform:none}}
+.bleed-in{animation:bleedBlock 1.6s var(--ease-silk) both}
+/* 日志：新条目轻轻落定 */
+.entry{animation:settle 1.1s var(--ease-silk) both}
+@keyframes settle{from{opacity:.0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
+.entry-time.bleed-in{animation:fadeIn 1.2s var(--ease-silk) both}
+/* 卷轴纸面：微卷的明暗 */
+.scroll-paper{box-shadow:inset 0 10px 12px -8px rgba(40,30,20,.38),inset 0 -10px 12px -8px rgba(40,30,20,.38),inset 14px 0 18px -14px rgba(60,44,28,.22),inset -14px 0 18px -14px rgba(60,44,28,.22)}
+.scroll-paper .curl{position:absolute;left:0;right:0;height:22px;pointer-events:none;z-index:1}
+/* 修为条：墨在条内缓缓流动，前端一颗湿墨珠 */
+.bar-xw .bar-track{overflow:visible}
+.bar-flow{position:absolute;inset:0;pointer-events:none;clip-path:inset(0 calc(100% - var(--p,0%)) 0 0);-webkit-clip-path:inset(0 calc(100% - var(--p,0%)) 0 0);transition:clip-path 1.2s var(--ease-ink),-webkit-clip-path 1.2s var(--ease-ink);
+  -webkit-mask:var(--brush-bar) center/100% 100% no-repeat;mask:var(--brush-bar) center/100% 100% no-repeat;overflow:hidden}
+.bar-flow::before{content:"";position:absolute;top:0;bottom:0;left:-60%;width:60%;background:linear-gradient(90deg,rgba(250,246,234,0),rgba(250,246,234,.32),rgba(250,246,234,0));animation:flow 5.5s var(--ease-breath) infinite}
+@keyframes flow{0%{transform:translate3d(0,0,0)}70%,100%{transform:translate3d(270%,0,0)}}
+.bar-xw .bar-tip{opacity:.85;width:6px;height:6px;margin:-3px 0 0 -3px;background:radial-gradient(circle at 35% 35%,#5a524a,#1b1814 60%);box-shadow:0 0 0 0 rgba(27,24,20,.25);animation:bead 3.4s var(--ease-breath) infinite}
+@keyframes bead{0%,100%{transform:scale(.85);box-shadow:0 0 0 0 rgba(27,24,20,.18)}50%{transform:scale(1.1);box-shadow:0 0 0 4px rgba(27,24,20,0)}}
+/* 数字翻滚 */
+.roll-wrap{display:inline-block;position:relative;overflow:hidden;vertical-align:bottom}
+.roll-in{display:inline-block;animation:rollIn .7s var(--ease-silk) both}
+@keyframes rollIn{0%{opacity:0;transform:translate3d(0,70%,0);filter:blur(2px)}100%{opacity:1;transform:none;filter:none}}
+.chip.flash em{animation:none}
+/* 印章：按下有压痕与朱砂晕 */
+.menu-seal{transition:transform .5s cubic-bezier(.3,1.6,.5,1),filter .3s}
+.menu-seal:active{transform:rotate(4deg) scale(.86);filter:drop-shadow(0 0 6px rgba(179,48,42,.45)) brightness(.9);transition-duration:.12s}
+@media (hover:hover){.menu-seal:hover{transform:rotate(-2deg) scale(1.06)}}
+.break-seal:active svg{transform:rotate(-3deg) scale(.88);filter:brightness(.88)}
+/* 破境印：落印压痕 */
+.bt.stamped .bt-stamp{animation:stampPress 1s both}
+/* 奇遇横卷：更慢更稳的展开 */
+.hpaper{transition:clip-path 1.15s var(--ease-silk),-webkit-clip-path 1.15s var(--ease-silk)}
+.hroller{transition:transform 1.15s var(--ease-silk)}
+.modal-shade{transition:opacity .9s var(--ease-silk)}
+/* 按钮文字：静置时一丝若有若无的呼吸 */
+.brush-btn .bb-text{animation:textBreath 6s var(--ease-breath) infinite}
+@keyframes textBreath{0%,100%{text-shadow:0 0 0 rgba(255,248,230,0)}50%{text-shadow:0 0 8px rgba(255,248,230,.18)}}
+@media (prefers-reduced-motion:reduce){
+  #grain,.bar-flow::before,.bar-xw .bar-tip,.brush-btn .bb-text,.entry{animation:none!important}
+}
+/* 破境：先让浓墨自中心洇开，再压暗四周；成功时墨色退淡，透出暖光 */
+.bt.gl .bt-shade{transition:opacity 1.6s 1.5s var(--ease-silk)}
+.bt.gl #inkfx{transition:opacity 2.4s var(--ease-silk)}
+.bt.gl.glory #inkfx{opacity:.5}
+body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}

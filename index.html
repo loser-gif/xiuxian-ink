@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=3" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=3" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=3">
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=4" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=4" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -130,7 +130,7 @@
       <div class="bars">
         <div class="bar bar-xw">
           <span class="bar-label">修为</span>
-          <div class="bar-track"><div class="bar-bg"></div><div class="bar-fill" id="xw-fill"></div><div class="bar-tip" id="xw-tip"></div></div>
+          <div class="bar-track"><div class="bar-bg"></div><div class="bar-fill" id="xw-fill"></div><div class="bar-flow"></div><div class="bar-tip" id="xw-tip"></div></div>
           <span class="bar-num" id="xw-num">0</span>
         </div>
         <div class="bar bar-life">
@@ -226,12 +226,15 @@
 <svg id="path-fx" aria-hidden="true"></svg>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="wash" aria-hidden="true"><div class="wash-ink"></div><div class="wash-paper"></div><div class="wash-full"></div></div>
+<canvas id="inkfx" aria-hidden="true"></canvas>
+<div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=3"></script>
-<script src="js/ink.js?v=3"></script>
-<script src="js/fx.js?v=3"></script>
-<script src="js/wallpaper.js?v=3"></script>
-<script src="js/game.js?v=3"></script>
+<script src="js/data.js?v=4"></script>
+<script src="js/ink.js?v=4"></script>
+<script src="js/fx.js?v=4"></script>
+<script src="js/wallpaper.js?v=4"></script>
+<script src="js/inkgl.js?v=4"></script>
+<script src="js/game.js?v=4"></script>
 </body>
 </html>

@@ -25,11 +25,14 @@ const Wallpaper = (() => {
         L.push([p[0] - dy * ww, p[1] + dx * ww]); Rr.push([p[0] + dy * ww, p[1] - dx * ww]);
       }
       c.beginPath(); c.moveTo(...L[0]); L.forEach(p => c.lineTo(...p)); for (let i = Rr.length - 1; i >= 0; i--) c.lineTo(...Rr[i]); c.closePath();
-      c.fillStyle = `rgba(${rgb},${a})`; c.fill();
+      // 墨分五色：枝干根部浓、梢头淡
+      const g = c.createLinearGradient(P[0][0], P[0][1], P[3][0], P[3][1]);
+      g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},${a * .45})`);
+      c.fillStyle = g; c.fill();
       // 飞白与树皮鳞纹
       for (let i = 0; i < n * 1.6; i++) {
         const t = r(), p = bez(...P, t), ww = (w0 + (w1 - w0) * t) / 2;
-        c.strokeStyle = r() < .55 ? `rgba(239,230,211,${.12 + r() * .18})` : `rgba(10,9,8,${.3 + r() * .3})`;
+        c.strokeStyle = r() < .55 ? `rgba(239,230,211,${.1 + r() * .14})` : `rgba(10,9,8,${(.14 + r() * .18) * a})`;
         c.lineWidth = (.6 + r() * 1.2) * s; c.beginPath();
         const ox = (r() - .5) * ww * 1.4, oy = (r() - .5) * ww * 1.4;
         c.ellipse(p[0] + ox, p[1] + oy, ww * (.2 + r() * .25), ww * (.1 + r() * .12), r() * 3, 0, Math.PI * (1 + r()));
@@ -46,23 +49,23 @@ const Wallpaper = (() => {
         c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(ang) * L, y + Math.sin(ang) * L * .95); c.stroke();
       }
     }
-    function cloud(cx, cy, len, size) {
+    function cloud(cx, cy, len, size, A = 1) {
       // 淡墨衬底
       const g = c.createRadialGradient(cx, cy, 0, cx, cy, len * .6);
-      g.addColorStop(0, 'rgba(48,58,56,.20)'); g.addColorStop(1, 'rgba(48,58,56,0)');
+      g.addColorStop(0, `rgba(48,58,56,${.16 * A})`); g.addColorStop(1, 'rgba(48,58,56,0)');
       c.save(); c.translate(cx, cy); c.scale(1, .45); c.translate(-cx, -cy); c.fillStyle = g; c.beginPath(); c.arc(cx, cy, len * .6, 0, 7); c.fill(); c.restore();
       const n = Math.round(len / (size * .55));
       for (let i = 0; i < n; i++) {
         const t = i / Math.max(1, n - 1), x = cx - len / 2 + t * len + (r() - .5) * size * .4;
         const y = cy + Math.sin(t * Math.PI) * -size * .28 + (r() - .5) * size * .25 + size * .18;
-        fan(x, y, size * (.8 + Math.sin(t * Math.PI) * .35), .78);
+        fan(x, y, size * (.8 + Math.sin(t * Math.PI) * .35), .6 * A);
       }
       // 第二层：稍高、稍短，叠出厚度
-      for (let i = 0; i < n * .7; i++) { const t = r(); fan(cx - len * .32 + t * len * .64, cy - size * .35 - Math.sin(t * Math.PI) * size * .3, size * .75, .7); }
+      for (let i = 0; i < n * .7; i++) { const t = r(); fan(cx - len * .32 + t * len * .64, cy - size * .35 - Math.sin(t * Math.PI) * size * .3, size * .75, .42 * A); }
     }
     const ink = '27,24,20';
     const T = [[w * 1.03, h * 1.04], [w * .86, h * .76], [w * .92, h * .44], [w * .74, h * .2]];
-    limb(T, 30 * s, 10 * s, ink, .94);
+    limb(T, 28 * s, 9 * s, ink, .74);
     const branches = [
       { t: .4, to: [w * .24, h * .42], droop: .06, w: 10 },
       { t: .66, to: [w * .36, h * .25], droop: .045, w: 8 },
@@ -72,11 +75,11 @@ const Wallpaper = (() => {
     for (const b of branches) {
       const st = bez(...T, b.t), en = b.to;
       const P = [st, [st[0] - (st[0] - en[0]) * .35, st[1] + h * b.droop], [st[0] - (st[0] - en[0]) * .7, en[1] + h * b.droop], en];
-      limb(P, b.w * s, 2.4 * s, ink, .9);
+      limb(P, b.w * s, 2.2 * s, ink, .62);
       const mid = bez(...P, .55), tip = bez(...P, .96);
-      clouds.push([tip[0] + 6 * s, tip[1] - 4 * s, 82 * s, 19 * s], [mid[0], mid[1] - 3 * s, 64 * s, 16 * s]);
+      clouds.push([tip[0] + 6 * s, tip[1] - 4 * s, 82 * s, 19 * s, .62 + b.t * .1], [mid[0], mid[1] - 3 * s, 64 * s, 16 * s, 1 - b.t * .35]);
     }
-    clouds.push([T[3][0], T[3][1] - 2 * s, 74 * s, 19 * s]);
+    clouds.push([T[3][0], T[3][1] - 2 * s, 74 * s, 19 * s, .55]);
     for (const cl of clouds) cloud(...cl);
   }
 

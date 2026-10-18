@@ -95,16 +95,22 @@ const FX = (() => {
     if (s === 1) { p.vy = rnd(520, 760) * p.z; p.vx = -p.vy * .2; p.len = rnd(10, 20) * p.z; }
     else if (s === 3) { p.vy = rnd(18, 42) * p.z; p.vx = rnd(-8, 8); p.size = rnd(4.5, 9) * p.z; }
     else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(9, 15) * p.z; }
-    else { p.vy = rnd(26, 46) * p.z; p.vx = rnd(12, 30); p.size = rnd(7, 12) * p.z; }
+    else { p.vy = rnd(16, 30) * p.z; p.vx = rnd(8, 20); p.size = rnd(6, 10.5) * p.z; }
   }
   function setSeason(s) {
     if (reduced()) return;
     if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
     if (s === W.season) return;
     W.season = s;
-    const n = [16, 46, 14, 40][s];
+    const n = [12, 40, 11, 36][s];
     W.parts = Array.from({ length: n }, () => { const p = {}; spawn(p, true); return p; });
     if (!W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
+  }
+  function setGold(realm) {
+    if (reduced() || !W.cv) return;
+    const n = realm >= 2 ? Math.min(12, 5 + (realm - 2) * 2) : 0;
+    if ((W.gold || []).length === n) return;
+    W.gold = Array.from({ length: n }, () => ({ x: rnd(0, W.w), y: rnd(0, W.h), vy: rnd(5, 12), s: rnd(2, 3.6), spin: rnd(.6, 1.4), ph: rnd(0, 6.28) }));
   }
   function wTick(t) {
     if (document.hidden) { W.raf = 0; return; }
@@ -120,13 +126,23 @@ const FX = (() => {
         p.x += Math.sin(time * 1.1 + p.ph) * 12 * dt * p.z; p.rot += p.spin * dt;
         const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : 'petal'), sz = p.size;
         const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
-        c.globalAlpha = (s === 3 ? 0.85 : 0.75) * (0.55 + p.z * 0.45);
+        c.globalAlpha = (s === 3 ? 0.85 : 0.62) * (0.4 + p.z * 0.6);
         c.setTransform(DPR * Math.cos(p.rot), DPR * Math.sin(p.rot), -DPR * Math.sin(p.rot) * fl, DPR * Math.cos(p.rot) * fl, p.x * DPR, p.y * DPR);
         c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
       }
       if (p.y > W.h + 30 || p.x < -60 || p.x > W.w + 60) spawn(p, false);
     }
     if (s === 1) c.stroke(); else { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.globalAlpha = 1; }
+    // 高境界：几片金箔缓缓浮沉，翻转到正面时一闪
+    for (const g of W.gold || []) {
+      g.y -= g.vy * dt; g.x += (Math.sin(time * .3 + g.ph) * 6 + wind * .3) * dt;
+      if (g.y < -20) { g.y = W.h + 20; g.x = rnd(0, W.w); }
+      const f = Math.cos(time * g.spin + g.ph), gl = Math.pow(Math.max(0, f), 8);
+      c.setTransform(DPR, 0, 0, DPR, g.x * DPR, g.y * DPR); c.rotate(time * .2 + g.ph); c.scale(g.s, g.s * (.2 + .8 * Math.abs(f)));
+      c.globalAlpha = .28 + .5 * gl; c.fillStyle = gl > .3 ? '#f6e3a8' : '#c49a4a';
+      c.beginPath(); c.moveTo(-1, -.6); c.lineTo(.9, -.9); c.lineTo(.7, .8); c.lineTo(-.8, .7); c.closePath(); c.fill();
+    }
+    if (W.gold && W.gold.length) { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.globalAlpha = 1; }
     W.raf = requestAnimationFrame(wTick);
   }
 
@@ -199,21 +215,29 @@ const FX = (() => {
       return t < 2.1;
     } }, [cx - 290, cy - 170, 580, 340]);
   }
-  // 破境成功：金屑升腾
-  function goldMotes(cx, cy, n = 46) {
+  // 破境成功：金箔碎片缓缓升腾、翻转时闪光
+  function goldMotes(cx, cy, n = 34) {
     if (reduced()) return;
-    const parts = Array.from({ length: n }, () => ({ x: cx + rnd(-120, 120), y: cy + rnd(-40, 160), vy: rnd(-60, -18), vx: rnd(-10, 10), r: rnd(.8, 2.4), d: rnd(0, 1.6), ph: rnd(0, 6.28), life: rnd(2.2, 3.6) }));
+    const parts = Array.from({ length: n }, () => {
+      const k = 3 + Math.floor(rnd(0, 3)), pts = Array.from({ length: k }, (_, i) => { const a = i / k * 6.283 + rnd(-.4, .4), r = rnd(.6, 1); return [Math.cos(a) * r, Math.sin(a) * r]; });
+      return { x: cx + rnd(-150, 150), y: cy + rnd(-30, 190), vy: rnd(-34, -12), vx: rnd(-8, 8), s: rnd(2.2, 5.2), d: rnd(0, 2.2), ph: rnd(0, 6.28), spin: rnd(1.2, 3.2), rot: rnd(0, 6.28), life: rnd(3, 4.8), pts };
+    });
     pRun({ draw(c, t) {
       let alive = false;
       for (const p of parts) {
-        const k = (t - p.d) / p.life; if (k < 0) { alive = true; continue; } if (k > 1) continue; alive = true;
-        const x = p.x + p.vx * (t - p.d) + Math.sin(t * 2 + p.ph) * 6, y = p.y + p.vy * (t - p.d);
-        const al = Math.sin(Math.PI * k) * .9;
-        const g = c.createRadialGradient(x, y, 0, x, y, p.r * 4); g.addColorStop(0, `rgba(255,236,180,${al})`); g.addColorStop(.35, `rgba(246,200,110,${al * .5})`); g.addColorStop(1, 'rgba(246,200,110,0)');
-        c.fillStyle = g; c.beginPath(); c.arc(x, y, p.r * 4, 0, 7); c.fill();
+        const tt = t - p.d, k = tt / p.life; if (k < 0) { alive = true; continue; } if (k > 1) continue; alive = true;
+        const x = p.x + p.vx * tt + Math.sin(tt * 1.3 + p.ph) * 9, y = p.y + p.vy * tt;
+        const flip = Math.cos(tt * p.spin + p.ph), glint = Math.pow(Math.max(0, flip), 6);
+        const al = Math.sin(Math.PI * Math.min(1, k * 1.2)) * (.55 + .45 * Math.abs(flip));
+        c.save(); c.translate(x, y); c.rotate(p.rot + tt * .4); c.scale(p.s, p.s * (.25 + .75 * Math.abs(flip)));
+        c.beginPath(); p.pts.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.closePath();
+        const L = 150 + glint * 100;
+        c.fillStyle = `rgba(${Math.min(255, 196 + glint * 59)},${Math.min(255, L)},${Math.round(70 + glint * 150)},${al})`; c.fill();
+        c.restore();
+        if (glint > .5) { const g = c.createRadialGradient(x, y, 0, x, y, p.s * 3.5); g.addColorStop(0, `rgba(255,240,200,${glint * al * .7})`); g.addColorStop(1, 'rgba(255,240,200,0)'); c.fillStyle = g; c.fillRect(x - p.s * 4, y - p.s * 4, p.s * 8, p.s * 8); }
       }
       return alive || t < .2;
-    } }, [cx - 200, cy - 240, 400, 460]);
+    } }, [cx - 200, cy - 260, 400, 480]);
   }
 
   /* ---------- 闭关：洞府渐暗 ---------- */
@@ -264,6 +288,13 @@ const FX = (() => {
       await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.catch(() => {});
       u.classList.remove('on'); washBusy = false; return;
     }
+    if (window.InkGL && InkGL.spreadOk) {   // WebGL：纸面以域扭曲的边缘洇开，外缘一圈淡墨
+      const cv = $('#inkfx'); cv.classList.remove('fade'); u.classList.add('on');
+      await InkGL.spread({ mode: 0, x, y, from: 0, to: 1.02, dur: 1050, ease: 'inOut', scale: .5, z: 41 });
+      await swap(); await sleep(60);
+      cv.classList.add('fade'); await sleep(820);
+      InkGL.hide(); cv.classList.remove('fade'); u.classList.remove('on'); washBusy = false; return;
+    }
     const ink = u.querySelector('.wash-ink'), paper = u.querySelector('.wash-paper'), full = u.querySelector('.wash-full');
     u.style.setProperty('--wx', (x ?? innerWidth / 2) + 'px'); u.style.setProperty('--wy', (y ?? innerHeight * .55) + 'px');
     u.classList.add('on');
@@ -289,5 +320,5 @@ const FX = (() => {
     ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(ev => window.addEventListener(ev, off, { passive: true }));
   }
 
-  return { vtext, initParallax, requestTilt, setSeason, qiSwirl, goldMotes, cave, inkPath, wash, initPress, reduced };
+  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, initPress, reduced };
 })();
