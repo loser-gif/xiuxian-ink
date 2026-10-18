@@ -119,7 +119,7 @@ body.go .title-menu{animation:fadeUp 1.4s 3.5s var(--ease-ink) both}
 .field{display:block;width:min(100%,320px);position:relative}
 .field-label{display:block;font-size:13px;letter-spacing:.5em;color:var(--ink3);margin-bottom:4px}
 .name-row{display:flex;align-items:center;gap:10px}
-#inp-name{flex:1;min-width:0;font-family:var(--f-head);font-size:34px;letter-spacing:.18em;color:var(--ink);background:transparent;border:0;outline:0;padding:4px 2px;
+#inp-name{flex:1;min-width:0;font-family:var(--f-head);font-size:34px;letter-spacing:.18em;color:var(--ink);background:transparent;border:0;outline:0;padding:4px 2px;min-height:46px;
   -webkit-user-select:text;user-select:text;border-radius:0}
 #inp-name::placeholder{color:rgba(110,100,87,.45)}
 .field-line{display:block;height:9px;margin-top:2px;background:var(--brush-line) center/100% 100% no-repeat;opacity:.85}
@@ -1184,6 +1184,9 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .mjb{flex:1;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);letter-spacing:.1em}
 .mjb-t{flex:1;height:6px;background:rgba(27,24,20,.1);border-radius:3px;overflow:hidden}
 .mjb-t i{display:block;height:100%;transition:width .8s var(--ease-ink);border-radius:3px}
+/* 秘境气血/灵力：笔触形条 */
+.mjb-t{height:8px;border-radius:0;background:rgba(27,24,20,.13);-webkit-mask:var(--brush-bar) center/100% 100% no-repeat;mask:var(--brush-bar) center/100% 100% no-repeat}
+.mjb-t i{border-radius:0;opacity:.88}
 .mjb.hp i{background:#9a3a2e}.mjb.ling i{background:#3d5560}
 .mjb b{font-weight:400;font-family:var(--f-head);font-size:14px;color:var(--ink2);min-width:2.6em;text-align:right}
 .mjb.low{animation:lowPulse 1.6s ease-in-out infinite}
@@ -1332,6 +1335,31 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   .auc-lamps{max-width:520px}
   .auc-lines,.auc-btns{max-width:460px}
   .auc-lot{max-width:460px}
+}
+/* 平板/宽屏：秘境居中成纸页，拍卖放大 */
+@media (min-width:700px) and (min-height:520px){
+  .mj{padding-top:calc(var(--sat) + 28px);padding-bottom:calc(var(--sab) + 22px)}
+  .mj>*:not(.mj-wash){width:100%;max-width:760px;margin-left:auto;margin-right:auto}
+  .mj-text{font-size:17px}
+  .mj-ttl b{font-size:30px}
+  .mj-nt{font-size:28px;padding-right:14px}
+  .mj-node{gap:20px}
+}
+@media (min-width:700px) and (min-height:700px){
+  .auc{padding-top:3vh;padding-bottom:3vh}
+  .auc-lamps{max-width:560px;height:76px}
+  .auc-lamps i{width:30px;height:58px}
+  .auc-head{font-size:20px;margin-top:14px}
+  .auc-head em{font-size:13px}
+  .auc-lot{max-width:520px;margin-top:5vh}
+  .auc-name{font-size:52px}
+  .auc-desc{font-size:15px}
+  .auc-price b{font-size:46px}
+  .auc-price small,.auc-price span{font-size:14px}
+  .auc-lines{max-width:520px;margin-top:4vh;font-size:15px}
+  .auc-btns{max-width:520px}
+  .auc-me{font-size:13px}
+  .al{font-size:15.5px}.al b{font-size:16.5px}
 }
 @media (min-width:1000px) and (min-height:600px) and (max-width:1180px){
   #scr-main{grid-template-columns:220px minmax(0,1fr) 220px;column-gap:22px;padding-left:24px;padding-right:24px}
