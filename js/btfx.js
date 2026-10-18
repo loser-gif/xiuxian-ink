@@ -120,20 +120,13 @@ const BtFx = (() => {
   async function revealPhase(bt, from, ok) {
     bt.classList.add('reveal');
     if (ok) {
-      await sleep(R() ? 80 : 480);
-      bt.classList.add('glory');
+      await sleep(R() ? 80 : 860);
+      bt.classList.add('glory', 'weight');
       if (typeof MoAudio !== 'undefined') {
         MoAudio.play(from === 4 ? 'gold' : 'splash');
         MoAudio.play('gold');
       }
-      if (!R() && typeof FX !== 'undefined' && FX.goldMotes) {
-        const big = document.getElementById('bt-big');
-        const bb = big ? big.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 3, width: 0, height: 0 };
-        const cx = bb.left + bb.width / 2, cy = bb.top + bb.height / 2;
-        const n = [18, 42, 28, 36, 48][from] || 30;
-        FX.goldMotes(cx, cy, n);
-      }
-      await sleep(R() ? 100 : (from === 4 ? 1100 : 850));
+      await sleep(R() ? 100 : (from === 4 ? 980 : 760));
     } else {
       await sleep(R() ? 100 : 1200);
       if (typeof MoAudio !== 'undefined') MoAudio.play('fail');
