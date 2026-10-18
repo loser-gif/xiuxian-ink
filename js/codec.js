@@ -126,7 +126,7 @@ const Codec = (() => {
   function decode(text) {
     const t = String(text || '').trim().replace(/\s+/g, '');
     const m = t.match(/MX1\.([A-Za-z0-9\-_]+)/);
-    if (!m) return { err: '这不是墨仙录的存档码' };
+    if (!m) return { err: '这不是纸上仙途的存档码' };
     let pack;
     try { pack = b64d(m[1]); } catch (e) { return { err: '存档码残缺，未能读入' }; }
     if (pack.length < 6 || pack[0] !== 1) return { err: '存档码版本不合' };

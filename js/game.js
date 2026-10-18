@@ -2080,14 +2080,14 @@ async function saveScroll(kind, title) {
   img.alt = (S.name || '无名') + ' · ' + (title || '终卷');
   view.hidden = false;
   requestAnimationFrame(() => view.classList.add('open'));
-  const file = new File([blob], '墨仙录.png', { type: 'image/png' });
+  const file = new File([blob], '纸上仙途.png', { type: 'image/png' });
   const shareBtn = $('#scroll-share');
   const can = navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }));
   if (shareBtn) {
     shareBtn.querySelector('.bb-text').textContent = can ? '分享' : '打开图片';
     shareBtn.onclick = async () => {
       if (can) {
-        try { await navigator.share({ files: [file], title: '墨仙录', text: (S.name || '') + ' · ' + (title || '') }); return; }
+        try { await navigator.share({ files: [file], title: '纸上仙途', text: [S.name || '', title || '', '纸上仙途'].filter(Boolean).join(' · ') }); return; }
         catch (e) { if (e && e.name === 'AbortError') return; }
       }
       const w = window.open(url, '_blank');
@@ -2225,7 +2225,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=30').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=31').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
