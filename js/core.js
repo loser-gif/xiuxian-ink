@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 9;
+  const SAVE_V = 10;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -128,7 +128,12 @@ const Core = (() => {
   function learn(s, id, tags, emit) {
     if (!GONGFA[id]) return false;
     if (s.gfs[id]) { tags && tags.push({ t: `《${GONGFA[id].name}》已在胸中`, c: '' }); return false; }
-    s.gfs[id] = { lv: 1, xp: 0 };
+    let lv0 = 1;
+    if (s.flags && s.flags.auxPage === id) {
+      lv0 = 2; delete s.flags.auxPage;
+      tags && tags.push({ t: '残页应验 · 起手二层', c: 'gold' });
+    }
+    s.gfs[id] = { lv: lv0, xp: 0 };
     tags && tags.push({ t: `得功法《${GONGFA[id].name}》`, c: 'up' });
     if (!s.gf) { s.gf = id; emit && emit({ text: `你开始修习《${GONGFA[id].name}》。从此吐纳有法，不再是盲人摸象。`, cls: 'sys' }); }
     return true;
@@ -480,6 +485,10 @@ const Core = (() => {
     if (kind === 'daoji') {
       if (s.path.daoji) return { err: '道基已定，不可轻易更易' };
       s.path.daoji = list[0];
+      if (s.flags && s.flags.daojiMem === list[0]) {
+        s.btBuff = (s.btBuff || 0) + 0.02;
+        s.flags.daojiMemUsed = 1;
+      }
     } else if (kind === 'danwen') {
       if (s.path.danwen && s.path.danwen.length) return { err: '丹纹已定' };
       s.path.danwen = list.slice(0, meta.max);
@@ -588,8 +597,9 @@ const Core = (() => {
 
   /* ---------- 破境 ---------- */
   function btChance(s, usePill) {
+    const mem = (typeof Samsara !== 'undefined' && Samsara.daojiAffinity && s.path) ? Samsara.daojiAffinity(s, s.path.daoji) : 0;
     return clamp(REALMS[s.realm].base + s.lg.bt + (s.xj - 50) / 250 + (usePill ? 0.2 : 0) + Math.min(0.12, s.fails * 0.04)
-      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt, 0.05, 0.95);
+      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt + mem, 0.05, 0.95);
   }
   // 返回 {ok, text, ending}；会直接改写 s；宗门赐法等追加日志走 emit
   function resolveBreak(s, usePill, emit) {
@@ -684,7 +694,11 @@ const Core = (() => {
     const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
     if (startGf && GONGFA[startGf]) { s.gf = startGf; s.gfs[startGf] = { lv: 1, xp: 0 }; }
     else if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
-    if (legacy) {
+    if (r && r.trial) { s.flags.trial = 1; s.realm = 2; s.stage = 0; s.months = 40 * 12; s.ls = 120; s.xw = 0; }
+    let legacyTags = [];
+    if (legacy && typeof Samsara !== 'undefined' && Samsara.applyLegacy) {
+      legacyTags = Samsara.applyLegacy(s, legacy) || [];
+    } else if (legacy) {
       s.wx = clamp(s.wx + (legacy.wx || 0), 1, 10); s.flags.legacy = 1;
       if (legacy.canhun) { s.flags.canhunSeed = legacy.canhun; s.flags.fabaoCanhun = 1; }
     }
@@ -692,9 +706,19 @@ const Core = (() => {
     const rank = orgId ? (START_RANK[r.lg.id] != null ? START_RANK[r.lg.id] : 1) : -1;
     s.sect = initSect(s, orgId, rank);
     if (r.free) s.sect.free = true;
+    // 门派印记：同宗贡奉
+    if (typeof Samsara !== 'undefined' && Samsara.onJoinOrg && orgId) {
+      const mark = Samsara.onJoinOrg(s, orgId);
+      if (mark) s.flags._legacyJoinText = mark.text;
+    }
+    if (typeof Samsara !== 'undefined' && Samsara.applyCourtMark) Samsara.applyCourtMark(s);
     s.npc = initNpc(s);
     if (typeof Jianghu !== 'undefined') Jianghu.init(s);
-    sync(s); return s;
+    // 试炼局：缩短寿元窗口感——不改公式，只记目标年
+    if (s.flags.trial) s.flags.trialYears = 20;
+    sync(s);
+    s._legacyTags = legacyTags;
+    return s;
   }
   function migrate(s) {
     if (!s) return null;
@@ -745,6 +769,10 @@ const Core = (() => {
     if (s.v === 8) {   // v0.12 → v0.13：因果
       s.v = 9;
       s.karma = s.karma || (typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] });
+    }
+    if (s.v === 9) {   // v0.13 → v1.0：轮回字段（档案侧仅占位；元数据在 moxian.meta）
+      s.v = 10;
+      s.flags = s.flags || {};
     }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };

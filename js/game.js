@@ -161,13 +161,66 @@ function initTitle() {
   if (s && !s.dead && !s.ascended) {
     $('#btn-continue').hidden = false;
     $('#continue-sub').textContent = `${s.name} · ${realmStr(s)}`;
+  } else {
+    const bc = $('#btn-continue'); if (bc) bc.hidden = true;
   }
   FX.setSeason(s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0); FX.setGold(0);
+  const subAtlas = $('#atlas-sub');
+  if (subAtlas && typeof Samsara !== 'undefined') {
+    const st = Samsara.atlasStats();
+    subAtlas.textContent = st.lives ? `轮回 ${cn(st.lives)} 世 · 墓志 ${cn(st.epitaphs)}` : '尚未入轮回簿';
+  }
+  const legPeek = (typeof Samsara !== 'undefined' && Samsara.peekLegacy) ? Samsara.peekLegacy() : null;
+  const legHint = $('#legacy-hint');
+  if (legHint) {
+    if (legPeek) {
+      const bits = [];
+      if (legPeek.wx) bits.push('悟性残念');
+      if (legPeek.canhun) bits.push('法宝残魂');
+      if (legPeek.daoji) bits.push('道基残忆');
+      if (legPeek.auxPage) bits.push('功法残页');
+      if (legPeek.sectMark) bits.push('门派印记');
+      if (legPeek.courtMark) bits.push('皇命印记');
+      legHint.hidden = false;
+      legHint.textContent = '前世余韵待启 · ' + (bits.join(' · ') || '一缕残念');
+    } else legHint.hidden = true;
+  }
+  const btnDaily = $('#btn-daily');
+  if (btnDaily && typeof Samsara !== 'undefined') {
+    const ds = Samsara.dailyStatus();
+    btnDaily.hidden = false;
+    const sm = btnDaily.querySelector('small');
+    if (sm) sm.textContent = ds.claimed ? '今日已领' : '晨露一缕';
+    btnDaily.classList.toggle('dim', !!ds.claimed);
+    btnDaily.onclick = () => {
+      FX.requestTilt();
+      if (!s || s.dead || s.ascended) { toast('须先有一卷在修，方可领日缘'); return; }
+      S = s;
+      const r = Samsara.claimDaily(S, pushLog);
+      if (r.err) { toast(r.err); return; }
+      save(); toast('日缘已领');
+      initTitle();
+    };
+  }
   $('#btn-new').onclick = async () => {
     FX.requestTilt();
     if (s && !s.dead && !s.ascended && !(await inkConfirm('另开新卷，旧卷将被覆盖。', '另开', true))) return;
+    window.__trialStart = false;
     resetCreate(); unrollTo('create');
   };
+  const btnTrial = $('#btn-trial');
+  if (btnTrial) {
+    btnTrial.hidden = false;
+    btnTrial.onclick = async () => {
+      FX.requestTilt();
+      if (s && !s.dead && !s.ascended && !(await inkConfirm('试炼将覆盖当前卷。短局二十载，不入轮回簿。', '试炼', true))) return;
+      window.__trialStart = true;
+      resetCreate(); unrollTo('create');
+      toast('试炼境：金丹起步 · 二十载');
+    };
+  }
+  const btnAtlas = $('#btn-atlas');
+  if (btnAtlas) btnAtlas.onclick = () => { FX.requestTilt(); openAtlasSheet(); };
   $('#btn-continue').onclick = () => { FX.requestTilt(); S = load(); if (!S) return; enterMain(true); };
 }
 
@@ -264,10 +317,13 @@ function initCreate() {
 
 function newGame(name, r, choice) {
   let legacy = null;
-  try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {}
+  if (typeof Samsara !== 'undefined' && Samsara.consumeLegacy) legacy = Samsara.consumeLegacy();
+  else { try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {} }
   const orgId = choice && choice.id !== 'free' ? choice.id : null;
   const free = !!(choice && choice.id === 'free');
-  const rr = Object.assign({}, r, { org: orgId, free });
+  const trial = !!window.__trialStart;
+  window.__trialStart = false;
+  const rr = Object.assign({}, r, { org: orgId, free, trial });
   S = Core.newState(name, rr, legacy);
   const lgDesc = (r.lg.id === 'wei' ? '' : r.els.join('')) + r.lg.name;
   const o = orgId && ORGS[orgId];
@@ -283,10 +339,21 @@ function newGame(name, r, choice) {
   } else {
     sectLine = `测得${lgDesc}。山门之内，尘埃落定。`;
   }
-  pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。你名${name}，青石镇人氏，年方十六。`, cls: 'sys' });
+  if (trial) {
+    pushLog({ text: `试炼境开启。你以金丹之姿落子，名${name}。二十载内须破一障；此局不入轮回簿，可解锁图鉴。`, cls: 'sys', tags: [{ t: '试炼', c: 'gold' }] });
+  } else {
+    pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。你名${name}，青石镇人氏，年方十六。`, cls: 'sys' });
+  }
   pushLog({ text: sectLine });
-  if (legacy) pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags: [{ t: '前世残念 · 悟性 +1', c: 'up' }], cls: 'gold' });
-  pushLog({ text: '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: true });
+  if (legacy) {
+    const tags = S._legacyTags || [{ t: '前世残念', c: 'gold' }];
+    pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags, cls: 'gold' });
+  }
+  if (S.flags && S.flags._legacyJoinText) {
+    pushLog({ text: S.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
+    delete S.flags._legacyJoinText;
+  }
+  pushLog({ text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: true });
   save();
   enterMain(false);
 }
@@ -345,6 +412,13 @@ function enterMain(fromSave) {
     scrollLog();
     if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
     if (fromSave) setTimeout(() => ensurePendingPath(), 900);
+    if (typeof Samsara !== 'undefined' && !fromSave) {
+      const ds = Samsara.dailyStatus();
+      if (!ds.claimed) setTimeout(() => {
+        const r = Samsara.claimDaily(S, pushLog);
+        if (r && r.ok) { save(); render(); }
+      }, 1200);
+    }
   });
   render();
 }
@@ -551,6 +625,13 @@ function act(kind) {
 }
 let endT = 0;
 function checkEnd() {
+  if (S && !S.dead && !S.ascended && S.flags && S.flags.trial && S.flags.trialYears) {
+    const startAge = 40;
+    if ((S.age | 0) >= startAge + (S.flags.trialYears | 0)) {
+      S.dead = true; S.ending = S.ending || 'zuohua';
+      pushLog({ title: '试炼终', text: '二十载钟声再响。试炼境收卷——此局不入轮回簿，所见道基／法相／神器已记入图鉴。', cls: 'sys', div: true });
+    }
+  }
   if (S && S.dead && !endT) endT = setTimeout(() => { endT = 0; if (S && S.dead) showEnd(S.ending || 'zuohua'); }, 1800);
   else if (S && !S.dead && S.sect && S.sect.dabiDue) setTimeout(dabiInvite, 1400);
 }
@@ -839,9 +920,11 @@ async function openPathCeremony(kind, pendingAscend) {
   ids.forEach((id, i) => {
     const o = tab[id];
     const b = document.createElement('button');
-    b.className = 'path-opt'; b.style.animationDelay = (180 + i * 90) + 'ms';
+    const mem = (kind === 'daoji' && S.flags && S.flags.daojiMem === id) || (kind === 'faxiang' && S.flags && S.flags.faxiangMem === id);
+    b.className = 'path-opt' + (mem ? ' mem' : ''); b.style.animationDelay = (180 + i * 90) + 'ms';
     b.type = 'button';
-    b.innerHTML = `<span class="po-seal">${esc(o.seal)}</span><div class="po-body"><b>${esc(o.name)}</b><em>${esc(o.trait)}</em><p></p></div>`;
+    const memTag = mem ? '<i class="po-mem">残忆</i>' : '';
+    b.innerHTML = `<span class="po-seal">${esc(o.seal)}</span><div class="po-body"><b>${esc(o.name)}${memTag}</b><em>${esc(o.trait)}</em><p></p></div>`;
     b.querySelector('p').textContent = o.desc;
     b.onclick = () => {
       if (opts.classList.contains('locked')) return;
@@ -1392,15 +1475,27 @@ function useItem(k) {
 function openMenu() {
   const w = document.createElement('div'); w.className = 'menu-list';
   const ps = (Core.pathSummary(S) || []).map(x => x.name).join(' · ') || '道基未定';
-  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}<br>此卷随笔随存，合上亦不失。</div>
+  const ds = (typeof Samsara !== 'undefined') ? Samsara.dailyStatus() : { claimed: true };
+  const trialNote = (S.flags && S.flags.trial) ? '<br><span class="menu-trial">试炼境 · 不入轮回簿</span>' : '';
+  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
     <button class="menu-item" data-m="resume">继续修行</button>
     <button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>
+    <button class="menu-item" data-m="atlas">轮回图鉴<small>墓志 · 道基 · 法相 · 神器 · 结局</small></button>
+    ${!ds.claimed ? '<button class="menu-item" data-m="daily">今日机缘<small>晨露一缕</small></button>' : ''}
     <button class="menu-item" data-m="title">回到卷首</button>
     ${Core.canRetire(S) ? '<button class="menu-item" data-m="retire">归隐山林<small>放下长生，此卷即终</small></button>' : ''}
     <button class="menu-item danger" data-m="reset">焚卷重来</button>`;
   w.onclick = async e => {
-    const m = e.target.dataset.m; if (!m) return;
+    const btn = e.target.closest('[data-m]'); if (!btn) return;
+    const m = btn.dataset.m;
     if (m === 'path') { await closeSheet(); openSheet('定型', pathPage()); return; }
+    if (m === 'atlas') { await closeSheet(); openAtlasSheet(); return; }
+    if (m === 'daily') {
+      await closeSheet();
+      const r = Samsara.claimDaily(S, pushLog);
+      if (r.err) toast(r.err); else { save(); render(); toast('日缘已领'); }
+      return;
+    }
     await closeSheet();
     if (m === 'title') { save(); initTitle(); unrollTo('title'); }
     if (m === 'retire' && await inkConfirm('此去不问长生。归隐之后，此卷即终。', '归隐')) {
@@ -1410,6 +1505,42 @@ function openMenu() {
     if (m === 'reset' && await inkConfirm('焚去此卷，前尘尽忘。', '焚卷', true)) { localStorage.removeItem(SAVE_KEY); S = null; resetCreate(); unrollTo('create'); }
   };
   openSheet('卷首', w);
+}
+
+
+/* ================= 轮回图鉴／墓志长卷 ================= */
+function openAtlasSheet() {
+  if (typeof Samsara === 'undefined') { toast('轮回未启'); return; }
+  const m = Samsara.loadMeta();
+  const st = Samsara.atlasStats(m);
+  const w = document.createElement('div'); w.className = 'atlas-sheet';
+  const END_N = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣' };
+  const sec = (title, html) => `<section class="atlas-sec"><h4>${title}</h4><div class="atlas-grid">${html}</div></section>`;
+  const cell = (name, on, sub) => `<div class="atlas-cell${on ? ' on' : ''}"><b>${name}</b>${sub ? '<em>' + sub + '</em>' : ''}${on ? '' : '<i>未识</i>'}</div>`;
+  let daojiH = '', faxiangH = '', shenqiH = '', endingH = '';
+  if (typeof DAOJI !== 'undefined') for (const id of Object.keys(DAOJI)) daojiH += cell(DAOJI[id].name, !!m.atlas.daoji[id], DAOJI[id].seal);
+  if (typeof FAXIANG !== 'undefined') for (const id of Object.keys(FAXIANG)) faxiangH += cell(FAXIANG[id].name, !!m.atlas.faxiang[id], FAXIANG[id].seal);
+  if (typeof SHENQI_ZHI !== 'undefined') for (const z of SHENQI_ZHI) shenqiH += cell(z.name, !!m.atlas.shenqi[z.name], z.seal || '器');
+  for (const k of Object.keys(END_N)) endingH += cell(END_N[k], !!m.atlas.ending[k], m.atlas.ending[k] ? ('×' + m.atlas.ending[k]) : '');
+  const epis = (m.epitaphs || []).slice(0, 8).map((ep, i) => {
+    const t = (ep.short || ep.text || '').slice(0, 64);
+    return `<button type="button" class="atlas-epi" data-i="${i}"><b>${esc(ep.name || '无名')} · ${esc(END_N[ep.ending] || ep.ending || '')}</b><span>${cn(ep.age)}岁 · ${esc(t)}</span></button>`;
+  }).join('') || '<p class="atlas-empty">尚无墓志。了结一世后，长卷自会落下。</p>';
+  w.innerHTML = `<div class="atlas-head">轮回 ${cn(st.lives)} 世　最高 ${cn(st.best.age || 0)} 岁 · 境 ${cn(st.best.realm || 0)}　飞升 ${cn(st.best.ascend || 0)}</div>
+    ${sec('道基 ' + cn(st.daoji) + '/' + cn(st.daojiMax), daojiH || '<p class="atlas-empty">—</p>')}
+    ${sec('法相 ' + cn(st.faxiang) + '/' + cn(st.faxiangMax), faxiangH || '<p class="atlas-empty">—</p>')}
+    ${sec('神器 ' + cn(st.shenqi) + '/' + cn(st.shenqiMax), shenqiH || '<p class="atlas-empty">—</p>')}
+    ${sec('结局', endingH)}
+    <section class="atlas-sec"><h4>墓志长卷</h4><div class="atlas-epis">${epis}</div>
+      <pre class="atlas-long" id="atlas-long-view" hidden></pre></section>`;
+  w.onclick = e => {
+    const b = e.target.closest('.atlas-epi'); if (!b) return;
+    const ep = (m.epitaphs || [])[+b.dataset.i]; if (!ep) return;
+    const view = w.querySelector('#atlas-long-view');
+    view.hidden = false; view.textContent = ep.text || ep.short || '';
+    w.querySelectorAll('.atlas-epi').forEach(x => x.classList.toggle('on', x === b));
+  };
+  openSheet('轮回图鉴', w);
 }
 
 /* ================= 终卷 ================= */
@@ -1445,22 +1576,49 @@ function showEnd(kind) {
     quancheng: ['权臣', `${S.name}修至${rs}，${courtLine}于${age}岁摄政，不篡位号。诏令出其手，军权归其心。史书不敢直书其名，只写「摄政如天」。`],
   }[kind] || ['坐化', ''];
   $('#end-title').textContent = T[0];
+  const isTrial = !!(S.flags && S.flags.trial);
+  let rec = null;
+  if (typeof Samsara !== 'undefined' && Samsara.recordLife) {
+    if (isTrial) {
+      const m = Samsara.loadMeta();
+      Samsara.unlockAtlas(m, S, kind);
+      Samsara.saveMeta(m);
+      rec = { epitaph: Samsara.epitaphLong(S, kind, T[1]), legacy: null };
+    } else {
+      rec = Samsara.recordLife(S, kind, T[1]);
+    }
+  }
+  const longEp = (rec && rec.epitaph) || T[1];
   $('#end-epitaph').textContent = T[1];
+  const longEl = $('#end-epitaph-long');
+  if (longEl) { longEl.textContent = longEp; longEl.hidden = false; }
   const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>`, renhuang: `境界 <b>${rs}</b>　人皇 <b>${age}岁</b>`, quancheng: `境界 <b>${rs}</b>　摄政 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
   const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
   const pth = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
   const pfl = pth ? `<br>定型 <b>${pth}</b>` : '';
   const fbl = S.fabao ? `<br>本命 <b>${S.fabao.name}</b>·${FABAO_STAGE[S.fabao.stage|0]}` : '';
-  const leg = kind === 'bingjie' ? '<br><span class="end-legacy">前世残念 · 来世悟性 +1</span>' : '';
-  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
-  let legacy = kind === 'bingjie' ? { wx: 1 } : {};
-  if (Core.fabaoOnDeath) {
-    const ch = Core.fabaoOnDeath(S);
-    if (ch) { legacy.canhun = ch; legacy.wx = (legacy.wx || 0) || (kind === 'bingjie' ? 1 : 0); }
+  const legObj = rec && rec.legacy;
+  const carry = [];
+  if (legObj) {
+    if (legObj.wx) carry.push(`悟性 +${legObj.wx}`);
+    if (legObj.canhun) carry.push('法宝残魂');
+    if (legObj.daoji) carry.push('道基残忆');
+    if (legObj.auxPage) carry.push('功法残页');
+    if (legObj.sectMark) carry.push('门派印记');
+    if (legObj.courtMark) carry.push('皇命印记');
   }
-  if (legacy.canhun || legacy.wx) try { localStorage.setItem(LEGACY_KEY, JSON.stringify(legacy)); } catch (er) {}
+  const leg = carry.length ? `<br><span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
+    : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '');
+  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
   save();
-  $('#btn-reborn').onclick = () => { localStorage.removeItem(SAVE_KEY); e.hidden = true; S = null; resetCreate(); unrollTo('create'); };
+  $('#btn-reborn').onclick = () => {
+    localStorage.removeItem(SAVE_KEY);
+    e.hidden = true; S = null;
+    window.__trialStart = false;
+    resetCreate(); initTitle(); unrollTo('create');
+  };
+  const btnAtlasEnd = $('#btn-end-atlas');
+  if (btnAtlasEnd) btnAtlasEnd.onclick = () => openAtlasSheet();
 }
 
 /* ================= 江湖界面 ================= */
@@ -1576,5 +1734,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet };
 })();

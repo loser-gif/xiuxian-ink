@@ -520,7 +520,7 @@ body.go .title-menu{animation:fadeUp 1.4s 3.5s var(--ease-ink) both}
 /* ---------- 终卷 ---------- */
 .end{position:fixed;inset:0;z-index:35;display:flex;align-items:center;justify-content:center;background:rgba(18,15,12,.7);padding:24px;animation:fadeIn 1.5s both}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.end-paper{position:relative;width:min(100%,400px);background-blend-mode:normal;padding:34px 26px 26px;text-align:center;
+.end-paper{position:relative;width:min(100%,400px);max-height:min(92vh,920px);overflow:auto;-webkit-overflow-scrolling:touch;background-blend-mode:normal;padding:34px 26px 26px;text-align:center;
   background:linear-gradient(rgba(249,245,233,.9),rgba(249,245,233,.9)),var(--paper-img);background-size:auto,256px;box-shadow:0 20px 50px rgba(0,0,0,.45);animation:unrollV 1.4s var(--ease-ink) both}
 @keyframes unrollV{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
 .end-title{font-family:var(--f-cao);font-size:72px;line-height:1.2;letter-spacing:.1em}
@@ -1770,3 +1770,39 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 .sq-row.off .sq-seal{background:#6e6457}
 .sq-row b{display:block;font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.12em;margin-bottom:2px}
 .sq-row p{margin:0;font-size:12.5px;line-height:1.7;color:var(--ink2)}
+
+
+/* ===== v1.0 轮回 ===== */
+.legacy-hint{position:absolute;left:0;right:0;bottom:calc(var(--sab) + 28vh);text-align:center;font-size:13px;letter-spacing:.18em;color:var(--zhu);opacity:.92;pointer-events:none;padding:0 18px}
+.title-menu .title-subbtn{padding:10px 36px 8px;min-width:160px}
+.title-menu .title-subbtn .bb-text{font-size:22px}
+.title-menu .title-subbtn small{font-size:11px}
+.title-menu .brush-btn.dim{opacity:.55}
+.end-epitaph-long{margin:8px 0 14px;padding:12px 14px;text-align:left;font-family:var(--f-body);font-size:13px;line-height:1.95;letter-spacing:.08em;color:var(--ink2);white-space:pre-wrap;background:rgba(27,24,20,.04);border-left:2px solid rgba(179,48,42,.35);max-height:28vh;overflow:auto}
+.end-actions{display:flex;flex-direction:column;align-items:center;gap:12px}
+.path-opt.mem{box-shadow:inset 0 0 0 1px rgba(214,170,80,.45)}
+.path-opt .po-mem{display:inline-block;margin-left:.4em;font-style:normal;font-size:11px;letter-spacing:.12em;color:rgba(214,170,80,.95);vertical-align:middle}
+.menu-trial{color:var(--zhu);letter-spacing:.12em}
+.atlas-sheet{padding:4px 2px 18px}
+.atlas-head{font-size:13px;letter-spacing:.14em;color:var(--ink3);margin-bottom:14px;line-height:1.8}
+.atlas-sec{margin-bottom:16px}
+.atlas-sec h4{font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.2em;margin:0 0 8px;color:var(--ink)}
+.atlas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.atlas-cell{position:relative;padding:10px 10px 12px;background:rgba(27,24,20,.04);border-radius:2px;min-height:52px}
+.atlas-cell b{display:block;font-family:var(--f-head);font-weight:400;font-size:15px;letter-spacing:.14em}
+.atlas-cell em{display:block;font-style:normal;font-size:11px;letter-spacing:.1em;color:var(--ink3);margin-top:2px}
+.atlas-cell i{position:absolute;right:8px;bottom:6px;font-style:normal;font-size:11px;letter-spacing:.1em;color:var(--ink3);opacity:.7}
+.atlas-cell:not(.on){opacity:.48;filter:grayscale(.4)}
+.atlas-cell.on{background:rgba(179,48,42,.08);box-shadow:inset 0 0 0 1px rgba(179,48,42,.2)}
+.atlas-empty{font-size:13px;color:var(--ink3);letter-spacing:.1em;margin:4px 0}
+.atlas-epis{display:flex;flex-direction:column;gap:8px}
+.atlas-epi{text-align:left;border:0;background:rgba(27,24,20,.04);padding:10px 12px;border-radius:2px;color:inherit;cursor:pointer}
+.atlas-epi b{display:block;font-family:var(--f-head);font-weight:400;font-size:14px;letter-spacing:.12em;margin-bottom:4px}
+.atlas-epi span{display:block;font-size:12px;line-height:1.7;color:var(--ink3)}
+.atlas-epi.on{background:rgba(179,48,42,.1);box-shadow:inset 0 0 0 1px rgba(179,48,42,.25)}
+.atlas-long{margin:10px 0 0;padding:12px;font-family:var(--f-body);font-size:13px;line-height:1.95;letter-spacing:.08em;white-space:pre-wrap;background:rgba(27,24,20,.04);border-left:2px solid rgba(179,48,42,.35);max-height:40vh;overflow:auto}
+@media (min-width:720px){
+  .atlas-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .title-menu{gap:14px}
+  .legacy-hint{bottom:calc(var(--sab) + 32vh)}
+}
