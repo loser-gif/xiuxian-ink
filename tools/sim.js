@@ -5,7 +5,7 @@ const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 function load() {
   const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String });
-  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'world', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
   return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, PATH_KIND, DAOJI })', ctx);
 }
 const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE } = G;
@@ -44,7 +44,10 @@ function bestGf(s, allowMo) {
   return best;
 }
 function play(rootId, strat, opt = {}) {
-  const s = Core.newState('模拟', rollRoot(rootId));
+  const root = rollRoot(rootId);
+  const orgPick = rootId === 'wei' ? (Math.random() < 0.55 ? 'sx' : null)
+    : (['qm', 'dx', 'yy', 'xj', 'sx'][Math.floor(Math.random() * 5)]);
+  const s = Core.newState('模拟', Object.assign(root, { org: orgPick, free: !orgPick }));
   const mix = STRATS[strat]; let sec = 0, n = { tuna: 0, biguan: 0, youli: 0, break: 0, mission: 0, promo: 0, dabi: 0 }, idle = 0;
   const realmAt = [0, 0, 0, 0, 0];   // 到达各境界的耗时
   let guard = 0;

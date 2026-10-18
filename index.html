@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=13" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=13" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=13">
-<link rel="stylesheet" href="css/style.css?v=13">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=14" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=14" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=14">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -109,7 +109,7 @@
     </div>
     <nav class="create-actions">
       <button class="brush-btn small" id="btn-test"><span class="bb-ink"></span><span class="bb-text">测灵根</span></button>
-      <button class="brush-btn small primary" id="btn-start" hidden><span class="bb-ink"></span><span class="bb-text">踏入仙途</span></button>
+      <button class="brush-btn small primary" id="btn-start" hidden><span class="bb-ink"></span><span class="bb-text">投帖拜山</span></button>
     </nav>
   </section>
 
@@ -238,6 +238,22 @@
   </div>
 </div>
 
+<!-- 拜山帖 -->
+<div id="baishan" class="path-cer baishan" hidden>
+  <div class="path-cer-shade"></div>
+  <div class="path-cer-panel">
+    <div class="path-cer-head">
+      <div class="path-cer-sealbox"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font" id="baishan-seal">拜</text></g></svg></div>
+      <h2 class="path-cer-title" id="baishan-title">拜山帖</h2>
+      <p class="path-cer-lead" id="baishan-lead"></p>
+    </div>
+    <div class="path-cer-opts" id="baishan-opts"></div>
+    <div class="path-cer-foot" id="baishan-foot" hidden>
+      <button class="brush-btn small light" id="baishan-confirm"><span class="bb-ink"></span><span class="bb-text">拜入</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- 大比 -->
 <div id="duel" class="duel" hidden>
   <div class="duel-shade"></div>
@@ -299,23 +315,24 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=13"></script>
-<script src="js/gongfa.js?v=13"></script>
-<script src="js/gear.js?v=13"></script>
-<script src="js/story.js?v=13"></script>
-<script src="js/sect.js?v=13"></script>
-<script src="js/world.js?v=13"></script>
-<script src="js/path.js?v=13"></script>
-<script src="js/core.js?v=13"></script>
-<script src="js/jianghu.js?v=13"></script>
-<script src="js/ink.js?v=13"></script>
-<script src="js/ding.js?v=13"></script>
-<script src="js/map.js?v=13"></script>
-<script src="js/audio.js?v=13"></script>
-<script src="js/fx.js?v=13"></script>
-<script src="js/wallpaper.js?v=13"></script>
-<script src="js/inkgl.js?v=13"></script>
-<script src="js/jhui.js?v=13"></script>
-<script src="js/game.js?v=13"></script>
+<script src="js/data.js?v=14"></script>
+<script src="js/gongfa.js?v=14"></script>
+<script src="js/gear.js?v=14"></script>
+<script src="js/story.js?v=14"></script>
+<script src="js/sect.js?v=14"></script>
+<script src="js/baijia.js?v=14"></script>
+<script src="js/world.js?v=14"></script>
+<script src="js/path.js?v=14"></script>
+<script src="js/core.js?v=14"></script>
+<script src="js/jianghu.js?v=14"></script>
+<script src="js/ink.js?v=14"></script>
+<script src="js/ding.js?v=14"></script>
+<script src="js/map.js?v=14"></script>
+<script src="js/audio.js?v=14"></script>
+<script src="js/fx.js?v=14"></script>
+<script src="js/wallpaper.js?v=14"></script>
+<script src="js/inkgl.js?v=14"></script>
+<script src="js/jhui.js?v=14"></script>
+<script src="js/game.js?v=14"></script>
 </body>
 </html>

@@ -251,34 +251,84 @@ async function doTest() {
 function initCreate() {
   $('#btn-randname').onclick = () => { $('#inp-name').value = randName(); };
   $('#btn-test').onclick = () => { if (roll) { if (rerolls <= 0) return; rerolls--; } doTest(); };
-  $('#btn-start').onclick = () => {
+  $('#btn-start').onclick = async () => {
     if (!roll) return;
     let name = $('#inp-name').value.trim().replace(/\s+/g, '');
     if (!name) { name = randName(); $('#inp-name').value = name; }
-    newGame(name, roll);
+    const choice = await openBaishan(roll);
+    if (!choice) return;
+    newGame(name, roll, choice);
   };
   $('#inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
 }
 
-function newGame(name, r) {
+function newGame(name, r, choice) {
   let legacy = null;
   try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {}
-  S = Core.newState(name, r, legacy);
+  const orgId = choice && choice.id !== 'free' ? choice.id : null;
+  const free = !!(choice && choice.id === 'free');
+  const rr = Object.assign({}, r, { org: orgId, free });
+  S = Core.newState(name, rr, legacy);
   const lgDesc = (r.lg.id === 'wei' ? '' : r.els.join('')) + r.lg.name;
-  const sectLine = {
-    tian: `测得${lgDesc}，满堂皆惊。宗主亲自下山，将你收为真传弟子。同来的少年们望着你，目光里有羡慕，也有别的什么。`,
-    yi: `测得${lgDesc}，执事长老当场将你收入内门。同来的少年们望着你，目光里有羡慕，也有别的什么。`,
-    shuang: `测得${lgDesc}，你被收入内门，赐下一枚青玉腰牌。`,
-    san: `测得${lgDesc}，你被分入外门，领了一套灰布道袍、一卷《青冥引气诀》。`,
-    si: `测得${lgDesc}，你被分去药园做杂役，每日浇水除草，夜里才能偷偷打坐。`,
-    wei: '测得伪灵根，青冥宗不收。你在山门外站了一夜，第二天清早，独自往深山里去了。',
-  }[r.lg.id];
-  pushLog({ text: `大衍历三千七百二十一年，春。青冥宗开山收徒。你名${name}，青石镇人氏，年方十六。`, cls: 'sys' });
+  const o = orgId && ORGS[orgId];
+  let sectLine;
+  if (free) {
+    sectLine = r.lg.id === 'wei'
+      ? `测得伪灵根，各宗门前无立锥之地。你折叠拜山帖，独自往深山里去了——无门无派，也好。`
+      : `测得${lgDesc}。你拜了山帖，却在山门外止步：此生不入任何门户。云海翻涌，像在鼓掌，也像在叹气。`;
+  } else if (o) {
+    const rank = Core.rankName(S);
+    const gf0 = S.gf && GONGFA[S.gf] ? GONGFA[S.gf].name : '入门心法';
+    sectLine = `测得${lgDesc}。你投帖${o.name}，赐下${rank}名分，领了腰牌与一卷《${gf0}》。${o.trait || ''}`;
+  } else {
+    sectLine = `测得${lgDesc}。山门之内，尘埃落定。`;
+  }
+  pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。你名${name}，青石镇人氏，年方十六。`, cls: 'sys' });
   pushLog({ text: sectLine });
   if (legacy) pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags: [{ t: '前世残念 · 悟性 +1', c: 'up' }], cls: 'gold' });
   pushLog({ text: '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: true });
   save();
   enterMain(false);
+}
+
+async function openBaishan(roll) {
+  const list = (typeof baishanAllowed === 'function' ? baishanAllowed(roll.lg.id) : BAISHAN);
+  const pc = $('#baishan'); if (!pc || !list || !list.length) return { id: roll.lg.id === 'wei' ? 'sx' : 'qm' };
+  return new Promise(resolve => {
+    pc.hidden = false; pc.className = 'path-cer baishan go';
+    $('#baishan-seal').textContent = '拜';
+    $('#baishan-title').textContent = '拜山帖';
+    $('#baishan-lead').textContent = '';
+    const opts = $('#baishan-opts'); opts.innerHTML = ''; opts.className = 'path-cer-opts';
+    const foot = $('#baishan-foot'); foot.hidden = true;
+    const lead = roll.lg.id === 'wei'
+      ? '伪灵根不为大多数宗门所收。帖上只余散修盟与无门两途——选一条，活下去。'
+      : '灵根已定。山海之间，数家门户张帖招徒。一帖既投，便是数年乃至数十年的路——慎择。';
+    inkWrite($('#baishan-lead'), lead, { immediate: true, step: 22 });
+    let selected = null;
+    list.forEach((b, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'path-opt'; btn.style.animationDelay = (160 + i * 80) + 'ms';
+      btn.innerHTML = `<span class="po-seal">${esc(b.seal)}</span><div class="po-body"><b>${esc(b.name)}</b><em>${esc(b.sub)}</em><p></p></div>`;
+      btn.querySelector('p').textContent = b.prose;
+      btn.onclick = () => {
+        selected = b;
+        opts.querySelectorAll('.path-opt').forEach(x => x.classList.remove('on'));
+        btn.classList.add('on');
+        foot.hidden = false;
+        $('#baishan-confirm').querySelector('.bb-text').textContent = b.id === 'free' ? '无门而去' : '投帖拜入';
+      };
+      opts.appendChild(btn);
+    });
+    $('#baishan-confirm').onclick = async () => {
+      if (!selected) return;
+      opts.classList.add('locked');
+      if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
+      pc.classList.add('leave'); await sleep(700);
+      pc.hidden = true; pc.className = 'path-cer baishan';
+      resolve(selected);
+    };
+  });
 }
 
 /* ================= 主界面 ================= */
@@ -843,9 +893,18 @@ function sectHome() {
       <div class="req ${cp.realmOk ? 'ok' : ''}"><span>境界</span><div class="req-word">${REALMS[cp.need.realm].name}${cp.need.stage ? REALMS[cp.need.realm].stages[cp.need.stage] : ''}以上</div><b>${cp.realmOk ? '已足' : '未足'}</b></div>
       <button class="brush-btn small promo-btn" ${cp.ok ? '' : 'disabled'}><span class="bb-ink"></span><span class="bb-text">请升${o.ranks[r + 1].replace('弟子', '')}</span></button>
     </div>` : '<div class="sect-note center">位极一宗，再无可升。</div>'}
-    <div class="dabi-line">${r <= 3 ? `下届${o.dabi} · 约${cn(Math.max(1, Math.ceil((sc.dabiAt - S.months) / 12)))}年后` : `${o.dabi} · 你已列席观礼`}${sc.dabiBest >= 0 ? `<br>最佳名次 · ${DABI_PLACE[sc.dabiBest]}` : ''}</div>`;
+    <div class="dabi-line">${r <= 3 ? `下届${o.dabi} · 约${cn(Math.max(1, Math.ceil((sc.dabiAt - S.months) / 12)))}年后` : `${o.dabi} · 你已列席观礼`}${sc.dabiBest >= 0 ? `<br>最佳名次 · ${DABI_PLACE[sc.dabiBest]}` : ''}</div>
+    <button type="button" class="defect-btn" id="btn-defect">叛宗<small>解牌下山 · 代价极重</small></button>`;
   const pb = w.querySelector('.promo-btn');
   if (pb) pb.onclick = async () => { if (!Core.canPromote(S).ok) return; await closeSheet(); const res = Core.promote(S, pushLog); if (res) runRite(res); };
+  const db = w.querySelector('#btn-defect');
+  if (db) db.onclick = async () => {
+    const cost = (() => { try { const lsS = REALMS[S.realm].lsScale; return Math.round(800 * lsS); } catch (e) { return 800; } })();
+    if (!(await inkConfirm(`叛出${o.name}？需灵石约${fmtNum(cost)}，并折寿伤神。此后为逍遥散修。`, '叛宗', true))) return;
+    const res = Core.defect(S, pushLog);
+    if (res.err) { toast(res.err); return; }
+    await closeSheet(); render(); save();
+  };
   return w;
 }
 function sectTasks() {
@@ -1394,5 +1453,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, JHUI, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, JHUI, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
 })();

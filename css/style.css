@@ -1528,3 +1528,11 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 .path-empty-hint{font-size:13px;color:var(--ink3);letter-spacing:.08em;margin-top:10px;line-height:1.8}
 .empty small{display:block;margin-top:6px;font-size:12px;letter-spacing:.1em;color:var(--ink3);font-weight:400}
 .status-line{letter-spacing:.18em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px}
+
+/* ===== v0.11 百家 ===== */
+.baishan .path-cer-title{letter-spacing:.35em}
+.defect-btn{display:block;width:100%;margin-top:14px;padding:12px 14px;border:0;border-radius:2px;cursor:pointer;
+  font-family:var(--f-body);font-size:14px;letter-spacing:.15em;color:var(--zhu);text-align:left;
+  background:rgba(179,48,42,.06);box-shadow:inset 0 0 0 1px rgba(179,48,42,.22)}
+.defect-btn small{display:block;margin-top:4px;font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+.sect-org{letter-spacing:.2em}

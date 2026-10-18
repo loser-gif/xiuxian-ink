@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 6;
+  const SAVE_V = 7;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -34,6 +34,11 @@ const Core = (() => {
     if (fb) parts.push({ t: fb, w: 1, spd: 1 });
     if (s.eq && s.eq.weapon && typeof GEAR !== 'undefined' && GEAR[s.eq.weapon])
       parts.push({ t: GEAR[s.eq.weapon].t || {}, w: 1, spd: 1 });
+    // 宗门气运
+    if (typeof orgTraitParts === 'function') {
+      const ot = orgTraitParts(s);
+      if (ot) parts.push({ t: ot, w: 1, spd: 1 });
+    }
     // 定型：道基 / 丹纹 / 法相 / 问道 / 劫纹
     if (s.path && typeof PATH_TABLE !== 'undefined') {
       if (s.path.daoji && PATH_TABLE.daoji[s.path.daoji]) parts.push({ t: PATH_TABLE.daoji[s.path.daoji].t || {}, w: 1, spd: 1 });
@@ -186,7 +191,14 @@ const Core = (() => {
 
   /* ---------- 本命法宝 ---------- */
   function fabaoPickSeed(s) {
-    const poolKey = (s.lgEls || []).find(e => typeof FABAO_POOL !== 'undefined' && FABAO_POOL[e]) || '_';
+    let keys = [];
+    const o = s.sect && s.sect.org && typeof ORGS !== 'undefined' ? ORGS[s.sect.org] : null;
+    if (o && o.fabaoEl && o.fabaoEl.length) keys = o.fabaoEl.filter(e => FABAO_POOL[e]);
+    if (!keys.length) {
+      const k = (s.lgEls || []).find(e => typeof FABAO_POOL !== 'undefined' && FABAO_POOL[e]);
+      keys = k ? [k] : ['_'];
+    }
+    const poolKey = keys[Math.floor(Math.random() * keys.length)];
     const pool = FABAO_POOL[poolKey] || FABAO_POOL._;
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -620,12 +632,18 @@ const Core = (() => {
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
       seen: {}, recent: [], acts: 0, ending: null };
-    if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
+    const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
+    if (startGf && GONGFA[startGf]) { s.gf = startGf; s.gfs[startGf] = { lv: 1, xp: 0 }; }
+    else if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
     if (legacy) {
       s.wx = clamp(s.wx + (legacy.wx || 0), 1, 10); s.flags.legacy = 1;
       if (legacy.canhun) { s.flags.canhunSeed = legacy.canhun; s.flags.fabaoCanhun = 1; }
     }
-    s.sect = initSect(s, r.lg.id === 'wei' ? null : 'qm', START_RANK[r.lg.id]); s.npc = initNpc(s);
+    const orgId = r.org || null;
+    const rank = orgId ? (START_RANK[r.lg.id] != null ? START_RANK[r.lg.id] : 1) : -1;
+    s.sect = initSect(s, orgId, rank);
+    if (r.free) s.sect.free = true;
+    s.npc = initNpc(s);
     if (typeof Jianghu !== 'undefined') Jianghu.init(s);
     sync(s); return s;
   }
@@ -666,6 +684,10 @@ const Core = (() => {
     if (s.v === 5) {   // v0.9 → v0.10：定型
       s.v = 6;
       s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
+    }
+    if (s.v === 6) {   // v0.10 → v0.11：百家（青冥仍为 qm）
+      s.v = 7;
+      if (s.sect && s.sect.org && !ORGS[s.sect.org]) s.sect.org = 'qm';
     }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
@@ -718,21 +740,47 @@ const Core = (() => {
   const payEvery = s => 12 * REALMS[s.realm].T * K.payYears;
   const dabiEvery = s => 12 * REALMS[s.realm].T * K.dabiYears;
   function initSect(s, o, rank) {
-    return { org: o, rank: o ? rank : -1, gx: 0, gxTotal: 0, free: false, master: !!(o === 'qm' && rank >= 2),
+    const orgO = o && ORGS[o];
+    return { org: o, rank: o ? rank : -1, gx: 0, gxTotal: 0, free: false,
+      master: !!(orgO && orgO.mentor && rank >= 2),
       missions: [], mAt: -1, uid: 0, payAt: s.months + payEvery(s), dabiAt: s.months + dabiEvery(s) * 0.4, dabiDue: false,
       dabiN: 0, dabiBest: -1, done: 0, promoLogged: -1 };
+  }
+  function meetOrgNpcs(s, o, asMaster) {
+    const orgO = ORGS[o]; if (!orgO || !s.npc) return;
+    (orgO.rookies || []).forEach(id => { if (s.npc[id]) s.npc[id].met = true; });
+    if (asMaster && orgO.mentor && s.npc[orgO.mentor]) s.npc[orgO.mentor].met = true;
   }
   function initNpc(s) {
     const n = {};
     for (const id in NPCS) n[id] = { a: NPCS[id].a0, met: false };
-    if (s.sect.org === 'qm') { ['lu', 'su', 'wen', 'shi'].forEach(id => n[id].met = true); if (s.sect.master) n.shifu.met = true; }
+    s.npc = n;
+    if (s.sect && s.sect.org) meetOrgNpcs(s, s.sect.org, s.sect.master);
     return n;
   }
   function join(s, o, tags) {
-    s.sect.org = o; s.sect.rank = 1; s.sect.missions = []; s.sect.mAt = -1;
+    s.sect.org = o; s.sect.rank = 1; s.sect.free = false; s.sect.missions = []; s.sect.mAt = -1;
     s.sect.payAt = s.months + payEvery(s); s.sect.dabiAt = s.months + dabiEvery(s) * 0.6;
-    if (o === 'qm') ['lu', 'su', 'wen', 'shi'].forEach(id => s.npc[id].met = true);
+    s.sect.master = false;
+    meetOrgNpcs(s, o, false);
     tags && tags.push({ t: `入${ORGS[o].name} · ${ORGS[o].ranks[1]}`, c: 'up' });
+  }
+  function defect(s, emit) {
+    if (!(s.sect && s.sect.org)) return { err: '无门可叛' };
+    if (s.flags && s.flags.defectCD && s.months < s.flags.defectCD) return { err: '叛宗未久，不宜再叛' };
+    const o = ORGS[s.sect.org], lsS = REALMS[s.realm].lsScale;
+    const costLs = Math.round(800 * lsS), costLife = Math.round(10 * LIFE_SCALE[s.realm]);
+    if (s.ls < costLs) return { err: `灵石不足 · 需${costLs}` };
+    const name = o.name;
+    s.ls -= costLs; s.lifeBonus -= costLife; s.xj = clamp(s.xj - 18, 0, 100);
+    s.flags = s.flags || {}; s.flags.defectedFrom = o.id; s.flags.defectCD = s.months + 12 * REALMS[s.realm].T * 8;
+    s.sect.org = null; s.sect.rank = -1; s.sect.master = false; s.sect.missions = []; s.sect.gx = 0;
+    s.sect.free = true;
+    sync(s);
+    const tags = [{ t: `叛出${name}`, c: 'down' }, { t: `灵石 −${costLs}`, c: 'down' }, { t: `寿元 −${costLife}年`, c: 'down' }, { t: '心境 −18', c: 'down' }, { t: '逍遥', c: 'gold' }];
+    const text = `你解下腰牌，放在山门石案上。${name}的钟没有为你响。下山时风很大，像整座山在赶人。自此无门无派——代价刻在寿元与心上。`;
+    if (emit) emit({ title: '叛宗', text, tags, cls: 'warn', div: true });
+    return { ok: true, text, tags };
   }
   function addGx(s, base, tags) {
     const v = Math.round(base * GX_SCALE[s.realm]);
@@ -768,13 +816,19 @@ const Core = (() => {
     const o = org(s), tags = [];
     s.sect.rank++;
     tags.push({ t: `晋${o.ranks[s.sect.rank]}`, c: 'up' });
-    if (o.id === 'qm' && s.sect.rank === 2 && !s.sect.master) { s.sect.master = true; s.npc.shifu.met = true; tags.push({ t: '拜入玄微真人门下', c: 'up' }); }
-    if (o.id === 'qm' && s.sect.rank === 3 && s.npc.shifu.a >= 40) {
-      const id = GF_SECT[2][ELEMENTS.includes(s.lgEls[0]) ? s.lgEls[0] : pick(ELEMENTS)];
-      if (!s.gfs[id]) { learn(s, id, tags, emit); tags.push({ t: '师父传法', c: 'up' }); }
+    if (o.mentor && s.sect.rank === 2 && !s.sect.master) {
+      s.sect.master = true;
+      if (s.npc[o.mentor]) s.npc[o.mentor].met = true;
+      tags.push({ t: `拜入${NPCS[o.mentor] ? NPCS[o.mentor].name : '师门'}门下`, c: 'up' });
+    }
+    if (o.mentor && s.sect.rank === 3 && s.npc[o.mentor] && s.npc[o.mentor].a >= 40) {
+      const tier = GF_SECT[2];
+      const id = tier[ELEMENTS.includes(s.lgEls[0]) ? s.lgEls[0] : pick(ELEMENTS)];
+      if (id && !s.gfs[id]) { learn(s, id, tags, emit); tags.push({ t: '师父传法', c: 'up' }); }
     }
     s.acts++;
-    return { rank: s.sect.rank, name: o.ranks[s.sect.rank], token: o.token[s.sect.rank], text: RITE_TEXT[o.id][s.sect.rank], tags };
+    const rite = (RITE_TEXT[o.id] && RITE_TEXT[o.id][s.sect.rank]) || `你晋升为${o.ranks[s.sect.rank]}。令牌入手，沉甸甸的。`;
+    return { rank: s.sect.rank, name: o.ranks[s.sect.rank], token: o.token[s.sect.rank], text: rite, tags };
   }
   function sectTick(s, emit) {
     const o = org(s); if (!o) return;
@@ -785,10 +839,14 @@ const Core = (() => {
       s.ls += ls;
       if (sc.rank >= 2 && Math.random() < 0.25) { s.items['聚气丹'] = (s.items['聚气丹'] || 0) + 1; tags.push({ t: '得聚气丹', c: 'up' }); }
       if (Math.random() < K.stipendPill[sc.rank]) { const pl = REALMS[s.realm].pill; s.items[pl] = (s.items[pl] || 0) + 1; tags.push({ t: `得${pl}`, c: 'up' }); }
-      emit && emit({ text: `${o.id === 'qm' ? '宗门' : '盟中'}按例发下${o.ranks[sc.rank]}的俸禄。`, tags, cls: 'sys' });
-      if (s.npc.su.met && s.npc.su.a >= 40 && Math.random() < 0.25) {
+      emit && emit({ text: `${o.short || '门中'}按例发下${o.ranks[sc.rank]}的俸禄。`, tags, cls: 'sys' });
+      if (s.npc.su && s.npc.su.met && s.npc.su.a >= 40 && Math.random() < 0.25) {
         const k = s.inj > 0 ? '回春丹' : '聚气丹'; s.items[k] = (s.items[k] || 0) + 1;
         emit && emit({ text: `苏晚晴托人捎来一只小瓷瓶，瓶底压着一张字条：“${s.inj > 0 ? '伤好之前，不许逞强。' : '修行莫太急。'}”`, tags: [{ t: `得${k}`, c: 'up' }], cls: 'sys' });
+      }
+      if (s.npc.dx_lian && s.npc.dx_lian.met && s.npc.dx_lian.a >= 40 && Math.random() < 0.2) {
+        s.items['回春丹'] = (s.items['回春丹'] || 0) + 1;
+        emit && emit({ text: '练清婉让药童送来一枚回春丹，纸条写：「别把命炼进炉里。」', tags: [{ t: '得回春丹', c: 'up' }], cls: 'sys' });
       }
     }
     if (s.months >= sc.dabiAt) {
@@ -801,7 +859,10 @@ const Core = (() => {
   }
   /* 宗门任务 */
   function missionPool(s) {
-    return MISSIONS.filter(m => s.sect.rank >= m.rank[0] && s.sect.rank <= m.rank[1] && (!m.rm || (s.realm >= m.rm[0] && s.realm <= m.rm[1])));
+    const oid = s.sect && s.sect.org;
+    return MISSIONS.filter(m => s.sect.rank >= m.rank[0] && s.sect.rank <= m.rank[1]
+      && (!m.rm || (s.realm >= m.rm[0] && s.realm <= m.rm[1]))
+      && (!m.orgs || (oid && m.orgs.includes(oid))));
   }
   function ensureMissions(s) {
     const sc = s.sect; if (!sc.org) return [];
@@ -827,13 +888,16 @@ const Core = (() => {
   const missionRisk = (s, m, c) => clamp(m.risk + ((c && c.risk) || 0) - missionBonus(s, m), 0.03, 0.9);
   function missionInfo(s, mi) {
     const m = MISSIONS.find(x => x.id === mi.id), o = org(s);
-    return { m, uid: mi.uid, name: o.id === 'sx' && SX_MISSION_NAME[m.id] ? SX_MISSION_NAME[m.id] : m.name, brief: fnv(m.brief, s),
+    if (!m) return null;
+    const lsMul = o ? o.lsMul : 1;
+    return { m, uid: mi.uid, name: (o && o.id === 'sx' && typeof SX_MISSION_NAME !== 'undefined' && SX_MISSION_NAME[m.id]) ? SX_MISSION_NAME[m.id] : m.name, brief: fnv(m.brief, s),
       months: m.m * REALMS[s.realm].T, risk: missionRisk(s, m), riskWord: riskWord(missionRisk(s, m)),
-      gx: Math.round(m.gx * GX_SCALE[s.realm]), ls: Math.round(m.ls * REALMS[s.realm].lsScale * o.lsMul) };
+      gx: Math.round(m.gx * GX_SCALE[s.realm]), ls: Math.round(m.ls * REALMS[s.realm].lsScale * lsMul) };
   }
   function missionEvent(s, uid) {
     const mi = s.sect.missions.find(x => x.uid === uid); if (!mi) return null;
-    const info = missionInfo(s, mi), m = info.m;
+    const info = missionInfo(s, mi); if (!info) return null;
+    const m = info.m;
     return { id: 'm_' + m.id, title: info.name, seal: m.seal, mission: true, text: () => m.text(s),
       choices: () => m.choices(s).map(c => ({ label: c.label, sub: (c.sub ? c.sub + ' · ' : '') + riskWord(missionRisk(s, m, c)), act: s2 => missionAct(s2, uid, m, c) })) };
   }
@@ -845,12 +909,12 @@ const Core = (() => {
     let text;
     if (ok) {
       fx.gx = m.gx * (c.gxm || 1); fx.xw = K.mXw;
-      fx.ls = Math.round(m.ls * (c.lsm || 1) * o.lsMul * REALMS[s.realm].lsScale); fx.lsRaw = true;
+      fx.ls = Math.round(m.ls * (c.lsm || 1) * (o ? o.lsMul : 1) * REALMS[s.realm].lsScale); fx.lsRaw = true;
       if (c.item) fx.item = fnv(c.item, s);
       for (const k of ['xj', 'wx', 'gfXp', 'npc']) if (c[k]) fx[k] = c[k];
       if (c.xw) fx.xw += c.xw;
       text = fnv(c.ok, s);
-      if (s.npc.wen.met && s.npc.wen.a <= -20 && Math.random() < 0.3) { fx.gx /= 2; text += '只是功劳簿上，这桩差事的一半，不知怎的记在了温庭玉名下。'; }
+      if (s.npc.wen && s.npc.wen.met && s.npc.wen.a <= -20 && Math.random() < 0.3) { fx.gx /= 2; text += '只是功劳簿上，这桩差事的一半，不知怎的记在了温庭玉名下。'; }
     } else {
       const f = c.ffx || {};
       fx.gx = m.gx * (f.gx != null ? f.gx : 0.2);
@@ -863,7 +927,8 @@ const Core = (() => {
   /* 藏经阁 */
   function libList(s) {
     const cap = s.sect.org ? RANK_LIB[s.sect.rank] : -1;
-    return LIB_POOL.map(id => ({ id, g: GONGFA[id], cost: LIB_COST[GONGFA[id].grade], known: !!s.gfs[id], open: GONGFA[id].grade <= cap }))
+    const pool = (typeof LIB_POOL_ORG !== 'undefined' && s.sect.org && LIB_POOL_ORG[s.sect.org]) || LIB_POOL;
+    return pool.filter(id => GONGFA[id]).map(id => ({ id, g: GONGFA[id], cost: LIB_COST[GONGFA[id].grade], known: !!s.gfs[id], open: GONGFA[id].grade <= cap }))
       .sort((a, b) => a.g.grade - b.g.grade);
   }
   function learnLib(s, id, emit) {
@@ -964,7 +1029,7 @@ const Core = (() => {
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
     btChance, resolveBreak, useItem, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct,
-    org, rankName, caveMul, join, addGx, npcAdd, npcWord, npcLine, npcHelp, canPromote, promote, sectTick,
+    org, rankName, caveMul, join, defect, addGx, npcAdd, npcWord, npcLine, npcHelp, canPromote, promote, sectTick,
     ensureMissions, missionInfo, missionEvent, missionAct, riskWord, libList, learnLib,
     duelPower, dabiNew, duelNew, duelTell, duelRound, dabiFinish, DUEL_BEATS: BEATS };
 })();
