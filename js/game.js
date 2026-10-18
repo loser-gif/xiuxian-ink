@@ -374,7 +374,8 @@ function render() {
   const tm = Core.gt(S, 'time', 1);
   setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm))); setText('#dur-biguan', cnDur(Math.round(r.T * K.biguanMonths * tm)));
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
-  setText('#bag-count', cnt ? `${cn(cnt)}物` : '空');
+  const bagLab = S.eq && S.eq.weapon ? (cnt ? `佩·${cn(cnt)}` : '佩') : (cnt ? `${cn(cnt)}物` : '空');
+  setText('#bag-count', bagLab);
   if (typeof JHUI !== 'undefined') setText('#youli-sub', JHUI.youliSub());
   $('#btn-break').hidden = !bottleneck() || S.dead || S.ascended;
   const st = $('#status-line'); st.classList.remove('zhu');
@@ -385,6 +386,14 @@ function render() {
   else if (lowLife) { msg = '寿元无多'; st.classList.add('zhu'); }
   else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
+  else {
+    const bits = [];
+    if (S.gf && GONGFA[S.gf]) bits.push('主《' + GONGFA[S.gf].name + '》');
+    if ((S.aux || []).length) bits.push('辅' + cn(S.aux.length));
+    if (S.fabao) bits.push('本命' + S.fabao.name);
+    if (S.path && S.path.daoji && typeof DAOJI !== 'undefined' && DAOJI[S.path.daoji]) bits.push(DAOJI[S.path.daoji].name);
+    if (bits.length) msg = bits.slice(0, 3).join(' · ');
+  }
   st.textContent = msg;
   renderSide();
 }
@@ -395,8 +404,12 @@ function renderSide() {
   const g = S.gf && GONGFA[S.gf];
   const auxN = (S.aux || []).length;
   const pathBits = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
-  $('#sd-gf').innerHTML = g ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>${auxN ? `<span class="sd-row">辅修 ${cn(auxN)} 门${S.fabao ? ' · 本命' + esc(S.fabao.name) : ''}</span>` : (S.fabao ? `<span class="sd-row">本命 · ${esc(S.fabao.name)} · ${FABAO_STAGE[S.fabao.stage|0]}</span>` : '')}${pathBits ? `<span class="sd-row path-line">${esc(pathBits)}</span>` : ''}`
-    : '<span class="sd-empty">胸中尚无功法</span>';
+  const fabaoLine = S.fabao ? `<span class="sd-row">本命 · ${esc(S.fabao.name)} · ${FABAO_STAGE[S.fabao.stage|0]}</span>` : '';
+  const auxLine = auxN ? `<span class="sd-row">辅修 ${cn(auxN)} 门</span>` : '';
+  const pathLine = pathBits ? `<span class="sd-row path-line">${esc(pathBits)}</span>` : '';
+  $('#sd-gf').innerHTML = g
+    ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>${auxLine}${fabaoLine}${pathLine}`
+    : (fabaoLine || pathLine ? `${fabaoLine}${pathLine}` : '<span class="sd-empty">胸中尚无功法</span>');
   const o = Core.org(S);
   $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>`
     : `<b class="sd-name">${esc(Core.rankName(S))}</b><span class="sd-row">无门无派，来去自由</span>`;
@@ -444,7 +457,8 @@ function act(kind) {
   } else if (kind === 'youli' && typeof JHUI !== 'undefined') {
     return JHUI.openMap();
   } else if (kind === 'youli') {
-    Core.passTime(S, r.T * K.youliMonths, pushLog);
+    const ym = Math.max(1, Math.round(r.T * K.youliMonths / (Core.pathYouliMul ? Core.pathYouliMul(S) : 1)));
+    Core.passTime(S, ym, pushLog);
     if (S.dead) { render(); save(); return checkEnd(); }
     const ev = Core.pickEvent(S);
     render(); save();
@@ -644,8 +658,7 @@ function pathPage() {
   const wrap = document.createElement('div'); wrap.className = 'path-page';
   const list = Core.pathSummary(S) || [];
   if (!list.length) {
-    wrap.innerHTML = `<div class="path-empty"><span class="path-empty-seal">空</span><p>道基未定。破境筑基之时，自有虚影落于丹田——那时，再择。
-</p></div>`;
+    wrap.innerHTML = `<div class="path-empty"><span class="path-empty-seal">空</span><p>道基未定。破境筑基之时，自有虚影落于丹田——那时，再择。</p><p class="path-empty-hint">金丹刻纹、元婴法相、化神问道、渡劫劫纹，亦各有一择。</p></div>`;
     return wrap;
   }
   wrap.innerHTML = list.map(x => {
@@ -654,6 +667,31 @@ function pathPage() {
     else o = PATH_TABLE[x.k][S.path[x.k]];
     return `<div class="path-card"><span class="path-card-seal">${esc(x.seal)}</span><div><b>${esc(PATH_KIND[x.k].name)} · ${esc(x.name)}</b><p>${esc(o ? o.trait : '')}</p><small>${esc(o ? o.desc : '')}</small></div></div>`;
   }).join('');
+  const washBox = document.createElement('div'); washBox.className = 'path-wash';
+  const bits = [];
+  if (S.path && S.path.danwen && S.path.danwen.length) {
+    const c = Core.pathWashCost(S, 'danwen');
+    bits.push(`<button type="button" class="path-wash-btn" data-w="danwen">洗去丹纹<small>灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj}</small></button>`);
+  }
+  if (S.path && S.path.daoji) {
+    const c = Core.pathWashCost(S, 'daoji');
+    bits.push(`<button type="button" class="path-wash-btn danger" data-w="daoji">震散道基<small>灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj} · 近乎自毁</small></button>`);
+  }
+  if (bits.length) {
+    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。</p>${bits.join('')}`;
+    washBox.onclick = async e => {
+      const b = e.target.closest('[data-w]'); if (!b) return;
+      const kind = b.dataset.w;
+      const title = kind === 'danwen' ? '洗去丹纹？纹成难易，此举耗寿伤神。' : '震散道基？百年倾向尽废，寻常修士视为自毁。';
+      if (!(await inkConfirm(title, kind === 'danwen' ? '洗纹' : '易基', true))) return;
+      const r = Core.washPath(S, kind, pushLog);
+      if (r.err) { toast(r.err); return; }
+      save(); render();
+      await closeSheet();
+      await ensurePendingPath();
+    };
+    wrap.appendChild(washBox);
+  }
   return wrap;
 }
 async function openPathCeremony(kind, pendingAscend) {
@@ -720,11 +758,15 @@ async function openPathCeremony(kind, pendingAscend) {
   });
 }
 async function ensurePendingPath() {
-  if (!S || S.dead || S.ascended || busy) return;
-  const k = Core.pendingPath(S);
-  if (!k) return;
-  await openPathCeremony(k, false);
-  busy = false; render(); save();
+  if (!S || S.dead || S.ascended) return;
+  let guard = 0;
+  while (guard++ < 5) {
+    if (busy) return;
+    const k = Core.pendingPath(S);
+    if (!k) break;
+    await openPathCeremony(k, false);
+    busy = false; render(); save();
+  }
 }
 
 /* ================= 宗门 ================= */
@@ -809,7 +851,7 @@ function sectHome() {
 function sectTasks() {
   const w = document.createElement('div'); w.className = 'tasks';
   const ms = Core.ensureMissions(S); save();
-  if (!ms.length) { w.innerHTML = '<div class="empty">近来无事可领</div>'; return w; }
+  if (!ms.length) { w.innerHTML = '<div class="empty">执事堂案上暂无新令<br><small>约三年一换，不妨先闭关或出山</small></div>'; return w; }
   ms.forEach(mi => {
     const info = Core.missionInfo(S, mi);
     const c = document.createElement('div'); c.className = 'task r' + Math.min(3, Math.floor(info.risk / 0.12));
@@ -1166,7 +1208,7 @@ function fabaoPage() {
       <div class="fabao-seal">空</div>
       <p class="fabao-title">本命未认</p>
       <p class="fabao-flavor">器随人走，人未至，器不来。破境筑基之后，自有一物落于识海——与你灵根相应，与你主修相系。</p>
-      <p class="fabao-hint">筑基成功时可认主 · 日常吐纳闭关游历可祭炼</p>
+      <p class="fabao-hint">筑基成功时认主 · 吐纳／闭关／游历／破境可祭炼<br>器基道基者，祭炼倍加亲近</p>
     </div>`;
     if (S.flags && S.flags.fabaoCanhun) wrap.insertAdjacentHTML('beforeend', '<p class="fabao-canhun">残魂未散 · 来世或可重光</p>');
     return wrap;
@@ -1241,7 +1283,7 @@ function showEnd(kind) {
   art.innerHTML = END_ART[kind] || '';
   const age = cn(S.age), rs = realmStr(), evs = S.events ? '历奇遇' + cn(S.events) + '桩' : '一生未逢奇遇';
   const T = {
-    ascend: ['飞升', `${S.name}，以${S.lg.name}之资，历${age}载春秋，终渡九重天劫，白日飞升。青冥山下的樵夫说，那一日，满山松涛都静了一瞬。`],
+    ascend: ['飞升', `${S.name}，以${S.lg.name}之资${(Core.pathSummary(S)||[]).length ? '，行' + (Core.pathSummary(S)||[]).map(x=>x.name).join('·') + '之路' : ''}，历${age}载春秋，终渡九重天劫，白日飞升。青冥山下的樵夫说，那一日，满山松涛都静了一瞬。`],
     zuohua: ['坐化', `${age}岁那年冬天，你在洞府中静静合上了眼。生前修至${rs}，${evs}。山风穿过石门，吹散了案上未写完的手札。` + pick(['青山不语，白云自去。', '一生求长生，长生终未得。', '此身原是客，何处不归途。'])],
     rumo: ['入魔', `${age}岁那年，${S.gf && GONGFA[S.gf].mo ? '《' + GONGFA[S.gf].name + '》在你体内' : '心魔在你识海中'}日夜低语，终于有一夜，你再也分不清哪一个声音是自己。后来有人在血雾谷见过一个赤瞳之人，修为通天，却认不得任何一位故人。` + pick(['一念成魔，万劫难复。', '墨落成血，再难洗白。'])],
     guiyin: ['归隐', `${S.name}修至${rs}，于${age}岁那年放下了长生。此后青冥山中少了一位修士，桃花溪上多了一叶扁舟。有渔人说，常见一个老者在江心垂钓，钓线上从不挂饵；后来，连那舟也不见了，只剩空船自横。`],
@@ -1252,8 +1294,11 @@ function showEnd(kind) {
   $('#end-epitaph').textContent = T[1];
   const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
   const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
+  const pth = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
+  const pfl = pth ? `<br>定型 <b>${pth}</b>` : '';
+  const fbl = S.fabao ? `<br>本命 <b>${S.fabao.name}</b>·${FABAO_STAGE[S.fabao.stage|0]}` : '';
   const leg = kind === 'bingjie' ? '<br><span class="end-legacy">前世残念 · 来世悟性 +1</span>' : '';
-  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
+  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
   let legacy = kind === 'bingjie' ? { wx: 1 } : {};
   if (Core.fabaoOnDeath) {
     const ch = Core.fabaoOnDeath(S);

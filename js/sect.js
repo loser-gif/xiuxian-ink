@@ -13,7 +13,7 @@ const ORGS = {
 // 晋升所需：累计贡献 + 境界
 const RANK_REQ = [
   { gx: 0, realm: 0 }, { gx: 40, realm: 0, stage: 3 }, { gx: 150, realm: 1 }, { gx: 460, realm: 2 },
-  { gx: 1250, realm: 3 }, { gx: 2700, realm: 4 }, { gx: 4600, realm: 4, stage: 2 },
+  { gx: 1250, realm: 3 }, { gx: 2600, realm: 4 }, { gx: 4000, realm: 4, stage: 1 },
 ];
 const RANK_LIB = [-1, 0, 1, 2, 3, 3, 3];           // 各位阶可入藏经阁的最高品阶
 const LIB_COST = [30, 110, 380, 1100];

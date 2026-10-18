@@ -417,6 +417,7 @@ const Core = (() => {
     if (fx.gf) learn(s, fx.gf, tags, emit);
     if (fx.gfXp && s.gf) { practice(s, fx.gfXp, null, emit); tags.push({ t: `《${GONGFA[s.gf].name}》精进`, c: 'up' }); }
     if (fx.flag) s.flags[fx.flag] = 1;
+    if (fx.btBuff) { s.btBuff = (s.btBuff || 0) + fx.btBuff; tags.push({ t: '破境把握暂增', c: 'up' }); }
     if (fx.gear && typeof GEAR !== 'undefined' && GEAR[fx.gear]) {
       s.items[fx.gear] = (s.items[fx.gear] || 0) + 1;
       tags.push({ t: `得${fx.gear}`, c: 'gold' });
@@ -486,6 +487,45 @@ const Core = (() => {
     if (s.path.jiewen && JIEWEN[s.path.jiewen]) out.push({ k: 'jiewen', name: JIEWEN[s.path.jiewen].name, seal: JIEWEN[s.path.jiewen].seal });
     return out;
   }
+  function pathWashCost(s, kind) {
+    const lsS = REALMS[s.realm].lsScale, lifeS = LIFE_SCALE[s.realm];
+    if (kind === 'danwen') return { ls: Math.round(960 * lsS), life: Math.round(6 * lifeS), xj: 10 };
+    if (kind === 'daoji') return { ls: Math.round(2400 * lsS), life: Math.round(14 * lifeS), xj: 16 };
+    return null;
+  }
+  function washPath(s, kind, emit) {
+    const cost = pathWashCost(s, kind);
+    if (!cost) return { err: '此定型不可洗去' };
+    if (kind === 'danwen') {
+      if (!(s.path && s.path.danwen && s.path.danwen.length)) return { err: '尚无丹纹可洗' };
+    } else if (kind === 'daoji') {
+      if (!(s.path && s.path.daoji)) return { err: '尚无道基可洗' };
+    } else return { err: '此定型不可洗去' };
+    if (s.ls < cost.ls) return { err: `灵石不足 · 需${cost.ls}` };
+    s.ls -= cost.ls;
+    s.lifeBonus -= cost.life;
+    s.xj = clamp(s.xj - cost.xj, 0, 100);
+    const tags = [
+      { t: `灵石 −${cost.ls}`, c: 'down' },
+      { t: `寿元 −${cost.life}年`, c: 'down' },
+      { t: `心境 −${cost.xj}`, c: 'down' },
+    ];
+    let text = '';
+    if (kind === 'danwen') {
+      const names = s.path.danwen.map(id => DANWEN[id] && DANWEN[id].name).filter(Boolean).join('、');
+      s.path.danwen = [];
+      text = `你以重金购得洗纹丹，金丹表面的${names || '旧纹'}寸寸淡去。丹面复白，像从未刻过——只是识海里空了一块，很久才填上。`;
+      tags.unshift({ t: '丹纹已洗', c: 'gold' });
+    } else {
+      const n = DAOJI[s.path.daoji].name;
+      s.path.daoji = null;
+      text = `你强行震碎丹田中的${n}虚影。经脉如遭雷劈，好在尚能重塑。道基一空，百年倾向尽散——此等代价，寻常修士不敢想。`;
+      tags.unshift({ t: '道基已散', c: 'gold' });
+    }
+    sync(s);
+    if (emit) emit({ title: kind === 'danwen' ? '洗纹' : '易基', text, tags, cls: 'warn', div: true });
+    return { ok: true, text, tags, cost };
+  }
 
   /* ---------- 破境 ---------- */
   function btChance(s, usePill) {
@@ -517,7 +557,9 @@ const Core = (() => {
       return { ok, from, text, needPath: need };
     }
     // 高境界破境失败，可能身死道消；身怀兵解玉符者兵解转修
-    const pd = K.btDeath[from] * (s.inj > 0 ? 1.3 : 1) * (1 - Math.min(0.4, Math.max(0, s.luck) * 0.04));
+    let pd = K.btDeath[from] * (s.inj > 0 ? 1.3 : 1) * (1 - Math.min(0.4, Math.max(0, s.luck) * 0.04));
+    if (from === 4 && s.path && s.path.jiewen && typeof JIEWEN !== 'undefined' && JIEWEN[s.path.jiewen] && JIEWEN[s.path.jiewen].risk)
+      pd *= JIEWEN[s.path.jiewen].risk;
     if (Math.random() < pd) {
       s.dead = true;
       if (s.items['兵解玉符'] > 0) { s.items['兵解玉符']--; s.ending = 'bingjie'; return { ok, from, text: TEXT.bingjie, ending: 'bingjie' }; }
@@ -918,7 +960,7 @@ const Core = (() => {
   return { K, LIFE_SCALE, clamp, pick, gf, gt, sync, req, unit, isLast, bottleneck, realmStr, timeLabel, fmtNum,
     gfMatch, gfMatchWord, gfLv, gfSpeed, learn, practice, switchCost, switchGf, setAux, clearAux,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
-    choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul,
+    choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
     btChance, resolveBreak, useItem, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct,

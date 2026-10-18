@@ -49,7 +49,11 @@ const Jianghu = (() => {
   /* ---------- 行旅 ---------- */
   const canGo = (s, id) => !!(s.found[id] && s.realm >= LOC[id].rm);
   const dist = (a, b) => Math.abs(LOC[a].x - LOC[b].x);
-  const travelMonths = (s, to) => to === s.loc ? K.exploreM * T(s) : T(s) * (K.travelBase + Math.round(dist(s.loc, to) * K.travelPer));
+  const travelMonths = (s, to) => {
+    let m = to === s.loc ? K.exploreM * T(s) : T(s) * (K.travelBase + Math.round(dist(s.loc, to) * K.travelPer));
+    if (typeof Core !== 'undefined' && Core.pathYouliMul) m = Math.max(1, Math.round(m / Core.pathYouliMul(s)));
+    return m;
+  };
   function gather(s, locId, tags, p = K.gather) {
     const l = LOC[locId]; if (!l || !l.herbs.length || Math.random() > p) return;
     const ok = l.herbs.filter(h => (ITEM_VAL[h].tier || 0) <= s.realm + 1); if (!ok.length) return;

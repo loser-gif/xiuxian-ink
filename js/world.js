@@ -350,3 +350,87 @@ EVENTS.push(
 
 LOC_EV.xuewu.push('shen_gu'); LOC_EV.xihuang.push('shen_gu'); EV_LOC.shen_gu = ['xuewu', 'xihuang'];
 LOC_EV.beihai.push('shen_deng'); LOC_EV.yunhai.push('shen_deng'); EV_LOC.shen_deng = ['beihai', 'yunhai'];
+
+/* ================= v0.10 补：神器＋道基机缘 ================= */
+EVENTS.push(
+  { id: 'shen_ling', title: '裂空残绫', seal: '绫', w: 2.8, once: true, rm: [1, 4],
+    cond: s => !s.flags.got_shen_ling && s.realm >= 1,
+    text: s => '古修洞府石壁裂开一道缝，缝中垂着半匹半透明的绫。风一吹，绫影把空间撕开一线，你看见缝那边竟是另一座山——转眼又合上。',
+    choices: s => [
+      { label: '以精血系绫，收作佩物', sub: '得裂空绫 · 心境日损', act: s => {
+        s.flags.got_shen_ling = 1;
+        return { text: '绫缠上腕时，你听见极远的一声呼唤，像在叫一个你不认识的名字。腕间一凉，绫已没入识海。', fx: { gear: '裂空绫', xj: -6, flag: 'got_shen_ling' } };
+      }},
+      { label: '只记下裂空之法，不取绫', sub: '功法精进', act: s => ({ text: '你凝视那一线裂隙，悟得些许挪移之妙。绫自行褪入石壁，再寻不见。', fx: { gfXp: 5, xj: 2, flag: 'got_shen_ling' } }) },
+      { label: '后退，不去碰', sub: '平安', act: s => ({ text: '你退了三步。石缝合拢，洞府复归寻常。走出洞口时，袖里多了一缕淡金丝线——不知何时落的。', fx: { ls: 25, flag: 'got_shen_ling' } }) },
+    ]},
+  { id: 'shen_pan', title: '子午铜盘', seal: '盘', w: 2.6, once: true, rm: [2, 4],
+    cond: s => !s.flags.got_shen_pan && s.realm >= 2,
+    text: s => '天阶下一块青石上，搁着一枚铜盘。指针不指南北，只微微颤着，像在等一个人伸手。盘沿刻着小字：「先付五年，再问前路。」',
+    choices: s => [
+      { label: '按盘心，付寿取盘', sub: '得子午罗盘 · 折寿五年', act: s => {
+        s.flags.got_shen_pan = 1;
+        return { text: '你掌心贴上盘心，一股凉意抽走。铜盘跃入袖中，指针忽然稳了——正指你尚未抵达的那一境。', fx: { gear: '子午罗盘', life: -0.1, flag: 'got_shen_pan' } };
+      }},
+      { label: '只借指针定向，不取盘', sub: '游历有获', act: s => ({ text: '你顺着指针走了一炷香，在乱石中捡到一枚古玉。铜盘仍在石上，像根本没被人碰过。', fx: { ls: 55, xj: 2, flag: 'got_shen_pan' } }) },
+      { label: '翻转铜盘，看背面铭文', sub: '或悟或伤', act: s => {
+        s.flags.got_shen_pan = 1;
+        if (Math.random() < 0.5) return { text: '背面是一幅极简星图。你记下了，破境之时或可少走弯路。盘却烫手，你不得不放下。', fx: { btBuff: 1, xj: -3 } };
+        return { text: '铭文一瞬刺目，你眼前发黑，好在闭气及时。醒来时盘已不见，只留下掌心一道圆印。', fx: { inj: 1, xj: -5 } };
+      }},
+    ]},
+);
+
+LOC_EV.gufu.push('shen_ling'); LOC_EV.heifeng.push('shen_ling'); EV_LOC.shen_ling = ['gufu', 'heifeng'];
+LOC_EV.yunhai.push('shen_pan'); LOC_EV.gufu.push('shen_pan'); EV_LOC.shen_pan = ['yunhai', 'gufu'];
+
+/* 道基共鸣：已择道基后的淡味机缘 */
+EVENTS.push(
+  { id: 'dj_jian', title: '剑意夜鸣', seal: '剑', w: 4, once: true, rm: [1, 4],
+    cond: s => s.path && s.path.daoji === 'jian' && !s.flags.dj_jian,
+    text: s => '夜里你在洞府调息，本命器忽然轻鸣。窗外松影一晃，像有人对剑。你睁眼，只见月光如刃，斜切在石案上。',
+    choices: s => [
+      { label: '起身对月练剑一式', sub: '斗法略利 · 祭炼', act: s => ({ text: '一式练完，腕间发热。你觉得那道刃形裂隙又深了半分——不是伤，是锋。', fx: { flag: 'dj_jian', xj: 2, gfXp: 3 } }) },
+      { label: '按住器鸣，继续入定', sub: '心境安', act: s => ({ text: '你按住识海里的震颤。月光移过案角，一切复静。锋藏于静，不在张扬。', fx: { flag: 'dj_jian', xj: 5 } }) },
+    ]},
+  { id: 'dj_dan', title: '药香入梦', seal: '丹', w: 4, once: true, rm: [1, 4],
+    cond: s => s.path && s.path.daoji === 'dan' && !s.flags.dj_dan,
+    text: s => '闭关第三夜，你梦见一座丹炉。炉火不灼，只把识海里的杂念一点点炼化。醒时鼻端仍有药香。',
+    choices: s => [
+      { label: '依梦中火候试炼一炉', sub: '丹道精进', act: s => {
+        if (s.dan) { s.dan.xp = (s.dan.xp || 0) + 6; }
+        return { text: '火候竟与梦中一般无二。虽未成上品，你却摸到了丹基与炉火的共鸣。', fx: { flag: 'dj_dan', xj: 2 } };
+      }},
+      { label: '记下药香，留待日后', sub: '心境', act: s => ({ text: '你把那缕香气记在心口。此后吐纳，总觉得丹田温润了些。', fx: { flag: 'dj_dan', xj: 4 } }) },
+    ]},
+  { id: 'dj_qi', title: '器心轻颤', seal: '器', w: 4, once: true, rm: [1, 4],
+    cond: s => s.path && s.path.daoji === 'qi' && s.fabao && !s.flags.dj_qi,
+    text: s => `本命${s.fabao.name}在识海中沉了沉，像认家的牲口蹭了蹭你的掌心。你忽然明白：器基所定，不只是路，是羁绊。`,
+    choices: s => [
+      { label: '以心血温养本命器', sub: '祭炼大进', act: s => { if (typeof Core !== 'undefined' && Core.fabaoFeed) Core.fabaoFeed(s, 12); return { text: '一滴心血落下，器光大盛。你与它之间的丝，又粗了一分。', fx: { flag: 'dj_qi', xj: -2 } }; } },
+      { label: '轻拍器身，权当问答', sub: '安稳', act: s => ({ text: '你在识海里拍了拍它。它震了一下，算是应了。', fx: { flag: 'dj_qi', xj: 3 } }) },
+    ]},
+  { id: 'dj_mo', title: '第二声笑', seal: '魔', w: 3.5, once: true, rm: [1, 4],
+    cond: s => s.path && s.path.daoji === 'mo' && !s.flags.dj_mo,
+    text: s => '丹田那滴黑血今夜又温了一下。你听见心里第二个声音轻笑：长生这条路，本就不干净。',
+    choices: s => [
+      { label: '随它笑，借力破障', sub: '修为进 · 心境危', act: s => ({ text: '你没有驱赶那笑声。修为涨了一截，镜中瞳仁却深了一分。', fx: { flag: 'dj_mo', xw: 0.08, xj: -10 } }) },
+      { label: '压下魔念，默诵清心', sub: '心境回稳', act: s => ({ text: '你咬破舌尖，以痛压念。笑声淡了，黑血仍在——只是暂时安静。', fx: { flag: 'dj_mo', xj: 8 } }) },
+    ]},
+  { id: 'dj_zhen', title: '罗盘在心', seal: '阵', w: 4, once: true, rm: [1, 4],
+    cond: s => s.path && s.path.daoji === 'zhen' && !s.flags.dj_zhen,
+    text: s => '你路过一处乱石，忽然觉得脚踩的不是地，是纹。天地经纬在瞳中闪了一下，你下意识拨开一枚石子——石下竟有一枚旧阵基。',
+    choices: s => [
+      { label: '依阵纹推演片刻', sub: '机缘', act: s => ({ text: '推演到第三层，阵基自行崩解，化作一缕清气没入你识海。你忽然懂了：有些路，是布出来的。', fx: { flag: 'dj_zhen', ls: 40, xj: 2 } }) },
+      { label: '埋回石子，不扰古阵', sub: '心境', act: s => ({ text: '你把石子放回原处。风过乱石，像有人低声道谢。', fx: { flag: 'dj_zhen', xj: 5 } }) },
+    ]},
+);
+LOC_EV.shanmen.push('dj_jian', 'dj_dan', 'dj_qi', 'dj_mo', 'dj_zhen');
+LOC_EV.gufu.push('dj_jian', 'dj_qi', 'dj_zhen');
+LOC_EV.yunyue.push('dj_dan');
+LOC_EV.xuewu.push('dj_mo');
+for (const id of ['dj_jian', 'dj_dan', 'dj_qi', 'dj_mo', 'dj_zhen']) {
+  EV_LOC[id] = EV_LOC[id] || [];
+}
+EV_LOC.dj_jian = ['shanmen', 'gufu']; EV_LOC.dj_dan = ['shanmen', 'yunyue'];
+EV_LOC.dj_qi = ['shanmen', 'gufu']; EV_LOC.dj_mo = ['shanmen', 'xuewu']; EV_LOC.dj_zhen = ['shanmen', 'gufu'];

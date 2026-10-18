@@ -192,7 +192,7 @@ function makeJHUI(G) {
   }
   async function wander() {
     if (mapBusy) return;
-    Core.passTime(G.S, REALMS[G.S.realm].T * K.youliMonths, pushLog);
+    Core.passTime(G.S, Math.max(1, Math.round(REALMS[G.S.realm].T * K.youliMonths / (Core.pathYouliMul ? Core.pathYouliMul(G.S) : 1))), pushLog);
     if (G.S.dead) { await closeMap(); return afterDeath(); }
     const ev = J.pickAt(G.S, null); render(); save();
     await closeMap(true); G.busy = false; openEvent(ev);

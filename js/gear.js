@@ -59,6 +59,12 @@ const GEAR = {
   '忘川灯': { grade: 2, kind: '神器', slot: 'weapon', artifact: 1, t: { life: 0.1, xinmo: 0.65 },
     curse: { lifeOnce: -8 },
     desc: '一盏青荧小灯，照不见前路，只照见来路。点亮它的人，寿元要先献给忘川。' },
+  '裂空绫': { grade: 2, kind: '神器', slot: 'weapon', artifact: 1, t: { spd: 1.08, qiyu: 0.12 },
+    curse: { xjPerYear: 0.8 },
+    desc: '一匹半透明的绫，抖开时空间似被撕开一线。佩之游历机缘更盛，只是夜里常听见远处有人唤你的名字——唤的，未必是你。' },
+  '子午罗盘': { grade: 2, kind: '神器', slot: 'weapon', artifact: 1, t: { bt: 0.035, time: 0.9 },
+    curse: { lifeOnce: -5 },
+    desc: '铜盘十二刻，指针永指你尚未抵达之处。握它的人，光阴略缓，破境略利——盘心却要你先付五年阳寿。' },
 };
 
 const GEAR_BUY = Object.keys(GEAR).filter(k => GEAR[k].buy);

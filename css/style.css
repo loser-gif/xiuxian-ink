@@ -1515,3 +1515,16 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 @media (prefers-reduced-motion:reduce){
   .path-cer,.path-cer-sealbox,.path-opt{animation:none!important;opacity:1;transform:none;transition:none}
 }
+
+/* ===== polish: 定型洗纹／状态 ===== */
+.path-wash{margin-top:18px;padding-top:14px;border-top:1px dashed rgba(27,24,20,.12)}
+.path-wash-note{font-size:12px;letter-spacing:.12em;color:var(--ink3);margin:0 0 10px;line-height:1.7}
+.path-wash-btn{display:block;width:100%;text-align:left;margin:0 0 8px;padding:12px 14px;border:0;border-radius:2px;cursor:pointer;
+  font-family:var(--f-body);font-size:15px;letter-spacing:.12em;color:var(--ink);
+  background:rgba(27,24,20,.04);box-shadow:inset 0 0 0 1px rgba(27,24,20,.08)}
+.path-wash-btn small{display:block;margin-top:4px;font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+.path-wash-btn.danger{color:var(--zhu);background:rgba(179,48,42,.06);box-shadow:inset 0 0 0 1px rgba(179,48,42,.2)}
+.path-wash-btn:active{transform:scale(.99)}
+.path-empty-hint{font-size:13px;color:var(--ink3);letter-spacing:.08em;margin-top:10px;line-height:1.8}
+.empty small{display:block;margin-top:6px;font-size:12px;letter-spacing:.1em;color:var(--ink3);font-weight:400}
+.status-line{letter-spacing:.18em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px}
