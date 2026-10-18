@@ -173,7 +173,7 @@ const Jianghu = (() => {
     else if (l.k.startsWith('R:')) learnRecipe(s, l.k.slice(2), tags);
     else { s.items[l.k] = (s.items[l.k] || 0) + 1; tags.push({ t: `得${l.k}`, c: 'up' }); }
     if (a.beat.includes('hei')) s.flags.heiGrudge = 1;
-    if (a.beat.includes('wen')) Core.npcAdd(s, 'wen', -4, tags);
+    if (a.beat.includes('wen')) { Core.npcAdd(s, 'wen', -4, tags); if (typeof karmaPlant === 'function') karmaPlant(s, 'wen_foe', 26); }
     return { won: true, tags };
   }
   function aucPass(s, a) { const w = a.leader && a.leader !== 'you' ? a.leader : null; return { lost: true, winner: w, line: w ? BIDDERS[w].win : '无人应价，此物流拍。' }; }

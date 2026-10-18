@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 8;
+  const SAVE_V = 9;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -317,6 +317,7 @@ const Core = (() => {
     if (s.age >= s.lifespan && !s.dead) { s.dead = true; s.ending = 'zuohua'; }
     if (!s.dead) sectTick(s, emit);
     if (!s.dead && typeof Jianghu !== 'undefined') Jianghu.tick(s, emit);
+    if (!s.dead && typeof karmaTick === 'function') karmaTick(s, emit);
   }
   function gainMul(s) {
     let m = 1;
@@ -434,6 +435,10 @@ const Core = (() => {
     if (fx.gf) learn(s, fx.gf, tags, emit);
     if (fx.gfXp && s.gf) { practice(s, fx.gfXp, null, emit); tags.push({ t: `《${GONGFA[s.gf].name}》精进`, c: 'up' }); }
     if (fx.flag) s.flags[fx.flag] = 1;
+    if (fx.karma && typeof karmaPlant === 'function') {
+      const ok = karmaPlant(s, fx.karma.id, fx.karma.years != null ? fx.karma.years : 20, fx.karma.data);
+      if (ok) tags.push({ t: '因果已种', c: 'gold' });
+    }
     if (fx.btBuff) { s.btBuff = (s.btBuff || 0) + fx.btBuff; tags.push({ t: '破境把握暂增', c: 'up' }); }
     if (fx.gear && typeof GEAR !== 'undefined' && GEAR[fx.gear]) {
       s.items[fx.gear] = (s.items[fx.gear] || 0) + 1;
@@ -480,6 +485,7 @@ const Core = (() => {
     } else if (kind === 'faxiang') {
       if (s.path.faxiang) return { err: '法相已定' };
       s.path.faxiang = list[0];
+      if (typeof karmaPlant === 'function') karmaPlant(s, 'xiang_fan', 16);
     } else if (kind === 'wendao') {
       if (s.path.wendao) return { err: '问道已定' };
       s.path.wendao = list[0];
@@ -508,6 +514,11 @@ const Core = (() => {
     const lsS = REALMS[s.realm].lsScale, lifeS = LIFE_SCALE[s.realm];
     if (kind === 'danwen') return { ls: Math.round(960 * lsS), life: Math.round(6 * lifeS), xj: 10 };
     if (kind === 'daoji') return { ls: Math.round(2400 * lsS), life: Math.round(14 * lifeS), xj: 16 };
+    if (kind === 'faxiang') {
+      let ls = Math.round(1800 * lsS), life = Math.round(10 * lifeS), xj = 14;
+      if (s.flags && s.flags.xiang_wash_half) { ls = Math.round(ls * 0.5); life = Math.round(life * 0.55); xj = Math.round(xj * 0.6); }
+      return { ls, life, xj };
+    }
     return null;
   }
   function washPath(s, kind, emit) {
@@ -517,6 +528,8 @@ const Core = (() => {
       if (!(s.path && s.path.danwen && s.path.danwen.length)) return { err: '尚无丹纹可洗' };
     } else if (kind === 'daoji') {
       if (!(s.path && s.path.daoji)) return { err: '尚无道基可洗' };
+    } else if (kind === 'faxiang') {
+      if (!(s.path && s.path.faxiang)) return { err: '尚无法相可洗' };
     } else return { err: '此定型不可洗去' };
     if (s.ls < cost.ls) return { err: `灵石不足 · 需${cost.ls}` };
     s.ls -= cost.ls;
@@ -527,20 +540,29 @@ const Core = (() => {
       { t: `寿元 −${cost.life}年`, c: 'down' },
       { t: `心境 −${cost.xj}`, c: 'down' },
     ];
-    let text = '';
+    let text = '', title = '洗纹';
     if (kind === 'danwen') {
       const names = s.path.danwen.map(id => DANWEN[id] && DANWEN[id].name).filter(Boolean).join('、');
       s.path.danwen = [];
       text = `你以重金购得洗纹丹，金丹表面的${names || '旧纹'}寸寸淡去。丹面复白，像从未刻过——只是识海里空了一块，很久才填上。`;
       tags.unshift({ t: '丹纹已洗', c: 'gold' });
-    } else {
+      title = '洗纹';
+    } else if (kind === 'daoji') {
       const n = DAOJI[s.path.daoji].name;
       s.path.daoji = null;
       text = `你强行震碎丹田中的${n}虚影。经脉如遭雷劈，好在尚能重塑。道基一空，百年倾向尽散——此等代价，寻常修士不敢想。`;
       tags.unshift({ t: '道基已散', c: 'gold' });
+      title = '易基';
+    } else {
+      const n = (FAXIANG[s.path.faxiang] && FAXIANG[s.path.faxiang].name) || '法相';
+      s.path.faxiang = null;
+      if (s.flags) delete s.flags.xiang_wash_half;
+      text = `你运转洗相秘法，识海中「${n}」如墨遇水，一寸寸淡开。元婴空明一阵，痛，却干净。法相既洗，须待机缘再凝。`;
+      tags.unshift({ t: '法相已洗', c: 'gold' });
+      title = '洗相';
     }
     sync(s);
-    if (emit) emit({ title: kind === 'danwen' ? '洗纹' : '易基', text, tags, cls: 'warn', div: true });
+    if (emit) emit({ title, text, tags, cls: 'warn', div: true });
     return { ok: true, text, tags, cost };
   }
 
@@ -637,7 +659,8 @@ const Core = (() => {
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
       seen: {}, recent: [], acts: 0, ending: null,
-      court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 } };
+      court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 },
+      karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] } };
     const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
     if (startGf && GONGFA[startGf]) { s.gf = startGf; s.gfs[startGf] = { lv: 1, xp: 0 }; }
     else if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
@@ -699,10 +722,15 @@ const Core = (() => {
       s.v = 8;
       s.court = s.court || (typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 });
     }
+    if (s.v === 8) {   // v0.12 → v0.13：因果
+      s.v = 9;
+      s.karma = s.karma || (typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] });
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
     s.court = s.court || (typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 });
+    s.karma = s.karma || (typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] });
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
     sync(s); return s;
   }
@@ -814,6 +842,7 @@ const Core = (() => {
     if (n.su && n.su.met && n.su.a >= 50) { bt += 0.03; who.push('su'); }
     if (n.shi && n.shi.met && n.shi.a >= 60) { bt += 0.02; who.push('shi'); }
     if (n.lu && n.lu.met && n.lu.a >= 70) { bt += 0.02; who.push('lu'); }
+    if (s.karma && s.karma.mate === 'su' && n.su && n.su.met) { bt += 0.04; if (!who.includes('su')) who.push('su'); }
     return { bt, who };
   }
   function canPromote(s) {

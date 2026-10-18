@@ -198,10 +198,10 @@ EVENTS.push(
 EVENTS.push({ id: 'hei_ambush', title: '夜路', seal: '袭', w: 30, cond: s => s.flags && s.flags.heiGrudge === 1,
   text: s => { Core.rollFoe(s, { rel: anyOf([0, 1, 1]) }); return `拍卖散场，你踏着月色出坊。巷子尽头立着一个黑袍人，袍角在风里一动不动。“东西留下，”他说，声音像砂纸，“我不想杀人。”他的气息，约莫${Core.foeStr(s)}。`; },
   choices: s => [
-    { label: '拔剑', sub: '凶险', act: s => { s.flags.heiGrudge = 2; return Core.fightAct(s, { name: '黑袍客', base: 0.5 + s.luck * 0.03,
+    { label: '拔剑', sub: '凶险', act: s => { s.flags.heiGrudge = 2; if (typeof karmaPlant === 'function') karmaPlant(s, 'hei_echo', 28); return Core.fightAct(s, { name: '黑袍客', base: 0.5 + s.luck * 0.03,
       win: { text: '三招之后，黑袍被你一剑挑落——底下是一张苍白的年轻的脸，额上刺着血雾谷的印记。他咬牙遁入夜色，丢下一只储物袋。', fx: { ls: 50, xj: 4 } },
       lose: { text: s => `那名${Core.foeStr(s)}的黑袍客出手如鬼魅。你护住了拍来的宝物，肋下却挨了一记血煞掌。`, fx: { inj: 3, xj: -2 } } }); } },
-    { label: '掉头回坊，借坊主之势', sub: '', act: s => { s.flags.heiGrudge = 2; return { text: '你转身回了听雨楼，在楼上坐到天明。黑袍人没有跟进来。坊主笑眯眯地收了你一笔“茶钱”。', fx: { ls: -Math.floor(s.ls * 0.08), lsRaw: true } }; } },
+    { label: '掉头回坊，借坊主之势', sub: '', act: s => { s.flags.heiGrudge = 2; if (typeof karmaPlant === 'function') karmaPlant(s, 'hei_echo', 28); return { text: '你转身回了听雨楼，在楼上坐到天明。黑袍人没有跟进来。坊主笑眯眯地收了你一笔“茶钱”。', fx: { ls: -Math.floor(s.ls * 0.08), lsRaw: true } }; } },
   ] });
 LOC_EV.yunyue.push('hei_ambush');
 EVENTS.push({ id: 'bh_jiao', title: '冰下', seal: '蛟', w: 9, rm: [3, 4],

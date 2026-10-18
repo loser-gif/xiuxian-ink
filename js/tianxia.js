@@ -113,7 +113,7 @@ EVENTS.push(
       { label: '领兵督运，以修士威压', sub: '兵权↑ 道统↓', act: s => {
         const tags = []; courtAdd(s, { bing: 10, dao: -8, min: 3 }, tags);
         if (s.court.rank < 5 && Math.random() < 0.4) courtPromote(s, s.court.rank + 1, tags);
-        return { text: '你催动灵压，运粮官跪了一地。饷是送到了，朝中也多了句闲话：「修士胁政。」', tags, fx: { time: REALMS[s.realm].T } };
+        return { text: '你催动灵压，运粮官跪了一地。饷是送到了，朝中也多了句闲话：「修士胁政。」', tags, fx: { time: REALMS[s.realm].T, karma: { id: 'court_echo', years: 22 } } };
       }},
       { label: '装聋作哑，但求无过', act: s => {
         const tags = []; courtAdd(s, { min: -4, dao: 1 }, tags);
@@ -146,7 +146,7 @@ EVENTS.push(
       { label: '私动修士储粮赈济', sub: '民心↑↑ 或触宗门', act: s => {
         const tags = []; courtAdd(s, { min: 12, dao: 2, bing: -2 }, tags);
         if (s.sect && s.sect.org && s.sect.gx > 20) { s.sect.gx -= 15; tags.push({ t: '贡献 −15', c: 'down' }); }
-        return { text: '你运来灵谷，化作凡粮。百姓喊青天。宗门来信却只二字：「慎之。」', tags, fx: { time: REALMS[s.realm].T, xj: 4 } };
+        return { text: '你运来灵谷，化作凡粮。百姓喊青天。宗门来信却只二字：「慎之。」', tags, fx: { time: REALMS[s.realm].T, xj: 4, karma: { id: 'court_grace', years: 18 } } };
       }},
       { label: '上疏死谏，请皇开仓', act: s => {
         const tags = [];

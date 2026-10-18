@@ -444,6 +444,7 @@ function render() {
   else if (lowLife) { msg = '寿元无多'; st.classList.add('zhu'); }
   else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
   else if (S.court && S.court.rank >= 6 && typeof canClaimThrone === 'function' && (canClaimThrone(S) || canRegent(S)) && !S.flags.jc_throne) { msg = '鼎鼐可问 · 往京城一抉'; st.classList.add('zhu'); }
+  else if (S.karma && (S.karma.seeds || []).some(k => S.months >= k.due && !S.flags['karma_done_' + k.id])) { msg = '因果将至 · 游历或逢回响'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
   else {
     const bits = [];
@@ -470,8 +471,12 @@ function renderSide() {
     ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>${auxLine}${fabaoLine}${pathLine}`
     : (fabaoLine || pathLine ? `${fabaoLine}${pathLine}` : '<span class="sd-empty">胸中尚无功法</span>');
   const o = Core.org(S);
-  $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>`
-    : `<b class="sd-name">${esc(Core.rankName(S))}</b><span class="sd-row">无门无派，来去自由</span>`;
+  const bond = [];
+  if (S.karma && S.karma.mate && typeof NPCS !== 'undefined' && NPCS[S.karma.mate]) bond.push('道侣 · ' + NPCS[S.karma.mate].name);
+  if (S.karma && S.karma.foe && typeof NPCS !== 'undefined' && NPCS[S.karma.foe]) bond.push('宿敌 · ' + NPCS[S.karma.foe].name);
+  const bondLine = bond.length ? `<span class="sd-row">${esc(bond.join(' · '))}</span>` : '';
+  $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>${bondLine}`
+    : `<b class="sd-name">${esc(Core.rankName(S))}</b><span class="sd-row">无门无派，来去自由</span>${bondLine}`;
   const items = Object.entries(S.items).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
   const eqLine = S.eq && S.eq.weapon ? `<span class="sd-row">佩 · ${esc(S.eq.weapon)}</span>` : '';
   $('#sd-bag').innerHTML = (eqLine || items.length) ? `${eqLine}${items.length ? `<ul class="sd-list">${items.slice(0, 4).map(([k, n]) => `<li><span>${esc(k)}</span><i>${cn(n)}</i></li>`).join('')}</ul>` : ''}${items.length > 4 ? `<span class="sd-more">另有${cn(items.length - 4)}种</span>` : ''}`
@@ -738,13 +743,19 @@ function pathPage() {
     const c = Core.pathWashCost(S, 'daoji');
     bits.push(`<button type="button" class="path-wash-btn danger" data-w="daoji">震散道基<small>灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj} · 近乎自毁</small></button>`);
   }
+  if (S.path && S.path.faxiang) {
+    const c = Core.pathWashCost(S, 'faxiang');
+    const half = S.flags && S.flags.xiang_wash_half;
+    bits.push(`<button type="button" class="path-wash-btn" data-w="faxiang">洗去法相<small>${half ? '相裂半价 · ' : ''}灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj}</small></button>`);
+  }
   if (bits.length) {
-    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。</p>${bits.join('')}`;
+    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。法相可洗；若逢「相裂」，代价略减。</p>${bits.join('')}`;
     washBox.onclick = async e => {
       const b = e.target.closest('[data-w]'); if (!b) return;
       const kind = b.dataset.w;
-      const title = kind === 'danwen' ? '洗去丹纹？纹成难易，此举耗寿伤神。' : '震散道基？百年倾向尽废，寻常修士视为自毁。';
-      if (!(await inkConfirm(title, kind === 'danwen' ? '洗纹' : '易基', true))) return;
+      const title = kind === 'danwen' ? '洗去丹纹？纹成难易，此举耗寿伤神。' : kind === 'faxiang' ? '洗去法相？识海空明一阵，须待机缘再凝。' : '震散道基？百年倾向尽废，寻常修士视为自毁。';
+      const conf = kind === 'danwen' ? '洗纹' : kind === 'faxiang' ? '洗相' : '易基';
+      if (!(await inkConfirm(title, conf, true))) return;
       const r = Core.washPath(S, kind, pushLog);
       if (r.err) { toast(r.err); return; }
       save(); render();
