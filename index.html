@@ -10,12 +10,13 @@
 <meta name="theme-color" content="#efe6d3">
 <meta name="format-detection" content="telephone=no">
 <title>墨仙录 · 水墨修仙</title>
-<link rel="icon" href="icon.svg?v=28" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=28">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=28" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=28" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=28">
-<link rel="stylesheet" href="css/style.css?v=28">
+<link rel="manifest" href="manifest.webmanifest?v=29">
+<link rel="icon" href="icon.svg?v=29" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=29">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=29" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=29" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=29">
+<link rel="stylesheet" href="css/style.css?v=29">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -61,6 +62,17 @@
 <div id="vignette" aria-hidden="true"></div>
 <canvas id="weather" aria-hidden="true"></canvas>
 <div id="intro" aria-hidden="true"><div class="drop"></div><div class="bloom"></div></div>
+<div id="splash" hidden>
+  <div class="splash-scroll">
+    <div class="splash-roller"></div>
+    <div class="splash-paper"><span class="splash-char">墨</span></div>
+    <div class="splash-roller bot"></div>
+  </div>
+</div>
+<div id="sw-refresh" hidden>
+  <span>新墨已备</span>
+  <button type="button" id="sw-refresh-btn">重开</button>
+</div>
 
 <main id="app">
   <!-- 卷首 -->
@@ -80,6 +92,7 @@
         <button class="brush-btn" id="btn-continue" hidden><span class="bb-ink"></span><span class="bb-text">续卷</span><small id="continue-sub">接续前缘</small></button>
       </div>
       <div class="title-menu-sub">
+        <button class="brush-btn small light title-subbtn" id="btn-slots"><span class="bb-ink"></span><span class="bb-text">存档</span><small>三卷</small></button>
         <button class="brush-btn small light title-subbtn" id="btn-atlas"><span class="bb-ink"></span><span class="bb-text">图鉴</span><small id="atlas-sub">轮回簿</small></button>
         <button class="brush-btn small light title-subbtn" id="btn-daily" hidden><span class="bb-ink"></span><span class="bb-text">日缘</span><small>晨露一缕</small></button>
         <button class="brush-btn small light title-subbtn" id="btn-trial"><span class="bb-ink"></span><span class="bb-text">试炼</span><small>短局二十载</small></button>
@@ -338,7 +351,8 @@
     <pre class="end-epitaph-long" id="end-epitaph-long" hidden></pre>
     <div class="end-stats" id="end-stats"></div>
     <div class="end-actions">
-      <button class="brush-btn small" id="btn-reborn"><span class="bb-ink"></span><span class="bb-text">再入轮回</span></button>
+      <button class="brush-btn small" id="btn-scroll"><span class="bb-ink"></span><span class="bb-text">存卷</span></button>
+      <button class="brush-btn small light" id="btn-reborn"><span class="bb-ink"></span><span class="bb-text">再入轮回</span></button>
       <button class="brush-btn small light" id="btn-end-atlas"><span class="bb-ink"></span><span class="bb-text">览图鉴</span></button>
     </div>
   </div>
@@ -352,29 +366,44 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=28"></script>
-<script src="js/gongfa.js?v=28"></script>
-<script src="js/gear.js?v=28"></script>
-<script src="js/story.js?v=28"></script>
-<script src="js/sect.js?v=28"></script>
-<script src="js/baijia.js?v=28"></script>
-<script src="js/world.js?v=28"></script>
-<script src="js/tianxia.js?v=28"></script>
-<script src="js/karma.js?v=28"></script>
-<script src="js/path.js?v=28"></script>
-<script src="js/core.js?v=28"></script>
-<script src="js/samsara.js?v=28"></script>
-<script src="js/jianghu.js?v=28"></script>
-<script src="js/ink.js?v=28"></script>
-<script src="js/ding.js?v=28"></script>
-<script src="js/map.js?v=28"></script>
-<script src="js/audio.js?v=28"></script>
-<script src="js/fx.js?v=28"></script>
-<script src="js/btfx.js?v=28"></script>
-<script src="js/fabaoart.js?v=28"></script>
-<script src="js/wallpaper.js?v=28"></script>
-<script src="js/inkgl.js?v=28"></script>
-<script src="js/jhui.js?v=28"></script>
-<script src="js/game.js?v=28"></script>
+<div id="scroll-view" hidden>
+  <div class="scroll-shade"></div>
+  <div class="scroll-stage">
+    <img id="scroll-img" alt="终卷绘卷">
+    <p class="scroll-hint">长按图片，即可保存</p>
+    <div class="scroll-actions">
+      <button class="brush-btn small" id="scroll-share"><span class="bb-ink"></span><span class="bb-text">分享</span></button>
+      <button class="brush-btn small light" id="scroll-close"><span class="bb-ink"></span><span class="bb-text">收起</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js?v=29"></script>
+<script src="js/gongfa.js?v=29"></script>
+<script src="js/gear.js?v=29"></script>
+<script src="js/story.js?v=29"></script>
+<script src="js/sect.js?v=29"></script>
+<script src="js/baijia.js?v=29"></script>
+<script src="js/world.js?v=29"></script>
+<script src="js/tianxia.js?v=29"></script>
+<script src="js/karma.js?v=29"></script>
+<script src="js/path.js?v=29"></script>
+<script src="js/core.js?v=29"></script>
+<script src="js/codec.js?v=29"></script>
+<script src="js/slots.js?v=29"></script>
+<script src="js/samsara.js?v=29"></script>
+<script src="js/jianghu.js?v=29"></script>
+<script src="js/ink.js?v=29"></script>
+<script src="js/ding.js?v=29"></script>
+<script src="js/map.js?v=29"></script>
+<script src="js/audio.js?v=29"></script>
+<script src="js/fx.js?v=29"></script>
+<script src="js/btfx.js?v=29"></script>
+<script src="js/fabaoart.js?v=29"></script>
+<script src="js/wallpaper.js?v=29"></script>
+<script src="js/inkgl.js?v=29"></script>
+<script src="js/jhui.js?v=29"></script>
+<script src="js/scrollart.js?v=29"></script>
+<script src="js/game.js?v=29"></script>
 </body>
 </html>

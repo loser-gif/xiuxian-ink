@@ -205,6 +205,7 @@ function auction(s) {
     const cap = Math.min(s.ls * 0.7, l.v * (0.8 + Math.random() * 0.5));
     let won = false;
     for (let k = 0; k < 12; k++) { if (Math.round(a.price * 1.1) > cap) break; const r = Jianghu.aucRaise(s, a, 0.1); if (r.won) { won = true; if (l.frag) STAT.frag++; break; } if (r.err) break; }
+    if (!won && a.leader === 'you') { const r = Jianghu.aucPass(s, a); if (r.won) { won = true; if (l.frag) STAT.frag++; } }
   }
   if (s.flags.heiGrudge === 1) { const ev = G.EVENTS.find(e => e.id === 'hei_ambush'); ev.text(s); const c = ev.choices(s)[Math.random() < 0.6 ? 0 : 1]; const res = Core.resolveChoice(s, c); fightCheck(s, 'hei_ambush', res); const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); }
   return sec;

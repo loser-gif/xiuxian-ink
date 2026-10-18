@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 10;
+  const SAVE_V = 11;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -749,10 +749,10 @@ const Core = (() => {
   /* ---------- 新卷 / 旧卷迁移 ---------- */
   function newState(name, r, legacy) {
     const s = { v: SAVE_V, name, lg: { id: r.lg.id, name: r.lg.name, mult: r.lg.mult, bt: r.lg.bt, sect: r.lg.sect }, lgEls: r.els,
-      wx: r.wx, xj: 50, luck: r.luck, ls: 10, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
+      wx: r.wx, xj: 50, luck: r.luck, ls: 20, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
-      seen: {}, recent: [], acts: 0, ending: null,
+      seen: {}, recent: [], acts: 0, ending: null, marks: [], played: 0,
       court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 },
       karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] } };
     const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
@@ -838,12 +838,19 @@ const Core = (() => {
       s.v = 10;
       s.flags = s.flags || {};
     }
+    if (s.v === 10) {  // v1.0 → v1.1：生平印记与游玩时长；修为倍率未改，不换算
+      s.v = 11;
+      s.marks = Array.isArray(s.marks) ? s.marks : [];
+      if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
     s.court = s.court || (typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 });
     s.karma = s.karma || (typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] });
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
+    s.marks = Array.isArray(s.marks) ? s.marks : [];
+    if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
     sync(s); return s;
   }
   function retire(s) { s.dead = true; s.ending = 'guiyin'; }

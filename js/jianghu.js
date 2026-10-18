@@ -124,6 +124,7 @@ const Jianghu = (() => {
     const L = REALMS[s.realm].lsScale, lots = [];
     const pool = [
       { k: pillOf(s), v: 160 * L, w: 3 },
+      { k: '聚气丹', v: (s.realm === 0 ? 20 : 36) * L, w: s.realm === 0 ? 4 : 0 },
       { k: '延寿果', v: 170 * L, w: 2 },
       { k: '天品残页', v: 260 * L, w: 2, frag: 1 },
       { k: '九叶灵芝', v: 120 * L, w: s.realm >= 2 ? 1.5 : 0 },
@@ -176,7 +177,14 @@ const Jianghu = (() => {
     if (a.beat.includes('wen')) { Core.npcAdd(s, 'wen', -4, tags); if (typeof karmaPlant === 'function') karmaPlant(s, 'wen_foe', 26); }
     return { won: true, tags };
   }
-  function aucPass(s, a) { const w = a.leader && a.leader !== 'you' ? a.leader : null; return { lost: true, winner: w, line: w ? BIDDERS[w].win : '无人应价，此物流拍。' }; }
+  function aucPass(s, a) {
+    if (a.leader === 'you') {
+      const won = aucWin(s, a);
+      return { won, line: '落槌。此物归你。' };
+    }
+    const w = a.leader || null;
+    return { lost: true, winner: w, line: w ? BIDDERS[w].win : '无人应价，此物流拍。' };
+  }
 
   /* ---------- 炼丹 ---------- */
   function learnRecipe(s, id, tags) {

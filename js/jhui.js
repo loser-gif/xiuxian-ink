@@ -321,14 +321,22 @@ function makeJHUI(G) {
       };
       const draw = () => {
         const p1 = Math.max(a.price + 1, Math.round(a.price * 1.1)), p3 = Math.max(a.price + 1, Math.round(a.price * 1.3));
-        btns.innerHTML = `<button class="ab" data-k=".1" ${p1 > G.S.ls ? 'disabled' : ''}><b>加一成</b><small>${fmtNum(p1)}</small></button>
+        const poor = p1 > G.S.ls;
+        const leading = a.leader === 'you';
+        btns.innerHTML = `<button class="ab" data-k=".1" ${poor ? 'disabled' : ''}><b>加一成</b><small>${fmtNum(p1)}</small></button>
           <button class="ab" data-k=".3" ${p3 > G.S.ls ? 'disabled' : ''}><b>加三成</b><small>${fmtNum(p3)}</small></button>
-          <button class="ab pass" data-k="0"><b>罢手</b><small>${a.leader === 'you' ? '' : '不争'}</small></button>`;
+          <button class="ab pass" data-k="0"><b>${leading ? '成交' : '罢手'}</b><small>${leading ? '落槌' : (poor ? '囊中不足' : '不争')}</small></button>`
+          + (poor && !leading ? '<p class="auc-hint">囊中羞涩，可罢手离场。不必硬争。</p>' : '');
         btns.onclick = async e => {
           const b = e.target.closest('.ab'); if (!b || b.disabled || btns.classList.contains('wait')) return;
           btns.classList.add('wait');
           const k = +b.dataset.k;
-          if (!k) { btns.classList.remove('wait'); btns.onclick = null; const r = J.aucPass(G.S, a); return finish(null, { who: r.winner, t: r.line }); }
+          if (!k) {
+            btns.classList.remove('wait'); btns.onclick = null;
+            const r = J.aucPass(G.S, a);
+            if (r.won) return finish(r.won, { who: 'you', t: r.line || '落槌。' });
+            return finish(null, { who: r.winner, t: r.line });
+          }
           const bid = Math.max(a.price + 1, Math.round(a.price * (1 + k)));
           if (typeof MoAudio !== 'undefined') MoAudio.play('gavel');
           addLine({ who: 'you', t: bid < 10000 ? `${cn(bid)}。` : `${fmtNum(bid)}灵石。` });

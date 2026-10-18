@@ -206,8 +206,36 @@ const LEGACY_KEY = 'moxian.legacy';
 // 收集规则层的旁白，待主条目落笔后再依次写出
 const buffer = () => { const B = []; return { emit: e => B.push(e), flush: () => { B.forEach(pushLog); B.length = 0; } }; };
 
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
-function load() { try { return Core.migrate(JSON.parse(localStorage.getItem(SAVE_KEY))); } catch (e) { console.warn(e); } return null; }
+let playTick = 0;
+function tickPlayed() {
+  if (!S || S.dead || S.ascended) { playTick = Date.now(); return; }
+  const now = Date.now();
+  if (playTick && document.visibilityState !== 'hidden') {
+    const d = Math.min(120000, Math.max(0, now - playTick));
+    S.played = (S.played | 0) + d;
+  }
+  playTick = now;
+}
+function save() {
+  if (!S) return;
+  tickPlayed();
+  if (typeof Slots !== 'undefined') Slots.writeActive(S);
+  else { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+}
+function load() {
+  try {
+    if (typeof Slots !== 'undefined') return Slots.readActive();
+    return Core.migrate(JSON.parse(localStorage.getItem(SAVE_KEY)));
+  } catch (e) { console.warn(e); }
+  return null;
+}
+function aliveSave() {
+  if (typeof Slots === 'undefined') return load();
+  const i = Slots.aliveIndex();
+  if (i < 0) return null;
+  Slots.setActive(i);
+  return Slots.read(i);
+}
 
 /* ================= 屏幕切换（卷轴） ================= */
 let curScreen = 'title';
@@ -235,10 +263,11 @@ function toast(msg) {
 
 /* ================= 卷首 ================= */
 function initTitle() {
-  const s = load();
+  const s = aliveSave();
   if (s && !s.dead && !s.ascended) {
     $('#btn-continue').hidden = false;
-    $('#continue-sub').textContent = `${s.name} · ${realmStr(s)}`;
+    const extra = (typeof Slots !== 'undefined') ? Slots.loadBox().slots.filter(x => x && x.sum && !x.sum.dead && !x.sum.ascended).length : 1;
+    $('#continue-sub').textContent = extra > 1 ? `${s.name} · ${realmStr(s)} · 另有卷` : `${s.name} · ${realmStr(s)}`;
   } else {
     const bc = $('#btn-continue'); if (bc) bc.hidden = true;
   }
@@ -286,8 +315,8 @@ function initTitle() {
   }
   $('#btn-new').onclick = async () => {
     FX.requestTilt();
-    if (s && !s.dead && !s.ascended && !(await inkConfirm('另开新卷，旧卷将被覆盖。', '另开', true))) return;
     window.__trialStart = false;
+    if (!(await pickSlotForNew(false))) return;
     resetCreate(); unrollTo('create');
   };
   const btnTrial = $('#btn-trial');
@@ -295,7 +324,7 @@ function initTitle() {
     btnTrial.hidden = false;
     btnTrial.onclick = async () => {
       FX.requestTilt();
-      if (s && !s.dead && !s.ascended && !(await inkConfirm('试炼将覆盖当前卷。短局二十载，不入轮回簿。', '试炼', true))) return;
+      if (!(await pickSlotForNew(true))) return;
       window.__trialStart = true;
       resetCreate(); unrollTo('create');
       toast('试炼境：金丹起步 · 二十载');
@@ -303,7 +332,22 @@ function initTitle() {
   }
   const btnAtlas = $('#btn-atlas');
   if (btnAtlas) btnAtlas.onclick = () => { FX.requestTilt(); openAtlasSheet(); };
-  $('#btn-continue').onclick = () => { FX.requestTilt(); S = load(); if (!S) return; enterMain(true); };
+  const btnSlots = $('#btn-slots');
+  if (btnSlots) btnSlots.onclick = () => { FX.requestTilt(); openSlots(); };
+  $('#btn-continue').onclick = () => { FX.requestTilt(); S = aliveSave(); if (!S) return; playTick = Date.now(); enterMain(true); };
+}
+
+async function pickSlotForNew(trial) {
+  if (typeof Slots === 'undefined') return true;
+  let i = Slots.firstEmpty();
+  if (i < 0) {
+    const ok = await inkConfirm(trial ? '三卷皆满。试炼将覆盖最近一卷。' : '三卷皆满。另开将覆盖最近一卷。', trial ? '试炼' : '覆盖', true);
+    if (!ok) return false;
+    i = Slots.newestIndex();
+  }
+  window.__slotTarget = i;
+  Slots.setActive(i);
+  return true;
 }
 
 /* ================= 墨笺问询：替代原生 confirm ================= */
@@ -407,6 +451,17 @@ function newGame(name, r, choice) {
   window.__trialStart = false;
   const rr = Object.assign({}, r, { org: orgId, free, trial });
   S = Core.newState(name, rr, legacy);
+  if (typeof Slots !== 'undefined') {
+    const slot = window.__slotTarget != null ? window.__slotTarget : (Slots.firstEmpty() >= 0 ? Slots.firstEmpty() : Slots.newestIndex());
+    window.__slotTarget = null;
+    Slots.setActive(slot);
+  }
+  playTick = Date.now();
+  if (!trial && typeof Samsara !== 'undefined') {
+    const meta = Samsara.loadMeta();
+    const firstLife = !legacy && !(meta.guide) && !(meta.lives > 0);
+    if (firstLife) S.flags.guide = 1;
+  }
   const lgDesc = (r.lg.id === 'wei' ? '' : r.els.join('')) + r.lg.name;
   const o = orgId && ORGS[orgId];
   let sectLine;
@@ -449,7 +504,11 @@ async function openBaishan(roll) {
     $('#baishan-title').textContent = '拜山帖';
     $('#baishan-lead').textContent = '';
     const opts = $('#baishan-opts'); opts.innerHTML = ''; opts.className = 'path-cer-opts';
-    const foot = $('#baishan-foot'); foot.hidden = true;
+    const foot = $('#baishan-foot'); foot.hidden = false;
+    const conf0 = $('#baishan-confirm');
+    conf0.disabled = true;
+    conf0.classList.add('dim');
+    const h0 = $('#baishan-hint'); if (h0) h0.textContent = '点选一家门户，再投帖';
     const lead = roll.lg.id === 'wei'
       ? '伪灵根不为大多数宗门所收。帖上只余散修盟与无门两途——选一条，活下去。'
       : '灵根已定。山海之间，数家门户张帖招徒。一帖既投，便是数年乃至数十年的路——慎择。';
@@ -466,14 +525,17 @@ async function openBaishan(roll) {
         opts.querySelectorAll('.path-opt').forEach(x => x.classList.remove('on'));
         btn.classList.add('on');
         foot.hidden = false;
-        const lab = $('#baishan-confirm').querySelector('.bb-text');
+        const conf = $('#baishan-confirm');
+        conf.disabled = false;
+        conf.classList.remove('dim');
+        const lab = conf.querySelector('.bb-text');
         if (lab) lab.textContent = b.id === 'free' ? '无门而去' : '投帖拜入';
         const h = $('#baishan-hint'); if (h) h.textContent = '确认后投帖 · Enter 亦可';
       };
       opts.appendChild(btn);
     });
     $('#baishan-confirm').onclick = async () => {
-      if (!selected) return;
+      if (!selected || $('#baishan-confirm').disabled) return;
       opts.classList.add('locked');
       if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
       pc.classList.add('leave'); await sleep(700);
@@ -494,18 +556,29 @@ function enterMain(fromSave) {
     scrollLog();
     if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
     if (fromSave) setTimeout(() => ensurePendingPath(), 900);
-    if (typeof Samsara !== 'undefined' && !fromSave) {
+    if (typeof Samsara !== 'undefined' && !fromSave && !(S.flags && S.flags.guide)) {
       const ds = Samsara.dailyStatus();
       if (!ds.claimed) setTimeout(() => {
+        if (!S || (S.flags && S.flags.guide)) return;
         const r = Samsara.claimDaily(S, pushLog);
         if (r && r.ok) { save(); render(); }
       }, 1200);
     }
+    if (S.flags && S.flags.guide) setTimeout(() => maybeGuide(), fromSave ? 600 : 1100);
   });
   render();
 }
+function noteMark(e) {
+  if (!S || !e || !e.title || e.guide) return;
+  S.marks = S.marks || [];
+  const last = S.marks[S.marks.length - 1];
+  if (last && last.t === e.title) return;
+  S.marks.push({ t: e.title, y: S.age | 0, c: e.cls || '' });
+  if (S.marks.length > 24) S.marks.splice(0, S.marks.length - 24);
+}
 function pushLog(e) {
   e.time = timeLabel();
+  noteMark(e);
   S.log.push(e); if (S.log.length > 60) S.log.splice(0, S.log.length - 60);
   if (curScreen === 'main' && !document.getElementById('scr-main').hidden) { renderEntry(e, true); scrollLog(); }
 }
@@ -602,13 +675,19 @@ function render() {
   $('#btn-break').hidden = !bottleneck() || S.dead || S.ascended;
   const st = $('#status-line'); st.classList.remove('zhu');
   let msg = '';
-  if (bottleneck()) { msg = '瓶颈已至 · 可破境'; st.classList.add('zhu'); }
+  if (bottleneck()) {
+    const pill = r.pill;
+    msg = (S.items[pill] > 0) ? '瓶颈已至 · 囊中有丹，可破境' : '瓶颈已至 · 可破境，坊市或有丹药';
+    st.classList.add('zhu');
+  }
   else if (S.inj > 0) { msg = `伤势未愈 · 修炼减半`; st.classList.add('zhu'); }
   else if (S.buff) msg = `灵脉加持 · 余${cn(S.buff.n)}次`;
   else if (lowLife) { msg = '寿元无多'; st.classList.add('zhu'); }
   else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
   else if (S.court && S.court.rank >= 6 && typeof canClaimThrone === 'function' && (canClaimThrone(S) || canRegent(S)) && !S.flags.jc_throne) { msg = '鼎鼐可问 · 往京城一抉'; st.classList.add('zhu'); }
   else if (S.karma && (S.karma.seeds || []).some(k => S.months >= k.due && !S.flags['karma_done_' + k.id])) { msg = '因果将至 · 游历或逢回响'; st.classList.add('zhu'); }
+  else if (S.flags && S.flags.guide && (S.acts | 0) < 1) msg = '先吐纳一息，或出山看看';
+  else if ((S.flags && S.flags.cultRun | 0) >= 6) { msg = '闭关已久 · 山外或有机缘'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
   else {
     const bits = [];
@@ -662,6 +741,7 @@ function act(kind) {
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
+    S.flags.cultRun = (S.flags.cultRun | 0) + 1;
     if (typeof MoAudio !== 'undefined') MoAudio.play('breath');
     lock(1500);
     const B = buffer(), o = Core.tuna(S, B.emit);
@@ -669,7 +749,7 @@ function act(kind) {
     // 灵气旋入丹田之后，才落笔记下这一季
     const done = async () => {
       if (!S) return;
-      pushLog({ text: o.text, tags: o.tags }); B.flush(); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd();
+      pushLog({ text: o.text, tags: o.tags }); B.flush(); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd(); maybeWanderNudge(); maybeGuide();
       const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
       clearTimeout(act.gt); act.gt = setTimeout(() => bx.classList.remove('gain'), 1500);
       await maybeFabaoCeremony();
@@ -678,18 +758,21 @@ function act(kind) {
     else { const sp = $('.scroll-paper').getBoundingClientRect(); FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, done); }
     return;
   } else if (kind === 'biguan') {
+    S.flags.cultRun = (S.flags.cultRun | 0) + 1;
     if (typeof MoAudio !== 'undefined') MoAudio.play('cave');
     lock(1100);
     FX.cave();
     const B = buffer(), o = Core.biguan(S, B.emit);
     pushLog({ text: o.text, tags: o.tags, cls: o.cls }); B.flush();
     Core.afterGain(S, o.ups, pushLog);
-    render(); save(); checkEnd();
+    render(); save(); checkEnd(); maybeWanderNudge(); maybeGuide();
     maybeFabaoCeremony();
     return;
   } else if (kind === 'youli' && typeof JHUI !== 'undefined') {
+    if (S.flags) S.flags.cultRun = 0;
     return JHUI.openMap();
   } else if (kind === 'youli') {
+    if (S.flags) S.flags.cultRun = 0;
     const ym = Math.max(1, Math.round(r.T * K.youliMonths / (Core.pathYouliMul ? Core.pathYouliMul(S) : 1)));
     Core.passTime(S, ym, pushLog);
     if (S.dead) { render(); save(); checkEnd(); return; }
@@ -708,6 +791,59 @@ function act(kind) {
     return;
   }
   render(); save(); checkEnd();
+}
+const GUIDES = [
+  { id: 'g1', min: 0, title: '晨课', seal: '息',
+    text: '入山第一夜，窗纸被风吹得轻轻响。执事只叮过一句：吐纳，是一季的呼吸；闭关，是一年的灯火。修为走到头时，卷上会浮出一枚朱红的「破境」。',
+    ok: '先去吐纳', okText: '你吸了一口气。丹田里有一点暖，像一粒还没点燃的火星。' },
+  { id: 'g2', min: 2, title: '旧囊', seal: '囊',
+    text: '你摸到袖中那只旧囊。丹药、残卷、兵器，都收在底下那枚「行囊」里——服下，佩上，或只是看看。有些东西不到时候，吃了也无益。',
+    ok: '记下了', okText: '你把囊口系紧。东西还在，路也还在。' },
+  { id: 'g3', min: 4, title: '腰间印', seal: '修',
+    text: '腰侧那枚黑印，刻着一个「修」字。点开它，便是功法、本命与日后的定型。主修一门，辅修至多两门。路还长，不必今夜都懂。',
+    ok: '知道了', okText: '你按了按那枚印。它凉，像一块刚落定的墨。' },
+];
+function guideEvent(g) {
+  return {
+    id: g.id, guide: true, title: g.title, seal: g.seal,
+    text: () => g.text,
+    choices: () => [
+      { label: g.ok, sub: '', act: () => ({ text: g.okText, fx: { xj: 1 } }) },
+      { label: '这些我已知', sub: '不再提示', skipAll: true, act: () => ({ text: '你拱了拱手。后头没说完的话，山风替你吹散了。', fx: {} }) },
+    ],
+  };
+}
+function uiBlocked() {
+  if (busy) return true;
+  if (document.querySelector('.ask')) return true;
+  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'modal', 'sheet', 'mj', 'map', 'scroll-view']) {
+    const el = document.getElementById(id);
+    if (el && !el.hidden) return true;
+  }
+  return false;
+}
+function finishGuide() {
+  if (S && S.flags) S.flags.guide = 0;
+  if (typeof Samsara === 'undefined') return;
+  const m = Samsara.loadMeta();
+  m.guide = 1;
+  Samsara.saveMeta(m);
+}
+function maybeGuide() {
+  if (!S || S.dead || S.ascended || !S.flags || !S.flags.guide || S.flags.trial) return;
+  if (uiBlocked()) return;
+  const g = GUIDES.find(x => !S.flags[x.id] && (S.acts | 0) >= x.min);
+  if (!g) return;
+  openEvent(guideEvent(g));
+}
+function maybeWanderNudge() {
+  if (!S || !S.flags || S.dead) return;
+  const n = S.flags.cultRun | 0;
+  const key = 'nudgeW' + S.realm;
+  if (n === 8 && !S.flags[key]) {
+    S.flags[key] = 1;
+    pushLog({ text: '你在洞里坐得太久，窗纸都黄了一圈。山门外似有人声，像在喊集市，又像只是风。', cls: 'sys' });
+  }
 }
 let endT = 0;
 function checkEnd() {
@@ -738,6 +874,8 @@ async function closeModal() {
   modal.hidden = true;
 }
 function openEvent(ev) {
+  if (!ev) return;
+  if (!ev.guide && typeof Samsara !== 'undefined' && Samsara.seeEncounter) Samsara.seeEncounter(ev.id);
   FX.vtext($('#ev-title'), ev.title);
   $('#ev-seal').textContent = ev.seal || pick(['缘', '遇', '奇', '机']);
   const text = ev.text(S);
@@ -775,9 +913,16 @@ function choose(ev, c, btn, evText) {
   setTimeout(() => { const m = $('.ev-main'); m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); }, 400);
   close.onclick = async () => {
     await closeModal();
-    pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: 'event', div: true });
+    if (S.flags) S.flags.cultRun = 0;
+    if (ev.guide) {
+      S.flags[ev.id] = 1;
+      if (c.skipAll) { GUIDES.forEach(g => { S.flags[g.id] = 1; }); finishGuide(); }
+      else if (GUIDES.every(g => S.flags[g.id])) finishGuide();
+    }
+    pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: 'event', div: true, guide: !!ev.guide });
     B.flush(); Core.afterGain(S, ups, pushLog);
     render(); save(); checkEnd();
+    if (!ev.guide) maybeGuide();
     if (res.after && !S.dead) res.after();
   };
   render(); save();
@@ -979,7 +1124,7 @@ async function openPathCeremony(kind, pendingAscend) {
   $('#path-cer-title').textContent = meta.name;
   $('#path-cer-lead').textContent = '';
   const opts = $('#path-cer-opts'); opts.innerHTML = ''; opts.className = 'path-cer-opts';
-  const foot = $('#path-cer-foot'); foot.hidden = true;
+  const foot = $('#path-cer-foot'); foot.hidden = false;
   const confBtn = $('#path-cer-confirm');
   const confLab = confBtn.querySelector('.bb-text') || confBtn;
   const hint = $('#path-cer-hint');
@@ -991,12 +1136,12 @@ async function openPathCeremony(kind, pendingAscend) {
   const syncFoot = () => {
     const n = selected.size;
     const ready = n >= pickN;
-    foot.hidden = n < 1;
+    foot.hidden = false;
     confBtn.disabled = !ready;
     confBtn.classList.toggle('dim', !ready);
     confLab.textContent = ready ? (meta.irrev ? '落定 · 难再更易' : '落定') : (max > 1 ? `再择（已选${cn(n)}）` : '落定');
     if (hint) {
-      if (!n) hint.textContent = '';
+      if (!n) hint.textContent = '点选一路，再落定';
       else if (!ready) hint.textContent = max > 1 ? `可多选至${cn(max)}道，至少${cn(pickN)}道` : '点下方落定';
       else hint.textContent = meta.irrev ? '落定后难再更易 · Enter 亦可' : '确认后落定 · Enter 亦可';
     }
@@ -1615,6 +1760,7 @@ function openMenu() {
   const trialNote = (S.flags && S.flags.trial) ? '<br><span class="menu-trial">试炼境 · 不入轮回簿</span>' : '';
   w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
     <button class="menu-item" data-m="resume">继续修行</button>
+    <button class="menu-item" data-m="slots">存档<small>三卷 · 导出 · 导入</small></button>
     <button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>
     <button class="menu-item" data-m="atlas">轮回图鉴<small>墓志 · 道基 · 法相 · 神器 · 结局</small></button>
     ${!ds.claimed ? '<button class="menu-item" data-m="daily">今日机缘<small>晨露一缕</small></button>' : ''}
@@ -1624,6 +1770,7 @@ function openMenu() {
   w.onclick = async e => {
     const btn = e.target.closest('[data-m]'); if (!btn) return;
     const m = btn.dataset.m;
+    if (m === 'slots') { await closeSheet(); openSlots(); return; }
     if (m === 'path') { await closeSheet(); openCult('path'); return; }
     if (m === 'atlas') { await closeSheet(); openAtlasSheet(); return; }
     if (m === 'daily') {
@@ -1638,11 +1785,138 @@ function openMenu() {
       Core.retire(S); pushLog({ title: '归隐', text: '你解下腰牌，放在洞府石案上，转身下山。山道上的石阶，你走了许多年，今日才觉出它这样长。', cls: 'event', div: true });
       render(); save(); setTimeout(() => showEnd('guiyin'), 900);
     }
-    if (m === 'reset' && await inkConfirm('焚去此卷，前尘尽忘。', '焚卷', true)) { localStorage.removeItem(SAVE_KEY); S = null; resetCreate(); unrollTo('create'); }
+    if (m === 'reset' && await inkConfirm('焚去此卷，前尘尽忘。', '焚卷', true)) {
+      if (typeof Slots !== 'undefined') Slots.clear(Slots.loadBox().active);
+      else localStorage.removeItem(SAVE_KEY);
+      S = null; resetCreate(); unrollTo('create');
+    }
   };
   openSheet('卷首', w);
 }
 
+
+/* ================= 三卷存档 ================= */
+const END_NAME = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣' };
+function openSlots() {
+  if (typeof Slots === 'undefined') { toast('存档未备'); return; }
+  const w = document.createElement('div');
+  w.className = 'slot-sheet';
+  let sel = Slots.loadBox().active | 0;
+  const paint = () => {
+    const box = Slots.loadBox();
+    if (sel < 0 || sel > 2) sel = box.active | 0;
+    const cards = box.slots.map((sl, i) => {
+      if (!sl || !sl.sum) return `<button type="button" class="slot-card empty${i === sel ? ' on' : ''}" data-i="${i}"><b>第${cn(i + 1)}卷</b><em>空卷</em><small>可存入</small></button>`;
+      const sm = sl.sum;
+      const st = sm.ascended ? '飞升' : sm.dead ? (END_NAME[sm.ending] || '已终') : '在修';
+      return `<button type="button" class="slot-card${i === sel ? ' on' : ''}" data-i="${i}"><b>${esc(sm.name || '无名')}</b><em>${esc(sm.realmName || '—')} · ${cn(sm.age || 0)}岁</em><small>${esc(Slots.fmtPlayed(sm.played))} · ${esc(Slots.fmtDate(sl.at))} · ${esc(st)}</small></button>`;
+    }).join('');
+    const io = w.querySelector('.slot-io');
+    const keep = io && !io.hidden ? io.innerHTML : '';
+    const keepOn = io && !io.hidden;
+    w.innerHTML = `<p class="slot-lead">三卷并存。读入即续，存入即覆。导出的码可抄去别处。</p>
+      <div class="slot-list">${cards}</div>
+      <div class="slot-actions">
+        <button type="button" class="menu-item" data-a="load">读入此卷</button>
+        ${S && !S.dead && !S.ascended ? '<button type="button" class="menu-item" data-a="save">存入此卷</button>' : ''}
+        <button type="button" class="menu-item" data-a="export">导出此卷</button>
+        <button type="button" class="menu-item" data-a="import">导入存档</button>
+        <button type="button" class="menu-item danger" data-a="wipe">焚去此卷</button>
+      </div>
+      <div class="slot-io"${keepOn ? '' : ' hidden'}>${keep}</div>`;
+  };
+  const slotData = i => {
+    const box = Slots.loadBox();
+    const sl = box.slots[i];
+    if (!sl) return null;
+    return Slots.migrateSlot(sl);
+  };
+  w.addEventListener('click', async e => {
+    const card = e.target.closest('.slot-card');
+    if (card) { sel = +card.dataset.i; paint(); return; }
+    const b = e.target.closest('[data-a]');
+    if (!b || b.closest('.slot-io')) return;
+    const a = b.dataset.a;
+    if (a === 'load') {
+      const data = slotData(sel);
+      if (!data) { toast('此卷是空的'); return; }
+      if (data.dead || data.ascended) { toast('此卷已终，可导出，不能续'); return; }
+      if (S && !S.dead && !(await inkConfirm('转去另一卷？当前卷已随手存好。', '读入'))) return;
+      save();
+      Slots.setActive(sel);
+      S = Slots.read(sel);
+      if (!S) { toast('此卷读不开'); return; }
+      playTick = Date.now();
+      await closeSheet();
+      $('#end').hidden = true;
+      enterMain(true);
+      return;
+    }
+    if (a === 'save') {
+      if (!S || S.dead || S.ascended) { toast('没有可存的卷'); return; }
+      const box = Slots.loadBox();
+      if (box.slots[sel] && sel !== box.active && !(await inkConfirm('覆上这一卷？', '存入', true))) return;
+      Slots.write(sel, S);
+      toast('已存入第' + cn(sel + 1) + '卷');
+      paint();
+      return;
+    }
+    if (a === 'export') {
+      const data = slotData(sel) || (S && sel === (Slots.loadBox().active | 0) ? S : null);
+      if (!data) { toast('此卷是空的'); return; }
+      let code = '';
+      try { code = Codec.encode(data); } catch (err) { toast('导出未成'); return; }
+      const io = document.createElement('div');
+      io.className = 'slot-io';
+      io.innerHTML = `<p>长按可复制。换一处设备，用「导入」贴回。</p><textarea class="slot-code" readonly></textarea><button type="button" class="menu-item" data-a="copy">复制</button>`;
+      io.querySelector('textarea').value = code;
+      const old = w.querySelector('.slot-io');
+      if (old) old.replaceWith(io); else w.appendChild(io);
+      io.querySelector('[data-a="copy"]').onclick = async () => {
+        const ta = io.querySelector('textarea');
+        ta.focus(); ta.select();
+        try { await navigator.clipboard.writeText(code); toast('已抄下'); }
+        catch (err) { toast('请长按文字复制'); }
+      };
+      return;
+    }
+    if (a === 'import') {
+      const io = document.createElement('div');
+      io.className = 'slot-io';
+      io.innerHTML = `<p>把存档码贴在下面。将写入第${cn(sel + 1)}卷。</p><textarea class="slot-code" placeholder="MX1.…"></textarea><button type="button" class="menu-item" data-a="doimp">验入</button>`;
+      const old = w.querySelector('.slot-io');
+      if (old) old.replaceWith(io); else w.appendChild(io);
+      io.querySelector('[data-a="doimp"]').onclick = async () => {
+        const text = io.querySelector('textarea').value;
+        const dec = Codec.decode(text);
+        if (dec.err) { toast(dec.err); return; }
+        let data = dec.data;
+        if (data && data.data && data.data.v && !data.v) data = data.data;
+        data = Core.migrate(data);
+        if (!data || !data.name) { toast('此码不是一卷可续的人生'); return; }
+        const box = Slots.loadBox();
+        if (box.slots[sel] && !(await inkConfirm(`写入第${cn(sel + 1)}卷，原卷将被盖住。`, '导入', true))) return;
+        Slots.write(sel, data);
+        toast('已导入 · ' + data.name);
+        paint();
+      };
+      return;
+    }
+    if (a === 'wipe') {
+      const box = Slots.loadBox();
+      if (!box.slots[sel]) { toast('此卷是空的'); return; }
+      if (!(await inkConfirm('焚去这一卷？', '焚卷', true))) return;
+      const wasActive = (box.active | 0) === sel;
+      Slots.clear(sel);
+      if (wasActive && S) { S = null; }
+      toast('已焚');
+      paint();
+      if (wasActive && document.body.dataset.screen === 'main') { await closeSheet(); initTitle(); unrollTo('title'); }
+    }
+  });
+  paint();
+  openSheet('存档', w);
+}
 
 /* ================= 轮回图鉴／墓志长卷 ================= */
 function openAtlasSheet() {
@@ -1652,21 +1926,41 @@ function openAtlasSheet() {
   const w = document.createElement('div'); w.className = 'atlas-sheet';
   const END_N = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣' };
   const sec = (title, html) => `<section class="atlas-sec"><h4>${title}</h4><div class="atlas-grid">${html}</div></section>`;
-  const cell = (name, on, sub) => `<div class="atlas-cell${on ? ' on' : ''}"><b>${name}</b>${sub ? '<em>' + sub + '</em>' : ''}${on ? '' : '<i>未识</i>'}</div>`;
-  let daojiH = '', faxiangH = '', shenqiH = '', endingH = '';
+  const cell = (name, on, sub) => `<div class="atlas-cell${on ? ' on' : ''}"><b>${esc(name)}</b>${sub ? '<em>' + esc(sub) + '</em>' : ''}${on ? '' : '<i>未识</i>'}</div>`;
+  const sil = i => {
+    const dx = ((i * 17) % 9) - 4, dy = ((i * 5) % 7) - 3, sc = (0.86 + (i % 4) * 0.06).toFixed(2);
+    return `<div class="atlas-cell sil" aria-label="未解之缘"><span class="sil-ink" style="transform:translate(${dx}px,${dy}px) scale(${sc})"></span><em>未解之缘</em></div>`;
+  };
+  let daojiH = '', faxiangH = '', shenqiH = '', endingH = '', encH = '';
   if (typeof DAOJI !== 'undefined') for (const id of Object.keys(DAOJI)) daojiH += cell(DAOJI[id].name, !!m.atlas.daoji[id], DAOJI[id].seal);
   if (typeof FAXIANG !== 'undefined') for (const id of Object.keys(FAXIANG)) faxiangH += cell(FAXIANG[id].name, !!m.atlas.faxiang[id], FAXIANG[id].seal);
   if (typeof SHENQI_ZHI !== 'undefined') for (const z of SHENQI_ZHI) shenqiH += cell(z.name, !!m.atlas.shenqi[z.name], z.seal || '器');
-  for (const k of Object.keys(END_N)) endingH += cell(END_N[k], !!m.atlas.ending[k], m.atlas.ending[k] ? ('×' + m.atlas.ending[k]) : '');
+  let endKnown = 0, silI = 0;
+  for (const k of Object.keys(END_N)) {
+    if (m.atlas.ending[k]) { endingH += cell(END_N[k], true, '×' + m.atlas.ending[k]); endKnown++; }
+    else endingH += sil(silI++);
+  }
+  const enc = Samsara.encounterCatalog();
+  m.atlas.encounter = m.atlas.encounter || {};
+  let encKnown = 0;
+  const knownEnc = [], unknownN = [];
+  enc.forEach(e => { if (m.atlas.encounter[e.id]) knownEnc.push(e); else unknownN.push(e); });
+  encKnown = knownEnc.length;
+  knownEnc.forEach(e => { encH += cell(e.title, true, e.seal || '缘'); });
+  unknownN.forEach(() => { encH += sil(silI++); });
+  const got = (st.daoji | 0) + (st.faxiang | 0) + (st.shenqi | 0) + endKnown + encKnown;
+  const max = (st.daojiMax | 0) + (st.faxiangMax | 0) + (st.shenqiMax | 0) + Object.keys(END_N).length + enc.length;
   const epis = (m.epitaphs || []).slice(0, 8).map((ep, i) => {
     const t = (ep.short || ep.text || '').slice(0, 64);
     return `<button type="button" class="atlas-epi" data-i="${i}"><b>${esc(ep.name || '无名')} · ${esc(END_N[ep.ending] || ep.ending || '')}</b><span>${cn(ep.age)}岁 · ${esc(t)}</span></button>`;
   }).join('') || '<p class="atlas-empty">尚无墓志。了结一世后，长卷自会落下。</p>';
-  w.innerHTML = `<div class="atlas-head">轮回 ${cn(st.lives)} 世　最高 ${cn(st.best.age || 0)} 岁 · 境 ${cn(st.best.realm || 0)}　飞升 ${cn(st.best.ascend || 0)}</div>
+  w.innerHTML = `<div class="atlas-head">已录 ${cn(got)} / ${cn(max)}　·　轮回 ${cn(st.lives)} 世　最高 ${cn(st.best.age || 0)} 岁</div>
+    <p class="atlas-count">终局 ${cn(endKnown)}/${cn(Object.keys(END_N).length)}　奇遇 ${cn(encKnown)}/${cn(enc.length)}　道基 ${cn(st.daoji)}/${cn(st.daojiMax)}　法相 ${cn(st.faxiang)}/${cn(st.faxiangMax)}　神器 ${cn(st.shenqi)}/${cn(st.shenqiMax)}</p>
     ${sec('道基 ' + cn(st.daoji) + '/' + cn(st.daojiMax), daojiH || '<p class="atlas-empty">—</p>')}
     ${sec('法相 ' + cn(st.faxiang) + '/' + cn(st.faxiangMax), faxiangH || '<p class="atlas-empty">—</p>')}
     ${sec('神器 ' + cn(st.shenqi) + '/' + cn(st.shenqiMax), shenqiH || '<p class="atlas-empty">—</p>')}
-    ${sec('结局', endingH)}
+    ${sec('终局 ' + cn(endKnown) + '/' + cn(Object.keys(END_N).length), endingH)}
+    ${sec('奇遇 ' + cn(encKnown) + '/' + cn(enc.length), encH || '<p class="atlas-empty">—</p>')}
     <section class="atlas-sec"><h4>墓志长卷</h4><div class="atlas-epis">${epis}</div>
       <pre class="atlas-long" id="atlas-long-view" hidden></pre></section>`;
   w.onclick = e => {
@@ -1747,14 +2041,59 @@ function showEnd(kind) {
     : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '');
   $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
   save();
-  $('#btn-reborn').onclick = () => {
-    localStorage.removeItem(SAVE_KEY);
+  $('#btn-reborn').onclick = async () => {
+    const kept = typeof Slots !== 'undefined' && Slots.firstEmpty() >= 0;
     e.hidden = true; S = null;
     window.__trialStart = false;
+    if (kept) toast('前卷留在存档里');
+    else if (typeof Slots !== 'undefined') window.__slotTarget = Slots.newestIndex();
     resetCreate(); initTitle(); unrollTo('create');
   };
   const btnAtlasEnd = $('#btn-end-atlas');
   if (btnAtlasEnd) btnAtlasEnd.onclick = () => openAtlasSheet();
+  const btnScroll = $('#btn-scroll');
+  if (btnScroll) btnScroll.onclick = () => saveScroll(kind, T[0]);
+}
+
+const END_SEAL = { ascend: '升', zuohua: '化', rumo: '魔', guiyin: '隐', bingjie: '解', yunluo: '殒', renhuang: '皇', quancheng: '摄' };
+async function saveScroll(kind, title) {
+  if (!S || typeof ScrollArt === 'undefined') { toast('绘卷未备'); return; }
+  const view = $('#scroll-view');
+  const img = $('#scroll-img');
+  if (!view || !img) return;
+  toast('正在落墨…');
+  let canvas;
+  try { canvas = await ScrollArt.render(S, kind, title); }
+  catch (err) { console.warn(err); toast('绘卷未成'); return; }
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  if (!blob) { toast('绘卷未成'); return; }
+  const url = URL.createObjectURL(blob);
+  if (img._url) URL.revokeObjectURL(img._url);
+  img._url = url;
+  img.src = url;
+  img.alt = (S.name || '无名') + ' · ' + (title || '终卷');
+  view.hidden = false;
+  requestAnimationFrame(() => view.classList.add('open'));
+  const file = new File([blob], '墨仙录.png', { type: 'image/png' });
+  const shareBtn = $('#scroll-share');
+  const can = navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }));
+  if (shareBtn) {
+    shareBtn.querySelector('.bb-text').textContent = can ? '分享' : '打开图片';
+    shareBtn.onclick = async () => {
+      if (can) {
+        try { await navigator.share({ files: [file], title: '墨仙录', text: (S.name || '') + ' · ' + (title || '') }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      const w = window.open(url, '_blank');
+      if (!w) toast('长按图片，即可保存');
+    };
+  }
+}
+function closeScrollView() {
+  const view = $('#scroll-view');
+  if (!view) return;
+  view.classList.remove('open');
+  setTimeout(() => { view.hidden = true; }, 320);
 }
 
 /* ================= 江湖界面 ================= */
@@ -1794,7 +2133,7 @@ const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
 function topLayer() {
   const ask = document.querySelector('.ask'); if (ask) return ask;
-  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
+  for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
   return null;
 }
 addEventListener('keydown', e => {
@@ -1805,6 +2144,7 @@ addEventListener('keydown', e => {
   if (k === 'Escape') {
     if (!L) return;
     if (L.classList.contains('ask')) return click(L.querySelector('.ask-no'));
+    if (L.id === 'scroll-view') { e.preventDefault(); return closeScrollView(); }
     if (L.id === 'sheet') { e.preventDefault(); return closeSheet(); }
     if (L.id === 'map') return click($('#map-close'));
     if (L.id === 'dan') return click($('#dan-close'));
@@ -1857,13 +2197,64 @@ addEventListener('keydown', e => {
 });
 setScreen('title');
 initTitle(); initCreate();
+if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) document.documentElement.dataset.standalone = '1';
+const scrollClose = $('#scroll-close');
+if (scrollClose) scrollClose.onclick = () => closeScrollView();
+const scrollShade = document.querySelector('#scroll-view .scroll-shade');
+if (scrollShade) scrollShade.onclick = () => closeScrollView();
+
+function splashWait() {
+  const el = document.getElementById('splash');
+  if (!el) return Promise.resolve();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.hidden = false;
+  if (reduce) {
+    el.classList.add('skip');
+    return sleep(160).then(() => el.classList.add('gone'));
+  }
+  requestAnimationFrame(() => el.classList.add('play'));
+  return sleep(1280).then(() => { el.classList.add('gone'); return sleep(380); });
+}
+function mountSW() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol === 'file:') return;
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('./sw.js?v=29').then(reg => {
+    if (!had) return;
+    const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
+    if (reg.waiting) ask();
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      if (!nw) return;
+      nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) ask(); });
+    });
+  }).catch(() => {});
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!had || reloading) return;
+    reloading = true;
+    location.reload();
+  });
+  const btn = document.getElementById('sw-refresh-btn');
+  if (btn) btn.onclick = () => {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      const w = reg && reg.waiting;
+      if (w) w.postMessage({ type: 'SKIP_WAITING' });
+      else location.reload();
+    });
+  };
+}
+mountSW();
+
 // 视觉素材与字体都就绪后再开卷，避免字体替换造成的半截状态
 Promise.all([
   initVisuals(),
   Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
-]).catch(() => {}).then(() => {
+]).catch(() => {}).then(() => splashWait()).then(() => {
+  const sp = document.getElementById('splash');
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
+  if (sp) setTimeout(() => { sp.hidden = true; }, 700);
 });
 
 /* 日志滚动时短暂显示墨条 */
@@ -1875,5 +2266,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null };
 })();

@@ -9,7 +9,8 @@ const Samsara = (() => {
     return {
       v: META_V, lives: 0,
       epitaphs: [],
-      atlas: { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {} },
+      atlas: { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {}, encounter: {} },
+      guide: 0,
       daily: { day: '', claimed: false },
       best: { age: 0, realm: 0, ascend: 0 },
     };
@@ -19,8 +20,9 @@ const Samsara = (() => {
     try {
       const m = JSON.parse(localStorage.getItem(META_KEY) || 'null');
       if (!m || typeof m !== 'object') return emptyMeta();
-      m.atlas = m.atlas || { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {} };
-      for (const k of ['daoji', 'faxiang', 'shenqi', 'ending', 'danwen']) m.atlas[k] = m.atlas[k] || {};
+      m.atlas = m.atlas || { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {}, encounter: {} };
+      for (const k of ['daoji', 'faxiang', 'shenqi', 'ending', 'danwen', 'encounter']) m.atlas[k] = m.atlas[k] || {};
+      if (m.guide == null) m.guide = 0;
       m.epitaphs = Array.isArray(m.epitaphs) ? m.epitaphs : [];
       m.daily = m.daily || { day: '', claimed: false };
       m.best = m.best || { age: 0, realm: 0, ascend: 0 };
@@ -226,6 +228,7 @@ const Samsara = (() => {
       text: long, short: shortLine || '',
     });
     if (m.epitaphs.length > 24) m.epitaphs.length = 24;
+    m.guide = 1;
     if ((s.age | 0) > (m.best.age | 0)) m.best.age = s.age | 0;
     if ((s.realm | 0) > (m.best.realm | 0)) m.best.realm = s.realm | 0;
     if (ending === 'ascend') m.best.ascend = (m.best.ascend | 0) + 1;
@@ -288,6 +291,27 @@ const Samsara = (() => {
 
   function isTrial(s) { return !!(s && s.flags && s.flags.trial); }
 
+  function encounterCatalog() {
+    if (typeof EVENTS === 'undefined') return [];
+    const seen = {}, out = [];
+    for (const e of EVENTS) {
+      if (!e || !e.once || !e.title || !e.id || e.mission || seen[e.id]) continue;
+      seen[e.id] = 1;
+      out.push({ id: e.id, title: e.title, seal: e.seal || '缘' });
+    }
+    return out;
+  }
+
+  function seeEncounter(id) {
+    if (!id || String(id).indexOf('g') === 0 && String(id).length <= 2) return;
+    const cat = encounterCatalog();
+    if (!cat.some(e => e.id === id)) return;
+    const m = loadMeta();
+    if (m.atlas.encounter[id]) return;
+    m.atlas.encounter[id] = 1;
+    saveMeta(m);
+  }
+
   function atlasStats(m) {
     m = m || loadMeta();
     const a = m.atlas;
@@ -298,6 +322,9 @@ const Samsara = (() => {
       faxiang: count(a.faxiang), faxiangMax: typeof FAXIANG !== 'undefined' ? Object.keys(FAXIANG).length : 5,
       shenqi: count(a.shenqi), shenqiMax: typeof SHENQI_ZHI !== 'undefined' ? SHENQI_ZHI.length : 6,
       ending: count(a.ending),
+      endingMax: 8,
+      encounter: count(a.encounter),
+      encounterMax: encounterCatalog().length,
       epitaphs: (m.epitaphs || []).length,
       best: m.best,
     };
@@ -310,5 +337,6 @@ const Samsara = (() => {
     daojiAffinity, onJoinOrg, applyCourtMark, courtLegacyBoost,
     dailyStatus, claimDaily, todayKey,
     trialSeed, isTrial, atlasStats,
+    encounterCatalog, seeEncounter,
   };
 })();
