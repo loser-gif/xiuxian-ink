@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 7;
+  const SAVE_V = 8;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -93,11 +93,14 @@ const Core = (() => {
   }
   function gfLv(s, id = s.gf) { return id && s.gfs[id] ? s.gfs[id].lv : 0; }
   function gfSpeed(s, id = s.gf) {
-    if (!id) return K.noGf * gearSpd(s);
+    if (!id) return K.noGf * gearSpd(s) * courtSpd(s);
     const g = GONGFA[id];
     let spd = GF_GRADE_MUL[g.grade] * gfMatch(s, id) * (1 + K.layerBonus * (gfLv(s, id) - 1)) * (g.t.spd || 1);
     if (id === s.gf) spd *= gearSpd(s) * fabaoSpd(s) * auxSpd(s);
-    return spd;
+    return spd * courtSpd(s);
+  }
+  function courtSpd(s) {
+    return typeof courtFriction === 'function' ? courtFriction(s).spd : 1;
   }
   function gearSpd(s) {
     if (!(s.eq && s.eq.weapon && typeof GEAR !== 'undefined' && GEAR[s.eq.weapon] && GEAR[s.eq.weapon].t.spd)) return 1;
@@ -305,7 +308,8 @@ const Core = (() => {
     if (bottleneck(s) && !s.bnLogged) { s.bnLogged = true; emit({ text: TEXT.bottleneck.replace('{r}', REALMS[s.realm].name + (s.realm === 0 ? '九层' : '圆满')), cls: 'warn' }); }
   }
   function passTime(s, m, emit) {
-    s.months += m * gt(s, 'time', 1); sync(s);
+    const cfT = typeof courtFriction === 'function' ? courtFriction(s).time : 1;
+    s.months += m * gt(s, 'time', 1) * cfT; sync(s);
     const left = s.lifespan - s.age, span = s.lifespan - 16;
     const k = s.realm + ':' + s.lifeBonus;
     if (left <= span * 0.05 && !s.warned['95' + k] && left > 0) { s.warned['95' + k] = 1; emit && emit({ text: TEXT.old95, cls: 'warn' }); }
@@ -356,7 +360,8 @@ const Core = (() => {
   }
   function biguan(s, emit) {
     const r = REALMS[s.realm], mul = gainMul(s), tags = [];
-    const pXm = clamp(0.06 + (50 - s.xj) / 400, 0.02, 0.22) * gt(s, 'xinmo', 1);
+    const cfXm = typeof courtFriction === 'function' ? courtFriction(s).xinmo : 1;
+    const pXm = clamp(0.06 + (50 - s.xj) / 400, 0.02, 0.22) * gt(s, 'xinmo', 1) * cfXm;
     const pDw = clamp(0.08 + s.luck * 0.006 + (s.wx - 5) * 0.012 + gt(s, 'dunwu', 0), 0.03, 0.4);
     const roll = Math.random(); let text = pick(TEXT.biguan).replace(/\{d\}/g, cnDur(r.T * K.biguanMonths)), cls = '', ups = [];
     passTime(s, r.T * K.biguanMonths, emit);
@@ -631,7 +636,8 @@ const Core = (() => {
       wx: r.wx, xj: 50, luck: r.luck, ls: 10, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
-      seen: {}, recent: [], acts: 0, ending: null };
+      seen: {}, recent: [], acts: 0, ending: null,
+      court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 } };
     const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
     if (startGf && GONGFA[startGf]) { s.gf = startGf; s.gfs[startGf] = { lv: 1, xp: 0 }; }
     else if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
@@ -689,9 +695,14 @@ const Core = (() => {
       s.v = 7;
       if (s.sect && s.sect.org && !ORGS[s.sect.org]) s.sect.org = 'qm';
     }
+    if (s.v === 7) {   // v0.11 → v0.12：天下仕途
+      s.v = 8;
+      s.court = s.court || (typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 });
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
+    s.court = s.court || (typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 });
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
     sync(s); return s;
   }

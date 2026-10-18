@@ -2,8 +2,8 @@
 'use strict';
 const InkMap = (() => {
   const MW = 2600, MH = 560;           // 逻辑尺寸（CSS 像素）
-  const GY = { town: .74, peach: .76, sect: .70, market: .73, ridge: .69, cliff: .71, redvalley: .75, desert: .73, sea: .77, heaven: .64 };
-  const LY = { town: .30, peach: .30, sect: .10, market: .26, ridge: .16, cliff: .20, redvalley: .24, desert: .30, sea: .26, heaven: .06 };
+  const GY = { town: .74, peach: .76, sect: .70, market: .73, capital: .72, ridge: .69, cliff: .71, redvalley: .75, desert: .73, sea: .77, heaven: .64 };
+  const LY = { town: .30, peach: .30, sect: .10, market: .26, capital: .18, ridge: .16, cliff: .20, redvalley: .24, desert: .30, sea: .26, heaven: .06 };
   const INK = [38, 34, 30], BLUE = [62, 70, 76];
   let cache = null;                    // { url, farUrl } 本次会话内复用
   const pts = () => LOCS.map(l => ({ id: l.id, x: l.x, y: GY[l.paint], ly: LY[l.paint] }));
@@ -144,6 +144,23 @@ const InkMap = (() => {
         ripples(c, R, X - 170 * s, X + 170 * s, gy - 4 * s, 60, s, .32); ripples(c, R, X - 170 * s, X + 170 * s, gy + 34 * s, 50, s, .26);
         for (let k = 0; k < 5; k++) { const x = X + (k - 2) * 60 * s + (R() - .5) * 20 * s, y = gy + (R() - .3) * 30 * s, w = (14 + R() * 18) * s; c.fillStyle = 'rgba(250,247,238,.85)'; c.strokeStyle = rgba(BLUE, .55); c.lineWidth = .9 * s; c.beginPath(); c.moveTo(x - w, y); c.lineTo(x - w * .4, y - w * .3); c.lineTo(x + w * .6, y - w * .25); c.lineTo(x + w, y + 1 * s); c.closePath(); c.fill(); c.stroke(); }
         c.fillStyle = 'rgba(214,170,90,.7)'; c.beginPath(); c.arc(X - 36 * s, gy - 30 * s, 3 * s, 0, 7); c.fill(); wash(c, X - 36 * s, gy - 30 * s, 22 * s, 22 * s, [214, 170, 90], .25);
+        break;
+      case 'capital':
+        seg({ seed: 47, alpha: .48, base: .72, amp: .2, peaks: 3, width: .15, sharp: 1.5 });
+        // 宫墙
+        c.strokeStyle = rgba(INK, .55); c.lineWidth = 1.4 * s;
+        c.strokeRect(X - 110 * s, gy - 52 * s, 220 * s, 52 * s);
+        // 正殿三重檐
+        pagoda(c, R, X, gy - 8 * s, 36 * s, 3, s);
+        for (let k = 0; k < 6; k++) roof(c, R, X + (k - 2.5) * 32 * s, gy - (k % 2) * 4 * s, (18 + R() * 6) * s, s, .75);
+        // 阙门双柱
+        for (const dx of [-70, 70]) {
+          stroke(c, R, X + dx * s, gy, X + dx * s, gy - 48 * s, 2 * s, INK, .75);
+          c.fillStyle = 'rgba(179,48,42,.7)'; c.beginPath();
+          c.moveTo(X + dx * s - 8 * s, gy - 48 * s); c.lineTo(X + dx * s + 8 * s, gy - 48 * s);
+          c.lineTo(X + dx * s, gy - 62 * s); c.fill();
+        }
+        wash(c, X, gy - 70 * s, 160 * s, 40 * s, [214, 170, 90], .1);
         break;
       case 'heaven':
         for (let k = 0; k < 22; k++) { const t = k / 21, x = X - 120 * s + t * 150 * s, y = gy - t * MH * s * .5; stroke(c, R, x - 8 * s, y, x + 8 * s, y, 1.2 * s, INK, .62 - t * .4); }
