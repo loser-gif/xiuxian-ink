@@ -23,7 +23,7 @@ const FX = (() => {
   /* ---------- 视差：陀螺仪 / 触摸拖动 / 鼠标 ---------- */
   const PX = { tx: 0, ty: 0, x: 0, y: 0, running: false, layers: [], gyro: false, base: null };
   function initParallax() {
-    const spec = [['.m1', .16], ['.mist1', .26], ['.m2', .36], ['.mist2', .52], ['.m3', .62], ['.mist3', .8], ['.m4', 1], ['.sun', .08], ['.birds', .12]];
+    const spec = [['.m1', .16], ['.mist1', .26], ['.m2', .36], ['.mist2', .52], ['.m3', .62], ['.mist3', .8], ['.m4', 1], ['.sun', .08], ['.cranes', .14], ['.atmo-far', .44], ['.atmo-near', .7], ['.lake', .78], ['.pine', 1.45]];
     PX.layers = spec.map(([s, d]) => ({ el: $('#scenery ' + s), d })).filter(l => l.el);
     // 触摸拖动：手指相对按下点的位移，松手后缓缓回中
     let sx = 0, sy = 0, touching = false;

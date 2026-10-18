@@ -33,7 +33,9 @@ function drawMountains(force) {
   if (!force && Math.abs(w - lastW) < 2) return;
   lastW = w;
   $$('.mtn').forEach((cv, i) => Ink.mountainLayer(cv, MTN[i]));
+  if (wallpaperOn) Wallpaper.rebuild();
 }
+let wallpaperOn = false;
 async function initVisuals() {
   root.style.setProperty('--brush-img', brushBtnImg(5, '#1b1814', 0.95));
   root.style.setProperty('--brush-img-light', brushBtnImg(12, '#1b1814', 0.14));
@@ -58,6 +60,7 @@ async function initVisuals() {
   root.style.setProperty('--blot', `url(${b1})`); root.style.setProperty('--blot2', `url(${b2})`);
   root.style.setProperty('--blot3', `url(${b3})`); root.style.setProperty('--blot4', `url(${b4})`);
   root.style.setProperty('--blot-stone', `url(${stone})`); root.style.setProperty('--blot-big', `url(${big})`);
+  try { Wallpaper.init(); wallpaperOn = true; } catch (e) { console.warn(e); }
 }
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => drawMountains(false), 250); });
@@ -247,6 +250,7 @@ function enterMain(fromSave) {
   const logs = S.log.slice(-30);
   unrollTo('main').then(() => {
     // 先铺陈旧事，最后三条以墨晕写出
+    render();
     logs.forEach((e, i) => renderEntry(e, fromSave ? i >= logs.length - 2 : true));
     scrollLog();
   });
@@ -280,6 +284,12 @@ function renderEntry(e, animate) {
 }
 function scrollLog() { const l = $('#log'); requestAnimationFrame(() => l.scrollTop = l.scrollHeight); }
 
+// 单行自适应：放不下就逐级缩小字号，绝不折行
+function fitLine(el, max, min) {
+  if (!el || !el.clientWidth) return;
+  let f = max; el.style.fontSize = f + 'px'; el.style.letterSpacing = '';
+  while (el.scrollWidth > el.clientWidth + 0.5 && f > min) { f -= 0.5; el.style.fontSize = f + 'px'; el.style.letterSpacing = '0.02em'; }
+}
 const prev = {};
 function setText(sel, v) {
   const el = $(sel); if (!el) return; v = String(v);
@@ -293,7 +303,7 @@ function render() {
   if (!S) return; sync();
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
-  setText('#h-name', S.name); setText('#h-sub', `${S.lg.sect} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
+  setText('#h-name', S.name); setText('#h-sub', `${S.lg.sect} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`); fitLine($('#h-sub'), 11.5, 9);
   const rq = req(); if (S.xw > rq && isLast()) S.xw = rq; const p = clamp(S.xw / rq, 0, 1);
   const fill = $('#xw-fill'); fill.parentElement.style.setProperty('--p', (p * 100).toFixed(1) + '%');
   fill.classList.toggle('full', bottleneck());
@@ -418,9 +428,14 @@ function act(kind) {
     S.recent = [...recent, ev.id].slice(-5);
     render(); save();
     busy = true; $$('.act').forEach(b => b.classList.add('busy'));
-    FX.inkPath($('.scroll-paper').getBoundingClientRect()).then(() => {
+    // 先把卷上的字推上去，空出卷底的远山，山路只画在空白处
+    const log = $('#log'), paperR = $('.scroll-paper').getBoundingClientRect();
+    const spacer = document.createElement('div'); spacer.className = 'log-spacer'; spacer.style.height = Math.round(paperR.height * 0.44) + 'px';
+    log.appendChild(spacer); log.scrollTo({ top: log.scrollHeight, behavior: FX.reduced() ? 'auto' : 'smooth' });
+    sleep(FX.reduced() ? 0 : 520).then(() => FX.inkPath(paperR)).then(() => {
       busy = false; $$('.act').forEach(b => b.classList.remove('busy'));
       openEvent(ev);
+      setTimeout(() => spacer.remove(), 900);
     });
     return;
   }

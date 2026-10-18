@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=2">
-<link rel="stylesheet" href="css/style.css?v=2">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=3" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=3" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -38,15 +38,23 @@
 <div id="paper" aria-hidden="true"></div>
 <div id="sky" aria-hidden="true"></div>
 <div id="scenery" aria-hidden="true">
-  <div class="sun"></div>
-  <div class="birds"><svg viewBox="0 0 100 40"><g fill="none" stroke="#2a2621" stroke-width="1.6" stroke-linecap="round"><path class="w" d="M2 14 Q8 6 14 13 Q20 6 27 12"/><path class="w" d="M40 4 Q45 -1 50 4 Q55 -1 61 3" opacity=".8"/><path class="w" d="M66 24 Q70 20 74 24 Q78 20 83 23" opacity=".6"/></g></svg></div>
+ <div class="cam">
+  <div class="sun"><i class="sun-halo"></i><i class="sun-dusk"></i></div>
+  <div class="cranes"><div class="crane c1"><svg viewBox="0 0 120 60"><g class="cr-body"><path d="M44 31 Q60 25 76 29 Q66 36 48 35 Z" fill="#f6f0e2" stroke="#2a2621" stroke-width="1.2"/><path d="M74 29 Q90 26 103 22" fill="none" stroke="#2a2621" stroke-width="2.1" stroke-linecap="round"/><circle cx="104.5" cy="21.6" r="2.4" fill="#2a2621"/><circle cx="104" cy="20" r="1.3" fill="#b3302a"/><path d="M106.5 21.8 L116 23" stroke="#5a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M46 33 L16 37 M46 34 L17 39.5" stroke="#2a2621" stroke-width="1.1" stroke-linecap="round"/><path d="M42 31 Q36 33 40 36 Q44 35 46 33Z" fill="#2a2621"/></g><g class="cr-wing"><path d="M54 29 Q48 12 34 1 Q46 4 58 10 Q66 4 80 2 Q70 14 66 28 Z" fill="#f3ecdd" stroke="#2a2621" stroke-width="1.1" stroke-linejoin="round"/><path d="M34 1 Q46 4 52 9 L50 12 Q42 6 34 1Z M80 2 Q72 6 68 10 L69 13 Q74 7 80 2Z" fill="#2a2621"/></g></svg></div><div class="crane c2"><svg viewBox="0 0 120 60"><g class="cr-body"><path d="M44 31 Q60 25 76 29 Q66 36 48 35 Z" fill="#f6f0e2" stroke="#2a2621" stroke-width="1.2"/><path d="M74 29 Q90 26 103 22" fill="none" stroke="#2a2621" stroke-width="2.1" stroke-linecap="round"/><circle cx="104.5" cy="21.6" r="2.4" fill="#2a2621"/><circle cx="104" cy="20" r="1.3" fill="#b3302a"/><path d="M106.5 21.8 L116 23" stroke="#5a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M46 33 L16 37 M46 34 L17 39.5" stroke="#2a2621" stroke-width="1.1" stroke-linecap="round"/><path d="M42 31 Q36 33 40 36 Q44 35 46 33Z" fill="#2a2621"/></g><g class="cr-wing"><path d="M54 29 Q48 12 34 1 Q46 4 58 10 Q66 4 80 2 Q70 14 66 28 Z" fill="#f3ecdd" stroke="#2a2621" stroke-width="1.1" stroke-linejoin="round"/><path d="M34 1 Q46 4 52 9 L50 12 Q42 6 34 1Z M80 2 Q72 6 68 10 L69 13 Q74 7 80 2Z" fill="#2a2621"/></g></svg></div></div>
   <canvas class="mtn m1"></canvas>
   <div class="mist mist1"></div>
   <canvas class="mtn m2"></canvas>
+  <canvas class="atmo atmo-far"></canvas>
   <div class="mist mist2"></div>
   <canvas class="mtn m3"></canvas>
+  <canvas class="atmo atmo-near"></canvas>
+  <div class="lake"><canvas class="lake-refl"></canvas><div class="lake-shimmer"></div>
+    <div class="boat-track"><div class="boat"><svg viewBox="0 0 120 70"><g class="bt-up"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b" opacity=".85"/><path d="M88 37 L90 25" stroke="#1f1c18" stroke-width="2.2" stroke-linecap="round"/><path d="M82 25 Q90 18 98 25 Z" fill="#1f1c18"/><path d="M95 33 L58 6" stroke="#2a2621" stroke-width="1" stroke-linecap="round"/></g><g class="bt-refl" transform="translate(0 94) scale(1 -1)" opacity=".16"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b"/><path d="M82 25 Q90 18 98 25 Z M88 37 L90 25" fill="#1f1c18" stroke="#1f1c18" stroke-width="2"/></g></svg><i class="wake w1"></i><i class="wake w2"></i></div></div></div>
   <div class="mist mist3"></div>
   <canvas class="mtn m4"></canvas>
+  <canvas class="pine"></canvas>
+ </div>
+ <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
 </div>
 <div id="vignette" aria-hidden="true"></div>
 <canvas id="weather" aria-hidden="true"></canvas>
@@ -220,9 +228,10 @@
 <div id="wash" aria-hidden="true"><div class="wash-ink"></div><div class="wash-paper"></div><div class="wash-full"></div></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=2"></script>
-<script src="js/ink.js?v=2"></script>
-<script src="js/fx.js?v=2"></script>
-<script src="js/game.js?v=2"></script>
+<script src="js/data.js?v=3"></script>
+<script src="js/ink.js?v=3"></script>
+<script src="js/fx.js?v=3"></script>
+<script src="js/wallpaper.js?v=3"></script>
+<script src="js/game.js?v=3"></script>
 </body>
 </html>
