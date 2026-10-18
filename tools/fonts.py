@@ -11,7 +11,7 @@ from fontTools.ttLib import TTFont
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.environ.get('FONTSRC', '/workspace/fontsrc')
-FILES = ['index.html', 'js/data.js', 'js/gongfa.js', 'js/story.js', 'js/sect.js', 'js/core.js', 'js/game.js', 'js/ink.js', 'js/fx.js', 'js/wallpaper.js', 'js/inkgl.js', 'css/style.css']
+FILES = ['index.html', 'js/data.js', 'js/gongfa.js', 'js/story.js', 'js/sect.js', 'js/core.js', 'js/world.js', 'js/jianghu.js', 'js/map.js', 'js/jhui.js', 'js/game.js', 'js/ink.js', 'js/fx.js', 'js/wallpaper.js', 'js/inkgl.js', 'css/style.css']
 PUNCT = set('０１２３４５６７８９，。！？；：“”‘’（）《》、…—·「」　')
 CAO_TEXT = '筑基金丹元婴化神飞升坐化成败渡劫入魔归隐兵解身殒攻守术奇胜负第一二三四五六七八九合晋'   # 草书大字只用于破境/终卷
 

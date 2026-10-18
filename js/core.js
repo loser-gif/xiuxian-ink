@@ -4,16 +4,16 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 3;
+  const SAVE_V = 4;
   // 调参入口（模拟器会改写这里）
   const K = {
-    tunaGain: 0.26, biguanGain: 1.0, tunaMonths: 3, biguanMonths: 12, youliMonths: 3,
+    tunaGain: 0.5, biguanGain: 1.7, tunaMonths: 3, biguanMonths: 12, youliMonths: 3,
     noGf: 0.75, mismatch: 0.85, yiElemental: 0.9, yiOwn: 1.4, wuxingPer: 0.07,
     match: { tian: 1.35, shuang: 1.25, san: 1.18, si: 1.1, wei: 1.05, yi: 1.0 },
     layerBonus: 0.04, xpNeed: lv => 3 + lv * 2,
-    btDeath: [0, 0, 0, 0.08, 0.24],
+    btDeath: [0, 0, 0.05, 0.14, 0.3],
     moLoss: [1, 2], moRiskXj: 30, moRisk: 0.008,
-    reqMul: [4.3, 5.0, 5.6, 6.7, 7.4], lifeMul: [1.3, 1.32, 1.32, 1.15, 1.2],
+    reqMul: [4.3, 5.0, 5.6, 6.7, 7.4], lifeMul: [1.0, 1.0, 1.0, 0.9, 0.95],
     rootLife: { si: 1.04, wei: 1.08 },   // 驳杂灵根，气血反而绵长些
     payYears: 2, dabiYears: 55, mYears: 3, mXw: 0.05, stipendPill: [0, 0, 0, 0.05, 0.08, 0.1, 0.12], freeQiyu: 0.12,
   };
@@ -119,6 +119,7 @@ const Core = (() => {
     else if (left <= span * 0.2 && !s.warned['80' + k] && left > 0) { s.warned['80' + k] = 1; emit && emit({ text: TEXT.old80, cls: 'warn' }); }
     if (s.age >= s.lifespan && !s.dead) { s.dead = true; s.ending = 'zuohua'; }
     if (!s.dead) sectTick(s, emit);
+    if (!s.dead && typeof Jianghu !== 'undefined') Jianghu.tick(s, emit);
   }
   function gainMul(s) {
     let m = 1;
@@ -188,12 +189,13 @@ const Core = (() => {
     if (e.once && s.seen[e.id]) return false;
     return !e.cond || e.cond(s);
   }
-  function pickEvent(s) {
-    const recent = s.recent || [];
-    let pool = EVENTS.filter(e => eventOk(s, e) && !recent.includes(e.id));
+  function pickEvent(s, filt, wmul) {
+    const recent = s.recent || [], ok = e => eventOk(s, e) && (!filt || filt(e));
+    let pool = EVENTS.filter(e => ok(e) && !recent.includes(e.id));
+    if (!pool.length) pool = EVENTS.filter(ok);
     if (!pool.length) pool = EVENTS.filter(e => eventOk(s, e));
     // 未见过的更易遇到；见得越多越稀；本境界专属的略受青睐
-    const wt = e => (e.wf ? e.wf(s) : e.w) * (s.seen[e.id] ? 1 / (1 + s.seen[e.id] * 1.2) : 1.8) * (e.rm ? 1.3 : 1);
+    const wt = e => (e.wf ? e.wf(s) : e.w) * (s.seen[e.id] ? 1 / (1 + s.seen[e.id] * 1.2) : 1.8) * (e.rm ? 1.3 : 1) * (wmul ? wmul(e) : 1);
     let tot = pool.reduce((a, e) => a + wt(e), 0), x = Math.random() * tot, ev = pool[0];
     for (const e of pool) { if ((x -= wt(e)) < 0) { ev = e; break; } }
     s.recent = [...recent, ev.id].slice(-8);
@@ -230,6 +232,7 @@ const Core = (() => {
     if (fx.gf) learn(s, fx.gf, tags, emit);
     if (fx.gfXp && s.gf) { practice(s, fx.gfXp, null, emit); tags.push({ t: `《${GONGFA[s.gf].name}》精进`, c: 'up' }); }
     if (fx.flag) s.flags[fx.flag] = 1;
+    if (typeof Jianghu !== 'undefined') Jianghu.fx(s, fx, tags);
     if (fx.time) passTime(s, fx.time, emit);
     if (fx.end && !s.dead) { s.dead = true; s.ending = fx.end; }
     checkXj(s, emit);
@@ -239,12 +242,13 @@ const Core = (() => {
   /* ---------- 破境 ---------- */
   function btChance(s, usePill) {
     return clamp(REALMS[s.realm].base + s.lg.bt + (s.xj - 50) / 250 + (usePill ? 0.2 : 0) + Math.min(0.12, s.fails * 0.04)
-      - (s.inj > 0 ? 0.15 : 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt, 0.05, 0.95);
+      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt, 0.05, 0.95);
   }
   // 返回 {ok, text, ending}；会直接改写 s；宗门赐法等追加日志走 emit
   function resolveBreak(s, usePill, emit) {
     const r = REALMS[s.realm], from = s.realm, p = btChance(s, usePill), ok = Math.random() < p;
     if (usePill) { s.items[r.pill]--; if (s.items[r.pill] <= 0) delete s.items[r.pill]; }
+    s.btBuff = 0;
     const btXj = gt(s, 'btXj', 0);
     s.acts++;
     if (ok) {
@@ -294,7 +298,12 @@ const Core = (() => {
       const v = Math.round(5 * LIFE_SCALE[s.realm] * 2); s.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); text = '朱果入口即化，一股勃勃生机自丹田升起，鬓边白发竟转青了几根。';
     } else if (k === '清心丹') {
       s.xj = clamp(s.xj + 15, 0, 100); s.warned.xjLow = 0; tags.push({ t: '心境 +15', c: 'up' }); text = '清心丹入口微苦，回甘如泉。心头那团乱麻，被一根根理顺了。';
-    } else return { err: '此物不可服用' };
+    } else {
+      const j = typeof Jianghu !== 'undefined' && Jianghu.useItem(s, k, tags);
+      if (!j) return { err: '此物不可服用' };
+      if (j.err) return j;
+      text = j.text; ups = j.ups || [];
+    }
     s.items[k]--; if (s.items[k] <= 0) delete s.items[k];
     sync(s);
     return { text, tags, ups };
@@ -309,6 +318,7 @@ const Core = (() => {
     if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
     if (legacy) { s.wx = clamp(s.wx + (legacy.wx || 0), 1, 10); s.flags.legacy = 1; }
     s.sect = initSect(s, r.lg.id === 'wei' ? null : 'qm', START_RANK[r.lg.id]); s.npc = initNpc(s);
+    if (typeof Jianghu !== 'undefined') Jianghu.init(s);
     sync(s); return s;
   }
   function migrate(s) {
@@ -330,6 +340,10 @@ const Core = (() => {
       s.xw = Math.round(s.xw * K.reqMul[s.realm] / V6_REQ[s.realm]);
       const oldLife = Math.round(REALMS[s.realm].life * V6_LIFE[s.realm] * (1 + gt(s, 'life', 0)) + (s.lifeBonus || 0));
       sync(s); if (oldLife > s.lifespan) s.lifeBonus = (s.lifeBonus || 0) + oldLife - s.lifespan;
+    }
+    if (s.v === 3) {   // v0.7 → v0.8：江湖字段；寿元公式调整，旧档寿元原样保留
+      const oldLife = s.lifespan; s.v = 4; if (typeof Jianghu !== 'undefined') Jianghu.init(s);
+      sync(s); if (oldLife > s.lifespan) { s.lifeBonus = (s.lifeBonus || 0) + oldLife - s.lifespan; sync(s); }
     }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};

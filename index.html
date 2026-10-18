@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=7" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=7" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=7">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=8" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=8" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -161,7 +161,7 @@
     <nav class="actions">
       <button class="act" data-act="tuna"><span class="act-ink"></span><span class="act-t">吐纳</span><small id="dur-tuna">一季</small></button>
       <button class="act" data-act="biguan"><span class="act-ink"></span><span class="act-t">闭关</span><small id="dur-biguan">一年</small></button>
-      <button class="act" data-act="youli"><span class="act-ink"></span><span class="act-t">游历</span><small>寻机缘</small></button>
+      <button class="act" data-act="youli"><span class="act-ink"></span><span class="act-t">游历</span><small id="youli-sub">寻机缘</small></button>
       <button class="act" data-act="bag"><span class="act-ink"></span><span class="act-t">行囊</span><small id="bag-count">空</small></button>
     </nav>
     <button class="break-seal" id="btn-break" hidden aria-label="破境">
@@ -239,6 +239,12 @@
   <button class="brush-btn small light duel-next" id="duel-next" hidden><span class="bb-ink"></span><span class="bb-text">再战</span></button>
 </div>
 
+<!-- 江湖：长卷 / 拍卖 / 丹炉 / 秘境 -->
+<div id="map" class="map" hidden></div>
+<div id="mj" class="mj" hidden></div>
+<div id="auc" class="auc" hidden></div>
+<div id="dan" class="dan" hidden></div>
+
 <!-- 晋升 -->
 <div id="rite" class="rite" hidden>
   <div class="rite-shade"></div>
@@ -268,15 +274,19 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=7"></script>
-<script src="js/gongfa.js?v=7"></script>
-<script src="js/story.js?v=7"></script>
-<script src="js/sect.js?v=7"></script>
-<script src="js/core.js?v=7"></script>
-<script src="js/ink.js?v=7"></script>
-<script src="js/fx.js?v=7"></script>
-<script src="js/wallpaper.js?v=7"></script>
-<script src="js/inkgl.js?v=7"></script>
-<script src="js/game.js?v=7"></script>
+<script src="js/data.js?v=8"></script>
+<script src="js/gongfa.js?v=8"></script>
+<script src="js/story.js?v=8"></script>
+<script src="js/sect.js?v=8"></script>
+<script src="js/world.js?v=8"></script>
+<script src="js/core.js?v=8"></script>
+<script src="js/jianghu.js?v=8"></script>
+<script src="js/ink.js?v=8"></script>
+<script src="js/map.js?v=8"></script>
+<script src="js/fx.js?v=8"></script>
+<script src="js/wallpaper.js?v=8"></script>
+<script src="js/inkgl.js?v=8"></script>
+<script src="js/jhui.js?v=8"></script>
+<script src="js/game.js?v=8"></script>
 </body>
 </html>

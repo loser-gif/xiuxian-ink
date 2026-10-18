@@ -205,10 +205,14 @@ const InkGL = (() => {
     host.__live = { host, cv, c: cv.getContext('2d'), seed: Math.random() * 10 + 1, surge: 0, surgeT: 0, ...v, w: 0, h: 0, rgb: hex(v.ink), drawn: false };
     B.list.push(host.__live);
   }
+  // 隐藏屏幕上的墨团：把画布缩成 1×1，释放后备存储；重新可见时 renderBlot 会按尺寸重建
+  function release() { for (const b of B.list) if (b.w > 1 && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; } }
   function scan() {
     if (!B.ok) return;
     document.querySelectorAll('.bb-ink:not(.live), .act-ink:not(.live)').forEach(register);
     B.list = B.list.filter(b => b.host.isConnected);
+    for (const b of B.list) if (!b.w && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; }
+    release();
     start();
   }
   function visible(b) {
@@ -236,6 +240,7 @@ const InkGL = (() => {
   function tick(now) {
     B.raf = 0;
     if (document.hidden) return;
+    release();
     const vis = B.list.filter(visible);
     if (!vis.length) return;                      // 无可见墨团：停下，等下一次 scan
     B.raf = requestAnimationFrame(tick);

@@ -261,6 +261,7 @@ function enterMain(fromSave) {
     render();
     logs.forEach((e, i) => renderEntry(e, fromSave ? i >= logs.length - 2 : true));
     scrollLog();
+    if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
   });
   render();
 }
@@ -342,6 +343,7 @@ function render() {
   setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm))); setText('#dur-biguan', cnDur(Math.round(r.T * K.biguanMonths * tm)));
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
   setText('#bag-count', cnt ? `${cn(cnt)}物` : '空');
+  if (typeof JHUI !== 'undefined') setText('#youli-sub', JHUI.youliSub());
   $('#btn-break').hidden = !bottleneck() || S.dead || S.ascended;
   const st = $('#status-line'); st.classList.remove('zhu');
   let msg = '';
@@ -381,6 +383,8 @@ function act(kind) {
     const B = buffer(), o = Core.biguan(S, B.emit);
     pushLog({ text: o.text, tags: o.tags, cls: o.cls }); B.flush();
     Core.afterGain(S, o.ups, pushLog);
+  } else if (kind === 'youli' && typeof JHUI !== 'undefined') {
+    return JHUI.openMap();
   } else if (kind === 'youli') {
     Core.passTime(S, r.T * K.youliMonths, pushLog);
     if (S.dead) { render(); save(); return checkEnd(); }
@@ -763,14 +767,14 @@ async function startDabi() {
   pushLog({ title: `${o.dabi} · ${DABI_PLACE[place]}`, text: res.text, tags: res.tags, cls: place >= 2 ? 'gold' : 'event', div: true });
   render(); save(); checkEnd();
 }
-function runDuel(t, r) {
+function runDuel(t, r, o = {}) {
   return new Promise(async resolve => {
     const opp = t.opps[r], d = Core.duelNew(S, opp); duelState = d;
     const el = $('#duel');
     el.classList.remove('over', 'won', 'lost', 'strike', 'clash-on', 'hit-me', 'hit-o');
-    $('#duel-rd').textContent = DABI_ROUND[r];
+    $('#duel-rd').textContent = o.rd || DABI_ROUND[r];
     $('#duel-oname').textContent = opp.name.replace(/^.* · /, '');
-    $('#duel-ostyle').textContent = (opp.npc ? NPCS[opp.npc].title : opp.name.split(' · ')[0] + '弟子') + ' · ' + STYLE_WORD[opp.style];
+    $('#duel-ostyle').textContent = (o.title || (opp.npc ? NPCS[opp.npc].title : opp.name.split(' · ')[0] + '弟子')) + ' · ' + STYLE_WORD[opp.style];
     $('#duel-ohp').innerHTML = hpPips(3); $('#duel-mhp').innerHTML = hpPips(3);
     $('#duel-round').textContent = ''; $('#duel-text').textContent = ''; $('#duel-tell').textContent = '';
     $('#duel-next').hidden = true; $('#duel-stamp').className = 'duel-stamp';
@@ -778,7 +782,7 @@ function runDuel(t, r) {
     const moves = $('#duel-moves');
     moves.innerHTML = DUEL_MOVES.map(m => `<button class="dmove" data-m="${m.id}"><span class="dm-ink"></span><b>${m.ch}</b><small>${m.hint}</small></button>`).join('');
     moves.classList.remove('on');
-    const intro = opp.npc ? DUEL_INTRO[opp.npc] : pick(DUEL_INTRO._).replace('对手', opp.name.replace(/^.* · /, ''));
+    const intro = o.intro || (opp.npc ? DUEL_INTRO[opp.npc] : pick(DUEL_INTRO._).replace('对手', opp.name.replace(/^.* · /, '')));
     await sleep(r === 0 ? 900 : 300);
     const di = inkWrite($('#duel-tell'), intro, { immediate: true, step: 22 });
     await sleep(Math.min(di, 1800) + 900);
@@ -802,7 +806,7 @@ function runDuel(t, r) {
           await sleep(500); $('#duel-stamp').classList.add('on');
           await sleep(900);
           const nx = $('#duel-next'); nx.hidden = false; nx.classList.remove('bleed-in'); void nx.offsetWidth; nx.classList.add('bleed-in');
-          nx.querySelector('.bb-text').textContent = d.over === 'win' && r < 2 ? '再战' : '下台';
+          nx.querySelector('.bb-text').textContent = o.last ? (d.over === 'win' ? '收剑' : '退走') : d.over === 'win' && r < 2 ? '再战' : '下台';
           nx.onclick = () => { nx.onclick = null; resolve(d.over === 'win'); };
         } else { await sleep(500); roundLoop(); }
       };
@@ -847,16 +851,18 @@ async function closeSheet() { sheet.classList.remove('open'); await sleep(500); 
 $('.sheet-shade').onclick = closeSheet;
 function openBag(tab = 'bag') {
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
-  wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button></div><div class="tab-body"></div>';
+  const hasDan = typeof JHUI !== 'undefined' && S.dan;
+  wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button>' + (hasDan ? '<i class="stab-dot"></i><button class="stab" data-t="dan">丹炉</button>' : '') + '</div><div class="tab-body"></div>';
   const body = wrap.querySelector('.tab-body');
+  const TT = { gf: '功法', bag: '行囊', dan: '丹炉' };
   const show = t => {
     wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-    $('#sheet-title').textContent = t === 'gf' ? '功法' : '行囊';
-    body.innerHTML = ''; body.appendChild(t === 'gf' ? gfPage() : bagPage());
+    $('#sheet-title').textContent = TT[t];
+    body.innerHTML = ''; body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : bagPage());
     body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
   };
   wrap.querySelector('.sheet-tabs').onclick = e => { const t = e.target.closest('.stab'); if (t) show(t.dataset.t); };
-  openSheet(tab === 'gf' ? '功法' : '行囊', wrap);
+  openSheet(TT[tab] || '行囊', wrap);
   show(tab);
 }
 function bagPage() {
@@ -985,6 +991,10 @@ function showEnd(kind) {
   $('#btn-reborn').onclick = () => { localStorage.removeItem(SAVE_KEY); e.hidden = true; S = null; resetCreate(); unrollTo('create'); };
 }
 
+/* ================= 江湖界面 ================= */
+const JHUI = typeof makeJHUI === 'function' ? makeJHUI({ get S() { return S; }, get busy() { return busy; }, set busy(v) { busy = v; },
+  $, sleep, pick, render, save, pushLog, openEvent, openSheet, closeSheet, toast, inkWrite, buffer, checkEnd, runDuel, realmStr, fmtNum, K, chanceWord }) : undefined;
+
 /* ================= 启动 ================= */
 $$('.act').forEach(b => b.addEventListener('click', () => {
   b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 500);
@@ -1004,5 +1014,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)) };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), JHUI };
 })();

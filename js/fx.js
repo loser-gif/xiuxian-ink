@@ -86,7 +86,9 @@ const FX = (() => {
   }
   function resizeWeather() {
     if (!W.cv) return; W.w = innerWidth; W.h = innerHeight;
-    W.cv.width = Math.round(W.w * DPR); W.cv.height = Math.round(W.h * DPR); W.c.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // 落花雨雪是小粒子，1.25 倍像素已足；全屏 2× 画布要 5MB，此处仅 2MB
+    const k = Math.min(DPR, 1.25); W.k = k;
+    W.cv.width = Math.round(W.w * k); W.cv.height = Math.round(W.h * k); W.c.setTransform(k, 0, 0, k, 0, 0);
   }
   function spawn(p, init) {
     const s = W.season;
@@ -115,7 +117,7 @@ const FX = (() => {
   function wTick(t) {
     if (document.hidden) { W.raf = 0; return; }
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
-    const c = W.c, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
+    const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 14 + Math.sin(time * 0.071) * 10;
     if (s === 1) { c.strokeStyle = 'rgba(52,62,70,.26)'; c.lineWidth = 1; c.beginPath(); }
     for (const p of W.parts) {
@@ -127,22 +129,22 @@ const FX = (() => {
         const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : 'petal'), sz = p.size;
         const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
         c.globalAlpha = (s === 3 ? 0.85 : 0.62) * (0.4 + p.z * 0.6);
-        c.setTransform(DPR * Math.cos(p.rot), DPR * Math.sin(p.rot), -DPR * Math.sin(p.rot) * fl, DPR * Math.cos(p.rot) * fl, p.x * DPR, p.y * DPR);
+        c.setTransform(D * Math.cos(p.rot), D * Math.sin(p.rot), -D * Math.sin(p.rot) * fl, D * Math.cos(p.rot) * fl, p.x * D, p.y * D);
         c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
       }
       if (p.y > W.h + 30 || p.x < -60 || p.x > W.w + 60) spawn(p, false);
     }
-    if (s === 1) c.stroke(); else { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.globalAlpha = 1; }
+    if (s === 1) c.stroke(); else { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
     // 高境界：几片金箔缓缓浮沉，翻转到正面时一闪
     for (const g of W.gold || []) {
       g.y -= g.vy * dt; g.x += (Math.sin(time * .3 + g.ph) * 6 + wind * .3) * dt;
       if (g.y < -20) { g.y = W.h + 20; g.x = rnd(0, W.w); }
       const f = Math.cos(time * g.spin + g.ph), gl = Math.pow(Math.max(0, f), 8);
-      c.setTransform(DPR, 0, 0, DPR, g.x * DPR, g.y * DPR); c.rotate(time * .2 + g.ph); c.scale(g.s, g.s * (.2 + .8 * Math.abs(f)));
+      c.setTransform(D, 0, 0, D, g.x * D, g.y * D); c.rotate(time * .2 + g.ph); c.scale(g.s, g.s * (.2 + .8 * Math.abs(f)));
       c.globalAlpha = .28 + .5 * gl; c.fillStyle = gl > .3 ? '#f6e3a8' : '#c49a4a';
       c.beginPath(); c.moveTo(-1, -.6); c.lineTo(.9, -.9); c.lineTo(.7, .8); c.lineTo(-.8, .7); c.closePath(); c.fill();
     }
-    if (W.gold && W.gold.length) { c.setTransform(DPR, 0, 0, DPR, 0, 0); c.globalAlpha = 1; }
+    if (W.gold && W.gold.length) { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
     W.raf = requestAnimationFrame(wTick);
   }
 

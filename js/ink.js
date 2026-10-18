@@ -91,7 +91,8 @@ const Ink = (() => {
 
   function mountainLayer(cv, o) {
     const W = o.W || cv.clientWidth, H = o.H || cv.clientHeight; if (!W || !H) return;
-    const dpr = o.W ? 1 : DPR;
+    // 水墨远山本就朦胧：屏幕上的山层最高 1.5 倍像素，省下近半显存（iOS 上 2× 时每层约 3MB）
+    const dpr = o.W ? 1 : Math.min(DPR, 1.5);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
     const R = mulberry(o.seed);
