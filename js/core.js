@@ -658,9 +658,33 @@ const Core = (() => {
   }
 
   /* ---------- 物品 ---------- */
-  function useItem(s, k) {
-    if (!(s.items[k] > 0)) return { err: '无此物' };
-    const tags = []; let text = '', ups = [];
+  /* 单次可连服上限：防一键刷穿；各丹另有情境上限（瓶颈／满心境等） */
+  const USE_HARD_CAP = 9;
+  function useBatchCap(s, k) {
+    const have = s.items[k] | 0;
+    if (have <= 0) return 0;
+    if (k === '聚气丹') {
+      if (bottleneck(s)) return 0;
+      return Math.min(5, have, USE_HARD_CAP);
+    }
+    if (k === '回春丹') return s.inj > 0 ? 1 : 0;
+    if (k === '清心丹') {
+      if (s.xj >= 100) return 0;
+      const need = Math.ceil((100 - s.xj) / 15);
+      return Math.min(3, have, need, USE_HARD_CAP);
+    }
+    if (k === '延寿果' || k === '延寿丹') return Math.min(5, have, USE_HARD_CAP);
+    if (k === '破障丹') {
+      if (bottleneck(s)) return (s.btBuff >= 0.08) ? 0 : 1;
+      return Math.min(3, have, USE_HARD_CAP);
+    }
+    // 其它可服物：默认至多 5
+    if (typeof PILLS !== 'undefined' && PILLS[k] && PILLS[k].use) return Math.min(5, have, USE_HARD_CAP);
+    if (typeof Jianghu !== 'undefined') return Math.min(5, have, USE_HARD_CAP);
+    return 0;
+  }
+  function useItemOnce(s, k, tags) {
+    let text = '', ups = [];
     if (k === '聚气丹') {
       if (bottleneck(s)) return { err: '瓶颈当前，丹药无益' };
       ups = addXw(s, unit(s) * 0.35, tags) || []; text = '丹药入腹，化作一股温润灵流，沿经脉缓缓散开。';
@@ -670,6 +694,7 @@ const Core = (() => {
     } else if (k === '延寿果') {
       const v = Math.round(5 * LIFE_SCALE[s.realm] * 2); s.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); text = '朱果入口即化，一股勃勃生机自丹田升起，鬓边白发竟转青了几根。';
     } else if (k === '清心丹') {
+      if (s.xj >= 100) return { err: '心境已满，留待日后' };
       s.xj = clamp(s.xj + 15, 0, 100); s.warned.xjLow = 0; tags.push({ t: '心境 +15', c: 'up' }); text = '清心丹入口微苦，回甘如泉。心头那团乱麻，被一根根理顺了。';
     } else {
       const j = typeof Jianghu !== 'undefined' && Jianghu.useItem(s, k, tags);
@@ -678,8 +703,47 @@ const Core = (() => {
       text = j.text; ups = j.ups || [];
     }
     s.items[k]--; if (s.items[k] <= 0) delete s.items[k];
-    sync(s);
     return { text, tags, ups };
+  }
+  function useItem(s, k, n) {
+    if (!(s.items[k] > 0)) return { err: '无此物' };
+    n = Math.max(1, (n | 0) || 1);
+    const cap = useBatchCap(s, k);
+    if (cap <= 0) {
+      if (k === '聚气丹' && bottleneck(s)) return { err: '瓶颈当前，丹药无益' };
+      if (k === '回春丹') return { err: '身无伤患，留待日后' };
+      if (k === '清心丹' && s.xj >= 100) return { err: '心境已满，留待日后' };
+      return { err: '此物暂不可服用' };
+    }
+    n = Math.min(n, cap, s.items[k] | 0);
+    const allTags = []; let lastText = '', allUps = []; let used = 0;
+    for (let i = 0; i < n; i++) {
+      if (!(s.items[k] > 0)) break;
+      // 情境中途变了（如聚气丹顶到瓶颈）
+      if (useBatchCap(s, k) <= 0) break;
+      const tags = [];
+      const r = useItemOnce(s, k, tags);
+      if (r.err) { if (!used) return r; break; }
+      used++;
+      lastText = r.text;
+      allTags.push(...tags);
+      if (r.ups) allUps.push(...r.ups);
+    }
+    if (!used) return { err: '未能服用' };
+    sync(s);
+    // 合并同名标签数量感
+    const merged = [];
+    const map = {};
+    for (const t of allTags) {
+      const key = t.t + '|' + (t.c || '');
+      if (!map[key]) { map[key] = { t: t.t, c: t.c, n: 0 }; merged.push(map[key]); }
+      map[key].n++;
+    }
+    const tagsOut = merged.map(x => x.n > 1 ? { t: x.t.replace(/\+(\d+)/, (_, n) => '+' + ((+n) * x.n)), c: x.c } : { t: x.t, c: x.c });
+    // 简单：若多颗，在文首标明
+    const text = used > 1 ? (`连服${typeof cn === 'function' ? cn(used) : used}枚。` + lastText) : lastText;
+    if (used > 1) tagsOut.unshift({ t: `服用 ×${used}`, c: 'gold' });
+    return { text, tags: tagsOut, ups: allUps, used };
   }
 
   /* ---------- 新卷 / 旧卷迁移 ---------- */
@@ -1115,7 +1179,7 @@ const Core = (() => {
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
-    btChance, resolveBreak, useItem, newState, migrate, retire, canRetire,
+    btChance, resolveBreak, useItem, useBatchCap, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct,
     org, rankName, caveMul, join, defect, addGx, npcAdd, npcWord, npcLine, npcHelp, canPromote, promote, sectTick,
     ensureMissions, missionInfo, missionEvent, missionAct, riskWord, libList, learnLib,

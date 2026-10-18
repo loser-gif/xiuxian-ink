@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=23" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=23" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=23">
-<link rel="stylesheet" href="css/style.css?v=23">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=24" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=24" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=24">
+<link rel="stylesheet" href="css/style.css?v=24">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -133,8 +133,11 @@
           <div class="who-name" id="h-name">无名</div>
           <div class="who-sub" id="h-sub">外门弟子 · 三灵根</div>
         </div>
-        <button class="menu-seal sect-seal" id="btn-sect" aria-label="宗门"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="44" fill="#1b1814"/><circle cx="50" cy="50" r="36" fill="none" stroke="#f3ead6" stroke-width="2.5" opacity=".7"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font" id="sect-seal-t">宗</text></g></svg></button>
-        <button class="menu-seal" id="btn-menu" aria-label="卷首"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font">卷</text></g></svg></button>
+        <div class="hud-seals">
+          <button class="menu-seal sect-seal" id="btn-sect" aria-label="宗门"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="44" fill="#1b1814"/><circle cx="50" cy="50" r="36" fill="none" stroke="#f3ead6" stroke-width="2.5" opacity=".7"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font" id="sect-seal-t">宗</text></g></svg></button>
+          <button class="menu-seal cult-seal" id="btn-cult" aria-label="修持"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#1b1814"/><rect x="14" y="14" width="72" height="72" rx="3" fill="none" stroke="#f3ead6" stroke-width="2.2" opacity=".75"/><text x="50" y="68" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font">修</text></g></svg></button>
+          <button class="menu-seal" id="btn-menu" aria-label="卷首"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font">卷</text></g></svg></button>
+        </div>
       </div>
       <div class="bars">
         <div class="bar bar-xw">
@@ -172,10 +175,10 @@
       <button class="act" data-act="tuna"><span class="act-ink"></span><span class="act-t">吐纳</span><small id="dur-tuna">一季</small></button>
       <button class="act" data-act="biguan"><span class="act-ink"></span><span class="act-t">闭关</span><small id="dur-biguan">一年</small></button>
       <button class="act" data-act="youli"><span class="act-ink"></span><span class="act-t">游历</span><small id="youli-sub">寻机缘</small></button>
-      <button class="act" data-act="bag"><span class="act-ink"></span><span class="act-t">行囊</span><small id="bag-count">空</small></button>
+      <button class="act" data-act="bag"><span class="act-ink"></span><span class="act-t">行囊</span><small id="bag-count">丹器</small></button>
     </nav>
     <aside class="side" id="side" aria-label="行藏">
-      <button class="side-card" data-open="gf"><h3>功法</h3><div class="sd-body" id="sd-gf"></div></button>
+      <button class="side-card" data-open="cult"><h3>修持</h3><div class="sd-body" id="sd-gf"></div></button>
       <button class="side-card" data-open="sect"><h3>宗门</h3><div class="sd-body" id="sd-sect"></div></button>
       <button class="side-card" data-open="bag"><h3>行囊</h3><div class="sd-body" id="sd-bag"></div></button>
       <button class="side-card" data-open="youli"><h3>行迹</h3><div class="sd-body" id="sd-loc"></div></button>
@@ -347,29 +350,29 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=23"></script>
-<script src="js/gongfa.js?v=23"></script>
-<script src="js/gear.js?v=23"></script>
-<script src="js/story.js?v=23"></script>
-<script src="js/sect.js?v=23"></script>
-<script src="js/baijia.js?v=23"></script>
-<script src="js/world.js?v=23"></script>
-<script src="js/tianxia.js?v=23"></script>
-<script src="js/karma.js?v=23"></script>
-<script src="js/path.js?v=23"></script>
-<script src="js/core.js?v=23"></script>
-<script src="js/samsara.js?v=23"></script>
-<script src="js/jianghu.js?v=23"></script>
-<script src="js/ink.js?v=23"></script>
-<script src="js/ding.js?v=23"></script>
-<script src="js/map.js?v=23"></script>
-<script src="js/audio.js?v=23"></script>
-<script src="js/fx.js?v=23"></script>
-<script src="js/btfx.js?v=23"></script>
-<script src="js/fabaoart.js?v=23"></script>
-<script src="js/wallpaper.js?v=23"></script>
-<script src="js/inkgl.js?v=23"></script>
-<script src="js/jhui.js?v=23"></script>
-<script src="js/game.js?v=23"></script>
+<script src="js/data.js?v=24"></script>
+<script src="js/gongfa.js?v=24"></script>
+<script src="js/gear.js?v=24"></script>
+<script src="js/story.js?v=24"></script>
+<script src="js/sect.js?v=24"></script>
+<script src="js/baijia.js?v=24"></script>
+<script src="js/world.js?v=24"></script>
+<script src="js/tianxia.js?v=24"></script>
+<script src="js/karma.js?v=24"></script>
+<script src="js/path.js?v=24"></script>
+<script src="js/core.js?v=24"></script>
+<script src="js/samsara.js?v=24"></script>
+<script src="js/jianghu.js?v=24"></script>
+<script src="js/ink.js?v=24"></script>
+<script src="js/ding.js?v=24"></script>
+<script src="js/map.js?v=24"></script>
+<script src="js/audio.js?v=24"></script>
+<script src="js/fx.js?v=24"></script>
+<script src="js/btfx.js?v=24"></script>
+<script src="js/fabaoart.js?v=24"></script>
+<script src="js/wallpaper.js?v=24"></script>
+<script src="js/inkgl.js?v=24"></script>
+<script src="js/jhui.js?v=24"></script>
+<script src="js/game.js?v=24"></script>
 </body>
 </html>

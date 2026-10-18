@@ -1492,8 +1492,8 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   .who{flex-basis:100%;padding:12px 0 0;margin-top:14px;border-left:0;border-top:1px solid rgba(27,24,20,.14)}
   .who-name{font-size:24px}
   .who-sub{font-size:12.5px;white-space:normal}
-  #btn-sect,#btn-menu{order:-1;margin-top:-10px}
-  #btn-sect{margin-left:auto;margin-right:4px}
+  .hud-seals{order:-1;margin-top:-10px;margin-left:auto}
+  #btn-sect{margin-left:0;margin-right:0}
   .bars{margin-top:20px;gap:16px}
   .bar{flex-wrap:wrap;row-gap:5px}
   .bar-label{width:auto;flex:1}
@@ -1840,4 +1840,31 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 .atlas-long{margin:10px 0 0;padding:12px;font-family:var(--f-body);font-size:13px;line-height:1.95;letter-spacing:.08em;white-space:pre-wrap;background:rgba(27,24,20,.04);border-left:2px solid rgba(179,48,42,.35);max-height:40vh;overflow:auto}
 @media (min-width:720px){
   .atlas-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+
+/* ===== 行囊 / 修持 UX ===== */
+.hud-seals{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
+.hud-seals .menu-seal{margin:0}
+.cult-seal{transform:rotate(-3deg)}
+.bag-lead{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;letter-spacing:.18em;color:var(--ink3);padding:2px 4px 10px;border-bottom:1px solid rgba(27,24,20,.08);margin-bottom:4px}
+.bag-lead span{font-size:11px;letter-spacing:.12em;color:var(--ink4)}
+.bag-list{padding-bottom:8px}
+.item{align-items:flex-start}
+.item-acts{flex:none;display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:64px}
+.item-acts .item-use{width:100%;box-sizing:border-box}
+.item-use.batch{background-image:var(--brush-img-ink-l);color:var(--ink2);font-size:15px;letter-spacing:.08em;min-height:36px;padding:4px 10px 3px}
+.item-use.batch.all{color:var(--zhu)}
+.item-cap-tip{font-size:11px;letter-spacing:.12em;color:var(--ink4);text-align:center;padding:4px 0}
+.path-seal{cursor:pointer}
+@media (max-width:480px){
+  .hud-seals{gap:4px}
+  .hud-seals .menu-seal{width:40px;height:40px;padding:3px}
+  .item-acts{flex-direction:row;flex-wrap:wrap;justify-content:flex-end;min-width:0;max-width:46%;gap:5px}
+  .item-acts .item-use{width:auto;min-width:52px;padding:5px 10px 4px;font-size:15px}
+  .item-use.batch{min-height:32px;font-size:13px}
+}
+@media (min-width:1000px){
+  .hud-seals{gap:8px;margin-right:4px}
+  .item-acts{min-width:72px}
 }

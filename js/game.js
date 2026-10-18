@@ -1285,57 +1285,108 @@ async function openSheet(title, body) {
 }
 async function closeSheet() { sheet.classList.remove('open'); await sleep(500); sheet.hidden = true; }
 $('.sheet-shade').onclick = closeSheet;
+function refreshOpenPanel() {
+  const root = $('#sheet-body') && $('#sheet-body').firstElementChild;
+  if (root && typeof root._refresh === 'function') root._refresh();
+}
 function openBag(tab = 'bag') {
+  // 行囊：只装消耗品与佩器；功法／法宝／定型／丹炉改走「修」印 openCult
+  if (tab && tab !== 'bag') return openCult(tab);
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
-  const hasDan = typeof JHUI !== 'undefined' && S.dan;
-    wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button><i class="stab-dot"></i><button class="stab" data-t="fabao">法宝</button><i class="stab-dot"></i><button class="stab" data-t="path">定型</button>' + (hasDan ? '<i class="stab-dot"></i><button class="stab" data-t="dan">丹炉</button>' : '') + '</div><div class="tab-body"></div>';
+  wrap.innerHTML = '<div class="bag-lead">丹药 · 佩器 · 杂物<span>服用后不关卷</span></div><div class="tab-body bag-body"></div>';
   const body = wrap.querySelector('.tab-body');
-  const TT = { gf: '功法', bag: '行囊', dan: '丹炉', fabao: '法宝', path: '定型' };
-  const show = t => {
-    wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-    $('#sheet-title').textContent = TT[t];
+  const show = () => {
+    $('#sheet-title').textContent = '行囊';
     body.innerHTML = '';
-    body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : t === 'fabao' ? fabaoPage() : t === 'path' ? pathPage() : bagPage());
+    body.appendChild(bagPage());
     body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
   };
-  wrap.querySelector('.sheet-tabs').onclick = e => { const t = e.target.closest('.stab'); if (t) show(t.dataset.t); };
-  openSheet(TT[tab] || '行囊', wrap);
-  show(tab);
+  wrap._refresh = show;
+  openSheet('行囊', wrap);
+  show();
+}
+function openCult(tab = 'gf') {
+  const wrap = document.createElement('div'); wrap.className = 'cult-wrap';
+  const hasDan = typeof JHUI !== 'undefined' && S && S.dan;
+  const tabs = [['gf', '功法'], ['fabao', '法宝'], ['path', '定型']];
+  if (hasDan) tabs.push(['dan', '丹炉']);
+  wrap.innerHTML = `<div class="sheet-tabs">${tabs.map((t, i) => `${i ? '<i class="stab-dot"></i>' : ''}<button class="stab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div><div class="tab-body"></div>`;
+  const body = wrap.querySelector('.tab-body');
+  const TT = { gf: '功法', dan: '丹炉', fabao: '法宝', path: '定型' };
+  let cur = tabs.some(t => t[0] === tab) ? tab : 'gf';
+  const show = t => {
+    cur = t;
+    wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    $('#sheet-title').textContent = TT[t] || '修持';
+    body.innerHTML = '';
+    body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : t === 'fabao' ? fabaoPage() : pathPage());
+    body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
+  };
+  wrap._refresh = () => show(cur);
+  wrap.querySelector('.sheet-tabs').onclick = e => { const b = e.target.closest('.stab'); if (b) show(b.dataset.t); };
+  openSheet(TT[cur] || '修持', wrap);
+  show(cur);
 }
 function bagPage() {
-  const wrap = document.createElement('div');
+  const wrap = document.createElement('div'); wrap.className = 'bag-list';
   if (S.eq && S.eq.weapon) {
     const eq = document.createElement('div'); eq.className = 'item eq-row';
     const gg = GEAR[S.eq.weapon];
     eq.innerHTML = `<div class="item-info"><div class="item-name">佩身 · ${S.eq.weapon}<em>${gg ? gg.kind : '器'}</em></div><div class="item-desc"></div></div>
-      <button class="item-use">卸下</button>`;
+      <div class="item-acts"><button class="item-use" data-act="uneq">卸下</button></div>`;
     eq.querySelector('.item-desc').textContent = gg ? gg.desc : '';
-    eq.querySelector('button').onclick = () => {
+    eq.querySelector('[data-act=uneq]').onclick = () => {
       const r = Core.unequip(S); if (r.err) return toast(r.err);
-      pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); closeSheet(); openBag('bag');
+      pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); refreshOpenPanel();
     };
     wrap.appendChild(eq);
   }
   const keys = Object.keys(S.items).filter(k => S.items[k] > 0);
-  if (!keys.length && !(S.eq && S.eq.weapon)) wrap.innerHTML = '<div class="empty">行囊空空，唯有清风两袖</div>';
+  if (!keys.length && !(S.eq && S.eq.weapon)) {
+    wrap.insertAdjacentHTML('beforeend', '<div class="empty">行囊空空，唯有清风两袖</div>');
+  }
   keys.forEach(k => {
     const it = document.createElement('div'); it.className = 'item';
     const isG = typeof GEAR !== 'undefined' && GEAR[k];
-    it.innerHTML = `<div class="item-info"><div class="item-name"></div><div class="item-desc"></div></div>`;
+    const canUse = !!(PILLS[k] && PILLS[k].use) || (k === '延寿丹' || k === '破障丹');
+    it.innerHTML = `<div class="item-info"><div class="item-name"></div><div class="item-desc"></div></div><div class="item-acts"></div>`;
     it.querySelector('.item-name').innerHTML = `${k}<em>×${S.items[k]}</em>${isG ? `<em class="gear-k">${GEAR[k].kind}</em>` : ''}`;
-    it.querySelector('.item-desc').textContent = isG ? GEAR[k].desc : (PILLS[k] ? PILLS[k].desc : '');
-    if (PILLS[k] && PILLS[k].use) {
-      const b = document.createElement('button'); b.className = 'item-use'; b.textContent = '服用';
-      b.onclick = () => { if (useItem(k)) closeSheet(); };
-      it.appendChild(b);
+    it.querySelector('.item-desc').textContent = isG ? GEAR[k].desc : (PILLS[k] ? PILLS[k].desc : (k === '延寿丹' ? '延年益寿，略补寿元。' : k === '破障丹' ? '破障开经，助破瓶颈或增益修为。' : ''));
+    const acts = it.querySelector('.item-acts');
+    if (canUse) {
+      const cap = Core.useBatchCap ? Core.useBatchCap(S, k) : Math.min(5, S.items[k] | 0);
+      const mk = (lab, n, cls) => {
+        const b = document.createElement('button'); b.className = 'item-use' + (cls ? ' ' + cls : ''); b.textContent = lab;
+        b.disabled = cap <= 0 || (n > 1 && (S.items[k] | 0) < 2);
+        if (n > 1 && n > cap) b.disabled = true;
+        b.onclick = () => {
+          const r = useItem(k, n);
+          if (r) { toast(n > 1 ? `已服 ×${r.used || n}` : '已服用'); refreshOpenPanel(); }
+        };
+        return b;
+      };
+      acts.appendChild(mk('服', 1));
+      if ((S.items[k] | 0) >= 2 && cap >= 2) {
+        const n5 = Math.min(5, cap, S.items[k] | 0);
+        if (n5 >= 2) acts.appendChild(mk('×' + n5, n5, 'batch'));
+      }
+      if ((S.items[k] | 0) > 1 && cap > 1) {
+        const nAll = Math.min(cap, S.items[k] | 0);
+        if (nAll >= 2) acts.appendChild(mk('尽', nAll, 'batch all'));
+      }
+      if (cap <= 0) {
+        const tip = document.createElement('span'); tip.className = 'item-cap-tip';
+        tip.textContent = k === '回春丹' ? '无伤' : k === '清心丹' ? '心境已满' : k === '聚气丹' ? '瓶颈无益' : '暂不可服';
+        acts.appendChild(tip);
+      }
     } else if (isG) {
       const b = document.createElement('button'); b.className = 'item-use'; b.textContent = '佩戴';
       b.onclick = () => {
         const r = Core.equip(S, k); if (r.err) return toast(r.err);
         pushLog({ text: r.text, tags: r.tags, cls: r.tags.some(t => t.c === 'down') ? 'warn' : 'sys' });
-        render(); save(); closeSheet(); openBag('bag');
+        render(); save(); refreshOpenPanel();
       };
-      it.appendChild(b);
+      acts.appendChild(b);
     }
     wrap.appendChild(it);
   });
@@ -1343,7 +1394,6 @@ function bagPage() {
     const zhi = document.createElement('div'); zhi.className = 'shenqi-zhi';
     const rows = SHENQI_ZHI.map(z => {
       const known = (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name);
-      const g = GEAR[z.name];
       return `<div class="sq-row ${known ? 'on' : 'off'}"><span class="sq-seal">${known ? esc(z.seal) : '？'}</span><div><b>${known ? esc(z.name) : '□□□□'}</b><p>${known ? esc(z.blurb) : '机缘未至，名录空阙。'}</p></div></div>`;
     }).join('');
     zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}`;
@@ -1351,6 +1401,7 @@ function bagPage() {
   }
   return wrap;
 }
+
 const layerDots = lv => Array.from({ length: GF_LAYERS }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
 const gfElWord = (id) => { const g = GONGFA[id]; return (g.el ? (g.el === '五行' ? '五行' : g.el + '行') : '无属') + ' · ' + Core.gfMatchWord(S, id); };
 function gfPage() {
@@ -1394,7 +1445,7 @@ function gfPage() {
       <button class="item-use">卸下</button>`;
     row.querySelector('button').onclick = () => {
       const r = Core.clearAux(S, id);
-      pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); closeSheet(); openBag('gf');
+      pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); refreshOpenPanel();
     };
     auxBox.appendChild(row);
   });
@@ -1423,7 +1474,7 @@ function gfPage() {
       const bAux = document.createElement('button'); bAux.className = 'item-use light'; bAux.textContent = '辅修';
       bAux.onclick = () => {
         const r = Core.setAux(S, id); if (r.err) return toast(r.err);
-        pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); closeSheet(); openBag('gf');
+        pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); refreshOpenPanel();
       };
       acts.appendChild(bAux);
     }
@@ -1466,11 +1517,11 @@ function fabaoPage() {
   wrap.insertAdjacentHTML('beforeend', `<p class="fabao-note">转主修或身死，或留残魂供来世再聚。法宝不入行囊，只在识海。祭炼进阶时，识海自有开光／化形之礼。</p>`);
   return wrap;
 }
-function useItem(k) {
-  const o = Core.useItem(S, k);
-  if (o.err) { toast(o.err); return false; }
+function useItem(k, n) {
+  const o = Core.useItem(S, k, n);
+  if (o.err) { toast(o.err); return null; }
   pushLog({ text: o.text, tags: o.tags, cls: 'sys' }); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd();
-  return true;
+  return o;
 }
 function openMenu() {
   const w = document.createElement('div'); w.className = 'menu-list';
@@ -1488,7 +1539,7 @@ function openMenu() {
   w.onclick = async e => {
     const btn = e.target.closest('[data-m]'); if (!btn) return;
     const m = btn.dataset.m;
-    if (m === 'path') { await closeSheet(); openSheet('定型', pathPage()); return; }
+    if (m === 'path') { await closeSheet(); openCult('path'); return; }
     if (m === 'atlas') { await closeSheet(); openAtlasSheet(); return; }
     if (m === 'daily') {
       await closeSheet();
@@ -1634,6 +1685,11 @@ $$('.act').forEach(b => b.addEventListener('click', () => {
 $('#btn-break').onclick = openBreak;
 $('#btn-menu').onclick = openMenu;
 $('#btn-sect').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openSect(); };
+$('#btn-cult').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openCult(); };
+$('#path-seals').onclick = e => {
+  const s = e.target.closest('.path-seal'); if (!s || busy || !S || S.dead || S.ascended) return;
+  openCult('path');
+};
 FX.initPress(); FX.initParallax();
 if (typeof MoAudio !== 'undefined') {
   MoAudio.mountUI();
@@ -1644,7 +1700,7 @@ if (typeof MoAudio !== 'undefined') {
 }
 $('#side').onclick = e => {
   const c = e.target.closest('.side-card'); if (!c || busy || !S || S.dead || S.ascended) return;
-  const k = c.dataset.open; if (k === 'gf') openBag('gf'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else act('youli');
+  const k = c.dataset.open; if (k === 'gf') openCult('gf'); else if (k === 'fabao') openCult('fabao'); else if (k === 'path') openCult('path'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else if (k === 'cult') openCult(); else act('youli');
 };
 addEventListener('resize', () => { if (document.body.dataset.screen === 'main') renderSide(); });
 
@@ -1734,5 +1790,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet };
 })();
