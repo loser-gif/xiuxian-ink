@@ -136,6 +136,7 @@ const TEXT = {
 // act 返回 {text, fx}; fx: xw(当前小境界所需比例) ls(灵石,随境界缩放) life(寿元年) xj wx luck inj item time(月) buff
 const rnd = (a, b) => a + Math.random() * (b - a);
 const chance = p => Math.random() < p;
+const anyOf = a => a[Math.floor(Math.random() * a.length)];
 
 const EVENTS = [
   {
@@ -195,11 +196,14 @@ const EVENTS = [
   },
   {
     id: 'herb', title: '朱果与蟒', w: 7,
-    text: () => '绝壁之上，一株老藤结着三枚朱红果实，异香扑鼻，是传说中延寿的朱果。藤下盘着一条赤鳞大蟒，鳞片在日光下如烧红的炭，正吐着信子打盹。',
+    text: s => { const dr = s.realm - Core.rollFoe(s, { realm: 1, stage: 0 }).realm; return '绝壁之上，一株老藤结着三枚朱红果实，异香扑鼻，是传说中延寿的朱果。藤下盘着一条赤鳞大蟒，鳞片在日光下如烧红的炭，正吐着信子打盹。'
+      + (dr >= 2 ? '那蟒的妖力不过筑基初期，在你眼中，与一条大些的长虫无异。' : dr === 1 ? '看那妖气，不过筑基初期，比你低了一个大境界。' : dr === 0 ? '看那妖气，已有筑基初期，与你相当。' : '那蟒的妖气浓得化不开，至少已是筑基之境——远在你之上。'); },
     choices: s => [
-      { label: '拔剑夺果', sub: '凶险', act: s => chance(0.45 + s.realm * 0.05 + s.luck * 0.03)
-        ? { text: '一场恶斗，山石崩飞。你终于斩下蟒首，摘得朱果。果肉入口即化，暖流直抵四肢百骸，多年积劳一扫而空。', fx: { item: { '延寿果': 1 }, life: 2, ls: 20 } }
-        : { text: '大蟒尾鞭如铁，你被抽落山崖，幸被一株老松挂住，才捡回一条性命。', fx: { inj: 4, life: -4 } } },
+      { label: '拔剑夺果', sub: Core.foeDr(s) >= 1 ? '探囊取物' : '凶险', act: s => Core.fightAct(s, { name: '大蟒', base: 0.45 + s.luck * 0.03,
+        win: { text: '一场恶斗，山石崩飞。你终于斩下蟒首，摘得朱果。果肉入口即化，暖流直抵四肢百骸，多年积劳一扫而空。', fx: { item: { '延寿果': 1 }, life: 2, ls: 20 } },
+        lose: { text: '大蟒尾鞭如铁，你被抽落山崖，幸被一株老松挂住，才捡回一条性命。', fx: { inj: 4, life: -4 } },
+        crush: '你只一拂袖，那大蟒便如一截枯藤般被甩下绝壁。你摘下朱果，连衣角都没有乱。',
+        dominant: '大蟒扑来，你并指一点，它便僵在半空，再不敢动。你从容摘下朱果，放它回了巢穴。' }) },
       { label: '以灵石为饵，调虎离山', sub: '耗灵石', disabled: s.ls < 15 * REALMS[s.realm].lsScale, act: s => ({ text: '你将灵石抛向远处溪涧，大蟒循着灵气游去。你趁机攀上绝壁，摘得一枚朱果，悄然退走。', fx: { ls: -15 * REALMS[s.realm].lsScale, lsRaw: true, item: { '延寿果': 1 } } }) },
       { label: '悄然退去', sub: '', act: s => ({ text: '天材地宝，有缘者得之。你屏住呼吸，退出了蟒的领地。', fx: {} }) },
     ],
@@ -216,15 +220,18 @@ const EVENTS = [
   },
   {
     id: 'bandit', title: '劫修拦路', w: 8, cond: s => s.realm <= 3,
-    text: () => '峡谷狭处，三名黑衣修士拦住去路。为首一人刀疤横贯面门，咧嘴笑道：“此山是我开。把储物袋留下，饶你不死。”',
+    text: s => { Core.rollFoe(s, { rel: anyOf([-4, -2, -1, 0, 0, 1]) }); const dr = Core.foeDr(s);
+      return `峡谷狭处，三名黑衣修士拦住去路。为首一人刀疤横贯面门，气息约莫${Core.foeStr(s)}，咧嘴笑道：“此山是我开。把储物袋留下，饶你不死。”` + (dr >= 1 ? '他显然没看出你的深浅。' : ''); },
     choices: s => [
-      { label: '拔剑迎战', sub: '凭气运', act: s => chance(0.5 + s.luck * 0.04)
-        ? { text: '剑光三起三落，刀疤脸捂着咽喉跪倒。余下二人见势不妙，作鸟兽散。你从他身上搜出一袋灵石。', fx: { ls: 45, xj: -2, xw: 0.2 } }
-        : { text: '寡不敌众，你身中数刀，拼死遁走，储物袋也丢了一半。', fx: { inj: 3, ls: -Math.floor(s.ls * 0.5), lsRaw: true } } },
+      { label: '拔剑迎战', sub: Core.foeDr(s) >= 1 ? '不费吹灰' : '凭气运', act: s => Core.fightAct(s, { name: '刀疤脸', base: 0.5 + s.luck * 0.04,
+        win: { text: '剑光三起三落，刀疤脸捂着咽喉跪倒。余下二人见势不妙，作鸟兽散。你从他身上搜出一袋灵石。', fx: { ls: 45, xj: -2, xw: 0.12 } },
+        lose: { text: '寡不敌众，你身中数刀，拼死遁走，储物袋也丢了一半。', fx: { inj: 3, ls: -Math.floor(s.ls * 0.5), lsRaw: true } },
+        crush: '你只一拂袖，三人便如落叶般翻滚出去，撞在崖壁上半晌爬不起来。刀疤脸跪地磕头，把自己的储物袋双手奉上。',
+        dominant: '刀疤脸的刀还没落下，便被你两指夹住，“铮”的一声断成两截。三人对视一眼，丢下一袋灵石，连滚带爬地跑了。' }) },
       { label: '交出灵石', sub: '破财消灾', act: s => ({ text: '你解下灵石袋抛了过去。刀疤脸掂了掂，啐了一口，让开了道路。', fx: { ls: -Math.floor(s.ls * 0.6), lsRaw: true, xj: -4 } }) },
-      { label: '施展遁术', sub: '', act: s => chance(0.7)
+      { label: '施展遁术', sub: '', act: s => Core.foeDr(s) >= 1 ? { text: '你懒得与他们纠缠，身形一晃，已在百丈之外。身后三人揉着眼睛，以为见了鬼。', fx: {}, fight: { dr: Core.foeDr(s), gap: 1, foe: Core.foeStr(s), tier: 'flee' } } : chance(0.7)
         ? { text: '你掐诀化作一道青烟，自崖壁间隙穿过，身后骂声渐远。', fx: {} }
-        : { text: '遁术未成，被一记飞刀擦过后背。你咬牙逃出峡谷，血浸透了衣衫。', fx: { inj: 2 } } },
+        : { text: '遁术未成，被一记飞刀擦过后背。你咬牙逃出峡谷，血浸透了衣衫。', fx: { inj: 2 }, fight: { dr: Core.foeDr(s), gap: 0, foe: Core.foeStr(s), tier: 'flee-fail' } } },
     ],
   },
   {
@@ -341,7 +348,7 @@ const EVENTS = [
       { label: '入秘境争夺', sub: '大凶大吉', act: s => { const r = Math.random() + s.luck * 0.02; return r > 0.6
           ? { text: '你于仙宫深处寻得一处丹房，玉瓶中的丹药虽已失了大半药力，仍是世间难求的珍品。出秘境时，你回头望了一眼，仙宫正缓缓沉入海底。', fx: { xw: 1.5, item: { [REALMS[s.realm].pill]: 1, '聚气丹': 1 }, time: 3 } }
           : r > 0.3 ? { text: '秘境中杀机四伏，你只在外围拾得几块灵石，便被人潮挤了出来。', fx: { ls: 40, time: 3 } }
-          : { text: '你被卷入一场混战，护体灵光碎裂，重伤遁出。', fx: { inj: 4, life: -5, time: 3 } }; } },
+          : { text: `你被卷入一场混战，几名${Core.foeStr(s, Core.shiftLv(s, 1))}的修士联手围攻，护体灵光碎裂，重伤遁出。`, fx: { inj: 4, life: -5, time: 3 }, fight: { dr: 0, gap: -0.25, foe: '同阶群修', tier: 'lose' } }; } },
       { label: '隔岸观火', sub: '', act: s => ({ text: '你站在礁石上，看着剑光如雨坠落海中。那一夜，死去的修士不知凡几。', fx: { xj: 4 } }) },
     ],
   },

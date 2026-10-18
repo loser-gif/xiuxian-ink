@@ -321,7 +321,9 @@ function render() {
   if (!S) return; sync();
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
-  setText('#h-name', S.name); setText('#h-sub', `${S.lg.sect} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`); fitLine($('#h-sub'), 11.5, 9);
+  setText('#h-name', S.name); setText('#h-sub', `${Core.rankName(S)} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
+  const so = Core.org(S); $('#sect-seal-t').textContent = so ? so.seal : '游';
+  $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok)); fitLine($('#h-sub'), 11.5, 9);
   const rq = req(); if (S.xw > rq && isLast()) S.xw = rq; const p = clamp(S.xw / rq, 0, 1);
   const fill = $('#xw-fill'); fill.parentElement.style.setProperty('--p', (p * 100).toFixed(1) + '%');
   fill.classList.toggle('full', bottleneck());
@@ -401,6 +403,7 @@ function act(kind) {
 let endT = 0;
 function checkEnd() {
   if (S && S.dead && !endT) endT = setTimeout(() => { endT = 0; if (S && S.dead) showEnd(S.ending || 'zuohua'); }, 1800);
+  else if (S && !S.dead && S.sect && S.sect.dabiDue) setTimeout(dabiInvite, 1400);
 }
 
 /* ================= 奇遇卷轴 ================= */
@@ -420,7 +423,7 @@ async function closeModal() {
 }
 function openEvent(ev) {
   FX.vtext($('#ev-title'), ev.title);
-  $('#ev-seal').textContent = pick(['缘', '遇', '奇', '机']);
+  $('#ev-seal').textContent = ev.seal || pick(['缘', '遇', '奇', '机']);
   const text = ev.text(S);
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
@@ -458,6 +461,7 @@ function choose(ev, c, btn, evText) {
     pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: 'event', div: true });
     B.flush(); Core.afterGain(S, ups, pushLog);
     render(); save(); checkEnd();
+    if (res.after && !S.dead) res.after();
   };
   render(); save();
 }
@@ -476,6 +480,8 @@ function openBreak() {
   if (has) t += `囊中尚有${pill}一枚，服之可增二成把握。`;
   if (S.inj > 0) t += '你身上伤势未愈，此时破境，凶险倍增。';
   if (S.fails) t += `此前已败${cn(S.fails)}次，屡败屡战，心志愈坚。`;
+  const help = Core.npcHelp(S).who.map(id => NPCS[id].name);
+  if (help.length) t += `${help.join('、')}${help.length > 1 ? '皆' : ''}在洞府外为你护法。`;
   if (K.btDeath[S.realm]) t += S.items['兵解玉符'] > 0 ? '此境破关，败则有身死之虞。好在袖中玉符温润，似在低语：纵使身殒，道不必绝。' : '此境破关，已非儿戏——一旦失手，便有身死道消之虞。';
   if (S.gf && GONGFA[S.gf].mo && S.xj < 15) t += '魔功反噬在即，心神摇摇欲坠，此时破关，凶多吉少。';
   openModal();
@@ -546,6 +552,291 @@ async function runBreak(usePill) {
   };
 }
 
+/* ================= 宗门 ================= */
+const TOKEN_MAT = {
+  木: ['#8a6744', '#4e3622', '#efdfbd'], 青玉: ['#7fa896', '#3d6556', '#f2f7f0'], 白玉: ['#f6f2e6', '#d3ccb8', '#2a2622'],
+  墨玉: ['#34312c', '#100f0d', '#d4b06a'], 赤金: ['#c87a44', '#7a2f18', '#f8e6b8'], 紫金: ['#e0c06e', '#94702e', '#3a2a10'],
+  铁: ['#6a6a66', '#2c2c2a', '#e6e2d8'], 青铜: ['#7d9474', '#3b5040', '#eef2e6'], 乌金: ['#3c3732', '#161412', '#d4b06a'],
+  玄铁: ['#39414b', '#11151a', '#d8dde2'], 赤铜: ['#b8683e', '#6a2a18', '#f8e6c8'], 紫铜: ['#a56452', '#5a2a24', '#f8e2d2'],
+};
+let tokenSeq = 0;
+function tokenSVG(orgId, rank, big) {
+  const o = ORGS[orgId], mat = TOKEN_MAT[o.token[rank]] || TOKEN_MAT['木'], id = 'tk' + (++tokenSeq);
+  const name = o.ranks[rank].replace('弟子', ''), chars = [...name], n = chars.length;
+  const fs = n <= 2 ? 44 : 34, y0 = n <= 2 ? 150 : 128, gap = n <= 2 ? 52 : 40;
+  const txt = chars.map((c, i) => `<text x="70" y="${y0 + i * gap}" text-anchor="middle" font-size="${fs}" class="seal-font" fill="${mat[2]}">${c}</text>`).join('');
+  const shape = 'M22 70 Q20 40 46 36 Q54 10 70 10 Q86 10 94 36 Q120 40 118 70 L118 262 Q118 276 104 276 L36 276 Q22 276 22 262 Z';
+  return `<svg viewBox="0 0 140 340" class="token-svg${big ? ' big' : ''}"><defs>
+    <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${mat[0]}"/><stop offset="1" stop-color="${mat[1]}"/></linearGradient>
+    <linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <clipPath id="${id}c"><path d="${shape}"/></clipPath></defs>
+    <path class="tk-cord" d="M70 22 L70 -40" />
+    <path d="${shape}" fill="url(#${id}g)" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+    <path d="M30 74 Q30 48 50 44 Q58 20 70 20 Q82 20 90 44 Q110 48 110 74 L110 258 Q110 268 100 268 L40 268 Q30 268 30 258 Z" fill="none" stroke="${mat[2]}" stroke-opacity=".45" stroke-width="1.4"/>
+    <circle cx="70" cy="30" r="5" fill="rgba(0,0,0,.45)"/>
+    <text x="70" y="${n <= 2 ? 92 : 88}" text-anchor="middle" font-size="15" letter-spacing="4" class="seal-font" fill="${mat[2]}" opacity=".8">${o.short}</text>
+    ${txt}
+    <g clip-path="url(#${id}c)"><rect class="tk-sheen" x="-160" y="-20" width="90" height="400" fill="url(#${id}s)" transform="rotate(18 70 170)"/></g>
+    <g class="tk-tassel"><path d="M70 276 L70 300" stroke="#9e2a22" stroke-width="3"/><circle cx="70" cy="302" r="5" fill="#9e2a22"/>
+    ${[-7, -3.5, 0, 3.5, 7].map(dx => `<path d="M${70 + dx * .4} 306 Q${70 + dx} 320 ${70 + dx * 1.3} 338" stroke="#b3302a" stroke-width="1.6" fill="none"/>`).join('')}</g></svg>`;
+}
+const gradeNames = ['凡', '灵', '地', '天'];
+function openSect(tab) {
+  const o = Core.org(S);
+  const tabs = o ? [['home', o.id === 'qm' ? '宗门' : '盟中'], ['task', '任务'], ['lib', o.id === 'qm' ? '藏经' : '秘库'], ['npc', '人物']] : [['home', '散修'], ['npc', '人物']];
+  tab = tab && tabs.find(t => t[0] === tab) ? tab : tabs[0][0];
+  const wrap = document.createElement('div'); wrap.className = 'bag-wrap sect-wrap';
+  wrap.innerHTML = `<div class="sheet-tabs">${tabs.map((t, i) => `${i ? '<i class="stab-dot"></i>' : ''}<button class="stab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div><div class="tab-body"></div>`;
+  const body = wrap.querySelector('.tab-body');
+  const title = t => ({ home: o ? o.name : '散修', task: o && o.id === 'sx' ? '盟中悬赏' : '宗门任务', lib: o ? o.lib : '', npc: '人物' })[t];
+  const show = t => {
+    wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    $('#sheet-title').textContent = title(t);
+    body.innerHTML = ''; body.appendChild({ home: sectHome, task: sectTasks, lib: sectLib, npc: sectNpc }[t]());
+    body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
+    $('#sheet-body').scrollTop = 0;
+  };
+  wrap.querySelector('.sheet-tabs').onclick = e => { const t = e.target.closest('.stab'); if (t) show(t.dataset.t); };
+  openSheet(title(tab), wrap);
+  show(tab);
+}
+function sectHome() {
+  const w = document.createElement('div'); w.className = 'sect-home';
+  const o = Core.org(S), sc = S.sect;
+  if (!o) {
+    w.innerHTML = `<div class="sect-card free"><div class="sect-card-v">${[...(sc.free ? '逍遥' : '散修')].map(c => `<i>${c}</i>`).join('')}</div>
+      <div class="sect-card-info"><div class="sect-org">无门无派</div><p class="sect-note">${sc.free ? '你谢绝了宗门的招揽。山高水长，无人管束，游历之中，机缘自会寻上门来。' : '伪灵根不入宗门之眼。可天下之大，总有一扇门，会为肯走路的人打开。'}</p>
+      <div class="perk"><b>${sc.free ? '逍遥' : '机缘'}</b><span>${sc.free ? '游历机缘更盛，所得修为更丰' : '筑基之后，或有宗门来招；坊市之中，亦有散修结盟'}</span></div></div></div>`;
+    return w;
+  }
+  const r = sc.rank, cp = Core.canPromote(S), libCap = RANK_LIB[r];
+  const pay = Math.round(o.ls[r] * REALMS[S.realm].lsScale);
+  w.innerHTML = `<div class="sect-card"><div class="sect-token">${tokenSVG(o.id, r)}</div>
+    <div class="sect-card-info"><div class="sect-org">${o.name}</div><div class="sect-rank">${o.ranks[r]}</div>
+    <div class="sect-gx"><span>可用贡献 <b>${fmtNum(sc.gx)}</b></span><span>累计 <b>${fmtNum(sc.gxTotal)}</b></span></div></div></div>
+    <div class="perks">
+      <div class="perk"><b>俸禄</b><span>每${cn(K.payYears * R().T)}年 灵石${cn(pay)}${r >= 2 ? ' · 时有丹药' : ''}${K.stipendPill[r] ? ' · 偶赐破境丹' : ''}</span></div>
+      <div class="perk"><b>灵脉</b><span>${o.cave[r] > 1 ? `闭关修为 +${Math.round((o.cave[r] - 1) * 100)}%` : '杂役居所，灵气稀薄'}</span></div>
+      <div class="perk"><b>${o.lib.slice(0, 2)}</b><span>${libCap < 0 ? '杂役不得入阁' : `可入${gradeNames.slice(0, libCap + 1).join('、')}品诸层`}</span></div>
+      ${(() => { const h = Core.npcHelp(S).who; return h.length ? `<div class="perk"><b>护法</b><span>${h.map(id => NPCS[id].name).join('、')} · 破境把握更增</span></div>` : ''; })()}
+    </div>
+    ${r < 6 ? `<div class="promo">
+      <div class="promo-h"><span>晋升</span><em>${o.ranks[r + 1]}</em></div>
+      <div class="req ${cp.gxOk ? 'ok' : ''}"><span>累计贡献</span><div class="req-bar"><i style="width:${Math.min(100, sc.gxTotal / cp.need.gx * 100).toFixed(1)}%"></i></div><b>${fmtNum(sc.gxTotal)} / ${fmtNum(cp.need.gx)}</b></div>
+      <div class="req ${cp.realmOk ? 'ok' : ''}"><span>境界</span><div class="req-word">${REALMS[cp.need.realm].name}${cp.need.stage ? REALMS[cp.need.realm].stages[cp.need.stage] : ''}以上</div><b>${cp.realmOk ? '已足' : '未足'}</b></div>
+      <button class="brush-btn small promo-btn" ${cp.ok ? '' : 'disabled'}><span class="bb-ink"></span><span class="bb-text">请升${o.ranks[r + 1].replace('弟子', '')}</span></button>
+    </div>` : '<div class="sect-note center">位极一宗，再无可升。</div>'}
+    <div class="dabi-line">${r <= 3 ? `下届${o.dabi} · 约${cn(Math.max(1, Math.ceil((sc.dabiAt - S.months) / 12)))}年后` : `${o.dabi} · 你已列席观礼`}${sc.dabiBest >= 0 ? `<br>最佳名次 · ${DABI_PLACE[sc.dabiBest]}` : ''}</div>`;
+  const pb = w.querySelector('.promo-btn');
+  if (pb) pb.onclick = async () => { if (!Core.canPromote(S).ok) return; await closeSheet(); const res = Core.promote(S, pushLog); if (res) runRite(res); };
+  return w;
+}
+function sectTasks() {
+  const w = document.createElement('div'); w.className = 'tasks';
+  const ms = Core.ensureMissions(S); save();
+  if (!ms.length) { w.innerHTML = '<div class="empty">近来无事可领</div>'; return w; }
+  ms.forEach(mi => {
+    const info = Core.missionInfo(S, mi);
+    const c = document.createElement('div'); c.className = 'task r' + Math.min(3, Math.floor(info.risk / 0.12));
+    c.innerHTML = `<span class="task-seal">${info.m.seal}</span><div class="task-info"><div class="task-name">${info.name}</div><p class="task-brief"></p>
+      <div class="task-meta"><span>耗时 ${cnDur(info.months)}</span><span class="risk">${info.riskWord}</span></div>
+      <div class="task-pay">酬 · 贡献 ${fmtNum(info.gx)} · 灵石 ${fmtNum(info.ls)}</div></div><button class="item-use">接令</button>`;
+    c.querySelector('.task-brief').textContent = info.brief;
+    c.querySelector('button').onclick = async () => { await closeSheet(); const ev = Core.missionEvent(S, mi.uid); if (ev) openEvent(ev); };
+    w.appendChild(c);
+  });
+  const every = 12 * R().T * K.mYears, left = Math.max(1, Math.ceil((S.sect.mAt + every - S.months) / 12));
+  const f = document.createElement('div'); f.className = 'sect-note center'; f.textContent = `执事堂的告示，约${cn(left)}年一换`; w.appendChild(f);
+  return w;
+}
+function sectLib() {
+  const w = document.createElement('div'); w.className = 'lib';
+  const o = Core.org(S);
+  w.innerHTML = `<div class="lib-h"><span>${o.lib}</span><em>可用贡献 ${fmtNum(S.sect.gx)}</em></div>`;
+  let lastG = -1;
+  Core.libList(S).forEach(it => {
+    if (it.g.grade !== lastG) { lastG = it.g.grade; const h = document.createElement('div'); h.className = 'lib-floor'; h.textContent = `${gradeNames[lastG]}品 · ${['一', '二', '三', '顶'][lastG]}层`; w.appendChild(h); }
+    const row = document.createElement('div'); row.className = 'gf-row lib-row g' + it.g.grade + (it.open ? '' : ' locked') + (it.known ? ' known' : '');
+    const needRank = RANK_LIB.findIndex(x => x >= it.g.grade);
+    row.innerHTML = `<span class="gf-seal">${GF_GRADE[it.g.grade]}</span><div class="gf-row-info"><div class="gf-row-name">${it.g.name}</div>
+      <div class="gf-row-sub">${gfElWord(it.id)} · ×${Core.gfSpeed(S, it.id).toFixed(2)}</div><div class="gf-row-trait">${it.g.trait}</div>
+      <div class="gf-cost">耗贡献 ${fmtNum(it.cost)}，录入胸中</div></div>
+      <button class="item-use" ${!it.open || it.known || S.sect.gx < it.cost ? 'disabled' : ''}>${it.known ? '已习' : !it.open ? `需${o.ranks[needRank].replace('弟子', '')}` : `${fmtNum(it.cost)}`}</button>`;
+    const btn = row.querySelector('button');
+    btn.onclick = () => {
+      if (!row.classList.contains('confirm')) { w.querySelectorAll('.lib-row.confirm').forEach(r => { r.classList.remove('confirm'); }); row.classList.add('confirm'); btn.textContent = '研习'; return; }
+      const res = Core.learnLib(S, it.id, pushLog); if (res.err) { toast(res.err); return; }
+      pushLog({ title: o.lib, text: `你在${o.lib}中静坐三日，将《${it.g.name}》一字一句抄录于心。合上书页时，窗外的松影已移过了半面墙。`, tags: res.tags, cls: 'event', div: true });
+      render(); save(); const body = w.parentNode; body.innerHTML = ''; body.appendChild(sectLib()); toast(`得《${it.g.name}》`);
+    };
+    w.appendChild(row);
+  });
+  return w;
+}
+function sectNpc() {
+  const w = document.createElement('div'); w.className = 'npcs';
+  Object.keys(NPCS).forEach(id => {
+    const n = NPCS[id], st = S.npc[id], c = document.createElement('div');
+    const isMaster = id === 'shifu';
+    const known = st.met && (!isMaster || S.sect.master);
+    c.className = 'npc' + (known ? '' : ' unmet') + (st.a < -10 ? ' foe' : st.a >= 50 ? ' close' : '');
+    if (!known) {
+      c.innerHTML = `<span class="npc-seal">？</span><div class="npc-info"><div class="npc-name">${isMaster && S.sect.org === 'qm' ? '师父' : '未曾相识'}</div><div class="npc-title">${isMaster && S.sect.org === 'qm' ? '晋内门弟子，方可拜师' : '萍水未逢'}</div></div>`;
+    } else {
+      const pct = (st.a + 100) / 2;
+      c.innerHTML = `<span class="npc-seal">${n.seal}</span><div class="npc-info"><div class="npc-name">${n.name}<em>${Core.npcWord(st.a)}</em></div>
+        <div class="npc-title">${n.title}</div><div class="npc-trait">${n.trait}</div>
+        <div class="npc-aff"><i style="left:${Math.min(50, pct)}%;width:${Math.abs(pct - 50)}%" class="${st.a < 0 ? 'neg' : ''}"></i><b></b></div>
+        <p class="npc-line"></p></div>`;
+      c.querySelector('.npc-line').textContent = Core.npcLine(S, id);
+    }
+    w.appendChild(c);
+  });
+  return w;
+}
+/* 晋升：令牌显现 */
+async function runRite(res) {
+  busy = true;
+  const el = $('#rite'), o = Core.org(S);
+  el.className = 'rite'; el.hidden = false;
+  $('#rite-token').innerHTML = tokenSVG(o.id, res.rank, true);
+  $('#rite-title').innerHTML = `<span>晋</span>${res.name}`;
+  $('#rite-text').textContent = ''; $('#rite-tags').innerHTML = ''; $('#rite-close').hidden = true;
+  await sleep(30); el.classList.add('go');
+  if (typeof InkGL !== 'undefined' && InkGL.spreadOk && !FX.reduced()) {
+    const cv = $('#inkfx'); cv.classList.remove('fade'); el.insertBefore(cv, $('#rite-token')); el.classList.add('gl');
+    InkGL.spread({ mode: 1, y: innerHeight * .4, from: 0, to: 1.08, dur: 2400, ease: 'inOut', scale: .5, z: 'auto' });
+  }
+  await sleep(FX.reduced() ? 100 : 1300);
+  el.classList.add('show');
+  await sleep(FX.reduced() ? 100 : 1900);
+  el.classList.add('stamped');
+  await sleep(500);
+  const d = inkWrite($('#rite-text'), res.text, { immediate: true, step: 24 });
+  $('#rite-tags').innerHTML = res.tags.map(x => `<span class="${x.c || ''}">${x.t}</span>`).join('');
+  await sleep(Math.min(d, 2400) + 300);
+  $('#rite-tags').classList.add('bleed-in');
+  const close = $('#rite-close'); close.hidden = false; close.classList.add('bleed-in');
+  close.onclick = async () => {
+    el.classList.add('leave'); await sleep(900); el.hidden = true; el.className = 'rite';
+    const cv = $('#inkfx'); if (cv.parentNode === el) { InkGL.hide(); document.body.insertBefore(cv, $('#grain')); }
+    busy = false;
+    pushLog({ title: `晋升 · ${res.name}`, text: res.text, tags: res.tags, cls: 'gold', div: true });
+    render(); save(); checkEnd();
+  };
+}
+/* 大比 */
+let dabiOpen = false;
+function dabiInvite() {
+  if (!S || S.dead || !S.sect.dabiDue || busy || dabiOpen || !modal.hidden || !sheet.hidden || !$('#bt').hidden || !$('#rite').hidden) return;
+  const o = Core.org(S); if (!o) { S.sect.dabiDue = false; return; }
+  dabiOpen = true;
+  const ev = { id: 'dabi', title: o.dabi, seal: '比',
+    text: () => o.id === 'qm' ? `${o.dabi}，${cn(K.dabiYears * R().T)}年一度。演武台上的青石被扫得发亮，八名弟子的名牌挂在台前，其中一块，写着你的名字。台下人山人海，执事堂的老执事敲了三下铜锣。` : `${o.dabi}开擂，散修们从四面八方涌来，坊市里的赌档早早开了盘口。擂台边的木牌上，你的名字排在第七。`,
+    choices: () => [
+      { label: '登台', sub: '三战定名次', act: () => ({ text: '你整了整衣袍，一步步走上演武台。台下的喧哗声，忽然都远了。', fx: {}, after: startDabi }) },
+      { label: '托病不出', sub: '贡献 · 心境稍减', act: s => { s.sect.dabiDue = false; return { text: '你递了一张告假条。那块写着你名字的名牌，被执事默默摘了下来。', fx: { gx: -2, xj: -2 } }; } },
+    ] };
+  openEvent(ev);
+  setTimeout(() => { dabiOpen = false; }, 1500);
+}
+const DM = Object.fromEntries(DUEL_MOVES.map(m => [m.id, m]));
+let duelState = null;
+function hpPips(n, lost) { return Array.from({ length: 3 }, (_, i) => `<i class="${i >= n ? 'lost' : ''}${lost && i === n ? ' hit' : ''}"></i>`).join(''); }
+async function startDabi() {
+  busy = true;
+  const t = Core.dabiNew(S), o = Core.org(S), el = $('#duel');
+  el.className = 'duel'; el.hidden = false;
+  $('#duel-ttl').textContent = o.dabi;
+  $('#duel-mname').textContent = S.name;
+  $('#duel-mstyle').textContent = `${REALMS[S.realm].name}${REALMS[S.realm].stages[S.stage]}${S.gf ? ' · 《' + GONGFA[S.gf].name + '》' : ''}`;
+  await sleep(30); el.classList.add('go');
+  const beat = []; let place = 0;
+  for (let r = 0; r < 3; r++) {
+    const won = await runDuel(t, r);
+    if (won) { place = r + 1; if (t.opps[r].npc) beat.push(t.opps[r].npc); } else break;
+  }
+  const res = Core.dabiFinish(S, place, beat);
+  await sleep(300);
+  el.classList.add('leave'); await sleep(900); el.hidden = true; el.className = 'duel';
+  busy = false;
+  pushLog({ title: `${o.dabi} · ${DABI_PLACE[place]}`, text: res.text, tags: res.tags, cls: place >= 2 ? 'gold' : 'event', div: true });
+  render(); save(); checkEnd();
+}
+function runDuel(t, r) {
+  return new Promise(async resolve => {
+    const opp = t.opps[r], d = Core.duelNew(S, opp); duelState = d;
+    const el = $('#duel');
+    el.classList.remove('over', 'won', 'lost', 'strike', 'clash-on', 'hit-me', 'hit-o');
+    $('#duel-rd').textContent = DABI_ROUND[r];
+    $('#duel-oname').textContent = opp.name.replace(/^.* · /, '');
+    $('#duel-ostyle').textContent = (opp.npc ? NPCS[opp.npc].title : opp.name.split(' · ')[0] + '弟子') + ' · ' + STYLE_WORD[opp.style];
+    $('#duel-ohp').innerHTML = hpPips(3); $('#duel-mhp').innerHTML = hpPips(3);
+    $('#duel-round').textContent = ''; $('#duel-text').textContent = ''; $('#duel-tell').textContent = '';
+    $('#duel-next').hidden = true; $('#duel-stamp').className = 'duel-stamp';
+    el.classList.add('intro');
+    const moves = $('#duel-moves');
+    moves.innerHTML = DUEL_MOVES.map(m => `<button class="dmove" data-m="${m.id}"><span class="dm-ink"></span><b>${m.ch}</b><small>${m.hint}</small></button>`).join('');
+    moves.classList.remove('on');
+    const intro = opp.npc ? DUEL_INTRO[opp.npc] : pick(DUEL_INTRO._).replace('对手', opp.name.replace(/^.* · /, ''));
+    await sleep(r === 0 ? 900 : 300);
+    const di = inkWrite($('#duel-tell'), intro, { immediate: true, step: 22 });
+    await sleep(Math.min(di, 1800) + 900);
+    el.classList.remove('intro');
+    const roundLoop = async () => {
+      const tl = Core.duelTell(d);
+      $('#duel-round').textContent = `第${cn(d.round + 1)}合`;
+      $('#duel-round').classList.remove('bleed-in'); void $('#duel-round').offsetWidth; $('#duel-round').classList.add('bleed-in');
+      $('#duel-text').textContent = '';
+      inkWrite($('#duel-tell'), tl.line, { immediate: true, step: 18 });
+      moves.querySelectorAll('.dmove').forEach(b => { b.disabled = b.dataset.m === 'qi' && !d.qi[0]; b.classList.remove('picked'); });
+      moves.classList.add('on');
+      moves.onclick = async e => {
+        const b = e.target.closest('.dmove'); if (!b || b.disabled || !moves.classList.contains('on')) return;
+        moves.classList.remove('on'); b.classList.add('picked');
+        const res = Core.duelRound(S, d, b.dataset.m);
+        await playClash(res, d);
+        if (d.over) {
+          el.classList.add('over', d.over === 'win' ? 'won' : 'lost');
+          $('#duel-stamp-t').textContent = d.over === 'win' ? '胜' : '负';
+          await sleep(500); $('#duel-stamp').classList.add('on');
+          await sleep(900);
+          const nx = $('#duel-next'); nx.hidden = false; nx.classList.remove('bleed-in'); void nx.offsetWidth; nx.classList.add('bleed-in');
+          nx.querySelector('.bb-text').textContent = d.over === 'win' && r < 2 ? '再战' : '下台';
+          nx.onclick = () => { nx.onclick = null; resolve(d.over === 'win'); };
+        } else { await sleep(500); roundLoop(); }
+      };
+    };
+    roundLoop();
+  });
+}
+const SLASH_SEED = { gong: 3, shou: 11, shu: 17, qi: 29 };
+async function playClash(res, d) {
+  const el = $('#duel'), svg = $('#duel-slash'), sp = $('#duel-splash');
+  $('#dc-o').textContent = DM[res.o].ch; $('#dc-m').textContent = DM[res.m].ch;
+  el.classList.remove('clash-on', 'strike', 'hit-me', 'hit-o', 'big'); void el.offsetWidth;
+  el.classList.add('clash-on');
+  await sleep(FX.reduced() ? 60 : 520);
+  // 笔锋：胜者一笔斩向败者
+  const toO = res.dmg[0] > 0, toM = res.dmg[1] > 0, stall = !toO && !toM;
+  const mk = (seed, flip, color, delay) => {
+    const p = Ink.brushPath(420, 34, seed);
+    return `<g transform="translate(195 130) rotate(${flip ? 152 : -28}) translate(-210 -17)"><path class="sl" d="${p}" fill="${color}" style="animation-delay:${delay}s"/></g>`;
+  };
+  svg.innerHTML = stall ? mk(SLASH_SEED[res.m], false, 'rgba(239,230,211,.55)', 0) + mk(SLASH_SEED[res.o] + 5, true, 'rgba(239,230,211,.4)', .08)
+    : toO ? mk(SLASH_SEED[res.m], false, '#efe6d3', 0) : mk(SLASH_SEED[res.o] + 5, true, '#b3302a', 0);
+  el.classList.add('strike'); if (Math.max(...res.dmg) >= 2) el.classList.add('big');
+  if (!stall) {
+    sp.className = 'duel-splash ' + (toO ? 'to-o' : 'to-m'); void sp.offsetWidth; sp.classList.add('on');
+    if (typeof InkGL !== 'undefined' && InkGL.spreadOk && !FX.reduced() && Math.max(...res.dmg) >= 2) {}
+  }
+  await sleep(FX.reduced() ? 60 : 380);
+  if (toO) { $('#duel-ohp').innerHTML = hpPips(d.hp[1], true); el.classList.add('hit-o'); }
+  if (toM) { $('#duel-mhp').innerHTML = hpPips(d.hp[0], true); el.classList.add('hit-me'); if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {} }
+  const t = inkWrite($('#duel-text'), res.text, { immediate: true, step: 18 });
+  await sleep(Math.min(t, 1500) + 650);
+}
+
 /* ================= 行囊 / 卷首菜单 ================= */
 const sheet = $('#sheet');
 async function openSheet(title, body) {
@@ -613,14 +904,13 @@ function gfPage() {
   const h = document.createElement('div'); h.className = 'gf-list-h'; h.innerHTML = `<span>胸中所藏</span><em>${cn(Object.keys(S.gfs).length)}部</em>`;
   wrap.appendChild(h);
   if (!others.length) { const em = document.createElement('div'); em.className = 'empty small'; em.textContent = '别无他法 · 机缘未至'; wrap.appendChild(em); }
-  const c = Core.switchCost(S);
   others.sort((a, b) => GONGFA[b].grade - GONGFA[a].grade).forEach(id => {
     const g = GONGFA[id], e = S.gfs[id];
     const row = document.createElement('div'); row.className = 'gf-row g' + g.grade + (g.mo ? ' mo' : '');
     row.innerHTML = `<span class="gf-seal">${GF_GRADE[g.grade]}</span>
       <div class="gf-row-info"><div class="gf-row-name">${g.name}<em>${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
       <div class="gf-row-sub">${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g.trait}</div>
-      <div class="gf-cost">散功转修：修为 −${fmtNum(c.xw)} · 心境 −${c.xj} · 耗时${cnDur(c.months)}</div></div>
+      <div class="gf-cost">${(c => `散功转修：${c.lose ? `修为 −${fmtNum(c.lose)} · ` : ''}心境 −${c.xj} · 耗时${cnDur(c.months + c.extra)}${c.extra ? `（修为不足，以${cnDur(c.extra)}苦功补足）` : ''}${c.layer ? ` · 《${GONGFA[S.gf].name}》跌一层` : ''}`)(Core.switchCost(S, id))}</div></div>
       <button class="item-use">转修</button>`;
     const btn = row.querySelector('button');
     btn.onclick = async () => {
@@ -702,6 +992,7 @@ $$('.act').forEach(b => b.addEventListener('click', () => {
 }));
 $('#btn-break').onclick = openBreak;
 $('#btn-menu').onclick = openMenu;
+$('#btn-sect').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openSect(); };
 FX.initPress(); FX.initParallax();
 setScreen('title');
 initTitle(); initCreate();
@@ -713,5 +1004,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)) };
 })();

@@ -11,9 +11,14 @@ from fontTools.ttLib import TTFont
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.environ.get('FONTSRC', '/workspace/fontsrc')
-FILES = ['index.html', 'js/data.js', 'js/gongfa.js', 'js/story.js', 'js/core.js', 'js/game.js', 'js/ink.js', 'js/fx.js', 'js/wallpaper.js', 'js/inkgl.js', 'css/style.css']
+FILES = ['index.html', 'js/data.js', 'js/gongfa.js', 'js/story.js', 'js/sect.js', 'js/core.js', 'js/game.js', 'js/ink.js', 'js/fx.js', 'js/wallpaper.js', 'js/inkgl.js', 'css/style.css']
 PUNCT = set('０１２３４５６７８９，。！？；：“”‘’（）《》、…—·「」　')
-CAO_TEXT = '筑基金丹元婴化神飞升坐化成败渡劫入魔归隐兵解身殒'   # 草书大字只用于破境/终卷
+CAO_TEXT = '筑基金丹元婴化神飞升坐化成败渡劫入魔归隐兵解身殒攻守术奇胜负第一二三四五六七八九合晋'   # 草书大字只用于破境/终卷
+
+def asset_v():
+    # 与 index.html 的缓存版本号保持一致，免得 preload 与 @font-face 地址错开
+    m = re.search(r'css/style\.css\?v=(\d+)', open(os.path.join(BASE, 'index.html'), encoding='utf8').read())
+    return m.group(1) if m else '1'
 
 def strip_comments(t, f):
     if f.endswith('.js') or f.endswith('.css'):
@@ -75,7 +80,7 @@ def build():
 @font-face{{font-family:'MoShu';src:url(../fonts/mashanzheng.woff2?v=__V__) format('woff2');font-display:swap;unicode-range:{ranges(m)}}}
 @font-face{{font-family:'MoCao';src:url(../fonts/cao.woff2?v=__V__) format('woff2');font-display:block;unicode-range:{ranges(z)}}}
 """
-    open(os.path.join(BASE, 'css/fonts.css'), 'w').write(css.replace('__V__', os.environ.get('ASSET_V', '2')))
+    open(os.path.join(BASE, 'css/fonts.css'), 'w').write(css.replace('__V__', os.environ.get('ASSET_V') or asset_v()))
     print(f'built: game={len(game)} extra={len(extra)}')
 
 def glyph_ok(font, ch):

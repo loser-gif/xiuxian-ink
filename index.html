@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=6" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=6" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=6">
-<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=7" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=7" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -125,6 +125,7 @@
           <div class="who-name" id="h-name">无名</div>
           <div class="who-sub" id="h-sub">外门弟子 · 三灵根</div>
         </div>
+        <button class="menu-seal sect-seal" id="btn-sect" aria-label="宗门"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="44" fill="#1b1814"/><circle cx="50" cy="50" r="36" fill="none" stroke="#f3ead6" stroke-width="2.5" opacity=".7"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font" id="sect-seal-t">宗</text></g></svg></button>
         <button class="menu-seal" id="btn-menu" aria-label="卷首"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font">卷</text></g></svg></button>
       </div>
       <div class="bars">
@@ -212,6 +213,43 @@
   <button class="bt-close brush-btn small light" id="bt-close" hidden><span class="bb-ink"></span><span class="bb-text">收卷</span></button>
 </div>
 
+<!-- 大比 -->
+<div id="duel" class="duel" hidden>
+  <div class="duel-shade"></div>
+  <div class="duel-ink" id="duel-ink"></div>
+  <div class="duel-head"><span id="duel-ttl">宗门大比</span><em id="duel-rd">八进四</em></div>
+  <div class="duel-side opp">
+    <div class="duel-id"><div class="duel-name" id="duel-oname"></div><div class="duel-style" id="duel-ostyle"></div></div>
+    <div class="duel-hp" id="duel-ohp"></div>
+  </div>
+  <div class="duel-stage" id="duel-stage">
+    <div class="duel-round" id="duel-round"></div>
+    <p class="duel-tell" id="duel-tell"></p>
+    <div class="duel-clash" id="duel-clash"><span class="dc-o" id="dc-o"></span><span class="dc-m" id="dc-m"></span></div>
+    <svg class="duel-slash" id="duel-slash" viewBox="0 0 390 260" preserveAspectRatio="none"></svg>
+    <div class="duel-splash" id="duel-splash"></div>
+    <p class="duel-text" id="duel-text"></p>
+    <div class="duel-stamp" id="duel-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="duel-stamp-t">胜</text></g></svg></div>
+  </div>
+  <div class="duel-side me">
+    <div class="duel-hp" id="duel-mhp"></div>
+    <div class="duel-id"><div class="duel-name" id="duel-mname"></div><div class="duel-style" id="duel-mstyle"></div></div>
+  </div>
+  <nav class="duel-moves" id="duel-moves"></nav>
+  <button class="brush-btn small light duel-next" id="duel-next" hidden><span class="bb-ink"></span><span class="bb-text">再战</span></button>
+</div>
+
+<!-- 晋升 -->
+<div id="rite" class="rite" hidden>
+  <div class="rite-shade"></div>
+  <div class="rite-rays"></div>
+  <div class="rite-token" id="rite-token"></div>
+  <div class="rite-title" id="rite-title"></div>
+  <p class="rite-text" id="rite-text"></p>
+  <div class="rite-tags entry-tags" id="rite-tags"></div>
+  <button class="brush-btn small light" id="rite-close" hidden><span class="bb-ink"></span><span class="bb-text">受令</span></button>
+</div>
+
 <!-- 终卷 -->
 <div id="end" class="end" hidden>
   <div class="end-paper">
@@ -230,14 +268,15 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=6"></script>
-<script src="js/gongfa.js?v=6"></script>
-<script src="js/story.js?v=6"></script>
-<script src="js/core.js?v=6"></script>
-<script src="js/ink.js?v=6"></script>
-<script src="js/fx.js?v=6"></script>
-<script src="js/wallpaper.js?v=6"></script>
-<script src="js/inkgl.js?v=6"></script>
-<script src="js/game.js?v=6"></script>
+<script src="js/data.js?v=7"></script>
+<script src="js/gongfa.js?v=7"></script>
+<script src="js/story.js?v=7"></script>
+<script src="js/sect.js?v=7"></script>
+<script src="js/core.js?v=7"></script>
+<script src="js/ink.js?v=7"></script>
+<script src="js/fx.js?v=7"></script>
+<script src="js/wallpaper.js?v=7"></script>
+<script src="js/inkgl.js?v=7"></script>
+<script src="js/game.js?v=7"></script>
 </body>
 </html>
