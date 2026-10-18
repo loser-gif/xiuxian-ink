@@ -12,7 +12,7 @@ const COURT_RANKS = [
 ];
 
 function emptyCourt() {
-  return { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0 };
+  return { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 };
 }
 function courtRankName(s) {
   if (!s.court || s.court.rank < 0) return '';
