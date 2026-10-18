@@ -4,23 +4,59 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 4;
+  const SAVE_V = 5;
   // 调参入口（模拟器会改写这里）
   const K = {
-    tunaGain: 0.5, biguanGain: 1.7, tunaMonths: 3, biguanMonths: 12, youliMonths: 3,
+    tunaGain: 0.44, biguanGain: 1.48, tunaMonths: 3, biguanMonths: 12, youliMonths: 3,
     noGf: 0.75, mismatch: 0.85, yiElemental: 0.9, yiOwn: 1.4, wuxingPer: 0.07,
     match: { tian: 1.35, shuang: 1.25, san: 1.18, si: 1.1, wei: 1.05, yi: 1.0 },
     layerBonus: 0.04, xpNeed: lv => 3 + lv * 2,
     btDeath: [0, 0, 0.05, 0.14, 0.3],
     moLoss: [1, 2], moRiskXj: 30, moRisk: 0.008,
-    reqMul: [4.3, 5.0, 5.6, 6.7, 7.4], lifeMul: [1.0, 1.0, 1.0, 0.9, 0.95],
+    // v0.9：略抬需求、略缓收益，三灵根均衡局约 70–80 分钟
+    reqMul: [5.05, 5.85, 6.55, 7.85, 8.65], lifeMul: [1.0, 1.0, 1.0, 0.9, 0.95],
     rootLife: { si: 1.04, wei: 1.08 },   // 驳杂灵根，气血反而绵长些
     payYears: 2, dabiYears: 55, mYears: 3, mXw: 0.05, stipendPill: [0, 0, 0, 0.05, 0.08, 0.1, 0.12], freeQiyu: 0.12,
   };
 
   /* ---------- 基础 ---------- */
   function gf(s) { return s.gf ? GONGFA[s.gf] : null; }
-  function gt(s, key, dflt) { const g = gf(s); return g && g.t[key] != null ? g.t[key] : dflt; }
+  // 主修完整生效；辅修仅取前 AUX_LAYER_CAP 层、且不参与 spd 主乘法（只给微量）
+  function traitBag(s) {
+    const parts = [];
+    if (s.gf && GONGFA[s.gf]) parts.push({ t: GONGFA[s.gf].t, w: 1, spd: 1 });
+    for (const id of (s.aux || [])) {
+      const g = GONGFA[id], e = s.gfs[id]; if (!g || !e) continue;
+      const w = Math.min(e.lv, typeof AUX_LAYER_CAP !== 'undefined' ? AUX_LAYER_CAP : 3) / (typeof GF_LAYERS !== 'undefined' ? GF_LAYERS : 9);
+      parts.push({ t: g.t, w: 0.55 * w, spd: 0.25 * w });
+    }
+    const fb = s.fabao && typeof FABAO_BONUS !== 'undefined' ? FABAO_BONUS[s.fabao.stage | 0] : null;
+    if (fb) parts.push({ t: fb, w: 1, spd: 1 });
+    if (s.eq && s.eq.weapon && typeof GEAR !== 'undefined' && GEAR[s.eq.weapon])
+      parts.push({ t: GEAR[s.eq.weapon].t || {}, w: 1, spd: 1 });
+    return parts;
+  }
+  function gt(s, key, dflt) {
+    const parts = traitBag(s);
+    if (key === 'spd') {
+      let m = 1;
+      for (const p of parts) if (p.t.spd != null) m *= 1 + (p.t.spd - 1) * (p.spd != null ? p.spd : p.w);
+      return m;
+    }
+    if (key === 'xinmo' || key === 'time') {
+      let m = 1, any = false;
+      for (const p of parts) if (p.t[key] != null) { m *= Math.pow(p.t[key], p.w); any = true; }
+      return any ? m : dflt;
+    }
+    if (key === 'mo') {
+      for (const p of parts) if (p.t.mo) return p.t.mo;
+      return dflt;
+    }
+    // 加法类：bt life qiyu dunwu heal xjGain btXj
+    let sum = 0, any = false;
+    for (const p of parts) if (p.t[key] != null) { sum += p.t[key] * p.w; any = true; }
+    return any ? sum : dflt;
+  }
   function sync(s) {
     s.age = Math.floor(s.months / 12);
     s.lifespan = Math.round(REALMS[s.realm].life * K.lifeMul[s.realm] * (K.rootLife[s.lg.id] || 1) * (1 + gt(s, 'life', 0)) + s.lifeBonus);
@@ -44,9 +80,28 @@ const Core = (() => {
   }
   function gfLv(s, id = s.gf) { return id && s.gfs[id] ? s.gfs[id].lv : 0; }
   function gfSpeed(s, id = s.gf) {
-    if (!id) return K.noGf;
+    if (!id) return K.noGf * gearSpd(s);
     const g = GONGFA[id];
-    return GF_GRADE_MUL[g.grade] * gfMatch(s, id) * (1 + K.layerBonus * (gfLv(s, id) - 1)) * (g.t.spd || 1);
+    let spd = GF_GRADE_MUL[g.grade] * gfMatch(s, id) * (1 + K.layerBonus * (gfLv(s, id) - 1)) * (g.t.spd || 1);
+    if (id === s.gf) spd *= gearSpd(s) * fabaoSpd(s) * auxSpd(s);
+    return spd;
+  }
+  function gearSpd(s) {
+    if (!(s.eq && s.eq.weapon && typeof GEAR !== 'undefined' && GEAR[s.eq.weapon] && GEAR[s.eq.weapon].t.spd)) return 1;
+    return GEAR[s.eq.weapon].t.spd;
+  }
+  function fabaoSpd(s) {
+    if (!(s.fabao && typeof FABAO_BONUS !== 'undefined')) return 1;
+    return FABAO_BONUS[s.fabao.stage | 0].spd || 1;
+  }
+  function auxSpd(s) {
+    let m = 1;
+    for (const id of (s.aux || [])) {
+      const g = GONGFA[id], e = s.gfs[id]; if (!g || !e || !g.t.spd) continue;
+      const w = 0.25 * Math.min(e.lv, typeof AUX_LAYER_CAP !== 'undefined' ? AUX_LAYER_CAP : 3) / 9;
+      m *= 1 + (g.t.spd - 1) * w;
+    }
+    return m;
   }
   function gfMatchWord(s, id) {
     const g = GONGFA[id]; if (!g.el) return '不择灵根';
@@ -92,7 +147,121 @@ const Core = (() => {
     emit && emit({ title: '转修', text: (old ? `你散去《${GONGFA[old].name}》的周天路数，改修《${GONGFA[id].name}》。经脉逆转之痛，如抽丝剥茧，${cnDur(c.months + c.extra)}方定。` : `你改修《${GONGFA[id].name}》。`) + (c.extra ? '修为本就浅薄，散功之后，几乎是从头来过。' : ''),
       tags, cls: 'event', div: true });
     checkXj(s, emit);
+    // 转主修：本命法宝若系于旧功，祭炼值回落，并记残魂旗（供来世）
+    if (s.fabao && s.fabao.gfId && s.fabao.gfId === old) {
+      s.fabao.bond = Math.max(0, Math.floor(s.fabao.bond * 0.55));
+      fabaoSyncStage(s);
+      s.fabao.gfId = id;
+      s.flags = s.flags || {};
+      s.flags.fabaoCanhun = 1;
+      if (emit) emit({ text: `《${GONGFA[old].name}》散去之时，本命${s.fabao.name}轻轻一颤，灵性淡了几分——似有一缕残魂，犹记旧主人路数。`, cls: 'sys' });
+    }
     return true;
+  }
+
+  /* ---------- 辅修 ---------- */
+  function setAux(s, id) {
+    if (!id || !s.gfs[id] || s.gf === id) return { err: '不可辅修' };
+    s.aux = s.aux || [];
+    if (s.aux.includes(id)) return { err: '已在辅修' };
+    if (s.aux.length >= (typeof AUX_MAX !== 'undefined' ? AUX_MAX : 2)) return { err: '辅修已满两门' };
+    s.aux.push(id);
+    sync(s);
+    return { text: `你将《${GONGFA[id].name}》列为辅修。不求精深，只取其意，温养性情。`, tags: [{ t: `辅修《${GONGFA[id].name}》`, c: 'up' }] };
+  }
+  function clearAux(s, id) {
+    s.aux = (s.aux || []).filter(x => x !== id);
+    sync(s);
+    return { text: id ? `你卸下辅修《${GONGFA[id].name}》。` : '你清空了辅修。', tags: [{ t: '卸辅修', c: '' }] };
+  }
+
+  /* ---------- 本命法宝 ---------- */
+  function fabaoPickSeed(s) {
+    const poolKey = (s.lgEls || []).find(e => typeof FABAO_POOL !== 'undefined' && FABAO_POOL[e]) || '_';
+    const pool = FABAO_POOL[poolKey] || FABAO_POOL._;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function fabaoAwaken(s, emit) {
+    if (s.fabao || typeof FABAO_POOL === 'undefined') return null;
+    let seed, bond = 0, stage = 0, fromCanhun = false;
+    if (s.flags && s.flags.canhunSeed) {
+      const c = s.flags.canhunSeed; fromCanhun = true;
+      seed = { id: c.id, name: c.name, seal: c.seal || '器', flavor: c.flavor || '残魂归笼，旧器重光。' };
+      bond = c.bond || FABAO_NEED[1] || 10; stage = Math.min(2, c.stage | 0);
+      delete s.flags.canhunSeed;
+    } else seed = fabaoPickSeed(s);
+    s.fabao = { id: seed.id, name: seed.name, seal: seed.seal, stage, bond, el: (s.lgEls || [])[0] || null, gfId: s.gf || null, flavor: seed.flavor };
+    fabaoSyncStage(s);
+    s.flags = s.flags || {}; s.flags.fabao = 1;
+    if (emit) emit({ title: fromCanhun ? '本命法宝 · 残魂归笼' : '本命法宝 · 认主',
+      text: fromCanhun ? `前世一缕残魂未散，今世再入仙途，${seed.name}自虚空凝出。${seed.flavor}你与它，似曾相识。`
+        : `机缘至，一物落于你识海之中——${seed.name}。${seed.flavor}自此与你气血相连，是为认主。`, cls: 'gold', div: true });
+    return s.fabao;
+  }
+  function fabaoSyncStage(s) {
+    if (!s.fabao || typeof FABAO_NEED === 'undefined') return;
+    let st = 0;
+    for (let i = FABAO_NEED.length - 1; i >= 0; i--) if (s.fabao.bond >= FABAO_NEED[i]) { st = i; break; }
+    if (st > (s.fabao.stage | 0)) {
+      s.fabao.stage = st;
+      return FABAO_STAGE[st];
+    }
+    s.fabao.stage = st;
+    return null;
+  }
+  function fabaoFeed(s, n, emit) {
+    if (!s.fabao) return;
+    s.fabao.bond = (s.fabao.bond || 0) + n;
+    if (!s.fabao.gfId && s.gf) s.fabao.gfId = s.gf;
+    const up = fabaoSyncStage(s);
+    if (up && emit) emit({ text: `本命${s.fabao.name}灵性大涨，进至「${up}」。`, cls: 'gold' });
+  }
+  function fabaoOnDeath(s) {
+    if (!s.fabao || (s.fabao.stage | 0) < 1) return null;
+    return { id: s.fabao.id, name: s.fabao.name, seal: s.fabao.seal, stage: s.fabao.stage, el: s.fabao.el, bond: Math.floor((s.fabao.bond || 0) * 0.4), flavor: s.fabao.flavor };
+  }
+
+  /* ---------- 装备 ---------- */
+  function equip(s, name) {
+    if (typeof GEAR === 'undefined' || !GEAR[name]) return { err: '非兵器' };
+    if (!(s.items[name] > 0) && s.eq && s.eq.weapon !== name) return { err: '囊中无此物' };
+    s.eq = s.eq || { weapon: null };
+    const g = GEAR[name];
+    // 神器代价：初次装备
+    const tags = [];
+    if (g.artifact && g.curse && !s.flags['eq_' + name]) {
+      s.flags['eq_' + name] = 1;
+      if (g.curse.lifeOnce) { s.lifeBonus += g.curse.lifeOnce; tags.push({ t: `寿元 ${g.curse.lifeOnce}年`, c: 'down' }); }
+      if (g.curse.xj) { s.xj = clamp(s.xj + g.curse.xj, 0, 100); tags.push({ t: `心境 ${g.curse.xj}`, c: 'down' }); }
+    }
+    // 卸下旧器回囊
+    if (s.eq.weapon && s.eq.weapon !== name) s.items[s.eq.weapon] = (s.items[s.eq.weapon] || 0) + 1;
+    if (s.items[name] > 0) { s.items[name]--; if (!s.items[name]) delete s.items[name]; }
+    s.eq.weapon = name;
+    sync(s);
+    return { text: g.artifact ? `你以心血温养${name}。${g.desc}` : `你将${name}佩在身侧。${g.desc}`, tags: tags.concat([{ t: `佩${name}`, c: 'up' }]) };
+  }
+  function unequip(s) {
+    if (!(s.eq && s.eq.weapon)) return { err: '未佩兵器' };
+    const n = s.eq.weapon;
+    s.items[n] = (s.items[n] || 0) + 1;
+    s.eq.weapon = null;
+    sync(s);
+    return { text: `你收起了${n}。`, tags: [{ t: `卸${n}`, c: '' }] };
+  }
+  function gearTick(s, emit) {
+    if (!(s.eq && s.eq.weapon && typeof GEAR !== 'undefined')) return;
+    const g = GEAR[s.eq.weapon];
+    if (!(g && g.artifact && g.curse)) return;
+    if (g.curse.xjPerYear) {
+      // 约略：每次行动按年月损耗，在 passTime 后按月计太细；此处在 tuna/biguan 末调用已够
+      const loss = Math.random() < 0.35 ? 1 : 0;
+      if (loss) { s.xj = clamp(s.xj - loss, 0, 100); }
+    }
+    if (g.curse.risk && Math.random() < g.curse.risk) {
+      s.inj += 1;
+      if (emit) emit({ text: `${s.eq.weapon}忽然反噬，一股阴寒倒灌识海。你咬牙压下，额上已冷汗淋漓。`, cls: 'warn' });
+    }
   }
 
   /* ---------- 数值 ---------- */
@@ -155,6 +324,8 @@ const Core = (() => {
     practice(s, 1, null, emit);
     moTick(s, 0, tags, emit);
     passTime(s, r.T * K.tunaMonths, emit);
+    fabaoFeed(s, 1, emit);
+    gearTick(s, emit);
     checkXj(s, emit);
     s.acts++;
     return { text: pick(TEXT.tuna).replace('{d}', cnDur(r.T * K.tunaMonths)), tags, ups };
@@ -178,6 +349,8 @@ const Core = (() => {
     practice(s, 3, null, emit);
     const mo = moTick(s, 1, tags, emit);
     if (mo === 'zouhuo') { text += pick(TEXT.zouhuo); cls = 'warn'; }
+    fabaoFeed(s, 3, emit);
+    gearTick(s, emit);
     checkXj(s, emit);
     s.acts++;
     return { text, tags, cls, ups };
@@ -232,6 +405,10 @@ const Core = (() => {
     if (fx.gf) learn(s, fx.gf, tags, emit);
     if (fx.gfXp && s.gf) { practice(s, fx.gfXp, null, emit); tags.push({ t: `《${GONGFA[s.gf].name}》精进`, c: 'up' }); }
     if (fx.flag) s.flags[fx.flag] = 1;
+    if (fx.gear && typeof GEAR !== 'undefined' && GEAR[fx.gear]) {
+      s.items[fx.gear] = (s.items[fx.gear] || 0) + 1;
+      tags.push({ t: `得${fx.gear}`, c: 'gold' });
+    }
     if (typeof Jianghu !== 'undefined') Jianghu.fx(s, fx, tags);
     if (fx.time) passTime(s, fx.time, emit);
     if (fx.end && !s.dead) { s.dead = true; s.ending = fx.end; }
@@ -257,6 +434,9 @@ const Core = (() => {
       sync(s);
       const text = TEXT.btSuccess[from] + `寿元增至${cn(s.lifespan)}载。` + (btXj ? TEXT.wangqingCost : '');
       sectReward(s, emit);
+      fabaoFeed(s, 8, emit);
+      if (!s.fabao && from === 0) fabaoAwaken(s, emit);   // 筑基成，本命器认主
+      else if (!s.fabao && from >= 1) fabaoAwaken(s, emit);
       checkXj(s, emit);
       return { ok, from, text };
     }
@@ -314,9 +494,12 @@ const Core = (() => {
     const s = { v: SAVE_V, name, lg: { id: r.lg.id, name: r.lg.name, mult: r.lg.mult, bt: r.lg.bt, sect: r.lg.sect }, lgEls: r.els,
       wx: r.wx, xj: 50, luck: r.luck, ls: 10, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
-      gf: null, gfs: {}, seen: {}, recent: [], acts: 0, ending: null };
+      gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, seen: {}, recent: [], acts: 0, ending: null };
     if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
-    if (legacy) { s.wx = clamp(s.wx + (legacy.wx || 0), 1, 10); s.flags.legacy = 1; }
+    if (legacy) {
+      s.wx = clamp(s.wx + (legacy.wx || 0), 1, 10); s.flags.legacy = 1;
+      if (legacy.canhun) { s.flags.canhunSeed = legacy.canhun; s.flags.fabaoCanhun = 1; }
+    }
     s.sect = initSect(s, r.lg.id === 'wei' ? null : 'qm', START_RANK[r.lg.id]); s.npc = initNpc(s);
     if (typeof Jianghu !== 'undefined') Jianghu.init(s);
     sync(s); return s;
@@ -345,8 +528,19 @@ const Core = (() => {
       const oldLife = s.lifespan; s.v = 4; if (typeof Jianghu !== 'undefined') Jianghu.init(s);
       sync(s); if (oldLife > s.lifespan) { s.lifeBonus = (s.lifeBonus || 0) + oldLife - s.lifespan; sync(s); }
     }
+    if (s.v === 4) {   // v0.8 → v0.9：器与卷
+      const oldLife = s.lifespan;
+      s.v = 5;
+      s.aux = s.aux || [];
+      s.fabao = s.fabao || null;
+      s.eq = s.eq || { weapon: null };
+      const V8 = [4.3, 5.0, 5.6, 6.7, 7.4];
+      s.xw = Math.round(s.xw * K.reqMul[s.realm] / V8[s.realm]);
+      sync(s); if (oldLife > s.lifespan) { s.lifeBonus = (s.lifeBonus || 0) + oldLife - s.lifespan; sync(s); }
+    }
     if (s.v !== SAVE_V) return null;
-    s.gfs = s.gfs || {}; s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
+    s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
+    s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
     sync(s); return s;
   }
   function retire(s) { s.dead = true; s.ending = 'guiyin'; }
@@ -626,7 +820,8 @@ const Core = (() => {
   }
 
   return { K, LIFE_SCALE, clamp, pick, gf, gt, sync, req, unit, isLast, bottleneck, realmStr, timeLabel, fmtNum,
-    gfMatch, gfMatchWord, gfLv, gfSpeed, learn, practice, switchCost, switchGf,
+    gfMatch, gfMatchWord, gfLv, gfSpeed, learn, practice, switchCost, switchGf, setAux, clearAux,
+    fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
     btChance, resolveBreak, useItem, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct,
