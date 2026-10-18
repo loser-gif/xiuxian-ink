@@ -1076,10 +1076,11 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .auc-banner .brush-btn{margin:0 auto}
 
 /* ---------- 拍卖会 ---------- */
-.auc,.dan{position:fixed;inset:0;z-index:28;display:flex;flex-direction:column;align-items:center;color:var(--paper-hi);overflow:hidden;
+.auc,.dan{position:fixed;inset:0;z-index:28;display:flex;flex-direction:column;align-items:center;overflow:hidden;
   padding:calc(var(--sat) + 18px) 22px calc(var(--sab) + 18px);opacity:0;transition:opacity .5s var(--ease-ink)}
 .auc.open,.dan.open{opacity:1}
-.auc-shade,.dan-shade{position:absolute;inset:-2px;background:radial-gradient(ellipse 90% 60% at 50% 40%,rgba(42,30,24,.985),rgba(12,10,9,1) 74%)}
+.auc-shade,.dan-shade{position:absolute;inset:-2px}
+.auc-shade{background:radial-gradient(ellipse 90% 60% at 50% 40%,rgba(42,30,24,.985),rgba(12,10,9,1) 74%)}
 .auc>*:not(.auc-shade):not(.auc-stamp){position:relative}
 .auc-lamps{display:flex;justify-content:space-between;width:100%;max-width:340px;height:30px}
 .auc-lamps i{width:16px;height:24px;border-radius:8px;background:radial-gradient(circle at 50% 45%,#f08a5c,#a8291f 70%);box-shadow:0 0 24px 6px rgba(224,106,74,.28);animation:lampSway 3.4s ease-in-out infinite alternate}
@@ -1115,48 +1116,31 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .auc-stamp.lost{filter:grayscale(.8) brightness(.8)}
 @keyframes stampIn{0%{opacity:0;transform:scale(2.4) rotate(-14deg)}100%{opacity:.92;transform:scale(1) rotate(-8deg)}}
 
-/* ---------- 丹炉 ---------- */
-.dan{justify-content:center}
-.dan>*:not(.dan-shade):not(.dan-fire):not(.dan-stamp){position:relative}
-.dan-fire{position:absolute;left:50%;top:50%;width:520px;height:520px;margin:-180px 0 0 -260px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle at 50% 50%,rgba(214,102,52,.42),rgba(179,48,42,.16) 38%,rgba(179,48,42,0) 64%);opacity:0;transition:opacity .8s}
-.dan.fire .dan-fire{opacity:1;animation:fireFlick .22s steps(2) infinite alternate}
-.dan.gold .dan-fire{opacity:.9;background:radial-gradient(circle at 50% 46%,rgba(232,190,110,.5),rgba(214,160,80,.14) 40%,rgba(0,0,0,0) 66%)}
-.dan.ok .dan-fire{opacity:.5}
-@keyframes fireFlick{from{transform:scale(1)}to{transform:scale(1.04) translateY(-3px)}}
-.dan-stage{position:relative;width:220px;height:240px}
-.ding.big{position:absolute;left:30px;bottom:0;width:160px;height:160px}
-.ding.big g{stroke:#e9dfc8}
-.ding.big path:first-child{fill:#1f1b17}
-.dan.fire .ding.big{animation:dingHum .12s linear infinite alternate}
-@keyframes dingHum{from{transform:translateX(-.6px)}to{transform:translateX(.6px)}}
-.dan-smoke{position:absolute;left:10px;top:-30px;width:200px;height:240px;overflow:visible;pointer-events:none}
-.dan-smoke path{fill:none;stroke:rgba(239,230,211,.55);stroke-width:7;stroke-linecap:round;filter:blur(3px);stroke-dasharray:320;stroke-dashoffset:320;opacity:0}
-.dan.fire .dan-smoke path{animation:smokeRise 2.1s var(--ease-ink) infinite}
-.dan.waste .dan-smoke path{stroke:rgba(140,130,118,.6);animation:smokeRise 2.4s ease-out 1}
-@keyframes smokeRise{0%{stroke-dashoffset:320;opacity:0}25%{opacity:.8}100%{stroke-dashoffset:0;opacity:0;transform:translateY(-30px)}}
-.dan-glow{position:absolute;left:50%;top:44%;width:16px;height:16px;margin:-8px;border-radius:50%;opacity:0;background:#f3d79a;box-shadow:0 0 30px 14px rgba(243,215,154,.5)}
-.dan.ok .dan-glow,.dan.gold .dan-glow{animation:pillRise 1.2s var(--ease-ink) forwards}
-@keyframes pillRise{0%{opacity:0;transform:translateY(40px) scale(.3)}60%{opacity:1}100%{opacity:1;transform:translateY(-36px) scale(1)}}
-.dan-splash{position:absolute;left:50%;top:55%;width:420px;height:420px;margin:-210px;background:var(--blot-big) center/contain no-repeat;filter:invert(1) sepia(.25);opacity:0;transform:scale(.1)}
-.dan.boom .dan-splash{animation:boomInk .7s var(--ease-ink) forwards}
-.dan.boom .dan-stage{animation:boomShake .5s linear}
-@keyframes boomInk{0%{opacity:0;transform:scale(.1) rotate(0)}30%{opacity:.5}100%{opacity:.16;transform:scale(1) rotate(25deg)}}
+/* ---------- 丹炉：纸上一鼎，水色炉火（v0.8.1 重绘） ---------- */
+.dan{justify-content:center;color:var(--ink);background:none}
+.dan>*:not(.dan-shade):not(.dan-stamp){position:relative}
+.dan-shade{background:radial-gradient(ellipse 80% 60% at 50% 42%,rgba(250,245,232,.0),rgba(120,92,58,.10) 70%,rgba(80,58,34,.22) 100%),
+  linear-gradient(rgba(243,236,220,.97),rgba(243,236,220,.97)),var(--paper-img);background-size:auto,auto,256px}
+.dan-shade::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34%;background:var(--mtn-img) center bottom/100% auto no-repeat;opacity:.1;pointer-events:none}
+.dan-head2{display:flex;align-items:baseline;gap:10px;font-family:var(--f-head);font-size:16px;letter-spacing:.42em;color:var(--ink3);margin-bottom:2px}
+.dan-head2 em{font-style:normal;font-family:var(--f-body);font-size:12px;letter-spacing:.2em;color:var(--zhu)}
+.dan-stage{position:relative;width:min(88vw,440px);height:min(88vw,440px,50vh);flex:none}
+.dan-gl{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.dan-ding-img{position:absolute;left:50%;top:50%;height:50%;width:auto;transform:translate(-50%,-50%);pointer-events:none}
+.dan.nogl.boom .dan-stage{animation:boomShake .5s linear}
+.dan.nogl.ok .dan-ding-img,.dan.nogl.gold .dan-ding-img{filter:drop-shadow(0 0 18px rgba(204,150,64,.5))}
 @keyframes boomShake{0%,100%{transform:none}20%{transform:translate(-8px,4px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,-3px)}80%{transform:translate(4px,3px)}}
-.dan-name{font-family:var(--f-head);font-size:30px;letter-spacing:.3em;margin-top:18px;color:rgba(239,230,211,.9)}
-.dan-text{max-width:320px;min-height:3.8em;margin-top:10px;font-size:15px;line-height:1.95;color:rgba(239,230,211,.88);text-align:center}
-.dan-tags{justify-content:center;opacity:0}
+.dan-name{font-family:var(--f-head);font-size:32px;letter-spacing:.34em;padding-left:.34em;margin-top:2px;color:var(--ink)}
+.dan.gold .dan-name{color:#8a5a1e}
+.dan.boom .dan-name,.dan.waste .dan-name{color:var(--ink2)}
+.dan-text{max-width:340px;min-height:3.9em;margin-top:8px;font-size:15.5px;line-height:1.95;color:var(--ink2);text-align:center}
+.dan-tags{justify-content:center;opacity:0;min-height:1.6em}
 .dan-tags.bleed-in{opacity:1}
-.dan-tags span{color:rgba(239,230,211,.7)!important}.dan-tags span.gold{color:#e3b866!important}
-.dan-close{margin-top:18px}
-.dan-stamp{top:16%;right:34px}
-.dan-flame{position:absolute;left:50%;bottom:6px;width:70px;height:40px;margin-left:-35px;opacity:0;transition:opacity .5s}
-.dan.fire .dan-flame{opacity:1}
-.dan-flame path{transform-origin:50% 100%;animation:flame .5s ease-in-out infinite alternate}
-.dan-flame path:nth-child(2){animation-duration:.37s;animation-delay:-.2s}.dan-flame path:nth-child(3){animation-duration:.43s;animation-delay:-.1s}
-@keyframes flame{from{transform:scaleY(.82) skewX(-4deg)}to{transform:scaleY(1.12) skewX(5deg)}}
+.dan-tags span.gold{color:#8a5a1e!important}
+.dan-close{margin-top:14px}
+.dan-stamp{top:8%;right:2%;width:68px;height:68px;z-index:2}
 .dan-head{display:flex;align-items:center;gap:14px;padding:4px 2px 12px;border-bottom:1px solid rgba(27,24,20,.1)}
-.dan-ding .ding{width:58px;height:58px}
+.dan-ding .ding-ico{display:block;width:62px;height:62px;margin:-4px -2px}
 .dan-info{flex:1}
 .dan-lv{font-size:13px;color:var(--ink3);letter-spacing:.2em}
 .dan-lv b{font-family:var(--f-head);font-weight:400;font-size:22px;color:var(--ink);margin-left:4px}

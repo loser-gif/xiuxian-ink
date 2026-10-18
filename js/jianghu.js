@@ -182,7 +182,9 @@ const Jianghu = (() => {
   const danNeed = lv => 3 + lv * 2;
   function danXp(s, n, tags) {
     s.dan.xp += n;
-    while (s.dan.lv < 9 && s.dan.xp >= danNeed(s.dan.lv)) { s.dan.xp -= danNeed(s.dan.lv); s.dan.lv++; tags && tags.push({ t: `丹道 ${cn(s.dan.lv)}重`, c: 'up' }); }
+    const lv0 = s.dan.lv;
+    while (s.dan.lv < 9 && s.dan.xp >= danNeed(s.dan.lv)) { s.dan.xp -= danNeed(s.dan.lv); s.dan.lv++; }
+    if (tags && s.dan.lv > lv0) tags.push({ t: `丹道 ${cn(s.dan.lv)}重`, c: 'up' });
   }
   const hasHerbs = (s, id) => Object.entries(RECIPES[id].need).every(([h, n]) => (s.items[h] || 0) >= n);
   function danChance(s, id) {

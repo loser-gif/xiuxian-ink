@@ -1014,5 +1014,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), JHUI };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), JHUI };
 })();

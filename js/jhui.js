@@ -291,7 +291,8 @@ function makeJHUI(G) {
           btns.classList.add('wait');
           const k = +b.dataset.k;
           if (!k) { btns.classList.remove('wait'); btns.onclick = null; const r = J.aucPass(G.S, a); return finish(null, { who: r.winner, t: r.line }); }
-          addLine({ who: 'you', t: `${fmtNum(Math.max(a.price + 1, Math.round(a.price * (1 + k))))}。` });
+          const bid = Math.max(a.price + 1, Math.round(a.price * (1 + k)));
+          addLine({ who: 'you', t: bid < 10000 ? `${cn(bid)}。` : `${fmtNum(bid)}灵石。` });
           const r = J.aucRaise(G.S, a, k); await sleep(700);
           a.lines.forEach(x => addLine(x)); upd(); btns.classList.remove('wait');
           if (r.err) { toast(r.err); return draw(); }
@@ -307,8 +308,9 @@ function makeJHUI(G) {
   function danPage() {
     const w = document.createElement('div'); w.className = 'dan-page';
     const d = G.S.dan, need = J.danNeed(d.lv);
-    w.innerHTML = `<div class="dan-head"><div class="dan-ding">${dingSVG()}</div><div class="dan-info"><div class="dan-lv">丹道 <b>${cn(d.lv)}重</b></div>
+    w.innerHTML = `<div class="dan-head"><div class="dan-ding"></div><div class="dan-info"><div class="dan-lv">丹道 <b>${cn(d.lv)}重</b></div>
       <div class="dan-xp"><i style="width:${Math.min(100, d.xp / need * 100).toFixed(0)}%"></i></div><small>已开炉${cn(d.n)}次${G.S.lgEls.includes('火') ? ' · 火灵根，控火更稳' : ''}</small></div></div>`;
+    w.querySelector('.dan-ding').appendChild(dingImg('ding-ico'));
     const ids = Object.keys(RECIPES);
     ids.sort((a, b) => (d.rec.includes(b) - d.rec.includes(a)) || RECIPES[a].diff - RECIPES[b].diff).forEach(id => {
       const r = RECIPES[id], known = d.rec.includes(id), row = document.createElement('div');
@@ -324,33 +326,34 @@ function makeJHUI(G) {
     });
     return w;
   }
-  function dingSVG(big) {
-    return `<svg viewBox="0 0 120 120" class="ding${big ? ' big' : ''}"><g fill="none" stroke="#1b1814" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M22 50 Q60 44 98 50 L92 84 Q60 94 28 84 Z" fill="#2a2621" stroke-width="2.5"/>
-      <path d="M26 58 Q60 52 94 58" stroke="#efe6d3" stroke-opacity=".28" stroke-width="1.5"/>
-      <path d="M18 50 Q60 40 102 50" stroke-width="4"/>
-      <path d="M34 47 Q34 30 44 30 M86 47 Q86 30 76 30" stroke-width="4"/>
-      <path d="M36 86 L30 108 M60 92 L60 112 M84 86 L90 108" stroke-width="5"/>
-      <path d="M48 68 q6 -6 12 0 q6 6 12 0" stroke="#efe6d3" stroke-opacity=".35" stroke-width="1.5"/></g></svg>`;
-  }
+  // 丹炉小像：与炉火场景同一幅水墨鼎
+  function dingImg(cls) { const im = new Image(); im.className = cls; im.alt = ''; im.decoding = 'async'; Ding.url().then(u => { im.src = u; }); return im; }
   const danEl = $('#dan');
   async function runFurnace(id) {
     G.busy = true;
     const r = RECIPES[id];
-    danEl.innerHTML = `<div class="dan-shade"></div><div class="dan-fire"></div>
-      <div class="dan-stage">${dingSVG(true)}
-        <svg class="dan-smoke" viewBox="0 0 200 260"><path d="M100 250 C80 210 122 190 98 150 C76 112 124 90 100 40"/><path d="M92 250 C110 214 70 188 90 146 C108 108 76 80 88 20" style="animation-delay:.35s"/><path d="M108 250 C126 220 94 196 112 160 C130 124 102 96 118 50" style="animation-delay:.7s"/></svg>
-        <svg class="dan-flame" viewBox="0 0 70 40"><path d="M35 40 C22 34 26 20 33 6 C36 18 46 24 44 34 Z" fill="rgba(226,120,60,.85)"/><path d="M22 40 C14 34 18 26 22 18 C24 26 30 30 28 38 Z" fill="rgba(200,80,44,.7)"/><path d="M48 40 C42 34 46 26 50 16 C52 26 58 30 55 38 Z" fill="rgba(200,80,44,.7)"/></svg>
-        <div class="dan-glow"></div><div class="dan-splash"></div></div>
+    danEl.innerHTML = `<div class="dan-shade"></div>
+      <div class="dan-head2"><span>开炉</span><em>${cnDur(J.danMonths(G.S, id))}</em></div>
+      <div class="dan-stage" id="dan-stage"><div class="dan-stamp" id="dan-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="dan-stamp-t">成</text></g></svg></div></div>
+
       <div class="dan-name">${r.name}</div><p class="dan-text" id="dan-text"></p><div class="entry-tags dan-tags" id="dan-tags"></div>
-      <div class="dan-stamp" id="dan-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="dan-stamp-t">成</text></g></svg></div>
-      <button class="brush-btn small light dan-close" id="dan-close" hidden><span class="bb-ink"></span><span class="bb-text">收丹</span></button>`;
-    danEl.className = 'dan'; danEl.hidden = false; await sleep(20); danEl.classList.add('open', 'fire');
+      <button class="brush-btn small dan-close" id="dan-close" hidden><span class="bb-ink"></span><span class="bb-text">收丹</span></button>`;
+    danEl.className = 'dan'; danEl.hidden = false;
+    const stage = $('#dan-stage');
+    const ctl = typeof InkGL !== 'undefined' && InkGL.furnace ? InkGL.furnace(stage, { size: .64 }) : null;
+    if (!ctl) stage.appendChild(dingImg('dan-ding-img'));
+    danEl.classList.toggle('nogl', !ctl);
+    G.furnace = ctl;
+    await sleep(20); danEl.classList.add('open', 'fire');
+    inkWrite($('#dan-text'), pick(['文火温养，药香初起……', '炉火渐旺，药气在鼎中翻涌……', '引火入炉，凝神看着火候……']), { immediate: true, step: 40 });
     const B = buffer(); const res = J.craft(G.S, id, B.emit); save();
-    await sleep(FX.reduced() ? 100 : 2200);
-    danEl.classList.remove('fire'); danEl.classList.add(res.ok ? (res.q >= 2 ? 'gold' : 'ok') : res.boom ? 'boom' : 'waste');
+    await sleep(FX.reduced() ? 300 : 2600);
+    const kind = res.ok ? (res.q >= 2 ? 'gold' : 'ok') : res.boom ? 'boom' : 'waste';
+    danEl.classList.remove('fire'); danEl.classList.add(kind);
+    if (ctl) ctl.set(kind);
     if (res.boom && navigator.vibrate) try { navigator.vibrate([20, 40, 30]); } catch (e) {}
-    await sleep(res.boom ? 700 : 500);
+    $('#dan-text').textContent = '';
+    await sleep(res.boom ? 900 : res.ok ? 1100 : 700);
     $('#dan-stamp-t').textContent = res.ok ? (res.q >= 2 ? DAN_Q[res.q].slice(0, 1) : '成') : res.boom ? '炸' : '废';
     $('#dan-stamp').classList.add('on');
     const t = inkWrite($('#dan-text'), res.text, { immediate: true, step: 18 });
@@ -359,7 +362,10 @@ function makeJHUI(G) {
     const c = $('#dan-close'); c.hidden = false; c.classList.add('bleed-in');
     c.querySelector('.bb-text').textContent = res.ok ? '收丹' : '收拾';
     c.onclick = async () => {
-      danEl.classList.remove('open'); await sleep(500); danEl.hidden = true; danEl.innerHTML = ''; danEl.className = 'dan';
+      c.onclick = null;
+      danEl.classList.remove('open'); await sleep(500);
+      if (ctl) ctl.stop(); G.furnace = null;
+      danEl.hidden = true; danEl.innerHTML = ''; danEl.className = 'dan';
       G.busy = false;
       pushLog({ title: `开炉 · ${r.name}`, text: res.text, tags: res.tags, cls: res.ok && res.q >= 2 ? 'gold' : 'event', div: true }); B.flush();
       render(); save(); checkEnd();
@@ -462,5 +468,5 @@ function makeJHUI(G) {
 
   function resume() { if (G.S && G.S.dive && !G.S.dead) showMj(false); }
   function youliSub() { const l = G.S && G.S.loc && LOC[G.S.loc]; return l ? l.name : '寻机缘'; }
-  return { openMap, closeMap, openMarket, startAuction, danPage, runFurnace, enterMj, resume, youliSub, aucWindow };
+  return { openMap, closeMap, openMarket, startAuction, danPage, runFurnace, enterMj, resume, youliSub, aucWindow, furnaceCtl: () => G.furnace };
 }
