@@ -438,3 +438,39 @@ for (const id of ['dj_jian', 'dj_dan', 'dj_qi', 'dj_mo', 'dj_zhen']) {
 }
 EV_LOC.dj_jian = ['shanmen', 'gufu']; EV_LOC.dj_dan = ['shanmen', 'yunyue'];
 EV_LOC.dj_qi = ['shanmen', 'gufu']; EV_LOC.dj_mo = ['shanmen', 'xuewu']; EV_LOC.dj_zhen = ['shanmen', 'gufu'];
+
+
+/* ================= 神器志续：骨笛／沉渊砚 ================= */
+EVENTS.push(
+  { id: 'shen_di', title: '谷中骨笛', seal: '笛', w: 2.4, once: true, rm: [1, 4],
+    cond: s => !s.flags.got_shen_di && s.realm >= 1,
+    text: s => '乱葬岗边缘，风穿过一截三孔骨笛。你走近时，笛孔无声，心里却有人轻轻应了一句——像极幼时奶名，又不完全是。',
+    choices: s => [
+      { label: '以精血润笛，收作佩物', sub: '得九婴骨笛 · 心境日损', act: s => {
+        s.flags.got_shen_di = 1;
+        return { text: '血渗进骨孔，笛身一温。你把它收入识海，夜里果真听见极轻的婴啼——啼完，游历的路反而顺了些。', fx: { gear: '九婴骨笛', xj: -5, flag: 'got_shen_di' } };
+      }},
+      { label: '埋笛，念一声超度', sub: '心境安', act: s => ({ text: '你把笛埋进黄土，低头念了半句谁也听不清的话。风停了。起身时袖里多了一枚无名骨钉。', fx: { xj: 4, ls: 20, flag: 'got_shen_di' } }) },
+      { label: '试吹一孔', sub: '或悟或伤', act: s => {
+        s.flags.got_shen_di = 1;
+        if (Math.random() < 0.5) return { text: '无声。可你忽然听懂了风里的一句诀。骨笛裂开，灵韵散入你经脉。', fx: { gfXp: 4, xj: -3 } };
+        return { text: '无声，却有阴寒倒灌。你喷出一口黑血，笛骨化灰。', fx: { inj: 2, xj: -6 } };
+      }},
+    ]},
+  { id: 'shen_yan', title: '沉渊残砚', seal: '砚', w: 2.3, once: true, rm: [2, 4],
+    cond: s => !s.flags.got_shen_yan && s.realm >= 2,
+    text: s => '古修书房塌了一角，案上一方深墨石砚，池中似有未干的夜。砚侧小字：「研墨者，先研己。」',
+    choices: s => [
+      { label: '以寿元养砚，收作佩物', sub: '得沉渊砚 · 折寿', act: s => {
+        s.flags.got_shen_yan = 1;
+        return { text: '你按着砚池，一截阳寿沉下去。砚光一敛，跃入袖中。此后闭关，心魔竟远了半寸。', fx: { gear: '沉渊砚', life: -0.1, flag: 'got_shen_yan' } };
+      }},
+      { label: '只借砚池研心，不取砚', sub: '顿悟', act: s => ({ text: '你对着砚池坐了一夜，杂念如墨沉底。起身时砚仍在，你心里亮了一寸。', fx: { xj: 6, gfXp: 3, flag: 'got_shen_yan' } }) },
+      { label: '倒掉池中那一汪「夜」', sub: '未知', act: s => {
+        s.flags.got_shen_yan = 1;
+        return { text: '墨夜泼在青砖上，砖缝里冒出一株细小的白梅。你折了一枝，砚已成普通石块。', fx: { xj: 3, luck: 1 } };
+      }},
+    ]},
+);
+LOC_EV.xuewu.push('shen_di'); LOC_EV.heifeng.push('shen_di'); EV_LOC.shen_di = ['xuewu', 'heifeng'];
+LOC_EV.gufu.push('shen_yan'); LOC_EV.yunhai.push('shen_yan'); EV_LOC.shen_yan = ['gufu', 'yunhai'];

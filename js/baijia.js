@@ -259,6 +259,44 @@ EVENTS.push(
       { label: '立约：不弃弱散', act: () => ({ text: '你把「凡持铁令者，皆可一饭」写上盟约。台下有人哭了。', fx: { flag: 'peak_ask', xj: 8 } }) },
       { label: '立约：只认本事', act: () => ({ text: '你说：「盟里没有可怜人，只有能活下去的人。」鼓噪声起。', fx: { flag: 'peak_ask', xj: 3, wx: 1 } }) },
     ] },
+
+  /* 掌门深一笔：夜问之后的职责 */
+  { id: 'peak_duty_qm', title: '栖霞峰会', seal: '峰', w: 4.5, once: true, rm: [4, 4],
+    cond: s => s.sect && s.sect.org === 'qm' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
+    text: () => '峰会之上，长老们为外门一桩冤案争执不下。金令在你案上，像一口未出鞘的剑。',
+    choices: () => [
+      { label: '亲审，不为偏袒', act: () => ({ text: '你把案卷翻到天明，判得不漂亮，却让两边都无话可说。下山时，外门弟子朝你拱手。', fx: { flag: 'peak_duty', xj: 6, gx: 40 } }) },
+      { label: '交给执事堂，自去闭关', act: () => ({ text: '你把金令一推：「你们裁。」闭关三月，出关时山门已贴了新榜——你的名字小了一寸，心倒静了。', fx: { flag: 'peak_duty', xj: 3, gx: -20 } }) },
+      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案角。堂上寂静。此后无人敢再在峰会上阴阳怪气——只是有人背后说：掌门锋利，山门也薄了。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
+    ] },
+  { id: 'peak_duty_dx', title: '药谷冬疫', seal: '疫', w: 4.5, once: true, rm: [4, 4],
+    cond: s => s.sect && s.sect.org === 'dx' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
+    text: () => '冬月外门染疫。丹室告急，有人主张封谷，有人主张开炉舍丹。',
+    choices: () => [
+      { label: '开炉，以谷主炉供外门', act: () => ({ text: '你把谷主炉的火分给外门。三日后疫退，药童们喊你「谷主」。赤霞真人只哼了一声，眼底却软。', fx: { flag: 'peak_duty', xj: 7, item: { '聚气丹': 2 }, gx: 30 } }) },
+      { label: '封谷自保，研新方', act: () => ({ text: '谷门落锁。半月后新方成，你开锁发丹——活的人多，怨的人也多。', fx: { flag: 'peak_duty', xj: 2, wx: 1, gx: 10 } }) },
+    ] },
+  { id: 'peak_duty_yy', title: '影殿点名', seal: '影', w: 4.5, once: true, rm: [4, 4],
+    cond: s => s.sect && s.sect.org === 'yy' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
+    text: () => '殿中要清点影卫名册。有三个名字，墨迹发虚——像活着，又像从未存在。',
+    choices: () => [
+      { label: '亲自入影查核', act: () => ({ text: '你在影里走了三夜，找回两个，第三个只剩一枚冷玉。上人说：「够了。影殿不求全。」', fx: { flag: 'peak_duty', xj: 5, gx: 35 } }) },
+      { label: '涂去虚名，装作不知', act: () => ({ text: '你把三个名字抹了。名册干净，殿也更空。有人谢你，有人恨你。', fx: { flag: 'peak_duty', xj: -3, gx: 15 } }) },
+    ] },
+  { id: 'peak_duty_xj', title: '楼约重修', seal: '约', w: 4.5, once: true, rm: [4, 4],
+    cond: s => s.sect && s.sect.org === 'xj' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
+    text: () => '楼约百年一修。弟子们为「效率」与「人情」吵翻——齿轮不认情，人却认。',
+    choices: () => [
+      { label: '约以效率为齿，情为油', act: () => ({ text: '你写：「齿不合则换，人疲则歇。」楼约贴出，吵声小了，机声顺了。', fx: { flag: 'peak_duty', xj: 6, wx: 1, gx: 25 } }) },
+      { label: '只改齿，不改人', act: () => ({ text: '你连夜校准。楼跑得更快，弟子眼底的青却更深。', fx: { flag: 'peak_duty', xj: -2, gx: 40 } }) },
+    ] },
+  { id: 'peak_duty_sx', title: '铁令风波', seal: '令', w: 4.5, once: true, rm: [4, 4],
+    cond: s => s.sect && s.sect.org === 'sx' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
+    text: () => '有人伪造铁令骗吃骗住。台下有人喊杀，有人喊放。独眼老贾看你，花三娘拨了一声算盘。',
+    choices: () => [
+      { label: '当众断伪令，赦初犯', act: () => ({ text: '你折断伪令，留下人：「再犯，无盟可投。」鼓噪声里，有人把真铁令握得更紧。', fx: { flag: 'peak_duty', xj: 7, gx: 30 } }) },
+      { label: '严惩，以儆效尤', act: () => ({ text: '伪令者被逐出盟。此后铁令更金贵，也更冷。', fx: { flag: 'peak_duty', xj: 2, gx: 20 } }) },
+    ] },
   /* 伪灵根更丰：散修路上 */
   { id: 'wei_night', title: '山门外一夜', seal: '夜', w: 6, once: true, rm: [0, 0],
     cond: s => s.lg && s.lg.id === 'wei' && !s.sect.org && !s.flags.wei_night,

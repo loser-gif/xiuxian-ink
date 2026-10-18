@@ -402,6 +402,7 @@ function setText(sel, v) {
   el.innerHTML = ''; const sp = document.createElement('span'); sp.className = 'roll-in'; sp.textContent = v; el.appendChild(sp);
 }
 function render() {
+
   if (!S) return; sync();
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
@@ -506,11 +507,12 @@ function act(kind) {
     const B = buffer(), o = Core.tuna(S, B.emit);
     save();
     // 灵气旋入丹田之后，才落笔记下这一季
-    const done = () => {
+    const done = async () => {
       if (!S) return;
       pushLog({ text: o.text, tags: o.tags }); B.flush(); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd();
       const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
       clearTimeout(act.gt); act.gt = setTimeout(() => bx.classList.remove('gain'), 1500);
+      await maybeFabaoCeremony();
     };
     if (typeof InkGL !== 'undefined' && InkGL.qi) InkGL.qi($('.scroll-paper'), { cy: .5, onSink: done });
     else { const sp = $('.scroll-paper').getBoundingClientRect(); FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, done); }
@@ -522,12 +524,15 @@ function act(kind) {
     const B = buffer(), o = Core.biguan(S, B.emit);
     pushLog({ text: o.text, tags: o.tags, cls: o.cls }); B.flush();
     Core.afterGain(S, o.ups, pushLog);
+    render(); save(); checkEnd();
+    maybeFabaoCeremony();
+    return;
   } else if (kind === 'youli' && typeof JHUI !== 'undefined') {
     return JHUI.openMap();
   } else if (kind === 'youli') {
     const ym = Math.max(1, Math.round(r.T * K.youliMonths / (Core.pathYouliMul ? Core.pathYouliMul(S) : 1)));
     Core.passTime(S, ym, pushLog);
-    if (S.dead) { render(); save(); return checkEnd(); }
+    if (S.dead) { render(); save(); checkEnd(); return; }
     const ev = Core.pickEvent(S);
     render(); save();
     busy = true; $$('.act').forEach(b => b.classList.add('busy'));
@@ -713,9 +718,11 @@ async function runBreak(usePill) {
       await openPathCeremony(res.needPath, !!res.pendingAscend);
       busy = false; render(); save();
       if (S.ascended) setTimeout(() => showEnd('ascend'), 1600); else checkEnd();
+      maybeFabaoCeremony();
     } else {
       busy = false;
       if (S.ascended) setTimeout(() => showEnd('ascend'), 1600); else checkEnd();
+      maybeFabaoCeremony();
     }
   };
 }
@@ -728,6 +735,11 @@ const PATH_LEAD = {
   wendao: '化神之际，你站在天地之间。可问天、问心、或问地——一问即可。',
   jiewen: '劫云将散。这一道烙在识海上的劫纹，将随你飞升而去。',
 };
+
+async function maybeFabaoCeremony() {
+  if (typeof FabaoArt === 'undefined' || !FabaoArt.flushIfAny) return;
+  await FabaoArt.flushIfAny();
+}
 function renderPathSeals() {
   const el = $('#path-seals'); if (!el || !S) return;
   const list = Core.pathSummary(S) || [];
@@ -763,13 +775,21 @@ function pathPage() {
     const half = S.flags && S.flags.xiang_wash_half;
     bits.push(`<button type="button" class="path-wash-btn" data-w="faxiang">洗去法相<small>${half ? '相裂半价 · ' : ''}灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj}</small></button>`);
   }
+  if (S.path && S.path.wendao) {
+    const c = Core.pathWashCost(S, 'wendao');
+    bits.push(`<button type="button" class="path-wash-btn" data-w="wendao">洗去问道<small>灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj}</small></button>`);
+  }
+  if (S.path && S.path.jiewen && !S.ascended) {
+    const c = Core.pathWashCost(S, 'jiewen');
+    bits.push(`<button type="button" class="path-wash-btn danger" data-w="jiewen">磨去劫纹<small>灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj} · 飞升前可另择</small></button>`);
+  }
   if (bits.length) {
-    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。法相可洗；若逢「相裂」，代价略减。</p>${bits.join('')}`;
+    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。法相／问道／劫纹（飞升前）皆可洗；若逢「相裂」，洗相代价略减。</p>${bits.join('')}`;
     washBox.onclick = async e => {
       const b = e.target.closest('[data-w]'); if (!b) return;
       const kind = b.dataset.w;
-      const title = kind === 'danwen' ? '洗去丹纹？纹成难易，此举耗寿伤神。' : kind === 'faxiang' ? '洗去法相？识海空明一阵，须待机缘再凝。' : '震散道基？百年倾向尽废，寻常修士视为自毁。';
-      const conf = kind === 'danwen' ? '洗纹' : kind === 'faxiang' ? '洗相' : '易基';
+      const title = ({ danwen: '洗去丹纹？纹成难易，此举耗寿伤神。', faxiang: '洗去法相？识海空明一阵，须待机缘再凝。', wendao: '洗去问道？天地之间那一问将被拔出，须得再问。', jiewen: '磨去劫纹？雷痕将淡，渡劫飞升前尚可另择一纹。', daoji: '震散道基？百年倾向尽废，寻常修士视为自毁。' })[kind];
+      const conf = ({ danwen: '洗纹', faxiang: '洗相', wendao: '洗问', jiewen: '洗劫', daoji: '易基' })[kind];
       if (!(await inkConfirm(title, conf, true))) return;
       const r = Core.washPath(S, kind, pushLog);
       if (r.err) { toast(r.err); return; }
@@ -1236,6 +1256,16 @@ function bagPage() {
     }
     wrap.appendChild(it);
   });
+  if (typeof SHENQI_ZHI !== 'undefined') {
+    const zhi = document.createElement('div'); zhi.className = 'shenqi-zhi';
+    const rows = SHENQI_ZHI.map(z => {
+      const known = (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name);
+      const g = GEAR[z.name];
+      return `<div class="sq-row ${known ? 'on' : 'off'}"><span class="sq-seal">${known ? esc(z.seal) : '？'}</span><div><b>${known ? esc(z.name) : '□□□□'}</b><p>${known ? esc(z.blurb) : '机缘未至，名录空阙。'}</p></div></div>`;
+    }).join('');
+    zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}`;
+    wrap.appendChild(zhi);
+  }
   return wrap;
 }
 const layerDots = lv => Array.from({ length: GF_LAYERS }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
@@ -1349,7 +1379,8 @@ function fabaoPage() {
     <div class="fabao-meta">系于 · ${f.el || '无属'}灵根${f.gfId && GONGFA[f.gfId] ? ' · 《' + GONGFA[f.gfId].name + '》' : ''}</div>`;
   card.querySelector('.fabao-flavor').textContent = f.flavor || '';
   wrap.appendChild(card);
-  wrap.insertAdjacentHTML('beforeend', `<p class="fabao-note">转主修或身死，或留残魂供来世再聚。法宝不入行囊，只在识海。</p>`);
+  if (typeof FabaoArt !== 'undefined' && FabaoArt.mountCard) FabaoArt.mountCard(card, f);
+  wrap.insertAdjacentHTML('beforeend', `<p class="fabao-note">转主修或身死，或留残魂供来世再聚。法宝不入行囊，只在识海。祭炼进阶时，识海自有开光／化形之礼。</p>`);
   return wrap;
 }
 function useItem(k) {
@@ -1545,5 +1576,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
 })();

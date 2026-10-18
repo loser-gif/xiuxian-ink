@@ -65,6 +65,23 @@ const GEAR = {
   '子午罗盘': { grade: 2, kind: '神器', slot: 'weapon', artifact: 1, t: { bt: 0.035, time: 0.9 },
     curse: { lifeOnce: -5 },
     desc: '铜盘十二刻，指针永指你尚未抵达之处。握它的人，光阴略缓，破境略利——盘心却要你先付五年阳寿。' },
+  '九婴骨笛': { grade: 2, kind: '神器', slot: 'weapon', artifact: 1, t: { qiyu: 0.14, duel: 1.06 },
+    curse: { xjPerYear: 1.0, risk: 0.01 },
+    desc: '一截三孔骨笛，吹之无声，却有人应。佩之游历、斗法皆利，只是夜里常听见婴啼——啼的，是笛，也是你心里那一点空。' },
+  '沉渊砚': { grade: 2, kind: '神器', slot: 'weapon', artifact: 1, t: { dunwu: 0.05, xinmo: 0.78 },
+    curse: { lifeOnce: -6 },
+    desc: '一方深墨石砚，池中似有未干的夜。研墨时可压心魔、助顿悟，砚池却要先吞你一截寿元，才肯为你磨。' },
 };
+
+/* 神器志：名录（奇遇见过或持有后解锁文案） */
+const SHENQI_ZHI = [
+  { name: '噬主骨刃', flag: 'got_shen_gu', seal: '刃', blurb: '白骨祭坛上的无名短刃。认主噬心神，换一截锋锐。' },
+  { name: '忘川灯', flag: 'got_shen_deng', seal: '灯', blurb: '照见来路，不照前路。点亮它的人，先把寿元付给忘川。' },
+  { name: '裂空绫', flag: 'got_shen_ling', seal: '绫', blurb: '半透明的裂隙之丝。抖开时空间一撕，夜里有人唤名。' },
+  { name: '子午罗盘', flag: 'got_shen_pan', seal: '盘', blurb: '指针永指未至之境。先付五年，再问前路。' },
+  { name: '九婴骨笛', flag: 'got_shen_di', seal: '笛', blurb: '三孔无声，却有人应。吹不响的笛，吹的是心口那一声空。' },
+  { name: '沉渊砚', flag: 'got_shen_yan', seal: '砚', blurb: '砚池如未干的夜。可压心魔，亦吞寿元。' },
+];
+
 
 const GEAR_BUY = Object.keys(GEAR).filter(k => GEAR[k].buy);

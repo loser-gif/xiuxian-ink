@@ -152,6 +152,10 @@
       tone(196, 0.55, 'triangle', 0.07, sfxBus, { a: 0.02, slide: 98, rel: 0.45, cut: 700 });
       burst(0.4, 0.05, sfxBus, { cut: 500, Q: 0.5, filter: 'lowpass', a: 0.02, rel: 0.35 });
     },
+    ink() {
+      burst(0.5, 0.04, sfxBus, { cut: 900, cutTo: 400, Q: 0.5, filter: 'lowpass', a: 0.08, hold: 0.1, rel: 0.35 });
+      tone(110, 0.7, 'sine', 0.025, sfxBus, { a: 0.1, hold: 0.15, rel: 0.5, cut: 500 });
+    },
   };
 
   function play(name) {
@@ -170,6 +174,8 @@
 
   /* ---------- Ambient ---------- */
   const PENTA = [196.0, 220.0, 261.63, 293.66, 329.63, 392.0, 440.0]; // G A C D E
+  const PENTA_YU = [174.61, 196.0, 220.0, 261.63, 293.66, 349.23, 392.0]; // 羽调略沉
+  const PENTA_ZHI = [220.0, 246.94, 293.66, 329.63, 392.0, 440.0, 493.88]; // 徵调略亮
 
   function stopNodes(list) {
     for (const n of list) {
@@ -197,8 +203,9 @@
   function schedulePluck(busGain, rate) {
     const tick = () => {
       if (!unlocked || pref.muted || hidden || amb.mode === 'off' || !ctx) return;
-      const f = PENTA[(Math.random() * PENTA.length) | 0] * (Math.random() < 0.25 ? 0.5 : 1);
-      const peak = 0.028 + Math.random() * 0.022;
+      const scale = (amb.season === 3) ? PENTA_YU : (amb.mode === 'title' ? PENTA_ZHI : PENTA);
+      const f = scale[(Math.random() * scale.length) | 0] * (Math.random() < 0.25 ? 0.5 : 1);
+      const peak = 0.024 + Math.random() * 0.026;
       const t0 = ctx.currentTime;
       const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
       const o2 = ctx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = f * 2.01;
@@ -208,6 +215,14 @@
       o.connect(flt); o2.connect(g2); g2.connect(flt); flt.connect(g); g.connect(busGain);
       env(g, 0.012, peak, 0.1, 2.6 + Math.random() * 1.6, t0);
       o.start(t0); o2.start(t0); o.stop(t0 + 4.8); o2.stop(t0 + 4.8);
+      // 偶发泛音余响
+      if (Math.random() < 0.35) {
+        const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = f * 3.01;
+        const g3 = ctx.createGain();
+        o3.connect(g3); g3.connect(busGain);
+        env(g3, 0.02, peak * 0.35, 0.05, 1.8, t0 + 0.35);
+        o3.start(t0 + 0.35); o3.stop(t0 + 3.2);
+      }
     };
     tick();
     return setInterval(tick, rate);
@@ -259,6 +274,31 @@
         if (Math.random() > 0.55) burst(0.05, 0.012, amb.gain, { cut: 4000 + Math.random() * 2000, Q: 3, filter: 'bandpass', a: 0.001, rel: 0.04 });
       }, 420);
       amb.nodes.push({ timer: dripTimer });
+    }
+    // 秋：虫鸣疏点
+    if (season === 2 && (mode === 'main' || mode === 'map' || mode === 'title') && place !== 'beihai' && place !== 'xuewu') {
+      const bugTimer = setInterval(() => {
+        if (pref.muted || hidden) return;
+        if (Math.random() > 0.4) {
+          tone(2400 + Math.random() * 1800, 0.04 + Math.random() * 0.05, 'square', 0.006 + Math.random() * 0.006, amb.gain, {
+            a: 0.001, hold: 0.008, rel: 0.03, cut: 5000, Q: 4, filter: 'bandpass'
+          });
+        }
+      }, 900);
+      amb.nodes.push({ timer: bugTimer });
+    }
+    // 冬：更干的风砂底
+    if (season === 3 && (mode === 'main' || mode === 'map') && place !== 'xuewu') {
+      const dry = makeNoiseLoop(600, 0.012, 'bandpass', 0.5);
+      amb.nodes.push(dry);
+    }
+    // 洞府／闭关感：main + 无特殊地名时极淡水滴
+    if (mode === 'main' && !place) {
+      const caveDrip = setInterval(() => {
+        if (pref.muted || hidden) return;
+        if (Math.random() > 0.7) burst(0.08, 0.008, amb.gain, { cut: 2800, Q: 2.5, filter: 'bandpass', a: 0.002, rel: 0.06 });
+      }, 2800);
+      amb.nodes.push({ timer: caveDrip });
     }
 
     // 血雾谷：不安低鸣

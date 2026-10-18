@@ -12,7 +12,7 @@ const ENEMY = /劫修|妖|蟒|狼(?!狈)|蛟|魔修|贼|匪|凶兽|山魈|叛徒
 // 天灾、禁制、丹炉、心魔、自损之类：并无敌手，受伤与境界高下无关。新增此类事件须在此登记，否则审计报错。
 const HAZARD = new Set(['cave', 'thunder', 'fox', 'furnace', 'meteor', 'mirror', 'jianzhong', 'danhui', 'hantan2', 'huoshan', 'wuxingbei', 'tianji', 'jieyun', 'xinmojie', 'su_fire',
   '任务:caiyao', '任务:danfang', '任务:zhenmai', '任务:tanmi', '任务:dx_shouhuo', '任务:dx_caiyao', '任务:dx_jianlu', '任务:yy_yinqi', '任务:xj_qiushi', '任务:xj_tuyan', 'leichi', 'fengyan', 'binghu',
-  'xw_mist', 'xh_bones', 'yh_stair', 'shen_gu', 'shen_deng', 'shen_ling', 'shen_pan', 'peak_dx', 'wei_night', 'tx_dao', 'yg_xiang_fan']);
+  'xw_mist', 'xh_bones', 'yh_stair', 'shen_gu', 'shen_deng', 'shen_ling', 'shen_pan', 'shen_di', 'shen_yan', 'peak_dx', 'peak_duty_qm', 'peak_duty_dx', 'peak_duty_yy', 'peak_duty_xj', 'peak_duty_sx', 'wei_night', 'tx_dao', 'yg_xiang_fan']);
 // 秘境中的禁制、阵法、丹毒、寒气、杀意、暗流：无敌手的折损（秘境:地:节点）
 const MJ_HAZARD = new Set(['秘境:gufu:石门禁制', '秘境:gufu:丹室', '秘境:gufu:书阁与剑池', '秘境:zhanchang:断戟山', '秘境:zhanchang:英灵冢', '秘境:zhanchang:血旗阵', '秘境:longgong:海眼', '秘境:longgong:珊瑚迷阵', '秘境:longgong:宝库']);
 const TRIALS = +(process.argv[2] || 60);

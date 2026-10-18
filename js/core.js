@@ -242,6 +242,7 @@ const Core = (() => {
     if (!s.fabao.gfId && s.gf) s.fabao.gfId = s.gf;
     const up = fabaoSyncStage(s);
     if (up && emit) emit({ text: `本命${s.fabao.name}灵性大涨，进至「${up}」。`, cls: 'gold' });
+    if (up && typeof FabaoArt !== 'undefined' && FabaoArt.queue) FabaoArt.queue(s.fabao, up);
   }
   function fabaoOnDeath(s) {
     if (!s.fabao || (s.fabao.stage | 0) < 1) return null;
@@ -519,6 +520,8 @@ const Core = (() => {
       if (s.flags && s.flags.xiang_wash_half) { ls = Math.round(ls * 0.5); life = Math.round(life * 0.55); xj = Math.round(xj * 0.6); }
       return { ls, life, xj };
     }
+    if (kind === 'wendao') return { ls: Math.round(1500 * lsS), life: Math.round(8 * lifeS), xj: 12 };
+    if (kind === 'jiewen') return { ls: Math.round(2200 * lsS), life: Math.round(12 * lifeS), xj: 15 };
     return null;
   }
   function washPath(s, kind, emit) {
@@ -530,6 +533,11 @@ const Core = (() => {
       if (!(s.path && s.path.daoji)) return { err: '尚无道基可洗' };
     } else if (kind === 'faxiang') {
       if (!(s.path && s.path.faxiang)) return { err: '尚无法相可洗' };
+    } else if (kind === 'wendao') {
+      if (!(s.path && s.path.wendao)) return { err: '尚无问道可洗' };
+    } else if (kind === 'jiewen') {
+      if (!(s.path && s.path.jiewen)) return { err: '尚无劫纹可洗' };
+      if (s.ascended) return { err: '已飞升，劫纹随你入天，不可复洗' };
     } else return { err: '此定型不可洗去' };
     if (s.ls < cost.ls) return { err: `灵石不足 · 需${cost.ls}` };
     s.ls -= cost.ls;
@@ -553,13 +561,25 @@ const Core = (() => {
       text = `你强行震碎丹田中的${n}虚影。经脉如遭雷劈，好在尚能重塑。道基一空，百年倾向尽散——此等代价，寻常修士不敢想。`;
       tags.unshift({ t: '道基已散', c: 'gold' });
       title = '易基';
-    } else {
+    } else if (kind === 'faxiang') {
       const n = (FAXIANG[s.path.faxiang] && FAXIANG[s.path.faxiang].name) || '法相';
       s.path.faxiang = null;
       if (s.flags) delete s.flags.xiang_wash_half;
       text = `你运转洗相秘法，识海中「${n}」如墨遇水，一寸寸淡开。元婴空明一阵，痛，却干净。法相既洗，须待机缘再凝。`;
       tags.unshift({ t: '法相已洗', c: 'gold' });
       title = '洗相';
+    } else if (kind === 'wendao') {
+      const n = (WENDAO[s.path.wendao] && WENDAO[s.path.wendao].name) || '问道';
+      s.path.wendao = null;
+      text = `你在天地之间又站了一夜，把「${n}」那一问从识海里拔出。问口空了，风灌进来，冷，也自由。须得再问一次，方可落定。`;
+      tags.unshift({ t: '问道已洗', c: 'gold' });
+      title = '洗问';
+    } else {
+      const n = (JIEWEN[s.path.jiewen] && JIEWEN[s.path.jiewen].name) || '劫纹';
+      s.path.jiewen = null;
+      text = `你以神识强行磨去烙在识海上的「${n}」。雷痕淡了，像一道将愈的伤——渡劫尚未成飞升前，尚可另择一纹。`;
+      tags.unshift({ t: '劫纹已洗', c: 'gold' });
+      title = '洗劫';
     }
     sync(s);
     if (emit) emit({ title, text, tags, cls: 'warn', div: true });
