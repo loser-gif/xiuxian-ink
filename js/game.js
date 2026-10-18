@@ -39,6 +39,10 @@ async function initVisuals() {
   root.style.setProperty('--brush-img', brushBtnImg(5, '#1b1814', 0.95));
   root.style.setProperty('--brush-img-light', brushBtnImg(12, '#1b1814', 0.14));
   root.style.setProperty('--brush-img-paper', brushBtnImg(19, '#f3ead6', 0.95));
+  root.style.setProperty('--brush-img-zhu-l', brushBtnImg(23, '#b3302a', 0.13));
+  root.style.setProperty('--brush-img-zhu', brushBtnImg(27, '#b3302a', 0.92));
+  root.style.setProperty('--brush-img-ink-l', brushBtnImg(31, '#1b1814', 0.1));
+  root.style.setProperty('--brush-img-night', brushBtnImg(35, '#efe4cc', 0.15));
   root.style.setProperty('--brush-line', brushImg(400, 12, 3, '#1b1814'));
   root.style.setProperty('--brush-bar', brushImg(400, 26, 8, '#1b1814'));
   root.style.setProperty('--brush-bar-zhu', brushImg(400, 26, 8, '#b3302a'));
@@ -153,12 +157,31 @@ function initTitle() {
     $('#continue-sub').textContent = `${s.name} · ${realmStr(s)}`;
   }
   FX.setSeason(s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0); FX.setGold(0);
-  $('#btn-new').onclick = () => {
+  $('#btn-new').onclick = async () => {
     FX.requestTilt();
-    if (s && !s.dead && !s.ascended && !confirm('另开新卷，旧卷将被覆盖。确定么？')) return;
+    if (s && !s.dead && !s.ascended && !(await inkConfirm('另开新卷，旧卷将被覆盖。', '另开', true))) return;
     resetCreate(); unrollTo('create');
   };
   $('#btn-continue').onclick = () => { FX.requestTilt(); S = load(); if (!S) return; enterMain(true); };
+}
+
+/* ================= 墨笺问询：替代原生 confirm ================= */
+let askOpen = null;
+function inkConfirm(text, ok = '确定', danger = false) {
+  return new Promise(res => {
+    const el = document.createElement('div'); el.className = 'ask'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    el.innerHTML = `<div class="ask-shade"></div><div class="ask-card"><p class="ask-text"></p><p class="ask-sub">确定么？</p>
+      <div class="ask-btns"><button class="brush-btn small ask-no"><span class="bb-ink"></span><span class="bb-text">且慢</span></button>
+      <button class="brush-btn small ask-ok${danger ? ' danger' : ''}" id="ask-ok"><span class="bb-ink"></span><span class="bb-text"></span></button></div></div>`;
+    el.querySelector('.ask-text').textContent = text; el.querySelector('.ask-ok .bb-text').textContent = ok;
+    document.body.appendChild(el);
+    const done = v => { if (!askOpen) return; askOpen = null; el.classList.remove('open'); setTimeout(() => el.remove(), 320); res(v); };
+    askOpen = done;
+    el.querySelector('.ask-ok').onclick = () => done(true);
+    el.querySelector('.ask-no').onclick = () => done(false);
+    el.querySelector('.ask-shade').onclick = () => done(false);
+    requestAnimationFrame(() => { el.classList.add('open'); el.querySelector('.ask-ok').focus({ preventScroll: true }); });
+  });
 }
 
 /* ================= 入道 ================= */
@@ -354,6 +377,27 @@ function render() {
   else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
   st.textContent = msg;
+  renderSide();
+}
+// 宽屏右栏：功法 / 宗门 / 行囊 / 行迹 一览（窄屏隐藏时不渲染）
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function renderSide() {
+  const side = $('#side'); if (!side || !side.offsetParent || !S) return;
+  const g = S.gf && GONGFA[S.gf];
+  $('#sd-gf').innerHTML = g ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>`
+    : '<span class="sd-empty">胸中尚无功法</span>';
+  const o = Core.org(S);
+  $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>`
+    : `<b class="sd-name">${esc(Core.rankName(S))}</b><span class="sd-row">无门无派，来去自由</span>`;
+  const items = Object.entries(S.items).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+  $('#sd-bag').innerHTML = items.length ? `<ul class="sd-list">${items.slice(0, 5).map(([k, n]) => `<li><span>${esc(k)}</span><i>${cn(n)}</i></li>`).join('')}</ul>${items.length > 5 ? `<span class="sd-more">另有${cn(items.length - 5)}种</span>` : ''}`
+    : '<span class="sd-empty">囊中空空</span>';
+  const loc = typeof LOCS !== 'undefined' && LOCS.find(l => l.id === S.loc);
+  const notes = [];
+  if (S.dan) notes.push(`丹道 ${cn(S.dan.lv)}重`);
+  if (typeof JHUI !== 'undefined' && JHUI.aucWindow()) notes.push('<span class="zhu">听雨楼拍卖将开</span>');
+  if (typeof Jianghu !== 'undefined' && S.mj) { const open = Jianghu.mjAll ? Object.keys(S.mj).filter(id => Jianghu.mjOpen(S, id)) : []; if (open.length) notes.push(`<span class="zhu">秘境现世 · ${open.map(id => esc(MIJING[id].name)).join('、')}</span>`); }
+  $('#sd-loc').innerHTML = `<b class="sd-name">${loc ? esc(loc.name) : '山中'}</b><span class="sd-row">${notes.join('<br>') || '暂无风声'}</span>`;
 }
 
 /* ================= 行动 ================= */
@@ -945,11 +989,11 @@ function openMenu() {
     const m = e.target.dataset.m; if (!m) return;
     await closeSheet();
     if (m === 'title') { save(); initTitle(); unrollTo('title'); }
-    if (m === 'retire' && confirm('此去不问长生。归隐之后，此卷即终。确定么？')) {
+    if (m === 'retire' && await inkConfirm('此去不问长生。归隐之后，此卷即终。', '归隐')) {
       Core.retire(S); pushLog({ title: '归隐', text: '你解下腰牌，放在洞府石案上，转身下山。山道上的石阶，你走了许多年，今日才觉出它这样长。', cls: 'event', div: true });
       render(); save(); setTimeout(() => showEnd('guiyin'), 900);
     }
-    if (m === 'reset' && confirm('焚去此卷，前尘尽忘。确定么？')) { localStorage.removeItem(SAVE_KEY); S = null; resetCreate(); unrollTo('create'); }
+    if (m === 'reset' && await inkConfirm('焚去此卷，前尘尽忘。', '焚卷', true)) { localStorage.removeItem(SAVE_KEY); S = null; resetCreate(); unrollTo('create'); }
   };
   openSheet('卷首', w);
 }
@@ -1004,6 +1048,60 @@ $('#btn-break').onclick = openBreak;
 $('#btn-menu').onclick = openMenu;
 $('#btn-sect').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openSect(); };
 FX.initPress(); FX.initParallax();
+$('#side').onclick = e => {
+  const c = e.target.closest('.side-card'); if (!c || busy || !S || S.dead || S.ascended) return;
+  const k = c.dataset.open; if (k === 'gf') openBag('gf'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else act('youli');
+};
+addEventListener('resize', () => { if (document.body.dataset.screen === 'main') renderSide(); });
+
+/* ================= 键盘：1-4 行动 · Esc 收起 · Enter 确认 · 方向键（地图/斗法） ================= */
+const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled;
+const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
+function topLayer() {
+  const ask = document.querySelector('.ask'); if (ask) return ask;
+  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
+  return null;
+}
+addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+  const tgt = e.target; if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA')) { if (e.key === 'Enter' && tgt.id === 'inp-name') tgt.blur(); return; }
+  const L = topLayer(), k = e.key;
+  const click = el => { if (vis(el)) { e.preventDefault(); el.click(); return true; } return false; };
+  if (k === 'Escape') {
+    if (!L) return;
+    if (L.classList.contains('ask')) return click(L.querySelector('.ask-no'));
+    if (L.id === 'sheet') { e.preventDefault(); return closeSheet(); }
+    if (L.id === 'map') return click($('#map-close'));
+    if (L.id === 'dan') return click($('#dan-close'));
+    return;
+  }
+  const digit = /^[1-9]$/.test(k) ? +k : 0;
+  if (!L) {
+    if (document.body.dataset.screen !== 'main') { if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON')) click(firstVis(document.querySelector('.screen:not([hidden])') || document.body, '.brush-btn')); return; }
+    if (digit >= 1 && digit <= 4) return click($$('.act')[digit - 1]);
+    if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON')) return click($('#btn-break'));
+    return;
+  }
+  // 斗法：方向键在招式间移动，数字直接出招
+  if (L.id === 'duel') {
+    const ms = [...L.querySelectorAll('.dmove')].filter(b => !b.disabled);
+    if (digit && ms[digit - 1]) return click(ms[digit - 1]);
+    if (k === 'ArrowLeft' || k === 'ArrowRight') { e.preventDefault(); const i = ms.indexOf(document.activeElement); const n = ms[(i < 0 ? 0 : i + (k === 'ArrowRight' ? 1 : -1) + ms.length) % ms.length]; n && n.focus(); return; }
+  }
+  // 地图：方向键换地点，Enter 行动
+  if (L.id === 'map' && typeof JHUI !== 'undefined') {
+    if (k === 'ArrowLeft' || k === 'ArrowRight') { e.preventDefault(); return JHUI.mapKey(k === 'ArrowRight' ? 1 : -1); }
+    if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON' && L.contains(tgt))) return click(firstVis(L, '.mc-btn.on') || firstVis(L, '.mc-btn'));
+  }
+  // 奇遇：数字选择
+  if (L.id === 'modal' && digit) { const cs = [...L.querySelectorAll('.choice')].filter(vis); if (cs[digit - 1]) return click(cs[digit - 1]); }
+  if (k === 'Enter') {
+    if (tgt && tgt.tagName === 'BUTTON' && L.contains(tgt) && vis(tgt)) return;   // 焦点在按钮上，交给浏览器
+    if (L.classList.contains('ask')) return click(L.querySelector('.ask-ok'));
+    if (L.id === 'sheet') return;
+    return click(firstVis(L, '.brush-btn:not(.ask-no)'));
+  }
+});
 setScreen('title');
 initTitle(); initCreate();
 // 视觉素材与字体都就绪后再开卷，避免字体替换造成的半截状态

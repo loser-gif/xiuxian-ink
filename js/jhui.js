@@ -12,7 +12,17 @@ function makeJHUI(G) {
 
   /* ================= 长卷地图 ================= */
   const mapEl = $('#map');
-  let sel = null, mapBusy = false, onScroll = null;
+  let sel = null, mapBusy = false, onScroll = null, drag = null;
+  addEventListener('pointermove', e => {
+    if (!drag) return; const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 4) { drag.moved = true; drag.sc.classList.add('dragging'); }
+    if (drag.moved) drag.sc.scrollLeft = drag.l - dx;
+  });
+  addEventListener('pointerup', () => {
+    if (!drag) return; const moved = drag.moved; drag.sc.classList.remove('dragging'); drag = null;
+    // 拖动后松手不算点选地点
+    if (moved) { const eat = ev => { ev.stopPropagation(); ev.preventDefault(); }; addEventListener('click', eat, { capture: true, once: true }); setTimeout(() => removeEventListener('click', eat, true), 0); }
+  });
   async function openMap() {
     if (G.busy || !G.S || G.S.dead || G.S.ascended) return;
     G.busy = true;
@@ -44,6 +54,12 @@ function makeJHUI(G) {
     // 远山视差：慢于近景
     onScroll = () => { far.style.transform = `translate3d(${(sc.scrollLeft * .3).toFixed(1)}px,0,0)`; };
     sc.addEventListener('scroll', onScroll, { passive: true });
+    // 桌面：滚轮纵向转横向；鼠标按住拖动长卷（触屏仍走原生滚动）
+    sc.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || e.ctrlKey) return;
+      e.preventDefault(); sc.scrollLeft += e.deltaY * (e.deltaMode === 1 ? 32 : 1);
+    }, { passive: false });
+    sc.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; drag = { sc, x: e.clientX, l: sc.scrollLeft, moved: false }; });
     centerOn(G.S.loc, false);
     G.busy = false;
   }
@@ -80,6 +96,13 @@ function makeJHUI(G) {
     const [mx, my] = locXY(G.S.loc);
     const mk = document.createElement('div'); mk.className = 'map-me'; mk.id = 'map-me'; mk.style.left = mx + '%'; mk.style.top = my + '%';
     mk.innerHTML = '<i class="me-halo"></i><i class="me-dot"></i>'; box.appendChild(mk);
+  }
+  // 键盘：左右键在已知地点间切换
+  function mapKey(dir) {
+    if (mapBusy || !mapEl.classList.contains('ready')) return;
+    const tags = [...mapEl.querySelectorAll('.map-tag')]; if (!tags.length) return;
+    const i = tags.findIndex(t => t.dataset.id === sel), n = tags[Math.min(tags.length - 1, Math.max(0, (i < 0 ? 0 : i) + dir))];
+    if (n && n.dataset.id !== sel) n.click();
   }
   function centerOn(id, smooth) {
     const sc = $('#map-scroll'), cv = $('#map-canvas'); if (!sc || !cv) return;
@@ -468,5 +491,5 @@ function makeJHUI(G) {
 
   function resume() { if (G.S && G.S.dive && !G.S.dead) showMj(false); }
   function youliSub() { const l = G.S && G.S.loc && LOC[G.S.loc]; return l ? l.name : '寻机缘'; }
-  return { openMap, closeMap, openMarket, startAuction, danPage, runFurnace, enterMj, resume, youliSub, aucWindow, furnaceCtl: () => G.furnace };
+  return { openMap, closeMap, openMarket, startAuction, danPage, runFurnace, enterMj, resume, youliSub, aucWindow, mapKey, furnaceCtl: () => G.furnace };
 }

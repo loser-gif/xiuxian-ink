@@ -87,8 +87,17 @@ const FX = (() => {
   function resizeWeather() {
     if (!W.cv) return; W.w = innerWidth; W.h = innerHeight;
     // 落花雨雪是小粒子，1.25 倍像素已足；全屏 2× 画布要 5MB，此处仅 2MB
-    const k = Math.min(DPR, 1.25); W.k = k;
+    // 大窗口再限总像素（约 2.6MP），4K 屏也不至于整屏高倍
+    const k = Math.min(DPR, 1.25, Math.sqrt(2.6e6 / (W.w * W.h))); W.k = k;
     W.cv.width = Math.round(W.w * k); W.cv.height = Math.round(W.h * k); W.c.setTransform(k, 0, 0, k, 0, 0);
+    if (W.parts && W.season >= 0) fitParts();
+  }
+  // 粒子数随画面面积增长（以 390×844 为基准，最多 2.4 倍），宽屏不显稀疏
+  const partN = s => Math.round([12, 40, 11, 36][s] * Math.min(2.4, Math.max(1, Math.sqrt(W.w * W.h / (390 * 844)))));
+  function fitParts() {
+    const n = partN(W.season);
+    while (W.parts.length < n) { const p = {}; spawn(p, true); W.parts.push(p); }
+    if (W.parts.length > n) W.parts.length = n;
   }
   function spawn(p, init) {
     const s = W.season;
@@ -104,7 +113,7 @@ const FX = (() => {
     if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
     if (s === W.season) return;
     W.season = s;
-    const n = [12, 40, 11, 36][s];
+    const n = partN(s);
     W.parts = Array.from({ length: n }, () => { const p = {}; spawn(p, true); return p; });
     if (!W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
   }
