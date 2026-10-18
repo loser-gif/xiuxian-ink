@@ -1535,5 +1535,15 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
+
+/* 日志滚动时短暂显示墨条 */
+(() => {
+  const log = document.getElementById('log');
+  if (!log) return;
+  let tmr = 0;
+  const mark = () => { log.classList.add('is-scrolling'); clearTimeout(tmr); tmr = setTimeout(() => log.classList.remove('is-scrolling'), 700); };
+  log.addEventListener('scroll', mark, { passive: true });
+})();
+
 window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
 })();
