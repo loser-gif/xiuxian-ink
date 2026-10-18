@@ -39,7 +39,9 @@ const Wallpaper = (() => {
       // 飞白与树皮鳞纹
       for (let i = 0; i < n * 1.6; i++) {
         const t = r(), p = bez(...P, t), ww = (w0 + (w1 - w0) * t) / 2;
-        c.strokeStyle = r() < .55 ? `rgba(239,230,211,${.1 + r() * .14})` : `rgba(10,9,8,${(.14 + r() * .18) * a})`;
+        c.strokeStyle = night
+          ? (r() < .55 ? `rgba(28,24,20,${.14 + r() * .16})` : `rgba(255,248,236,${(.1 + r() * .14) * a})`)
+          : (r() < .55 ? `rgba(239,230,211,${.1 + r() * .14})` : `rgba(10,9,8,${(.14 + r() * .18) * a})`);
         c.lineWidth = (.6 + r() * 1.2) * s; c.beginPath();
         const ox = (r() - .5) * ww * 1.4, oy = (r() - .5) * ww * 1.4;
         c.ellipse(p[0] + ox, p[1] + oy, ww * (.2 + r() * .25), ww * (.1 + r() * .12), r() * 3, 0, Math.PI * (1 + r()));
@@ -52,14 +54,14 @@ const Wallpaper = (() => {
       c.lineCap = 'round';
       for (let k = 0; k < n; k++) {
         const ang = Math.PI * (1.0 + (k / n) * 1.0) + (r() - .5) * .1, L = size * (.7 + r() * .35);
-        c.strokeStyle = `rgba(22,21,18,${a * (.6 + r() * .4)})`; c.lineWidth = (.6 + r() * .5) * s;
+        c.strokeStyle = `rgba(${needle},${a * (.6 + r() * .4)})`; c.lineWidth = (.6 + r() * .5) * s;
         c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(ang) * L, y + Math.sin(ang) * L * .95); c.stroke();
       }
     }
     function cloud(cx, cy, len, size, A = 1) {
       // 淡墨衬底
       const g = c.createRadialGradient(cx, cy, 0, cx, cy, len * .6);
-      g.addColorStop(0, `rgba(48,58,56,${.16 * A})`); g.addColorStop(1, 'rgba(48,58,56,0)');
+      g.addColorStop(0, `rgba(${cloudInk},${.16 * A})`); g.addColorStop(1, `rgba(${cloudInk},0)`);
       c.save(); c.translate(cx, cy); c.scale(1, .45); c.translate(-cx, -cy); c.fillStyle = g; c.beginPath(); c.arc(cx, cy, len * .6, 0, 7); c.fill(); c.restore();
       const n = Math.round(len / (size * .55));
       for (let i = 0; i < n; i++) {
@@ -70,7 +72,10 @@ const Wallpaper = (() => {
       // 第二层：稍高、稍短，叠出厚度
       for (let i = 0; i < n * .7; i++) { const t = r(); fan(cx - len * .32 + t * len * .64, cy - size * .35 - Math.sin(t * Math.PI) * size * .3, size * .75, .42 * A); }
     }
-    const ink = '27,24,20';
+    const night = document.documentElement.dataset.theme === 'night';
+    const ink = night ? '230,222,208' : '27,24,20';
+    const needle = night ? '214,206,192' : '22,21,18';
+    const cloudInk = night ? '206,198,184' : '48,58,56';
     const T = [[w * 1.03, h * 1.04], [w * .86, h * .76], [w * .92, h * .44], [w * .74, h * .2]];
     limb(T, 28 * s, 9 * s, ink, .74);
     const branches = [

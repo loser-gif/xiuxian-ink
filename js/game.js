@@ -27,11 +27,19 @@ const MTN = [
   { seed: 57, rgb: [26, 25, 23], alpha: 0.92, base: 1.08, amp: 0.62, peaks: 2, hero: 0, width: 0.2, sharp: 1.8, fade: 0.9, wash: 0.42, cun: 0.25, cunLen: 1.2, folds: 2, line: 1.5, dots: 0.1, trees: 3, treeSize: 1, bottomFade: false },
 ];
 let lastW = 0;
+/* 夜墨远山：淡墨绘在透明画布上，避免整层反相把湖面切成一条硬边 */
+const MTN_NIGHT = [
+  { rgb: [168, 160, 150], alpha: 0.4 },
+  { rgb: [198, 188, 174], alpha: 0.54 },
+  { rgb: [222, 212, 198], alpha: 0.68 },
+  { rgb: [236, 228, 216], alpha: 0.76, bottomFade: true },
+];
 function drawMountains(force) {
   const w = window.innerWidth;
   if (!force && Math.abs(w - lastW) < 2) return;
   lastW = w;
-  $$('.mtn').forEach((cv, i) => Ink.mountainLayer(cv, MTN[i]));
+  const night = document.documentElement.dataset.theme === 'night';
+  $$('.mtn').forEach((cv, i) => Ink.mountainLayer(cv, night ? Object.assign({}, MTN[i], MTN_NIGHT[i]) : MTN[i]));
   if (wallpaperOn) Wallpaper.rebuild();
 }
 let wallpaperOn = false;
@@ -2171,10 +2179,11 @@ function applyLook(partial) {
   if (meta) meta.setAttribute('content', dark ? '#16130f' : '#efe6d3');
   const apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   if (apple) apple.setAttribute('content', dark ? 'black' : 'default');
-  root.style.setProperty('--brush-night-ink', brushBtnImg(44, '#e7dcc8', 0.7));
-  root.style.setProperty('--brush-img-zhu', brushBtnImg(27, dark ? '#a85a54' : '#b3302a', dark ? 0.8 : 0.92));
+  root.style.setProperty('--brush-night-ink', brushBtnImg(44, '#4a4036', 0.92));
+  root.style.setProperty('--brush-img-zhu', brushBtnImg(27, dark ? '#9c4038' : '#b3302a', dark ? 0.94 : 0.92));
   if (typeof FX !== 'undefined' && FX.syncMotion) FX.syncMotion();
   if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
+  drawMountains(true);
 }
 function openLook() {
   const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, readLook());
@@ -2392,7 +2401,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=33').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=34').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();

@@ -2570,26 +2570,51 @@ html[data-theme="night"] body[data-season="3"]{
   --sb-track:rgba(20,16,12,.45);
   color-scheme:dark;
 }
-html[data-theme="night"] #paper{background-color:#14110e}
-html[data-theme="night"] #paper-veil{mix-blend-mode:soft-light;opacity:.7}
-html[data-theme="night"] #fiber{mix-blend-mode:soft-light;opacity:.07}
+/* 宣纸贴图是不透明浅色，盖住 --paper。只滤 #paper 这一层，卷面仍用原贴图。 */
+html[data-theme="night"] #paper{
+  background-color:#120f0c;
+  filter:contrast(1.18) brightness(.2) sepia(.5) saturate(.72);
+}
+html[data-theme="night"] #wash .wash-paper,
+html[data-theme="night"] #wash .wash-full{
+  filter:contrast(1.18) brightness(.2) sepia(.5) saturate(.72);
+}
+html[data-theme="night"] #paper-veil{mix-blend-mode:soft-light;opacity:.55}
+html[data-theme="night"] #fiber{mix-blend-mode:soft-light;opacity:.08}
 html[data-theme="night"] #vignette{
-  background:radial-gradient(120% 90% at 50% 42%,transparent 46%,rgba(0,0,0,.42) 100%);
+  background:radial-gradient(120% 90% at 50% 42%,transparent 52%,rgba(0,0,0,.38) 100%);
 }
-html[data-theme="night"] #scenery .mtn,
-html[data-theme="night"] #scenery .pine,
+html[data-theme="night"] #tod{opacity:.28}
+html[data-theme="night"] .mist{opacity:.62}
 html[data-theme="night"] #scenery .lake{
-  filter:invert(.88) sepia(.28) brightness(1.12) contrast(.92);
+  background:linear-gradient(180deg,rgba(18,16,14,0) 0%,rgba(150,160,170,.05) 16%,rgba(186,194,202,.13) 42%,rgba(206,198,186,.09) 100%);
 }
-html[data-theme="night"] .sun{opacity:.72;filter:saturate(.7)}
+html[data-theme="night"] .boat{filter:invert(.88) sepia(.32) brightness(1.2) contrast(.92)}
+html[data-theme="night"] .wake{border-color:rgba(236,228,214,.4)}
+html[data-theme="night"] .sun{opacity:.8;filter:saturate(.85) brightness(1.05)}
 html[data-theme="night"] .title-v,
-html[data-theme="night"] .tch b{color:#f6eee2;text-shadow:0 1px 0 rgba(0,0,0,.45)}
+html[data-theme="night"] .tch b{color:#f6eee2;text-shadow:0 1px 0 rgba(0,0,0,.55),0 0 16px rgba(8,6,4,.4)}
+html[data-theme="night"] .title-sub{color:#e7dcc8}
+html[data-theme="night"] .title-poem{color:#d9ccb4}
 html[data-theme="night"] .brush-btn:not(.light):not(#btn-continue) .bb-ink{background-image:var(--brush-img-zhu)}
+/* 深纸上的淡钮：宣纸笔触配浓墨，字才压得住 */
 html[data-theme="night"] .brush-btn.light,
-html[data-theme="night"] #btn-continue{color:var(--ink)}
+html[data-theme="night"] #btn-continue{color:#1c1814}
 html[data-theme="night"] .brush-btn.light .bb-ink,
-html[data-theme="night"] #btn-continue .bb-ink{background-image:var(--brush-night-ink,var(--brush-img-light))}
+html[data-theme="night"] #btn-continue .bb-ink{background-image:var(--brush-img-paper)}
+html[data-theme="night"] .brush-btn.light small,
+html[data-theme="night"] #btn-continue small{color:#3a332b;opacity:.9}
 html[data-theme="night"] .audio-btn{color:#f4ecdc;background-image:var(--brush-img-zhu);opacity:.88}
+html[data-theme="night"] .splash-char{color:#1c1814}
+html[data-theme="night"] .actions .act .act-ink{
+  background-color:rgba(236,226,208,.55);background-image:none;opacity:1;
+  -webkit-mask-position:center;-webkit-mask-repeat:no-repeat;-webkit-mask-size:contain;
+  mask-position:center;mask-repeat:no-repeat;mask-size:contain;
+  -webkit-mask-image:var(--blot);mask-image:var(--blot);
+}
+html[data-theme="night"] .act:nth-child(2) .act-ink{-webkit-mask-image:var(--blot2);mask-image:var(--blot2)}
+html[data-theme="night"] .act:nth-child(3) .act-ink{-webkit-mask-image:var(--blot3);mask-image:var(--blot3)}
+html[data-theme="night"] .act:nth-child(4) .act-ink{-webkit-mask-image:var(--blot4);mask-image:var(--blot4)}
 html[data-theme="night"] #btn-menu svg rect{fill:#8e3e3a}
 html[data-theme="night"] .scroll-paper,
 html[data-theme="night"] .hpaper,
@@ -2607,11 +2632,27 @@ html[data-theme="night"] .map{
 html[data-theme="night"] .entry.warn .entry-text{color:#8a3028}
 html[data-theme="night"] .ink-cadence .ink-ch{color:#4a433a}
 html[data-theme="night"] #splash{background:#14110e}
-html[data-theme="night"] .splash-char{color:#f0e6d6}
 html[data-theme="night"] .modal-shade{background:radial-gradient(ellipse at 50% 50%,rgba(8,6,5,.55),rgba(6,5,4,.78))}
 html[data-theme="night"] .sheet-shade{background:rgba(6,5,4,.62)}
 html[data-theme="night"] .end{background:rgba(8,6,5,.78)}
 html[data-theme="night"] .scroll-hint{color:#f4ecdc}
+/* 手机直屏：笺不铺暖纸，修为条与寿烛改淡墨，否则深纸上看不见 */
+@media (max-width:759px){
+  html[data-theme="night"] body[data-screen="main"] .bar-bg,
+  html[data-theme="night"] body[data-screen="main"] .bar-fill{
+    background-color:rgba(236,226,208,.78);background-image:none;
+    -webkit-mask:var(--brush-bar) center/100% 100% no-repeat;mask:var(--brush-bar) center/100% 100% no-repeat;
+  }
+  html[data-theme="night"] body[data-screen="main"] .bar-fill.full{
+    background-color:#c46a62;background-image:none;
+    -webkit-mask:var(--brush-bar) center/100% 100% no-repeat;mask:var(--brush-bar) center/100% 100% no-repeat;
+  }
+  html[data-theme="night"] body[data-screen="main"] .bar-bg{opacity:.28}
+  html[data-theme="night"] body[data-screen="main"] .bar-fill{opacity:.9}
+  html[data-theme="night"] body[data-screen="main"] .chips{border-top-color:rgba(240,230,210,.18)}
+  html[data-theme="night"] body[data-screen="main"] .incense::before{border-top-color:rgba(240,230,210,.35)}
+  html[data-theme="night"] body[data-screen="main"] .stick{background:linear-gradient(90deg,#c4a882,#f0e2cc)}
+}
 
 /* 终卷：正文可滚，三枚印钮始终落在卷内可见处 */
 .end{padding:calc(var(--sat) + 10px) 12px calc(var(--sab) + 10px)}

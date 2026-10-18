@@ -1,6 +1,6 @@
 /* 墨仙录 · 离线壳。网络优先，版本化缓存；更新 skipWaiting，由页面提示重开。 */
 'use strict';
-const CACHE = 'moxian-v33';
+const CACHE = 'moxian-v34';
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([
