@@ -612,6 +612,8 @@ function choose(ev, c, btn, evText) {
 }
 
 /* ================= 破境 ================= */
+if (typeof BtFx !== 'undefined') BtFx.setWriter((el, text) => inkWrite(el, text, { immediate: true, step: FX.reduced() ? 8 : 55 }));
+
 const btChance = usePill => Core.btChance(S, usePill);
 const chanceWord = p => { const n = Math.round(p * 10); return n <= 1 ? '九死一生' : n >= 9 ? '十拿九稳' : `约莫${cn(n)}成`; };
 function openBreak() {
@@ -650,51 +652,61 @@ async function runBreak(usePill) {
   busy = true;
   const r = R(), B = buffer(), res = Core.resolveBreak(S, usePill, B.emit), from = res.from, ok = res.ok;
   save();
-  const bt = $('#bt'); bt.className = 'bt'; bt.hidden = false;
-  const lines = $('#bt-lines'), big = $('#bt-big'), a = $('#bt-a'), b = $('#bt-b'), txt = $('#bt-text'), close = $('#bt-close');
-  lines.innerHTML = ''; txt.textContent = ''; close.hidden = true;
+  const bt = $('#bt');
+  const meta = (typeof BtFx !== 'undefined') ? BtFx.prepare(bt, from, ok) : null;
+  bt.hidden = false;
+  const lines = $('#bt-lines'), a = $('#bt-a'), b = $('#bt-b'), txt = $('#bt-text'), close = $('#bt-close');
+  lines.innerHTML = ''; txt.textContent = ''; close.hidden = true; close.classList.remove('bleed-in');
   const target = NEXT_REALM_NAME[from];
   a.textContent = b.textContent = target;
-  $('#bt-stamp-t').textContent = ok ? '成' : '败';
+  if (!meta) $('#bt-stamp-t').textContent = ok ? '成' : '败';
   await sleep(30); bt.classList.add('go');
-  if (InkGL.spreadOk && !FX.reduced()) {   // 浓墨以扭曲的边缘自中心洇满全屏
-    const cv = $('#inkfx'); cv.classList.remove('fade'); bt.insertBefore(cv, $('#bt-ink')); bt.classList.add('gl');
-    InkGL.spread({ mode: 1, y: innerHeight * .44, from: 0, to: 1.08, dur: 2600, ease: 'inOut', scale: .5, z: 'auto' });
+  // 墨染入场：渡劫更慢更沉，筑基略轻
+  const spreadDur = from === 4 ? 3200 : from === 0 ? 2000 : 2600;
+  if (InkGL.spreadOk && !FX.reduced()) {
+    const cv = $('#inkfx'); cv.classList.remove('fade');
+    const ink = $('#bt-ink');
+    bt.insertBefore(cv, ink || bt.firstChild); bt.classList.add('gl');
+    InkGL.spread({ mode: 1, y: innerHeight * (from === 4 ? .36 : .44), from: 0, to: 1.08, dur: spreadDur, ease: 'inOut', scale: .5, z: 'auto' });
   }
-  await sleep(1000);
-  const l1 = document.createElement('div'); lines.appendChild(l1);
-  inkWrite(l1, usePill ? `服下${r.pill}，凝神静气` : '凝神静气，抱元守一', { immediate: true, step: 60 });
-  await sleep(1100);
-  bt.classList.add('charge');
-  const l2 = document.createElement('div'); lines.appendChild(l2);
-  inkWrite(l2, from === 4 ? '劫云压顶……' : '引天地灵气，冲击瓶颈……', { immediate: true, step: 70 });
-  await sleep(1900);
-  bt.classList.remove('charge');
-  bt.classList.add('reveal');
-  if (ok) {
-    await sleep(500); bt.classList.add('glory');
-    if (typeof MoAudio !== 'undefined') { MoAudio.play('splash'); MoAudio.play('gold'); }
-    const bb = $('#bt-big').getBoundingClientRect(); FX.goldMotes(bb.left + bb.width / 2, bb.top + bb.height / 2);
-    await sleep(800);
-  } else await sleep(1300);
-  if (!ok) {
-    if (typeof MoAudio !== 'undefined') MoAudio.play('fail');
-    bt.classList.add('fail', 'crack'); bt.classList.add('shake'); await sleep(500);
+  await sleep(FX.reduced() ? 80 : (from === 4 ? 1200 : 900));
+  if (typeof BtFx !== 'undefined') await BtFx.chargePhase(bt, from, usePill, r.pill);
+  else {
+    const l1 = document.createElement('div'); lines.appendChild(l1);
+    inkWrite(l1, usePill ? `服下${r.pill}，凝神静气` : '凝神静气，抱元守一', { immediate: true, step: 60 });
+    await sleep(1100); bt.classList.add('charge');
+    const l2 = document.createElement('div'); lines.appendChild(l2);
+    inkWrite(l2, from === 4 ? '劫云压顶……' : '引天地灵气，冲击瓶颈……', { immediate: true, step: 70 });
+    await sleep(1900); bt.classList.remove('charge');
+  }
+  if (typeof BtFx !== 'undefined') await BtFx.revealPhase(bt, from, ok);
+  else {
+    bt.classList.add('reveal');
+    if (ok) {
+      await sleep(500); bt.classList.add('glory');
+      if (typeof MoAudio !== 'undefined') { MoAudio.play('splash'); MoAudio.play('gold'); }
+      const bb = $('#bt-big').getBoundingClientRect(); FX.goldMotes(bb.left + bb.width / 2, bb.top + bb.height / 2);
+      await sleep(800);
+    } else await sleep(1300);
+    if (!ok) {
+      if (typeof MoAudio !== 'undefined') MoAudio.play('fail');
+      bt.classList.add('fail', 'crack', 'shake'); await sleep(500);
+    }
   }
   if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
   bt.classList.add('stamped');
-  await sleep(500);
-  // 结算（规则层已算定，这里只落笔）
+  await sleep(FX.reduced() ? 80 : 480);
   const logText = res.text;
   if (res.ending) bt.classList.add('end-' + res.ending);
   inkWrite(txt, logText, { immediate: true, step: 26 });
   save();
-  await sleep(1600);
+  await sleep(FX.reduced() ? 200 : 1500);
   close.hidden = false; close.classList.add('bleed-in');
   close.onclick = async () => {
     bt.classList.add('leave'); await sleep(900); bt.hidden = true; bt.className = 'bt';
+    if (typeof BtFx !== 'undefined') BtFx.clearStage();
     const cv = $('#inkfx'); if (cv.parentNode === bt) { InkGL.hide(); document.body.insertBefore(cv, $('#grain')); }
-    const ttl = ok ? (from === 4 ? '渡劫' : `破境 · ${NEXT_REALM_NAME[from]}`) : { bingjie: '兵解', yunluo: '身殒', rumo: '入魔' }[res.ending] || '破境未果';
+    const ttl = ok ? (from === 4 ? '渡劫飞升' : `破境 · ${NEXT_REALM_NAME[from]}`) : { bingjie: '兵解', yunluo: '身殒', rumo: '入魔' }[res.ending] || '破境未果';
     pushLog({ title: ttl, text: logText, cls: ok ? 'gold' : 'warn', div: true });
     B.flush(); render(); save();
     if (ok && res.needPath) {
@@ -1523,5 +1535,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, JHUI, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
 })();

@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=17" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=17" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=17">
-<link rel="stylesheet" href="css/style.css?v=17">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=19" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=19" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=19">
+<link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -211,12 +211,25 @@
   </div>
 </div>
 
-<!-- 破境 -->
+<!-- 破境 · 分境仪式 -->
 <div id="bt" class="bt" hidden>
-  <div class="bt-shade"></div><div class="bt-ink" id="bt-ink"></div>
-  <div class="bt-rays"></div><div class="bt-glow"></div><div class="bt-ring"></div>
+  <div class="bt-shade"></div>
+  <div class="bt-ink" id="bt-ink"></div>
+  <div class="bt-stage" id="bt-stage" aria-hidden="true">
+    <div class="bt-clouds" id="bt-clouds"></div>
+    <div class="bt-veins" id="bt-veins"></div>
+    <div class="bt-ring"></div>
+    <div class="bt-ring bt-ring-2"></div>
+    <div class="bt-orb" id="bt-orb"></div>
+    <div class="bt-infant" id="bt-infant"></div>
+    <div class="bt-pillar" id="bt-pillar"></div>
+    <div class="bt-bolts" id="bt-bolts"></div>
+    <div class="bt-stairs" id="bt-stairs"></div>
+  </div>
+  <div class="bt-rays"></div><div class="bt-glow"></div>
   <div class="bt-lines" id="bt-lines"></div>
   <div class="bt-big" id="bt-big"><span class="bt-half a" id="bt-a"></span><span class="bt-half b" id="bt-b"></span></div>
+  <div class="bt-sub" id="bt-sub"></div>
   <div class="bt-stamp" id="bt-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="bt-stamp-t">成</text></g></svg></div>
   <p class="bt-text" id="bt-text"></p>
   <button class="bt-close brush-btn small light" id="bt-close" hidden><span class="bb-ink"></span><span class="bb-text">收卷</span></button>
@@ -322,26 +335,27 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=17"></script>
-<script src="js/gongfa.js?v=17"></script>
-<script src="js/gear.js?v=17"></script>
-<script src="js/story.js?v=17"></script>
-<script src="js/sect.js?v=17"></script>
-<script src="js/baijia.js?v=17"></script>
-<script src="js/world.js?v=17"></script>
-<script src="js/tianxia.js?v=17"></script>
-<script src="js/karma.js?v=17"></script>
-<script src="js/path.js?v=17"></script>
-<script src="js/core.js?v=17"></script>
-<script src="js/jianghu.js?v=17"></script>
-<script src="js/ink.js?v=17"></script>
-<script src="js/ding.js?v=17"></script>
-<script src="js/map.js?v=17"></script>
-<script src="js/audio.js?v=17"></script>
-<script src="js/fx.js?v=17"></script>
-<script src="js/wallpaper.js?v=17"></script>
-<script src="js/inkgl.js?v=17"></script>
-<script src="js/jhui.js?v=17"></script>
-<script src="js/game.js?v=17"></script>
+<script src="js/data.js?v=19"></script>
+<script src="js/gongfa.js?v=19"></script>
+<script src="js/gear.js?v=19"></script>
+<script src="js/story.js?v=19"></script>
+<script src="js/sect.js?v=19"></script>
+<script src="js/baijia.js?v=19"></script>
+<script src="js/world.js?v=19"></script>
+<script src="js/tianxia.js?v=19"></script>
+<script src="js/karma.js?v=19"></script>
+<script src="js/path.js?v=19"></script>
+<script src="js/core.js?v=19"></script>
+<script src="js/jianghu.js?v=19"></script>
+<script src="js/ink.js?v=19"></script>
+<script src="js/ding.js?v=19"></script>
+<script src="js/map.js?v=19"></script>
+<script src="js/audio.js?v=19"></script>
+<script src="js/fx.js?v=19"></script>
+<script src="js/btfx.js?v=19"></script>
+<script src="js/wallpaper.js?v=19"></script>
+<script src="js/inkgl.js?v=19"></script>
+<script src="js/jhui.js?v=19"></script>
+<script src="js/game.js?v=19"></script>
 </body>
 </html>
