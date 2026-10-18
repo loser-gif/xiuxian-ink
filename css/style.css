@@ -638,3 +638,15 @@ body:not([data-screen=title]) .cam,body:not([data-screen=title]) .cam *,body:not
 .bt.gl #inkfx{transition:opacity 2.4s var(--ease-silk)}
 .bt.gl.glory #inkfx{opacity:.5}
 body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
+
+/* v0.5 吐纳·圆相：墨在纸下（文字之下）旋聚、沉入 */
+.qi-ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .25s}
+.qi-ink.on{opacity:1}
+.bar-xw.gain .bar-flow::before{animation:flow 1.3s var(--ease-silk) 1}
+.bar-xw.gain .bar-tip{animation:bead 1.3s var(--ease-silk) 1}
+@media (prefers-reduced-motion:reduce){.qi-ink{display:none}.log .entry:last-child{animation:fadeIn .6s ease both!important}}
+/* 开卷下的小字：在活墨上也要清楚 */
+.brush-btn:not(.light):not(#btn-continue) small{opacity:1;color:#f7f0dd;font-size:11.5px;text-shadow:0 0 3px rgba(12,10,8,.9),0 0 8px rgba(12,10,8,.6)}
+.path-ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .3s}
+.path-ink.on{opacity:1}.path-ink.out{opacity:0;transition:opacity .9s var(--ease-silk)}
+@media (prefers-reduced-motion:reduce){.path-ink{display:none}}

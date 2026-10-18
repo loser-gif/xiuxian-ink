@@ -401,7 +401,7 @@ function act(kind) {
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
-    lock(900);
+    lock(1500);
     const mul = gainMul();
     const g = Math.round(unit() * 0.22 * (0.9 + Math.random() * 0.2) * mul);
     const tags = []; const ups = bottleneck() ? (tags.push({ t: '瓶颈难破，修为难进' }), []) : addXw(g, tags);
@@ -409,12 +409,14 @@ function act(kind) {
     const text = pick(TEXT.tuna).replace('{d}', cnDur(r.T * 3));
     save();
     // 灵气旋入丹田之后，才落笔记下这一季
-    const sp = $('.scroll-paper').getBoundingClientRect();
-    FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, () => {
-      const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
+    const done = () => {
       if (!S) return;
       pushLog({ text, tags }); afterGain(ups); render(); save(); checkEnd();
-    });
+      const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
+      clearTimeout(act.gt); act.gt = setTimeout(() => bx.classList.remove('gain'), 1500);
+    };
+    if (typeof InkGL !== 'undefined' && InkGL.qi) InkGL.qi($('.scroll-paper'), { cy: .5, onSink: done });
+    else { const sp = $('.scroll-paper').getBoundingClientRect(); FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, done); }
     return;
   } else if (kind === 'biguan') {
     lock(1100);

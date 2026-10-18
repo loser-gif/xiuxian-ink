@@ -247,32 +247,70 @@ const FX = (() => {
     await sleep(2350); el.classList.remove('on');
   }
 
-  /* ---------- 游历：山路一笔 ---------- */
-  async function inkPath(rect) {
-    if (reduced()) return;
-    const svg = $('#path-fx'); svg.classList.remove('out'); svg.style.opacity = '';
-    const { width: Wd, height: H } = rect, L = 0, T = 0;
-    Object.assign(svg.style, { left: rect.left + 'px', top: rect.top + 'px', width: Wd + 'px', height: H + 'px' });
-    // 山路沿卷底的远山蜿蜒而上：起于左下，止于右侧山腰
-    const pts = [[L + Wd * .06, T + H * .97], [L + Wd * .3, T + H * rnd(.86, .9)], [L + Wd * .52, T + H * rnd(.9, .94)], [L + Wd * .72, T + H * rnd(.78, .82)], [L + Wd * .86, T + H * rnd(.7, .74)]];
-    let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  /* ---------- 游历：山路一笔（淡墨笔触，画在纸下，起笔按、收笔飞白） ---------- */
+  let pathCv = null;
+  function stampSprite() {
+    if (stampSprite.c) return stampSprite.c;
+    const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d');
+    const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(24,23,26,1)'); g.addColorStop(.55, 'rgba(24,23,26,.85)'); g.addColorStop(.8, 'rgba(30,32,40,.25)'); g.addColorStop(1, 'rgba(30,32,40,0)');
+    c.fillStyle = g; c.fillRect(0, 0, 64, 64); return (stampSprite.c = cv);
+  }
+  function inkPath() {
+    if (reduced()) return Promise.resolve();
+    const host = $('.scroll-paper'); if (!host) return Promise.resolve();
+    if (!pathCv) { pathCv = document.createElement('canvas'); pathCv.className = 'path-ink'; pathCv.setAttribute('aria-hidden', 'true'); }
+    if (pathCv.parentNode !== host) host.insertBefore(pathCv, host.querySelector('.log'));
+    const Wd = host.clientWidth, H = host.clientHeight, k = Math.min(DPR, 2);
+    pathCv.width = Math.round(Wd * k); pathCv.height = Math.round(H * k);
+    const c = pathCv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0); c.clearRect(0, 0, Wd, H);
+    pathCv.classList.remove('out'); pathCv.classList.add('on');
+    // 山路沿卷底远山蜿蜒而上：起于左下，止于右侧山腰
+    const pts = [[Wd * .06, H * .95], [Wd * .3, H * rnd(.86, .9)], [Wd * .52, H * rnd(.9, .93)], [Wd * .72, H * rnd(.78, .82)], [Wd * .86, H * rnd(.7, .74)]];
+    const seg = [];
     for (let i = 1; i < pts.length; i++) {
       const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], mx = (x0 + x1) / 2;
-      d += ` C${mx.toFixed(1)} ${y0.toFixed(1)} ${mx.toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+      for (let j = 0; j < 40; j++) { const t = j / 40, u = 1 - t;
+        seg.push([u*u*u*x0 + 3*u*u*t*mx + 3*u*t*t*mx + t*t*t*x1, u*u*u*y0 + 3*u*u*t*y0 + 3*u*t*t*y1 + t*t*t*y1]); }
     }
-    const end = pts[pts.length - 1];
-    svg.innerHTML = `<path class="p1" d="${d}"/><path class="p2" d="${d}" transform="translate(0 5)" opacity="0"/><circle cx="${end[0]}" cy="${end[1]}" r="4.5" opacity="0"/>`;
-    const p1 = svg.querySelector('.p1'), p2 = svg.querySelector('.p2'), dot = svg.querySelector('circle');
-    const len = p1.getTotalLength();
-    p1.style.strokeDasharray = `${len} ${len}`; p1.style.strokeDashoffset = len;
-    const anim = [p1.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 1000, easing: 'cubic-bezier(.4,.1,.3,1)', fill: 'forwards' }),
-      p2.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: 1150, fill: 'forwards' })];
-    await sleep(900);
-    dot.animate([{ opacity: 0 }, { opacity: .7 }], { duration: 300, fill: 'forwards' });
-    await Promise.all(anim.map(a => a.finished.catch(() => {})));
-    await sleep(150);
-    svg.classList.add('out');
-    setTimeout(() => { svg.innerHTML = ''; svg.classList.remove('out'); }, 800);
+    seg.push(pts[pts.length - 1]);
+    // 等距重采样
+    const P = [seg[0]], STEP = .6; let carry = 0;
+    for (let i = 1; i < seg.length; i++) {
+      const [ax, ay] = seg[i - 1], [bx, by] = seg[i], d = Math.hypot(bx - ax, by - ay);
+      let s0 = STEP - carry;
+      for (; s0 <= d; s0 += STEP) P.push([ax + (bx - ax) * s0 / d, ay + (by - ay) * s0 / d]);
+      carry = d - (s0 - STEP);
+    }
+    const N = P.length, img = stampSprite(), D = 1150, t0 = performance.now(), ph = rnd(0, 9);
+    const bristles = [-.62, -.25, .12, .5, .8].map(o => ({ o, cut: rnd(.72, .95) }));
+    let drawn = 0;
+    return new Promise(res => {
+      const frame = now => {
+        const k2 = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k2, 2.4);   // 行笔先快后缓
+        const upto = Math.floor(e * (N - 1));
+        for (; drawn <= upto; drawn++) {
+          const i = drawn, t = i / (N - 1), [x, y] = P[i], q = P[Math.min(N - 1, i + 8)], pr = P[Math.max(0, i - 8)];
+          let nx = -(q[1] - pr[1]), ny = q[0] - pr[0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+          // 起笔按（略重）→ 行笔 → 收笔提（变细、飞白）
+          const press = 1 + .7 * Math.exp(-t * 18), lift = 1 - Math.pow(Math.max(0, (t - .55) / .45), 1.6) * .75;
+          const wob = .85 + .3 * Math.sin(t * 23 + ph) * Math.sin(t * 7.3 + ph * 2);
+          const w = 2.5 * press * lift * wob;
+          if (i % 5 === 0) { c.globalAlpha = .03; c.drawImage(img, x - w * 4, y - w * 4, w * 8, w * 8); }   // 淡墨洇晕
+          if (t < .58) { c.globalAlpha = .12; c.drawImage(img, x - w, y - w, w * 2, w * 2); }
+          else for (const b of bristles) {                                                          // 散锋飞白
+            if (t > b.cut || Math.sin(i * .045 + b.o * 11 + ph) > .7) continue;
+            const r = Math.max(.45, w * .42), bx = x + nx * b.o * w, by = y + ny * b.o * w;
+            c.globalAlpha = .16; c.drawImage(img, bx - r, by - r, r * 2, r * 2);
+          }
+        }
+        c.globalAlpha = 1;
+        if (k2 < 1) return requestAnimationFrame(frame);
+        setTimeout(() => { pathCv.classList.add('out'); setTimeout(() => { pathCv.classList.remove('on', 'out'); c.clearRect(0, 0, Wd, H); }, 900); }, 250);
+        res();
+      };
+      requestAnimationFrame(frame);
+    });
   }
 
   /* ---------- 墨染转场 ---------- */
@@ -288,7 +326,7 @@ const FX = (() => {
       await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.catch(() => {});
       u.classList.remove('on'); washBusy = false; return;
     }
-    if (window.InkGL && InkGL.spreadOk) {   // WebGL：纸面以域扭曲的边缘洇开，外缘一圈淡墨
+    if (typeof InkGL !== 'undefined' && InkGL.spreadOk) {   // WebGL：纸面以域扭曲的边缘洇开，外缘一圈淡墨
       const cv = $('#inkfx'); cv.classList.remove('fade'); u.classList.add('on');
       await InkGL.spread({ mode: 0, x, y, from: 0, to: 1.02, dur: 1050, ease: 'inOut', scale: .5, z: 41 });
       await swap(); await sleep(60);

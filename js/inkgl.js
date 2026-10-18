@@ -101,6 +101,64 @@ const InkGL = (() => {
       }
     }`;
 
+
+  // ---- 吐纳：淡墨云气自卷底山影与两侧被吸入，旋成一笔圆相，随即沉入纸中
+  const QI_FRAG = NOISE + `
+    varying vec2 vUv;
+    uniform vec2 uRes, uC; uniform float uT, uSeed, uR;
+    vec3 INK = vec3(.09, .085, .08), INDIGO = vec3(.20, .23, .32);
+    void main(){
+      vec2 px = vUv * uRes;
+      vec2 p = (px - uC) / uRes.y;                 // 以卷高为单位，圆心为原点
+      float t = uT;
+      float g = smoothstep(0., 1.05, t);            // 吸：0→1.05s
+      float e = smoothstep(.5, 1.12, t);            // 圆相落笔
+      float s = smoothstep(1.08, 1.75, t);          // 沉：墨被纸吸走
+      // 域扭曲：云气不是点，是被水流牵动的一缕淡墨
+      float r0 = length(p);
+      float rip0 = uR + smoothstep(1.08, 1.75, t) * .42;
+      if (t > 1.2 && abs(r0 - uR) > .32 && abs(r0 - rip0) > .14) { gl_FragColor = vec4(0.); return; }
+      if (t < .5 && r0 < uR * .45) { gl_FragColor = vec4(0.); return; }
+      vec2 w = vec2(fbm3(p * 3.2 + vec2(uSeed, t * .35)), fbm3(p * 3.2 + vec2(uSeed + 4.1, -t * .3))) - .5;
+      vec2 q = p + w * (.09 + .05 * (1. - g));
+      float r = length(q), th = atan(q.y, q.x);
+      float lr = log(max(r, .02));
+      // 两缕螺旋：随吸气向圆心收拢、旋转
+      float phi = th * 2. - lr * 3.4 - t * 2.6 + uSeed;
+      float band = pow(.5 + .5 * sin(phi + w.x * 5.), 10.);
+      float band2 = pow(.5 + .5 * sin(phi * .5 + 1.7 + w.y * 6.), 12.) * .6;   // 一缕更细的游丝
+      // 沿流向的浓淡起伏，向内流动
+      float stream = smoothstep(.25, .75, fbm3(vec2(phi * .35, lr * 2.6 + t * 3.2) + uSeed));
+      float Rout = mix(1.25, uR * 1.05, g * g);     // 云气外缘随吸气收缩
+      float env = smoothstep(Rout + .14, Rout - .06, r) * smoothstep(uR * .55, uR * 1.02, r);
+      // 自下方山影升起的那一缕更浓
+      env *= .55 + .45 * smoothstep(.15, -.45, p.y) + .25 * smoothstep(.0, -.2, p.y);
+      float smoke = max(band, band2) * (.35 + .65 * stream) * env;
+      smoke *= smoothstep(0., .28, t) * (1. - smoothstep(.85, 1.2, t));         // 入、化为圆相
+      // 圆相：一笔，起笔浓、收笔飞白，留一缺口
+      float th0 = -2.2 + uSeed * .3;
+      float a = fract((atan(p.y, p.x) - th0) / 6.2832);                          // 起笔处 a=0，顺时针
+      a = 1. - a;
+      float rr = length(p + w * .025);
+      float bw = mix(.020, .007, a) * (1. + .35 * (fbm3(vec2(a * 6., uSeed)) - .5)) * (1. + s * 2.4);
+      float ringR = uR * (1. + .015 * sin(a * 9. + uSeed) + s * .08);
+      float ring = exp(-pow((rr - ringR) / bw, 2.));
+      float dry = smoothstep(.25, .6, noise(vec2(a * 70., (rr - ringR) / bw * 1.6) + uSeed));
+      ring *= mix(1., dry, smoothstep(.55, .92, a));
+      ring *= smoothstep(e * .94 + .015 + s * .06, e * .94 - .02 - s * .14, a);                       // 笔锋随时间行进
+      ring *= smoothstep(0., .03 + s * .08, a);
+      // 沉入：墨沿纸纤维洇开、变淡
+      float fib = fibre(p * 2.4 + uSeed);
+      float bleed = exp(-pow((rr - ringR) / (bw * (2.2 + fib * 1.5)), 2.)) * s * (1. - s) * .9 * smoothstep(.98, .8, a) * smoothstep(0., .06, a);
+      float enso = (ring * (1. - s * .92) + bleed * .5) * smoothstep(1.75, 1.5, t + .0001) ;
+      // 纸色微漾：一圈极淡的墨痕自圆相向外荡开（呼）
+      float rip = exp(-pow((r - (uR + s * .42)) / (.025 + s * .03), 2.)) * s * (1. - s) * .22;
+      float A = smoke * .26 + enso * .52 + rip;
+      A *= 1. - smoothstep(1.6, 1.8, t);
+      vec3 col = mix(INDIGO, INK, clamp(enso * 1.4 + smoke * .4, 0., 1.));
+      gl_FragColor = vec4(col * A, A);
+    }`;
+
   function mkGL(canvas) {
     const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true }) ;
     if (!gl) return null;
@@ -244,6 +302,48 @@ const InkGL = (() => {
   }
   function hide() { if (S.cv) S.cv.classList.remove('on'); }
 
+
+  /* ================= 吐纳·圆相 ================= */
+  const Q = { gl: null, P: null, cv: null, ok: null };
+  function qiInit(host) {
+    if (Q.ok === false) return false;
+    if (!Q.cv) {
+      try {
+        Q.cv = document.createElement('canvas'); Q.cv.className = 'qi-ink'; Q.cv.setAttribute('aria-hidden', 'true');
+        Q.gl = mkGL(Q.cv); if (!Q.gl) throw new Error('no webgl'); Q.P = prog(Q.gl, QI_FRAG); Q.ok = true;
+      } catch (e) { console.warn('InkGL qi disabled:', e.message); Q.ok = false; return false; }
+    }
+    if (Q.cv.parentNode !== host) host.insertBefore(Q.cv, host.firstChild);
+    return true;
+  }
+  // host：卷轴纸面；onSink 在墨开始沉入纸中时调用（此时写下日志）
+  function qi(host, { cy = .5, onSink, at } = {}) {
+    return new Promise(res => {
+      if (reduced() || !qiInit(host)) { onSink && onSink(); return res(false); }
+      const cv = Q.cv, gl = Q.gl, P = Q.P;
+      const W = host.clientWidth, H = host.clientHeight, k = Math.min(devicePixelRatio || 1, 2) * .4;
+      cv.width = Math.max(8, Math.round(W * k)); cv.height = Math.max(8, Math.round(H * k));
+      gl.viewport(0, 0, cv.width, cv.height);
+      cv.classList.add('on');
+      const seed = at != null ? 3.3 : Math.random() * 6 + 1, t0 = at != null ? performance.now() - at * 1000 : performance.now(), D = 1.8;
+      const Rr = Math.min(.12, (W / H) * .2);            // 圆相半径（卷高为单位），窄屏自适应
+      let sunk = false; const gen = Q.gen = (Q.gen || 0) + 1;
+      const frame = now => {
+        if (gen !== Q.gen) { if (!sunk) { sunk = true; onSink && onSink(); } return res(true); }   // 被新一次吐纳接替
+        const t = (now - t0) / 1000;
+        if (!sunk && t >= 1.1) { sunk = true; onSink && onSink(); }
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+        if (t < D) {
+          gl.useProgram(P.p);
+          gl.uniform2f(P.U.uRes, cv.width, cv.height); gl.uniform2f(P.U.uC, cv.width / 2, cv.height * (1 - cy));
+          gl.uniform1f(P.U.uT, t); gl.uniform1f(P.U.uSeed, seed); gl.uniform1f(P.U.uR, Rr);
+          draw(gl, P); if (at == null) requestAnimationFrame(frame); else res(true);
+        } else { cv.classList.remove('on'); res(true); }
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+
   function init() {
     if (initBlots()) {
       scan();
@@ -258,5 +358,5 @@ const InkGL = (() => {
     }
     initSpread();
   }
-  return { init, scan, spread, hide, setPaper, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
+  return { init, scan, spread, hide, setPaper, qi, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
 })();
