@@ -402,7 +402,9 @@ function render() {
   if (!S) return; sync();
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
-  setText('#h-name', S.name); setText('#h-sub', `${Core.rankName(S)} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
+  setText('#h-name', S.name);
+  const cr = typeof courtRankName === 'function' ? courtRankName(S) : '';
+  setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
   renderPathSeals();
   const so = Core.org(S); $('#sect-seal-t').textContent = so ? so.seal : '游';
   $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok)); fitLine($('#h-sub'), 11.5, 9);
@@ -421,6 +423,12 @@ function render() {
   if (typeof MoAudio !== 'undefined') MoAudio.setSeason(season);
   document.body.dataset.realm = S.ascended ? 5 : S.realm;
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
+  const chipC = $('#chip-court');
+  if (chipC) {
+    const on = !!(S.court && S.court.rank >= 0);
+    chipC.hidden = !on;
+    if (on) setText('#c-court', courtRankName(S) || '白身');
+  }
   const tm = Core.gt(S, 'time', 1);
   setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm))); setText('#dur-biguan', cnDur(Math.round(r.T * K.biguanMonths * tm)));
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
@@ -435,6 +443,7 @@ function render() {
   else if (S.buff) msg = `灵脉加持 · 余${cn(S.buff.n)}次`;
   else if (lowLife) { msg = '寿元无多'; st.classList.add('zhu'); }
   else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
+  else if (S.court && S.court.rank >= 6 && typeof canClaimThrone === 'function' && (canClaimThrone(S) || canRegent(S)) && !S.flags.jc_throne) { msg = '鼎鼐可问 · 往京城一抉'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
   else {
     const bits = [];
@@ -469,6 +478,7 @@ function renderSide() {
     : '<span class="sd-empty">囊中空空</span>';
   const loc = typeof LOCS !== 'undefined' && LOCS.find(l => l.id === S.loc);
   const notes = [];
+  if (S.court && S.court.rank >= 0) notes.push(`朝 · ${courtRankName(S)}　兵${cn(S.court.bing)} 民${cn(S.court.min)} 道${cn(S.court.dao)}`);
   if (S.dan) notes.push(`丹道 ${cn(S.dan.lv)}重`);
   if (typeof JHUI !== 'undefined' && JHUI.aucWindow()) notes.push('<span class="zhu">听雨楼拍卖将开</span>');
   if (typeof Jianghu !== 'undefined' && S.mj) { const open = Jianghu.mjAll ? Object.keys(S.mj).filter(id => Jianghu.mjOpen(S, id)) : []; if (open.length) notes.push(`<span class="zhu">秘境现世 · ${open.map(id => esc(MIJING[id].name)).join('、')}</span>`); }
@@ -568,7 +578,8 @@ function choose(ev, c, btn, evText) {
   const box = $('#ev-choices'); if (box.classList.contains('chosen')) return;
   btn.classList.add('picked'); box.classList.add('chosen');
   const res = Core.resolveChoice(S, c);
-  const B = buffer(), { tags, ups } = Core.applyFx(S, res.fx || {}, B.emit);
+  const B = buffer(), fxR = Core.applyFx(S, res.fx || {}, B.emit);
+  const tags = [...(res.tags || []), ...(fxR.tags || [])], ups = fxR.ups;
   if (res.fx && res.fx.gf) FX.goldMotes && setTimeout(() => { const t = $('#ev-result').getBoundingClientRect(); FX.goldMotes(t.left + t.width / 2, t.top + 20); }, 900);
   const out = $('#ev-result');
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
@@ -1331,6 +1342,8 @@ const END_ART = {
   guiyin: `<svg viewBox="0 0 320 120"><circle class="ea-moon" cx="244" cy="30" r="16"/><g class="ea-boat"><path d="M96 80 Q160 98 226 77 L214 88 Q160 104 108 90Z"/><path class="ea-pole" d="M146 84 L198 26"/></g><g class="ea-boat ea-refl"><path d="M96 98 Q160 84 226 100 L214 93 Q160 80 108 92Z"/></g><g class="ea-waves"><path d="M30 96 Q60 92 90 96 T150 96 T210 96 T290 96"/><path d="M70 108 Q100 104 130 108 T190 108 T250 108"/></g></svg>`,
   bingjie: `<svg viewBox="0 0 320 120"><g class="ea-sword"><path class="ea-blade1" d="M104 92 L168 52 Q172 51 173 55 L110 97Z"/><path class="ea-blade2" d="M180 46 L236 12 Q240 12 239 16 L186 52Z"/><path class="ea-guard" d="M92 82 Q98 80 116 104 Q112 108 108 104 Q100 92 90 86Z"/><path class="ea-hilt" d="M100 100 L80 116"/></g><g class="ea-motes">${Array.from({ length: 16 }, (_, i) => `<circle cx="${176 + (i * 37) % 64 - 20}" cy="${50 - (i * 23) % 42}" r="${1 + (i % 3) * .8}" style="animation-delay:${(i * .19).toFixed(2)}s"/>`).join('')}</g></svg>`,
   yunluo: `<svg viewBox="0 0 320 120"><path class="ea-bolt" d="M184 -4 L156 42 L172 44 L142 92 L160 94 L132 124 L166 88 L150 86 L182 38 L166 36 L192 -4Z"/><path class="ea-bolt thin" d="M156 42 L134 58 L140 64 L116 86 L146 60 L140 56 L162 44Z"/></svg>`,
+  renhuang: `<svg viewBox="0 0 320 120"><g class="ea-throne"><rect x="130" y="48" width="60" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M120 48 L160 18 L200 48" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="160" cy="28" r="6" fill="currentColor" opacity=".55"/><path d="M140 100 H180" stroke="currentColor" stroke-width="2"/></g><g class="ea-rays" opacity=".45">${Array.from({length:9},(_,i)=>{const a=(-90+(i-4)*12)*Math.PI/180;return `<path d="M160 22 L${(160+Math.cos(a)*90).toFixed(1)} ${(22+Math.sin(a)*90).toFixed(1)}"/>`;}).join('')}</g></svg>`,
+  quancheng: `<svg viewBox="0 0 320 120"><g class="ea-seal"><rect x="118" y="28" width="84" height="84" rx="6" fill="none" stroke="currentColor" stroke-width="2.4"/><text x="160" y="86" text-anchor="middle" font-size="42" class="seal-font" fill="currentColor" opacity=".85">摄</text></g></svg>`,
 };
 function showEnd(kind) {
   if (!S) return;
@@ -1341,6 +1354,8 @@ function showEnd(kind) {
   if (!art) { art = document.createElement('div'); art.className = 'end-art'; e.querySelector('.end-paper').prepend(art); }
   art.innerHTML = END_ART[kind] || '';
   const age = cn(S.age), rs = realmStr(), evs = S.events ? '历奇遇' + cn(S.events) + '桩' : '一生未逢奇遇';
+  const cr = typeof courtRankName === 'function' ? courtRankName(S) : '';
+  const courtLine = cr ? `官至${cr}，兵${cn((S.court&&S.court.bing)||0)}·民${cn((S.court&&S.court.min)||0)}·道${cn((S.court&&S.court.dao)||0)}。` : '';
   const T = {
     ascend: ['飞升', `${S.name}，以${S.lg.name}之资${(Core.pathSummary(S)||[]).length ? '，行' + (Core.pathSummary(S)||[]).map(x=>x.name).join('·') + '之路' : ''}，历${age}载春秋，终渡九重天劫，白日飞升。青冥山下的樵夫说，那一日，满山松涛都静了一瞬。`],
     zuohua: ['坐化', `${age}岁那年冬天，你在洞府中静静合上了眼。生前修至${rs}，${evs}。山风穿过石门，吹散了案上未写完的手札。` + pick(['青山不语，白云自去。', '一生求长生，长生终未得。', '此身原是客，何处不归途。'])],
@@ -1348,10 +1363,12 @@ function showEnd(kind) {
     guiyin: ['归隐', `${S.name}修至${rs}，于${age}岁那年放下了长生。此后青冥山中少了一位修士，桃花溪上多了一叶扁舟。有渔人说，常见一个老者在江心垂钓，钓线上从不挂饵；后来，连那舟也不见了，只剩空船自横。`],
     bingjie: ['兵解', `${rs}破关之际，天威如山，肉身寸寸崩解。袖中兵解玉符应声而碎，一缕真灵遁出，没入茫茫轮回。此生修为尽散，道心未绝——来世入道之时，或可忆起今日。`],
     yunluo: ['身殒', `${rs}破关失利，经脉寸断，${age}载苦修化作山间一缕青烟。同门在你的洞府前立了一块无字碑，碑前的野草，年年都长得很高。` + pick(['大道无情，从不等人。', '天道之下，众生皆刍狗。'])],
+    renhuang: ['人皇', `${S.name}修至${rs}，${courtLine}于${age}岁登基，建元人皇。史官写下：仙凡一统，自此人主天下。山门钟声那日齐哑——有人说是敬畏，有人说是诀别。`],
+    quancheng: ['权臣', `${S.name}修至${rs}，${courtLine}于${age}岁摄政，不篡位号。诏令出其手，军权归其心。史书不敢直书其名，只写「摄政如天」。`],
   }[kind] || ['坐化', ''];
   $('#end-title').textContent = T[0];
   $('#end-epitaph').textContent = T[1];
-  const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
+  const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>`, renhuang: `境界 <b>${rs}</b>　人皇 <b>${age}岁</b>`, quancheng: `境界 <b>${rs}</b>　摄政 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
   const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
   const pth = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
   const pfl = pth ? `<br>定型 <b>${pth}</b>` : '';

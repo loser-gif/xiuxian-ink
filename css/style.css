@@ -1536,3 +1536,10 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
   background:rgba(179,48,42,.06);box-shadow:inset 0 0 0 1px rgba(179,48,42,.22)}
 .defect-btn small{display:block;margin-top:4px;font-size:12px;letter-spacing:.08em;color:var(--ink3)}
 .sect-org{letter-spacing:.2em}
+
+/* v0.12 天下结局 */
+.end-renhuang .end-title{color:#8a6a2a;text-shadow:0 0 16px rgba(214,170,80,.4);letter-spacing:.18em}
+.end-renhuang .end-art{color:#8a6a2a}
+.end-quancheng .end-title{color:#5a2a2a;letter-spacing:.2em}
+.end-quancheng .end-art{color:#8a1712}
+.end-quancheng .end-paper{background:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(90,40,36,.12),transparent 70%),linear-gradient(rgba(246,238,226,.92),rgba(246,238,226,.92)),var(--paper-img);background-size:auto,auto,256px}
