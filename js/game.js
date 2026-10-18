@@ -291,6 +291,7 @@ function enterMain(fromSave) {
     logs.forEach((e, i) => renderEntry(e, fromSave ? i >= logs.length - 2 : true));
     scrollLog();
     if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
+    if (fromSave) setTimeout(() => ensurePendingPath(), 900);
   });
   render();
 }
@@ -352,6 +353,7 @@ function render() {
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
   setText('#h-name', S.name); setText('#h-sub', `${Core.rankName(S)} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
+  renderPathSeals();
   const so = Core.org(S); $('#sect-seal-t').textContent = so ? so.seal : '游';
   $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok)); fitLine($('#h-sub'), 11.5, 9);
   const rq = req(); if (S.xw > rq && isLast()) S.xw = rq; const p = clamp(S.xw / rq, 0, 1);
@@ -392,7 +394,8 @@ function renderSide() {
   const side = $('#side'); if (!side || !side.offsetParent || !S) return;
   const g = S.gf && GONGFA[S.gf];
   const auxN = (S.aux || []).length;
-  $('#sd-gf').innerHTML = g ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>${auxN ? `<span class="sd-row">辅修 ${cn(auxN)} 门${S.fabao ? ' · 本命' + esc(S.fabao.name) : ''}</span>` : (S.fabao ? `<span class="sd-row">本命 · ${esc(S.fabao.name)} · ${FABAO_STAGE[S.fabao.stage|0]}</span>` : '')}`
+  const pathBits = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
+  $('#sd-gf').innerHTML = g ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>${auxN ? `<span class="sd-row">辅修 ${cn(auxN)} 门${S.fabao ? ' · 本命' + esc(S.fabao.name) : ''}</span>` : (S.fabao ? `<span class="sd-row">本命 · ${esc(S.fabao.name)} · ${FABAO_STAGE[S.fabao.stage|0]}</span>` : '')}${pathBits ? `<span class="sd-row path-line">${esc(pathBits)}</span>` : ''}`
     : '<span class="sd-empty">胸中尚无功法</span>';
   const o = Core.org(S);
   $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>`
@@ -608,12 +611,120 @@ async function runBreak(usePill) {
   close.onclick = async () => {
     bt.classList.add('leave'); await sleep(900); bt.hidden = true; bt.className = 'bt';
     const cv = $('#inkfx'); if (cv.parentNode === bt) { InkGL.hide(); document.body.insertBefore(cv, $('#grain')); }
-    busy = false;
-    const ttl = ok ? (from === 4 ? '飞升' : `破境 · ${NEXT_REALM_NAME[from]}`) : { bingjie: '兵解', yunluo: '身殒', rumo: '入魔' }[res.ending] || '破境未果';
+    const ttl = ok ? (from === 4 ? '渡劫' : `破境 · ${NEXT_REALM_NAME[from]}`) : { bingjie: '兵解', yunluo: '身殒', rumo: '入魔' }[res.ending] || '破境未果';
     pushLog({ title: ttl, text: logText, cls: ok ? 'gold' : 'warn', div: true });
     B.flush(); render(); save();
-    if (S.ascended) setTimeout(() => showEnd('ascend'), 1600); else checkEnd();
+    if (ok && res.needPath) {
+      await openPathCeremony(res.needPath, !!res.pendingAscend);
+      busy = false; render(); save();
+      if (S.ascended) setTimeout(() => showEnd('ascend'), 1600); else checkEnd();
+    } else {
+      busy = false;
+      if (S.ascended) setTimeout(() => showEnd('ascend'), 1600); else checkEnd();
+    }
   };
+}
+
+/* ================= 定型仪式 ================= */
+const PATH_LEAD = {
+  daoji: '筑基已成。丹田之中，一道虚影未定——此乃道基。一经落成，难再更易。择其一路，定下此后百年的修行之趋。',
+  danwen: '金丹凝成，丹面尚白。可刻一至二道丹纹。纹成之后，若要洗去，需以极重代价。',
+  faxiang: '元婴化形。识海之中，一尊法相将成。法相一定，斗法招式与机缘皆随之偏转。',
+  wendao: '化神之际，你站在天地之间。可问天、问心、或问地——一问即可。',
+  jiewen: '劫云将散。这一道烙在识海上的劫纹，将随你飞升而去。',
+};
+function renderPathSeals() {
+  const el = $('#path-seals'); if (!el || !S) return;
+  const list = Core.pathSummary(S) || [];
+  if (!list.length) { el.innerHTML = ''; el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = list.map(x => `<span class="path-seal" data-k="${x.k}" title="${esc(x.name)}"><i>${esc(x.seal)}</i><b>${esc(x.name)}</b></span>`).join('');
+}
+function pathPage() {
+  const wrap = document.createElement('div'); wrap.className = 'path-page';
+  const list = Core.pathSummary(S) || [];
+  if (!list.length) {
+    wrap.innerHTML = `<div class="path-empty"><span class="path-empty-seal">空</span><p>道基未定。破境筑基之时，自有虚影落于丹田——那时，再择。
+</p></div>`;
+    return wrap;
+  }
+  wrap.innerHTML = list.map(x => {
+    let o = null;
+    if (x.k === 'danwen') { const oid = (S.path.danwen || []).find(i => DANWEN[i] && DANWEN[i].seal === x.seal); o = DANWEN[oid]; }
+    else o = PATH_TABLE[x.k][S.path[x.k]];
+    return `<div class="path-card"><span class="path-card-seal">${esc(x.seal)}</span><div><b>${esc(PATH_KIND[x.k].name)} · ${esc(x.name)}</b><p>${esc(o ? o.trait : '')}</p><small>${esc(o ? o.desc : '')}</small></div></div>`;
+  }).join('');
+  return wrap;
+}
+async function openPathCeremony(kind, pendingAscend) {
+  const meta = PATH_KIND[kind], tab = PATH_TABLE[kind];
+  if (!meta || !tab) return;
+  const pc = $('#path-cer'); if (!pc) return;
+  busy = true;
+  pc.hidden = false; pc.className = 'path-cer go kind-' + kind;
+  $('#path-cer-seal').textContent = meta.seal;
+  $('#path-cer-title').textContent = meta.name;
+  $('#path-cer-lead').textContent = '';
+  const opts = $('#path-cer-opts'); opts.innerHTML = ''; opts.className = 'path-cer-opts';
+  const foot = $('#path-cer-foot'); foot.hidden = true;
+  $('#path-cer-prose').textContent = '';
+  inkWrite($('#path-cer-lead'), PATH_LEAD[kind] || '', { immediate: true, step: 22 });
+  await sleep(400);
+  const selected = new Set();
+  const max = meta.max, pickN = meta.pick;
+  const ids = Object.keys(tab);
+  ids.forEach((id, i) => {
+    const o = tab[id];
+    const b = document.createElement('button');
+    b.className = 'path-opt'; b.style.animationDelay = (180 + i * 90) + 'ms';
+    b.innerHTML = `<span class="po-seal">${esc(o.seal)}</span><div class="po-body"><b>${esc(o.name)}</b><em>${esc(o.trait)}</em><p></p></div>`;
+    b.querySelector('p').textContent = o.desc;
+    b.onclick = () => {
+      if (opts.classList.contains('locked')) return;
+      if (max === 1) {
+        selected.clear();
+        opts.querySelectorAll('.path-opt').forEach(x => x.classList.remove('on'));
+        selected.add(id); b.classList.add('on');
+      } else {
+        if (selected.has(id)) { selected.delete(id); b.classList.remove('on'); }
+        else if (selected.size < max) { selected.add(id); b.classList.add('on'); }
+        else return;
+      }
+      foot.hidden = selected.size < pickN;
+      $('#path-cer-confirm').textContent = selected.size >= pickN ? (meta.irrev ? '落定 · 难再更易' : '落定') : '请再择';
+    };
+    opts.appendChild(b);
+  });
+  await new Promise(resolve => {
+    $('#path-cer-confirm').onclick = async () => {
+      if (selected.size < pickN || opts.classList.contains('locked')) return;
+      opts.classList.add('locked');
+      const list = [...selected];
+      const B = buffer();
+      const r = Core.choosePath(S, kind, list, B.emit);
+      if (r.err) { toast(r.err); opts.classList.remove('locked'); return; }
+      save();
+      foot.hidden = true;
+      const prose = $('#path-cer-prose');
+      pc.classList.add('sealed');
+      if (typeof MoAudio !== 'undefined') { MoAudio.play('stamp'); MoAudio.play('gold'); }
+      inkWrite(prose, r.text || '', { immediate: true, step: 28 });
+      B.flush();
+      await sleep(2200);
+      pc.classList.add('leave'); await sleep(800);
+      pc.hidden = true; pc.className = 'path-cer';
+      if (pendingAscend) Core.finishAscend(S, pushLog);
+      pushLog({ title: meta.name + ' · ' + r.names, text: r.text, tags: r.tags, cls: 'gold', div: true });
+      resolve();
+    };
+  });
+}
+async function ensurePendingPath() {
+  if (!S || S.dead || S.ascended || busy) return;
+  const k = Core.pendingPath(S);
+  if (!k) return;
+  await openPathCeremony(k, false);
+  busy = false; render(); save();
 }
 
 /* ================= 宗门 ================= */
@@ -915,14 +1026,14 @@ $('.sheet-shade').onclick = closeSheet;
 function openBag(tab = 'bag') {
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
   const hasDan = typeof JHUI !== 'undefined' && S.dan;
-  wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button><i class="stab-dot"></i><button class="stab" data-t="fabao">法宝</button>' + (hasDan ? '<i class="stab-dot"></i><button class="stab" data-t="dan">丹炉</button>' : '') + '</div><div class="tab-body"></div>';
+    wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button><i class="stab-dot"></i><button class="stab" data-t="fabao">法宝</button><i class="stab-dot"></i><button class="stab" data-t="path">定型</button>' + (hasDan ? '<i class="stab-dot"></i><button class="stab" data-t="dan">丹炉</button>' : '') + '</div><div class="tab-body"></div>';
   const body = wrap.querySelector('.tab-body');
-  const TT = { gf: '功法', bag: '行囊', dan: '丹炉', fabao: '法宝' };
+  const TT = { gf: '功法', bag: '行囊', dan: '丹炉', fabao: '法宝', path: '定型' };
   const show = t => {
     wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     $('#sheet-title').textContent = TT[t];
     body.innerHTML = '';
-    body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : t === 'fabao' ? fabaoPage() : bagPage());
+    body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : t === 'fabao' ? fabaoPage() : t === 'path' ? pathPage() : bagPage());
     body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
   };
   wrap.querySelector('.sheet-tabs').onclick = e => { const t = e.target.closest('.stab'); if (t) show(t.dataset.t); };
@@ -1090,13 +1201,16 @@ function useItem(k) {
 }
 function openMenu() {
   const w = document.createElement('div'); w.className = 'menu-list';
-  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>此卷随笔随存，合上亦不失。</div>
+  const ps = (Core.pathSummary(S) || []).map(x => x.name).join(' · ') || '道基未定';
+  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}<br>此卷随笔随存，合上亦不失。</div>
     <button class="menu-item" data-m="resume">继续修行</button>
+    <button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>
     <button class="menu-item" data-m="title">回到卷首</button>
     ${Core.canRetire(S) ? '<button class="menu-item" data-m="retire">归隐山林<small>放下长生，此卷即终</small></button>' : ''}
     <button class="menu-item danger" data-m="reset">焚卷重来</button>`;
   w.onclick = async e => {
     const m = e.target.dataset.m; if (!m) return;
+    if (m === 'path') { await closeSheet(); openSheet('定型', pathPage()); return; }
     await closeSheet();
     if (m === 'title') { save(); initTitle(); unrollTo('title'); }
     if (m === 'retire' && await inkConfirm('此去不问长生。归隐之后，此卷即终。', '归隐')) {

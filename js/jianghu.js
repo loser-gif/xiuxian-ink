@@ -189,7 +189,9 @@ const Jianghu = (() => {
   const hasHerbs = (s, id) => Object.entries(RECIPES[id].need).every(([h, n]) => (s.items[h] || 0) >= n);
   function danChance(s, id) {
     const r = RECIPES[id];
-    return clamp(0.56 + 0.065 * (s.dan.lv - 1) - 0.1 * r.diff + 0.03 * (s.wx - 5) + (s.lgEls.includes('火') ? 0.05 : 0) + (s.npc && s.npc.su && s.npc.su.a >= 50 ? 0.04 : 0), 0.05, 0.95);
+    let bonus = (s.lgEls.includes('火') ? 0.05 : 0) + (s.npc && s.npc.su && s.npc.su.a >= 50 ? 0.04 : 0);
+    if (s.path && s.path.daoji === 'dan' && typeof DAOJI !== 'undefined') bonus += DAOJI.dan.craft || 0;
+    return clamp(0.56 + 0.065 * (s.dan.lv - 1) - 0.1 * r.diff + 0.03 * (s.wx - 5) + bonus, 0.05, 0.95);
   }
   const danMonths = (s, id) => T(s) * (2 + Math.floor(RECIPES[id].diff / 2));
   function craft(s, id, emit) {

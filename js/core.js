@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 5;
+  const SAVE_V = 6;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -34,6 +34,14 @@ const Core = (() => {
     if (fb) parts.push({ t: fb, w: 1, spd: 1 });
     if (s.eq && s.eq.weapon && typeof GEAR !== 'undefined' && GEAR[s.eq.weapon])
       parts.push({ t: GEAR[s.eq.weapon].t || {}, w: 1, spd: 1 });
+    // 定型：道基 / 丹纹 / 法相 / 问道 / 劫纹
+    if (s.path && typeof PATH_TABLE !== 'undefined') {
+      if (s.path.daoji && PATH_TABLE.daoji[s.path.daoji]) parts.push({ t: PATH_TABLE.daoji[s.path.daoji].t || {}, w: 1, spd: 1 });
+      for (const id of (s.path.danwen || [])) if (PATH_TABLE.danwen[id]) parts.push({ t: PATH_TABLE.danwen[id].t || {}, w: 1, spd: 1 });
+      if (s.path.faxiang && PATH_TABLE.faxiang[s.path.faxiang]) parts.push({ t: PATH_TABLE.faxiang[s.path.faxiang].t || {}, w: 1, spd: 1 });
+      if (s.path.wendao && PATH_TABLE.wendao[s.path.wendao]) parts.push({ t: PATH_TABLE.wendao[s.path.wendao].t || {}, w: 1, spd: 1 });
+      if (s.path.jiewen && PATH_TABLE.jiewen[s.path.jiewen]) parts.push({ t: PATH_TABLE.jiewen[s.path.jiewen].t || {}, w: 1, spd: 1 });
+    }
     return parts;
   }
   function gt(s, key, dflt) {
@@ -212,7 +220,10 @@ const Core = (() => {
   }
   function fabaoFeed(s, n, emit) {
     if (!s.fabao) return;
-    s.fabao.bond = (s.fabao.bond || 0) + n;
+    let mul = 1;
+    if (s.path && s.path.daoji && typeof DAOJI !== 'undefined' && DAOJI[s.path.daoji] && DAOJI[s.path.daoji].fabao)
+      mul = DAOJI[s.path.daoji].fabao;
+    s.fabao.bond = (s.fabao.bond || 0) + Math.round(n * mul);
     if (!s.fabao.gfId && s.gf) s.fabao.gfId = s.gf;
     const up = fabaoSyncStage(s);
     if (up && emit) emit({ text: `本命${s.fabao.name}灵性大涨，进至「${up}」。`, cls: 'gold' });
@@ -417,6 +428,65 @@ const Core = (() => {
     return { tags, ups };
   }
 
+  /* ---------- 定型 ---------- */
+  function pathYouliMul(s) {
+    if (s.path && s.path.daoji && typeof DAOJI !== 'undefined' && DAOJI[s.path.daoji] && DAOJI[s.path.daoji].youli)
+      return DAOJI[s.path.daoji].youli;
+    return 1;
+  }
+  function emptyPath() { return { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null }; }
+  function pendingPath(s) {
+    if (!s || s.dead || s.ascended) return null;
+    const p = s.path || emptyPath();
+    if (s.realm >= 1 && !p.daoji) return 'daoji';
+    if (s.realm >= 2 && !(p.danwen && p.danwen.length)) return 'danwen';
+    if (s.realm >= 3 && !p.faxiang) return 'faxiang';
+    if (s.realm >= 4 && !p.wendao) return 'wendao';
+    return null;
+  }
+  function pathAtBreak(from) { return (typeof PATH_AT !== 'undefined' && PATH_AT[from]) || null; }
+  function choosePath(s, kind, ids, emit) {
+    if (!s.path) s.path = emptyPath();
+    const tab = typeof PATH_TABLE !== 'undefined' ? PATH_TABLE[kind] : null;
+    const meta = typeof PATH_KIND !== 'undefined' ? PATH_KIND[kind] : null;
+    if (!tab || !meta) return { err: '未知定型' };
+    const list = Array.isArray(ids) ? ids : [ids];
+    if (list.length < meta.pick || list.length > meta.max) return { err: '选择数目不符' };
+    for (const id of list) if (!tab[id]) return { err: '无此选项' };
+    if (kind === 'daoji') {
+      if (s.path.daoji) return { err: '道基已定，不可轻易更易' };
+      s.path.daoji = list[0];
+    } else if (kind === 'danwen') {
+      if (s.path.danwen && s.path.danwen.length) return { err: '丹纹已定' };
+      s.path.danwen = list.slice(0, meta.max);
+    } else if (kind === 'faxiang') {
+      if (s.path.faxiang) return { err: '法相已定' };
+      s.path.faxiang = list[0];
+    } else if (kind === 'wendao') {
+      if (s.path.wendao) return { err: '问道已定' };
+      s.path.wendao = list[0];
+    } else if (kind === 'jiewen') {
+      if (s.path.jiewen) return { err: '劫纹已定' };
+      s.path.jiewen = list[0];
+    } else return { err: '未知定型' };
+    sync(s);
+    const names = list.map(id => tab[id].name).join('、');
+    const prose = list.map(id => tab[id].desc).join('');
+    const tags = list.map(id => ({ t: meta.name + ' · ' + tab[id].name, c: 'gold' }));
+    if (emit) emit({ title: meta.name + '已定', text: prose, tags, cls: 'gold', div: true });
+    return { text: prose, tags, names };
+  }
+  function pathSummary(s) {
+    if (!s || !s.path) return [];
+    const out = [];
+    if (s.path.daoji && DAOJI[s.path.daoji]) out.push({ k: 'daoji', name: DAOJI[s.path.daoji].name, seal: DAOJI[s.path.daoji].seal });
+    for (const id of (s.path.danwen || [])) if (DANWEN[id]) out.push({ k: 'danwen', name: DANWEN[id].name, seal: DANWEN[id].seal });
+    if (s.path.faxiang && FAXIANG[s.path.faxiang]) out.push({ k: 'faxiang', name: FAXIANG[s.path.faxiang].name, seal: FAXIANG[s.path.faxiang].seal });
+    if (s.path.wendao && WENDAO[s.path.wendao]) out.push({ k: 'wendao', name: WENDAO[s.path.wendao].name, seal: WENDAO[s.path.wendao].seal });
+    if (s.path.jiewen && JIEWEN[s.path.jiewen]) out.push({ k: 'jiewen', name: JIEWEN[s.path.jiewen].name, seal: JIEWEN[s.path.jiewen].seal });
+    return out;
+  }
+
   /* ---------- 破境 ---------- */
   function btChance(s, usePill) {
     return clamp(REALMS[s.realm].base + s.lg.bt + (s.xj - 50) / 250 + (usePill ? 0.2 : 0) + Math.min(0.12, s.fails * 0.04)
@@ -430,16 +500,21 @@ const Core = (() => {
     const btXj = gt(s, 'btXj', 0);
     s.acts++;
     if (ok) {
-      if (from === 4) { s.ascended = true; s.ending = 'ascend'; sync(s); return { ok, from, text: TEXT.btSuccess[from] }; }
+      const need = pathAtBreak(from);
+      if (from === 4) {
+        // 渡劫成功：先定劫纹，再飞升（UI 选完后调用 finishAscend）
+        sync(s);
+        return { ok, from, text: TEXT.btSuccess[from], needPath: need, pendingAscend: true };
+      }
       s.realm++; s.stage = 0; s.xw = 0; s.fails = 0; s.inj = 0; s.bnLogged = false; s.xj = clamp(s.xj + 5 - btXj, 0, 100);
       sync(s);
       const text = TEXT.btSuccess[from] + `寿元增至${cn(s.lifespan)}载。` + (btXj ? TEXT.wangqingCost : '');
       sectReward(s, emit);
       fabaoFeed(s, 8, emit);
-      if (!s.fabao && from === 0) fabaoAwaken(s, emit);   // 筑基成，本命器认主
+      if (!s.fabao && from === 0) fabaoAwaken(s, emit);
       else if (!s.fabao && from >= 1) fabaoAwaken(s, emit);
       checkXj(s, emit);
-      return { ok, from, text };
+      return { ok, from, text, needPath: need };
     }
     // 高境界破境失败，可能身死道消；身怀兵解玉符者兵解转修
     const pd = K.btDeath[from] * (s.inj > 0 ? 1.3 : 1) * (1 - Math.min(0.4, Math.max(0, s.luck) * 0.04));
@@ -455,6 +530,12 @@ const Core = (() => {
     checkXj(s, emit);
     return { ok, from, text: fText + `休养${cnDur(r.T * 6)}，方能再试。`, ending: s.dead ? s.ending : null };
   }
+  function finishAscend(s, emit) {
+    if (s.ascended) return;
+    s.ascended = true; s.ending = 'ascend'; sync(s);
+    if (emit) emit({ title: '飞升', text: TEXT.btSuccess[4], cls: 'gold', div: true });
+  }
+
   function sectReward(s, emit) {
     if (!s.sect || s.sect.org !== 'qm') return;
     const tier = GF_SECT[s.realm]; if (!tier) return;
@@ -495,7 +576,8 @@ const Core = (() => {
     const s = { v: SAVE_V, name, lg: { id: r.lg.id, name: r.lg.name, mult: r.lg.mult, bt: r.lg.bt, sect: r.lg.sect }, lgEls: r.els,
       wx: r.wx, xj: 50, luck: r.luck, ls: 10, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
-      gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, seen: {}, recent: [], acts: 0, ending: null };
+      gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
+      seen: {}, recent: [], acts: 0, ending: null };
     if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
     if (legacy) {
       s.wx = clamp(s.wx + (legacy.wx || 0), 1, 10); s.flags.legacy = 1;
@@ -539,8 +621,13 @@ const Core = (() => {
       s.xw = Math.round(s.xw * K.reqMul[s.realm] / V8[s.realm]);
       sync(s); if (oldLife > s.lifespan) { s.lifeBonus = (s.lifeBonus || 0) + oldLife - s.lifespan; sync(s); }
     }
+    if (s.v === 5) {   // v0.9 → v0.10：定型
+      s.v = 6;
+      s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
+    s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
     sync(s); return s;
   }
@@ -748,10 +835,18 @@ const Core = (() => {
   }
   /* 大比：攻克术、术克守、守克攻；奇招一搏 */
   const BEATS = { gong: 'shu', shu: 'shou', shou: 'gong' };
-  const isSword = s => !!(s.gf && ['baihong', 'taibai'].includes(s.gf));
+  const isSword = s => !!(s.gf && ['baihong', 'taibai'].includes(s.gf)) || !!(s.path && (s.path.daoji === 'jian' || s.path.faxiang === 'jian'));
   function duelPower(s) {
+    let mul = 1;
+    if (s.path && typeof PATH_TABLE !== 'undefined') {
+      const add = (o) => { if (o && o.duel) mul *= o.duel; };
+      if (s.path.daoji) add(PATH_TABLE.daoji[s.path.daoji]);
+      for (const id of (s.path.danwen || [])) add(PATH_TABLE.danwen[id]);
+      if (s.path.faxiang) add(PATH_TABLE.faxiang[s.path.faxiang]);
+      if (s.path.jiewen) add(PATH_TABLE.jiewen[s.path.jiewen]);
+    }
     return Math.sqrt(gfSpeed(s) / 1.2) * (1 + 0.02 * (gfLv(s) - 1)) * (1 + 0.03 * (s.wx - 5))
-      * (1 + 0.05 * s.stage / Math.max(1, REALMS[s.realm].stages.length - 1)) * (s.inj > 0 ? 0.85 : 1);
+      * (1 + 0.05 * s.stage / Math.max(1, REALMS[s.realm].stages.length - 1)) * (s.inj > 0 ? 0.85 : 1) * mul;
   }
   function dabiNew(s) {
     s.sect.dabiDue = false;
@@ -823,6 +918,7 @@ const Core = (() => {
   return { K, LIFE_SCALE, clamp, pick, gf, gt, sync, req, unit, isLast, bottleneck, realmStr, timeLabel, fmtNum,
     gfMatch, gfMatchWord, gfLv, gfSpeed, learn, practice, switchCost, switchGf, setAux, clearAux,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
+    choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
     btChance, resolveBreak, useItem, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct,

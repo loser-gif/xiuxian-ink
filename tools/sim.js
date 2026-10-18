@@ -5,10 +5,10 @@ const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 function load() {
   const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String });
-  for (const f of ['data', 'gongfa', 'gear', 'story', 'sect', 'world', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
-  return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL })', ctx);
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'world', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+  return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, PATH_KIND, DAOJI })', ctx);
 }
-const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL } = G;
+const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE } = G;
 const JH = !process.env.NOJH;
 if (process.env.JK) Object.assign(Jianghu.K, JSON.parse(process.env.JK));
 if (process.env.K) Object.assign(Core.K, JSON.parse(process.env.K));
@@ -49,6 +49,13 @@ function play(rootId, strat, opt = {}) {
   const realmAt = [0, 0, 0, 0, 0];   // 到达各境界的耗时
   let guard = 0;
   while (!s.dead && !s.ascended && guard++ < 20000) {
+    // 定型补选（迁移存档）
+    const pk = Core.pendingPath(s);
+    if (pk) {
+      const tab = PATH_TABLE[pk], ids = Object.keys(tab);
+      const pick = pk === 'danwen' ? ids.slice(0, 1) : [ids[Math.floor(Math.random() * ids.length)]];
+      Core.choosePath(s, pk, pick, noop); sec += 8;
+    }
     // 物品
     for (const k of ['延寿果', '延寿丹', '回春丹', '聚气丹', '清心丹', '破障丹']) {
       if (!(s.items[k] > 0)) continue;
@@ -84,6 +91,12 @@ function play(rootId, strat, opt = {}) {
       const left = s.lifespan - s.age;
       if (pill || p >= 0.5 || idle >= 3 || left < REALMS[s.realm].T * 6) {
         const before = s.realm; const res = Core.resolveBreak(s, pill, noop); sec += SEC.break; n.break++; idle = 0;
+        if (res.ok && res.needPath) {
+          const tab = PATH_TABLE[res.needPath], ids = Object.keys(tab);
+          const pick = res.needPath === 'danwen' ? ids.slice(0, 1 + (Math.random() < 0.45 ? 1 : 0)) : [ids[Math.floor(Math.random() * ids.length)]];
+          Core.choosePath(s, res.needPath, pick, noop);
+          if (res.pendingAscend) Core.finishAscend(s, noop);
+        }
         if (res.ok && s.realm > before) realmAt[s.realm] = sec;
         continue;
       }

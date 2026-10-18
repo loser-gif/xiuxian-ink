@@ -12,10 +12,10 @@
 <title>墨仙录 · 水墨修仙</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=11" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=11" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=11">
-<link rel="stylesheet" href="css/style.css?v=11">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=12" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=12" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=12">
+<link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -146,6 +146,7 @@
         <span class="chip"><b>心境</b><em id="c-xj">平和</em></span>
         <span class="chip"><b>灵石</b><em id="c-ls">十</em></span>
       </div>
+      <div class="path-seals" id="path-seals" hidden></div>
     </header>
 
     <div class="scroll">
@@ -220,6 +221,23 @@
   <button class="bt-close brush-btn small light" id="bt-close" hidden><span class="bb-ink"></span><span class="bb-text">收卷</span></button>
 </div>
 
+<!-- 定型仪式 -->
+<div id="path-cer" class="path-cer" hidden>
+  <div class="path-cer-shade"></div>
+  <div class="path-cer-panel">
+    <div class="path-cer-head">
+      <div class="path-cer-sealbox"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font" id="path-cer-seal">基</text></g></svg></div>
+      <h2 class="path-cer-title" id="path-cer-title">道基</h2>
+      <p class="path-cer-lead" id="path-cer-lead"></p>
+    </div>
+    <div class="path-cer-opts" id="path-cer-opts"></div>
+    <p class="path-cer-prose" id="path-cer-prose"></p>
+    <div class="path-cer-foot" id="path-cer-foot" hidden>
+      <button class="brush-btn small light" id="path-cer-confirm"><span class="bb-ink"></span><span class="bb-text">落定</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- 大比 -->
 <div id="duel" class="duel" hidden>
   <div class="duel-shade"></div>
@@ -281,22 +299,23 @@
 <div id="grain" aria-hidden="true"></div>
 <div id="toast" aria-live="polite"></div>
 
-<script src="js/data.js?v=11"></script>
-<script src="js/gongfa.js?v=11"></script>
-<script src="js/gear.js?v=11"></script>
-<script src="js/story.js?v=11"></script>
-<script src="js/sect.js?v=11"></script>
-<script src="js/world.js?v=11"></script>
-<script src="js/core.js?v=11"></script>
-<script src="js/jianghu.js?v=11"></script>
-<script src="js/ink.js?v=11"></script>
-<script src="js/ding.js?v=11"></script>
-<script src="js/map.js?v=11"></script>
-<script src="js/audio.js?v=11"></script>
-<script src="js/fx.js?v=11"></script>
-<script src="js/wallpaper.js?v=11"></script>
-<script src="js/inkgl.js?v=11"></script>
-<script src="js/jhui.js?v=11"></script>
-<script src="js/game.js?v=11"></script>
+<script src="js/data.js?v=12"></script>
+<script src="js/gongfa.js?v=12"></script>
+<script src="js/gear.js?v=12"></script>
+<script src="js/story.js?v=12"></script>
+<script src="js/sect.js?v=12"></script>
+<script src="js/world.js?v=12"></script>
+<script src="js/path.js?v=12"></script>
+<script src="js/core.js?v=12"></script>
+<script src="js/jianghu.js?v=12"></script>
+<script src="js/ink.js?v=12"></script>
+<script src="js/ding.js?v=12"></script>
+<script src="js/map.js?v=12"></script>
+<script src="js/audio.js?v=12"></script>
+<script src="js/fx.js?v=12"></script>
+<script src="js/wallpaper.js?v=12"></script>
+<script src="js/inkgl.js?v=12"></script>
+<script src="js/jhui.js?v=12"></script>
+<script src="js/game.js?v=12"></script>
 </body>
 </html>
