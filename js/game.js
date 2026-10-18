@@ -311,12 +311,15 @@ async function openBaishan(roll) {
       btn.className = 'path-opt'; btn.style.animationDelay = (160 + i * 80) + 'ms';
       btn.innerHTML = `<span class="po-seal">${esc(b.seal)}</span><div class="po-body"><b>${esc(b.name)}</b><em>${esc(b.sub)}</em><p></p></div>`;
       btn.querySelector('p').textContent = b.prose;
+      btn.type = 'button';
       btn.onclick = () => {
         selected = b;
         opts.querySelectorAll('.path-opt').forEach(x => x.classList.remove('on'));
         btn.classList.add('on');
         foot.hidden = false;
-        $('#baishan-confirm').querySelector('.bb-text').textContent = b.id === 'free' ? '无门而去' : '投帖拜入';
+        const lab = $('#baishan-confirm').querySelector('.bb-text');
+        if (lab) lab.textContent = b.id === 'free' ? '无门而去' : '投帖拜入';
+        const h = $('#baishan-hint'); if (h) h.textContent = '确认后投帖 · Enter 亦可';
       };
       opts.appendChild(btn);
     });
@@ -766,10 +769,12 @@ function pathPage() {
   }
   return wrap;
 }
+let pathCerGen = 0;
 async function openPathCeremony(kind, pendingAscend) {
   const meta = PATH_KIND[kind], tab = PATH_TABLE[kind];
   if (!meta || !tab) return;
   const pc = $('#path-cer'); if (!pc) return;
+  const gen = ++pathCerGen;
   busy = true;
   pc.hidden = false; pc.className = 'path-cer go kind-' + kind;
   $('#path-cer-seal').textContent = meta.seal;
@@ -777,16 +782,33 @@ async function openPathCeremony(kind, pendingAscend) {
   $('#path-cer-lead').textContent = '';
   const opts = $('#path-cer-opts'); opts.innerHTML = ''; opts.className = 'path-cer-opts';
   const foot = $('#path-cer-foot'); foot.hidden = true;
+  const confBtn = $('#path-cer-confirm');
+  const confLab = confBtn.querySelector('.bb-text') || confBtn;
+  const hint = $('#path-cer-hint');
   $('#path-cer-prose').textContent = '';
   inkWrite($('#path-cer-lead'), PATH_LEAD[kind] || '', { immediate: true, step: 22 });
   await sleep(400);
   const selected = new Set();
   const max = meta.max, pickN = meta.pick;
+  const syncFoot = () => {
+    const n = selected.size;
+    const ready = n >= pickN;
+    foot.hidden = n < 1;
+    confBtn.disabled = !ready;
+    confBtn.classList.toggle('dim', !ready);
+    confLab.textContent = ready ? (meta.irrev ? '落定 · 难再更易' : '落定') : (max > 1 ? `再择（已选${cn(n)}）` : '落定');
+    if (hint) {
+      if (!n) hint.textContent = '';
+      else if (!ready) hint.textContent = max > 1 ? `可多选至${cn(max)}道，至少${cn(pickN)}道` : '点下方落定';
+      else hint.textContent = meta.irrev ? '落定后难再更易 · Enter 亦可' : '确认后落定 · Enter 亦可';
+    }
+  };
   const ids = Object.keys(tab);
   ids.forEach((id, i) => {
     const o = tab[id];
     const b = document.createElement('button');
     b.className = 'path-opt'; b.style.animationDelay = (180 + i * 90) + 'ms';
+    b.type = 'button';
     b.innerHTML = `<span class="po-seal">${esc(o.seal)}</span><div class="po-body"><b>${esc(o.name)}</b><em>${esc(o.trait)}</em><p></p></div>`;
     b.querySelector('p').textContent = o.desc;
     b.onclick = () => {
@@ -798,16 +820,16 @@ async function openPathCeremony(kind, pendingAscend) {
       } else {
         if (selected.has(id)) { selected.delete(id); b.classList.remove('on'); }
         else if (selected.size < max) { selected.add(id); b.classList.add('on'); }
-        else return;
+        else { toast(`至多${cn(max)}道`); return; }
       }
-      foot.hidden = selected.size < pickN;
-      $('#path-cer-confirm').textContent = selected.size >= pickN ? (meta.irrev ? '落定 · 难再更易' : '落定') : '请再择';
+      syncFoot();
     };
     opts.appendChild(b);
   });
+  syncFoot();
   await new Promise(resolve => {
-    $('#path-cer-confirm').onclick = async () => {
-      if (selected.size < pickN || opts.classList.contains('locked')) return;
+    confBtn.onclick = async () => {
+      if (selected.size < pickN || opts.classList.contains('locked') || confBtn.disabled) return;
       opts.classList.add('locked');
       const list = [...selected];
       const B = buffer();
@@ -821,7 +843,9 @@ async function openPathCeremony(kind, pendingAscend) {
       inkWrite(prose, r.text || '', { immediate: true, step: 28 });
       B.flush();
       await sleep(2200);
+      if (gen !== pathCerGen) { resolve(); return; }
       pc.classList.add('leave'); await sleep(800);
+      if (gen !== pathCerGen) { resolve(); return; }
       pc.hidden = true; pc.className = 'path-cer';
       if (pendingAscend) Core.finishAscend(S, pushLog);
       pushLog({ title: meta.name + ' · ' + r.names, text: r.text, tags: r.tags, cls: 'gold', div: true });
@@ -1428,7 +1452,7 @@ const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
 function topLayer() {
   const ask = document.querySelector('.ask'); if (ask) return ask;
-  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
+  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
   return null;
 }
 addEventListener('keydown', e => {
@@ -1442,6 +1466,14 @@ addEventListener('keydown', e => {
     if (L.id === 'sheet') { e.preventDefault(); return closeSheet(); }
     if (L.id === 'map') return click($('#map-close'));
     if (L.id === 'dan') return click($('#dan-close'));
+    if (L.id === 'path-cer' || L.id === 'baishan') {
+      e.preventDefault();
+      const btn = L.id === 'baishan' ? $('#baishan-confirm') : $('#path-cer-confirm');
+      const foot = L.id === 'baishan' ? $('#baishan-foot') : $('#path-cer-foot');
+      if (foot && !foot.hidden && btn && !btn.disabled) { btn.focus(); toast('请点「落定」确认，或按 Enter'); }
+      else toast('请先点选一项，再点底部「落定」');
+      return;
+    }
     return;
   }
   const digit = /^[1-9]$/.test(k) ? +k : 0;
@@ -1465,9 +1497,19 @@ addEventListener('keydown', e => {
   // 奇遇：数字选择
   if (L.id === 'modal' && digit) { const cs = [...L.querySelectorAll('.choice')].filter(vis); if (cs[digit - 1]) return click(cs[digit - 1]); }
   if (k === 'Enter') {
-    if (tgt && tgt.tagName === 'BUTTON' && L.contains(tgt) && vis(tgt)) return;   // 焦点在按钮上，交给浏览器
+    if (tgt && tgt.tagName === 'BUTTON' && L.contains(tgt) && vis(tgt) && tgt.id !== 'path-cer-confirm' && tgt.id !== 'baishan-confirm') return;
     if (L.classList.contains('ask')) return click(L.querySelector('.ask-ok'));
     if (L.id === 'sheet') return;
+    if (L.id === 'path-cer') {
+      const b = $('#path-cer-confirm'), f = $('#path-cer-foot');
+      if (f && !f.hidden && b && !b.disabled) return click(b);
+      toast('请先点选定型'); return;
+    }
+    if (L.id === 'baishan') {
+      const b = $('#baishan-confirm'), f = $('#baishan-foot');
+      if (f && !f.hidden && b && !b.disabled) return click(b);
+      toast('请先点选门户'); return;
+    }
     return click(firstVis(L, '.brush-btn:not(.ask-no)'));
   }
 });
