@@ -519,7 +519,7 @@ const ScrollArt = (() => {
     ctx.fillStyle = 'rgba(28,25,21,0.5)';
     ctx.font = '16px MoShu, MoWen, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('墨仙录', W / 2, H - 92);
+    ctx.fillText('纸上仙途', W / 2, H - 92);
     ctx.font = '13px MoWen, serif';
     ctx.fillStyle = 'rgba(28,25,21,0.38)';
     ctx.fillText(URL, W / 2, H - 70);
