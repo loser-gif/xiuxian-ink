@@ -5,7 +5,7 @@ const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 function load() {
   const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String });
-  for (const f of ['data', 'gongfa', 'story', 'sect', 'world', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+  for (const f of ['data', 'gongfa', 'gear', 'story', 'sect', 'world', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
   return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL })', ctx);
 }
 const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL } = G;
@@ -13,7 +13,7 @@ const JH = !process.env.NOJH;
 if (process.env.JK) Object.assign(Jianghu.K, JSON.parse(process.env.JK));
 if (process.env.K) Object.assign(Core.K, JSON.parse(process.env.K));
 // 真实耗时估计（秒）：动画 + 阅读 + 点按
-const SEC = { travel: 18, market: 22, auction: 45, craft: 11, mjNode: 14, mjEnter: 12, tuna: 3.0, biguan: 3.6, youli: 17, break: 14, item: 4, gfSwitch: 8, mission: 20, promo: 12, lib: 6, duelIntro: 10, duelRound: 6, dabi: 8 };
+const SEC = { travel: 20, market: 26, auction: 50, craft: 14, mjNode: 16, mjEnter: 14, tuna: 4.2, biguan: 5.0, youli: 22, break: 18, item: 5, gfSwitch: 10, mission: 24, promo: 14, lib: 7, duelIntro: 12, duelRound: 7, dabi: 10 };
 const STRATS = {
   balanced: { mission: .06, biguan: 0.45, tuna: 0.30, youli: 0.25 },
   grinder: { mission: .03, biguan: 0.72, tuna: 0.10, youli: 0.18 },
@@ -67,6 +67,18 @@ function play(rootId, strat, opt = {}) {
     if (JH) { sec += jhStep(s, n); if (s.dead) break; }
     const b = bestGf(s, opt.mo);
     if (b !== s.gf && !Core.bottleneck(s)) { Core.switchGf(s, b, noop); sec += SEC.gfSwitch; if (s.dead) break; }
+    // 辅修：择一非主修、相合功法
+    if (Core.setAux && (s.aux || []).length < 2) {
+      for (const id of Object.keys(s.gfs)) {
+        if (id === s.gf || (s.aux || []).includes(id) || GONGFA[id].mo) continue;
+        if (Core.gfMatch(s, id) >= 1) { Core.setAux(s, id); break; }
+      }
+    }
+    // 坊市凡兵
+    if (JH && s.ls > 120 && !(s.eq && s.eq.weapon) && s.items['精铁短剑'] > 0) Core.equip(s, '精铁短剑');
+    else if (JH && s.mkt && s.mkt.st && s.mkt.st['精铁短剑'] > 0 && s.ls >= Jianghu.price(s, '精铁短剑') && !(s.eq && s.eq.weapon)) {
+      Jianghu.buy(s, '精铁短剑'); if (s.items['精铁短剑']) Core.equip(s, '精铁短剑'); sec += SEC.market * 0.3;
+    }
     if (Core.bottleneck(s)) {
       const pill = s.items[REALMS[s.realm].pill] > 0, p = Core.btChance(s, pill);
       const left = s.lifespan - s.age;

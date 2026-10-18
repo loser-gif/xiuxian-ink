@@ -172,6 +172,7 @@ function makeJHUI(G) {
       requestAnimationFrame(step);
     });
     const tr = J.travel(G.S, to, pushLog); tr.from = from;
+    if (Core.fabaoFeed) Core.fabaoFeed(G.S, 2);
     if (typeof MoAudio !== 'undefined') MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
     render(); save(); renderWhere();
     await sleep(FX.reduced() ? 0 : 380);
@@ -215,7 +216,7 @@ function makeJHUI(G) {
     wrap.querySelector('.sheet-tabs').onclick = e => { const b = e.target.closest('.stab'); if (b) show(b.dataset.t); };
     openSheet('云岳坊', wrap); show(tabs.find(t => t[0] === tab) ? tab : 'buy');
   }
-  const itemDesc = k => k === 'SCROLL' ? '瞎眼说书人兜售的功法残卷。真假难辨，全凭眼力与运气。' : k.startsWith('R:') ? `${RECIPES[k.slice(2)].name}的丹方。需${Object.entries(RECIPES[k.slice(2)].need).map(([h, n]) => h + cn(n)).join('、')}。` : (PILLS[k] && PILLS[k].desc) || '';
+  const itemDesc = k => k === 'SCROLL' ? '瞎眼说书人兜售的功法残卷。真假难辨，全凭眼力与运气。' : k.startsWith('R:') ? `${RECIPES[k.slice(2)].name}的丹方。需${Object.entries(RECIPES[k.slice(2)].need).map(([h, n]) => h + cn(n)).join('、')}。` : (typeof GEAR !== 'undefined' && GEAR[k] ? GEAR[k].desc : (PILLS[k] && PILLS[k].desc) || '');
   const itemName = k => k === 'SCROLL' ? '功法残卷' : k.startsWith('R:') ? RECIPES[k.slice(2)].name + '方' : k;
   function trend(k) { const f = G.S.mkt.f[k] || 1; return f >= 1.15 ? '<i class="tr up">贵</i>' : f <= .85 ? '<i class="tr dn">贱</i>' : ''; }
   function buyPage(refresh) {

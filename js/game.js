@@ -391,13 +391,15 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function renderSide() {
   const side = $('#side'); if (!side || !side.offsetParent || !S) return;
   const g = S.gf && GONGFA[S.gf];
-  $('#sd-gf').innerHTML = g ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>`
+  const auxN = (S.aux || []).length;
+  $('#sd-gf').innerHTML = g ? `<b class="sd-name">《${esc(g.name)}》</b><span class="sd-row"><em>${GF_GRADE[g.grade]}</em>${S.gfs[S.gf].lv >= GF_LAYERS ? '大成' : '第' + cn(S.gfs[S.gf].lv) + '层'} · 行功×${Core.gfSpeed(S).toFixed(2)}</span>${auxN ? `<span class="sd-row">辅修 ${cn(auxN)} 门${S.fabao ? ' · 本命' + esc(S.fabao.name) : ''}</span>` : (S.fabao ? `<span class="sd-row">本命 · ${esc(S.fabao.name)} · ${FABAO_STAGE[S.fabao.stage|0]}</span>` : '')}`
     : '<span class="sd-empty">胸中尚无功法</span>';
   const o = Core.org(S);
   $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>`
     : `<b class="sd-name">${esc(Core.rankName(S))}</b><span class="sd-row">无门无派，来去自由</span>`;
   const items = Object.entries(S.items).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
-  $('#sd-bag').innerHTML = items.length ? `<ul class="sd-list">${items.slice(0, 5).map(([k, n]) => `<li><span>${esc(k)}</span><i>${cn(n)}</i></li>`).join('')}</ul>${items.length > 5 ? `<span class="sd-more">另有${cn(items.length - 5)}种</span>` : ''}`
+  const eqLine = S.eq && S.eq.weapon ? `<span class="sd-row">佩 · ${esc(S.eq.weapon)}</span>` : '';
+  $('#sd-bag').innerHTML = (eqLine || items.length) ? `${eqLine}${items.length ? `<ul class="sd-list">${items.slice(0, 4).map(([k, n]) => `<li><span>${esc(k)}</span><i>${cn(n)}</i></li>`).join('')}</ul>` : ''}${items.length > 4 ? `<span class="sd-more">另有${cn(items.length - 4)}种</span>` : ''}`
     : '<span class="sd-empty">囊中空空</span>';
   const loc = typeof LOCS !== 'undefined' && LOCS.find(l => l.id === S.loc);
   const notes = [];
@@ -913,13 +915,14 @@ $('.sheet-shade').onclick = closeSheet;
 function openBag(tab = 'bag') {
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
   const hasDan = typeof JHUI !== 'undefined' && S.dan;
-  wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button>' + (hasDan ? '<i class="stab-dot"></i><button class="stab" data-t="dan">丹炉</button>' : '') + '</div><div class="tab-body"></div>';
+  wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button><i class="stab-dot"></i><button class="stab" data-t="fabao">法宝</button>' + (hasDan ? '<i class="stab-dot"></i><button class="stab" data-t="dan">丹炉</button>' : '') + '</div><div class="tab-body"></div>';
   const body = wrap.querySelector('.tab-body');
-  const TT = { gf: '功法', bag: '行囊', dan: '丹炉' };
+  const TT = { gf: '功法', bag: '行囊', dan: '丹炉', fabao: '法宝' };
   const show = t => {
     wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     $('#sheet-title').textContent = TT[t];
-    body.innerHTML = ''; body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : bagPage());
+    body.innerHTML = '';
+    body.appendChild(t === 'gf' ? gfPage() : t === 'dan' ? JHUI.danPage() : t === 'fabao' ? fabaoPage() : bagPage());
     body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
   };
   wrap.querySelector('.sheet-tabs').onclick = e => { const t = e.target.closest('.stab'); if (t) show(t.dataset.t); };
@@ -928,16 +931,37 @@ function openBag(tab = 'bag') {
 }
 function bagPage() {
   const wrap = document.createElement('div');
+  if (S.eq && S.eq.weapon) {
+    const eq = document.createElement('div'); eq.className = 'item eq-row';
+    const gg = GEAR[S.eq.weapon];
+    eq.innerHTML = `<div class="item-info"><div class="item-name">佩身 · ${S.eq.weapon}<em>${gg ? gg.kind : '器'}</em></div><div class="item-desc"></div></div>
+      <button class="item-use">卸下</button>`;
+    eq.querySelector('.item-desc').textContent = gg ? gg.desc : '';
+    eq.querySelector('button').onclick = () => {
+      const r = Core.unequip(S); if (r.err) return toast(r.err);
+      pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); closeSheet(); openBag('bag');
+    };
+    wrap.appendChild(eq);
+  }
   const keys = Object.keys(S.items).filter(k => S.items[k] > 0);
-  if (!keys.length) wrap.innerHTML = '<div class="empty">行囊空空，唯有清风两袖</div>';
+  if (!keys.length && !(S.eq && S.eq.weapon)) wrap.innerHTML = '<div class="empty">行囊空空，唯有清风两袖</div>';
   keys.forEach(k => {
     const it = document.createElement('div'); it.className = 'item';
+    const isG = typeof GEAR !== 'undefined' && GEAR[k];
     it.innerHTML = `<div class="item-info"><div class="item-name"></div><div class="item-desc"></div></div>`;
-    it.querySelector('.item-name').innerHTML = `${k}<em>×${S.items[k]}</em>`;
-    it.querySelector('.item-desc').textContent = PILLS[k] ? PILLS[k].desc : '';
+    it.querySelector('.item-name').innerHTML = `${k}<em>×${S.items[k]}</em>${isG ? `<em class="gear-k">${GEAR[k].kind}</em>` : ''}`;
+    it.querySelector('.item-desc').textContent = isG ? GEAR[k].desc : (PILLS[k] ? PILLS[k].desc : '');
     if (PILLS[k] && PILLS[k].use) {
       const b = document.createElement('button'); b.className = 'item-use'; b.textContent = '服用';
       b.onclick = () => { if (useItem(k)) closeSheet(); };
+      it.appendChild(b);
+    } else if (isG) {
+      const b = document.createElement('button'); b.className = 'item-use'; b.textContent = '佩戴';
+      b.onclick = () => {
+        const r = Core.equip(S, k); if (r.err) return toast(r.err);
+        pushLog({ text: r.text, tags: r.tags, cls: r.tags.some(t => t.c === 'down') ? 'warn' : 'sys' });
+        render(); save(); closeSheet(); openBag('bag');
+      };
       it.appendChild(b);
     }
     wrap.appendChild(it);
@@ -948,45 +972,114 @@ const layerDots = lv => Array.from({ length: GF_LAYERS }, (_, i) => `<i class="$
 const gfElWord = (id) => { const g = GONGFA[id]; return (g.el ? (g.el === '五行' ? '五行' : g.el + '行') : '无属') + ' · ' + Core.gfMatchWord(S, id); };
 function gfPage() {
   const wrap = document.createElement('div'); wrap.className = 'gf-page';
+  // 主修
+  const mainBox = document.createElement('div'); mainBox.className = 'gf-block';
+  mainBox.innerHTML = '<div class="gf-list-h"><span>主修</span><em>一门</em></div>';
+  wrap.appendChild(mainBox);
   if (!S.gf) {
-    wrap.innerHTML = `<div class="gf-scroll gf-none"><div class="gf-vname">${[...'无法可依'].map(c => `<i>${c}</i>`).join('')}</div>
+    mainBox.insertAdjacentHTML('beforeend', `<div class="gf-scroll gf-none"><div class="gf-vname">${[...'无法可依'].map(c => `<i>${c}</i>`).join('')}</div>
       <div class="gf-info"><p class="gf-desc">胸中尚无一部功法。你只凭本能吐纳，像在夜里摸索山路——走得动，却走不快。</p>
-      <div class="gf-speed">行功之速 <b>×${K.noGf.toFixed(2)}</b></div><div class="gf-src">游历、宗门、坊市，皆可遇得功法。</div></div></div>`;
+      <div class="gf-speed">行功之速 <b>×${K.noGf.toFixed(2)}</b></div><div class="gf-src">游历、宗门、坊市，皆可遇得功法。</div></div></div>`);
   } else {
-    const g = GONGFA[S.gf], e = S.gfs[S.gf];
-    const card = document.createElement('div'); card.className = 'gf-scroll g' + g.grade + (g.mo ? ' mo' : '');
-    card.innerHTML = `<div class="gf-vname">${[...g.name].map(c => `<i>${c}</i>`).join('')}</div>
+    const g0 = GONGFA[S.gf], e = S.gfs[S.gf];
+    const card = document.createElement('div'); card.className = 'gf-scroll g' + g0.grade + (g0.mo ? ' mo' : '') + ' main';
+    card.innerHTML = `<div class="gf-vname">${[...g0.name].map(c => `<i>${c}</i>`).join('')}</div>
       <div class="gf-info">
-        <div class="gf-meta"><span class="gf-seal">${GF_GRADE[g.grade]}</span><span class="gf-el">${gfElWord(S.gf)}</span></div>
+        <div class="gf-meta"><span class="gf-seal">${GF_GRADE[g0.grade]}</span><span class="gf-el">${gfElWord(S.gf)}</span><span class="gf-role">主修</span></div>
         <div class="gf-layers">${layerDots(e.lv)}<em>${e.lv >= GF_LAYERS ? '大成' : '第' + cn(e.lv) + '层'}</em></div>
         <div class="gf-speed">行功之速 <b>×${Core.gfSpeed(S).toFixed(2)}</b></div>
-        <div class="gf-trait">${g.trait}</div>
+        <div class="gf-trait">${g0.trait}</div>
         <p class="gf-desc"></p>
-        <div class="gf-src">得自 · ${g.src}</div>
+        <div class="gf-src">得自 · ${g0.src}</div>
       </div>`;
-    card.querySelector('.gf-desc').textContent = g.desc;
-    wrap.appendChild(card);
+    card.querySelector('.gf-desc').textContent = g0.desc;
+    mainBox.appendChild(card);
   }
+  // 辅修
+  const auxBox = document.createElement('div'); auxBox.className = 'gf-block';
+  const aux = S.aux || [];
+  auxBox.innerHTML = `<div class="gf-list-h"><span>辅修</span><em>${cn(aux.length)}/${cn(typeof AUX_MAX !== 'undefined' ? AUX_MAX : 2)} · 只取其意</em></div>`;
+  wrap.appendChild(auxBox);
+  if (!aux.length) {
+    const em = document.createElement('div'); em.className = 'empty small'; em.textContent = '尚未辅修 · 可自胸中所藏择一两门温养'; auxBox.appendChild(em);
+  } else aux.forEach(id => {
+    const g0 = GONGFA[id], e = S.gfs[id];
+    const row = document.createElement('div'); row.className = 'gf-row aux g' + g0.grade;
+    row.innerHTML = `<span class="gf-seal">${GF_GRADE[g0.grade]}</span>
+      <div class="gf-row-info"><div class="gf-row-name">${g0.name}<em>辅 · ${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
+      <div class="gf-row-sub">${gfElWord(id)} · ${g0.trait}</div></div>
+      <button class="item-use">卸下</button>`;
+    row.querySelector('button').onclick = () => {
+      const r = Core.clearAux(S, id);
+      pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); closeSheet(); openBag('gf');
+    };
+    auxBox.appendChild(row);
+  });
+  // 所藏
   const others = Object.keys(S.gfs).filter(id => id !== S.gf);
   const h = document.createElement('div'); h.className = 'gf-list-h'; h.innerHTML = `<span>胸中所藏</span><em>${cn(Object.keys(S.gfs).length)}部</em>`;
   wrap.appendChild(h);
   if (!others.length) { const em = document.createElement('div'); em.className = 'empty small'; em.textContent = '别无他法 · 机缘未至'; wrap.appendChild(em); }
   others.sort((a, b) => GONGFA[b].grade - GONGFA[a].grade).forEach(id => {
-    const g = GONGFA[id], e = S.gfs[id];
-    const row = document.createElement('div'); row.className = 'gf-row g' + g.grade + (g.mo ? ' mo' : '');
-    row.innerHTML = `<span class="gf-seal">${GF_GRADE[g.grade]}</span>
-      <div class="gf-row-info"><div class="gf-row-name">${g.name}<em>${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
-      <div class="gf-row-sub">${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g.trait}</div>
+    const g0 = GONGFA[id], e = S.gfs[id], isAux = aux.includes(id);
+    const row = document.createElement('div'); row.className = 'gf-row g' + g0.grade + (g0.mo ? ' mo' : '');
+    row.innerHTML = `<span class="gf-seal">${GF_GRADE[g0.grade]}</span>
+      <div class="gf-row-info"><div class="gf-row-name">${g0.name}<em>${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
+      <div class="gf-row-sub">${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g0.trait}</div>
       <div class="gf-cost">${(c => `散功转修：${c.lose ? `修为 −${fmtNum(c.lose)} · ` : ''}心境 −${c.xj} · 耗时${cnDur(c.months + c.extra)}${c.extra ? `（修为不足，以${cnDur(c.extra)}苦功补足）` : ''}${c.layer ? ` · 《${GONGFA[S.gf].name}》跌一层` : ''}`)(Core.switchCost(S, id))}</div></div>
-      <button class="item-use">转修</button>`;
-    const btn = row.querySelector('button');
-    btn.onclick = async () => {
-      if (!row.classList.contains('confirm')) { wrap.querySelectorAll('.gf-row.confirm').forEach(r => { r.classList.remove('confirm'); r.querySelector('button').textContent = '转修'; }); row.classList.add('confirm'); btn.textContent = '确定'; return; }
+      <div class="gf-acts"></div>`;
+    const acts = row.querySelector('.gf-acts');
+    const bMain = document.createElement('button'); bMain.className = 'item-use'; bMain.textContent = '转修';
+    bMain.onclick = async () => {
+      if (!row.classList.contains('confirm')) { wrap.querySelectorAll('.gf-row.confirm').forEach(r => { r.classList.remove('confirm'); const bb = r.querySelector('.item-use'); if (bb && bb.textContent === '确定') bb.textContent = '转修'; }); row.classList.add('confirm'); bMain.textContent = '确定'; return; }
       await closeSheet();
       Core.switchGf(S, id, pushLog); render(); save(); checkEnd();
     };
+    acts.appendChild(bMain);
+    if (!isAux && aux.length < (typeof AUX_MAX !== 'undefined' ? AUX_MAX : 2)) {
+      const bAux = document.createElement('button'); bAux.className = 'item-use light'; bAux.textContent = '辅修';
+      bAux.onclick = () => {
+        const r = Core.setAux(S, id); if (r.err) return toast(r.err);
+        pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); closeSheet(); openBag('gf');
+      };
+      acts.appendChild(bAux);
+    }
     wrap.appendChild(row);
   });
+  return wrap;
+}
+function fabaoPage() {
+  const wrap = document.createElement('div'); wrap.className = 'fabao-page';
+  if (!S.fabao) {
+    wrap.innerHTML = `<div class="fabao-scroll empty-fabao">
+      <div class="fabao-seal">空</div>
+      <p class="fabao-title">本命未认</p>
+      <p class="fabao-flavor">器随人走，人未至，器不来。破境筑基之后，自有一物落于识海——与你灵根相应，与你主修相系。</p>
+      <p class="fabao-hint">筑基成功时可认主 · 日常吐纳闭关游历可祭炼</p>
+    </div>`;
+    if (S.flags && S.flags.fabaoCanhun) wrap.insertAdjacentHTML('beforeend', '<p class="fabao-canhun">残魂未散 · 来世或可重光</p>');
+    return wrap;
+  }
+  const f = S.fabao, st = f.stage | 0, need = typeof FABAO_NEED !== 'undefined' ? FABAO_NEED : [0, 10, 28, 64];
+  const next = st < 3 ? need[st + 1] : null;
+  const bonus = (typeof FABAO_BONUS !== 'undefined' ? FABAO_BONUS[st] : {}) || {};
+  const traits = [];
+  if (bonus.bt) traits.push('破境 +' + Math.round(bonus.bt * 100) + '%');
+  if (bonus.spd) traits.push('行功 ×' + bonus.spd.toFixed(2));
+  if (bonus.life) traits.push('寿元 +' + Math.round(bonus.life * 100) + '%');
+  if (bonus.qiyu) traits.push('机缘略增');
+  const card = document.createElement('div'); card.className = 'fabao-scroll stage-' + st;
+  card.innerHTML = `
+    <div class="fabao-head"><span class="fabao-seal">${f.seal || '器'}</span>
+      <div><b class="fabao-name">${f.name}</b><span class="fabao-stage">${typeof FABAO_STAGE !== 'undefined' ? FABAO_STAGE[st] : ''}</span></div></div>
+    <p class="fabao-flavor"></p>
+    <div class="fabao-bond"><span>祭炼</span><span class="fb-track"><i style="width:${next ? Math.min(100, f.bond / next * 100) : 100}%"></i></span>
+      <em>${next ? cn(f.bond) + ' / ' + cn(next) : '化形已成'}</em></div>
+    <div class="fabao-traits">${traits.length ? traits.map(t => '<span>' + t + '</span>').join('') : '<span>认主之初，灵性尚浅</span>'}</div>
+    <div class="fabao-meta">系于 · ${f.el || '无属'}灵根${f.gfId && GONGFA[f.gfId] ? ' · 《' + GONGFA[f.gfId].name + '》' : ''}</div>`;
+  card.querySelector('.fabao-flavor').textContent = f.flavor || '';
+  wrap.appendChild(card);
+  wrap.insertAdjacentHTML('beforeend', `<p class="fabao-note">转主修或身死，或留残魂供来世再聚。法宝不入行囊，只在识海。</p>`);
   return wrap;
 }
 function useItem(k) {
@@ -1047,7 +1140,12 @@ function showEnd(kind) {
   const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
   const leg = kind === 'bingjie' ? '<br><span class="end-legacy">前世残念 · 来世悟性 +1</span>' : '';
   $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
-  if (kind === 'bingjie') try { localStorage.setItem(LEGACY_KEY, JSON.stringify({ wx: 1 })); } catch (er) {}
+  let legacy = kind === 'bingjie' ? { wx: 1 } : {};
+  if (Core.fabaoOnDeath) {
+    const ch = Core.fabaoOnDeath(S);
+    if (ch) { legacy.canhun = ch; legacy.wx = (legacy.wx || 0) || (kind === 'bingjie' ? 1 : 0); }
+  }
+  if (legacy.canhun || legacy.wx) try { localStorage.setItem(LEGACY_KEY, JSON.stringify(legacy)); } catch (er) {}
   save();
   $('#btn-reborn').onclick = () => { localStorage.removeItem(SAVE_KEY); e.hidden = true; S = null; resetCreate(); unrollTo('create'); };
 }

@@ -7,14 +7,14 @@ const Core = (() => {
   const SAVE_V = 5;
   // 调参入口（模拟器会改写这里）
   const K = {
-    tunaGain: 0.44, biguanGain: 1.48, tunaMonths: 3, biguanMonths: 12, youliMonths: 3,
+    tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
     noGf: 0.75, mismatch: 0.85, yiElemental: 0.9, yiOwn: 1.4, wuxingPer: 0.07,
     match: { tian: 1.35, shuang: 1.25, san: 1.18, si: 1.1, wei: 1.05, yi: 1.0 },
     layerBonus: 0.04, xpNeed: lv => 3 + lv * 2,
     btDeath: [0, 0, 0.05, 0.14, 0.3],
     moLoss: [1, 2], moRiskXj: 30, moRisk: 0.008,
     // v0.9：略抬需求、略缓收益，三灵根均衡局约 70–80 分钟
-    reqMul: [5.05, 5.85, 6.55, 7.85, 8.65], lifeMul: [1.0, 1.0, 1.0, 0.9, 0.95],
+    reqMul: [5.15, 5.95, 6.7, 8.0, 8.85], lifeMul: [1.06, 1.08, 1.1, 1.0, 1.02],
     rootLife: { si: 1.04, wei: 1.08 },   // 驳杂灵根，气血反而绵长些
     payYears: 2, dabiYears: 55, mYears: 3, mXw: 0.05, stipendPill: [0, 0, 0, 0.05, 0.08, 0.1, 0.12], freeQiyu: 0.12,
   };
@@ -140,6 +140,7 @@ const Core = (() => {
     const c = switchCost(s, id), old = s.gf;
     if (old && c.layer) s.gfs[old].lv -= 1;
     s.gf = id; s.xw = Math.max(0, s.xw - c.xw); s.xj = clamp(s.xj - c.xj, 0, 100);
+    s.aux = (s.aux || []).filter(x => x !== id);
     s.bnLogged = false;
     passTime(s, c.months + c.extra, emit);
     const tags = [...(c.lose ? [{ t: `修为 −${fmtNum(c.lose)}`, c: 'down' }] : []), ...(c.extra ? [{ t: `补足根基 ${cnDur(c.extra)}`, c: 'down' }] : []), { t: `心境 −${c.xj}`, c: 'down' }];

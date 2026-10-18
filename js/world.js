@@ -77,6 +77,7 @@ const ITEM_VAL = {
   '青叶草': { base: 3, tier: 0 }, '宁神花': { base: 5, tier: 0 }, '赤阳花': { base: 6, tier: 0 }, '紫云芝': { base: 6, tier: 1 }, '龙血藤': { base: 7, tier: 2 },
   '血菩提': { base: 8, tier: 2 }, '雪莲': { base: 7, tier: 3 }, '九叶灵芝': { base: 9, tier: 4 },
   '妖丹': { base: 12, rel: 1 }, '火精石': { base: 14, tier: 2 }, '寒铁': { base: 10, tier: 1 }, '古剑残片': { base: 12, tier: 2 }, '鲛珠': { base: 12, tier: 3 }, '龙鳞': { base: 14, tier: 3 },
+  '精铁短剑': { base: 55, rel: 1 }, '青钢刃': { base: 88, rel: 1 }, '寒铁枪': { base: 240, tier: 1 }, '赤焰环': { base: 260, tier: 1 }, '碧水尺': { base: 230, tier: 1 },
 };
 
 /* ================= 丹方 ================= */
@@ -108,6 +109,8 @@ const MARKET = [
   { k: '青叶草', n: [3, 8] }, { k: '宁神花', n: [2, 5] }, { k: '赤阳花', n: [2, 5] }, { k: '紫云芝', n: [1, 3], rm: 1 }, { k: '龙血藤', n: [1, 2], rm: 2, p: 0.7 },
   { k: '血菩提', n: [1, 2], rm: 2, p: 0.5 }, { k: '雪莲', n: [1, 1], rm: 3, p: 0.5 },
   { k: 'R:huichun', p: 0.45 }, { k: 'R:yanshou', p: 0.25, rm: 2 }, { k: 'SCROLL', p: 0.6 },
+  { k: '精铁短剑', n: [1, 2], p: 0.55 }, { k: '青钢刃', n: [1, 1], p: 0.4 },
+  { k: '寒铁枪', n: [1, 1], p: 0.28, rm: 1 }, { k: '赤焰环', n: [1, 1], p: 0.25, rm: 1 }, { k: '碧水尺', n: [1, 1], p: 0.25, rm: 1 },
 ];
 const MARKET_BARK = ['卖丹的老道捋着胡子：“童叟无欺，童叟无欺。”', '药铺小伙计把秤杆一翘：“新到的灵草，带着露水呢。”', '街角有人压低声音：“上好的残卷，要不要瞧瞧？”', '听雨楼的灯笼又挂起来了，楼下站满了看热闹的人。', '一个胖商人拦住你：“道友，收妖丹么？价钱好商量。”'];
 
@@ -310,3 +313,40 @@ const MIJING = {
     ] },
 };
 const MJ_TINT = { moss: '#4e5a46', rust: '#6a4632', sea: '#3c5664' };
+
+
+/* ================= v0.9 神器奇遇 ================= */
+EVENTS.push(
+  { id: 'shen_gu', title: '白骨祭坛', seal: '祭', w: 3, once: true, rm: [1, 4],
+    cond: s => !s.flags.got_shen_gu && s.realm >= 1,
+    text: s => '荒谷深处一座白骨堆成的祭坛，坛上插着一柄骨白短刃，无护手，刃口沁着薄红。周围静得可怕——连风都绕道走。你识海中那一点灵光隐隐发烫，似在提醒：此物有灵，亦有主。',
+    choices: s => [
+      { label: '以心血温之，强行认主', sub: '得噬主骨刃 · 寿元与心境皆有损', act: s => {
+        s.flags.got_shen_gu = 1;
+        return { text: '你刺破指尖，血珠滴上刃身。骨刃嗡鸣一声，钻入你袖中。只是那一瞬，鬓角似又白了一寸，心头也空了一块。', fx: { gear: '噬主骨刃', life: -0.08, xj: -8, flag: 'got_shen_gu' } };
+      }},
+      { label: '以土掩之，不去招惹', sub: '心境略安', act: s => ({ text: '你拨开黄土，把祭坛埋了半截。走出谷口时，背后似有骨节轻响——你没有回头。', fx: { xj: 3, flag: 'got_shen_gu' } }) },
+      { label: '试着拨开骨刃，看清铭文', sub: '或有机缘，或被反噬', act: s => {
+        s.flags.got_shen_gu = 1;
+        if (Math.random() < 0.45) return { text: '铭文是上古血篆，你强记下来，悟得一丝噬元之法。骨刃却突然烫手，你甩开它，掌心已起水泡。', fx: { gfXp: 4, inj: 1, xj: -4 } };
+        return { text: '你刚触到刃柄，阴寒倒灌。好在你运功及时，只是吐了一口淤血。骨刃没入土中，再寻不见。', fx: { inj: 2, xj: -6 } };
+      }},
+    ]},
+  { id: 'shen_deng', title: '忘川青灯', seal: '灯', w: 2.5, once: true, rm: [2, 4],
+    cond: s => !s.flags.got_shen_deng && s.realm >= 2,
+    text: s => '月下冰湖中央，一盏青荧小灯悬在水面上，照不见前路，只照见你来时的脚印。灯旁立一石碣，三字：「寿可赎」。',
+    choices: s => [
+      { label: '以寿元点亮青灯', sub: '得忘川灯 · 折损寿元', act: s => {
+        s.flags.got_shen_deng = 1;
+        return { text: '你掐指一算，心知此灯要你一截阳寿。灯焰跳了一下，跃入识海。此后闭关，心魔竟远了些——只是铜镜里，你眉间多了一道浅纹。', fx: { gear: '忘川灯', life: -0.12, flag: 'got_shen_deng' } };
+      }},
+      { label: '只借灯火照路，不取灯', sub: '游历有获', act: s => ({ text: '你借着灯光辨清了湖心石路，捡到一枚鲛珠。青灯依旧悬着，像在等下一个愿意付钱的人。', fx: { item: { '鲛珠': 1 }, xj: 2, flag: 'got_shen_deng' } }) },
+      { label: '吹灭它', sub: '未知', act: s => {
+        s.flags.got_shen_deng = 1;
+        return { text: '你吹了一口气。灯灭了。湖面忽然起雾，你在雾里走了很久，走出来时，手里多了一张无名功法残页——墨迹未干。', fx: { ls: 40, xj: -2 } };
+      }},
+    ]},
+);
+
+LOC_EV.xuewu.push('shen_gu'); LOC_EV.xihuang.push('shen_gu'); EV_LOC.shen_gu = ['xuewu', 'xihuang'];
+LOC_EV.beihai.push('shen_deng'); LOC_EV.yunhai.push('shen_deng'); EV_LOC.shen_deng = ['beihai', 'yunhai'];
