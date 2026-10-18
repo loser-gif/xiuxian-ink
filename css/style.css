@@ -1618,7 +1618,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 
 
 /* ---------- 氛围音效开关 ---------- */
-#audio-dock{position:fixed;z-index:55;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));
+#audio-dock{position:fixed;z-index:18;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));
   display:flex;align-items:center;gap:8px;pointer-events:none}
 #audio-dock>*{pointer-events:auto}
 .audio-btn{width:44px;height:44px;border:0;border-radius:50%;cursor:pointer;font-family:var(--f-head);font-size:18px;letter-spacing:.15em;
@@ -2331,6 +2331,12 @@ body[data-screen=main] .scroll-paper{
   .title-menu .title-subbtn .bb-text{font-size:17px;letter-spacing:.12em;padding-left:.12em}
   .title-menu .title-subbtn small{font-size:10.5px;letter-spacing:.04em}
   body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))}
+  /* 四枚底钮横排时，整组左移，避开右下角的设/声（宽屏还有音量条） */
+  body[data-screen=title] .title-menu{box-sizing:border-box;padding-right:148px}
+  body[data-screen=title] .title-menu-sub{width:min(620px,100%);max-width:100%}
+}
+@media (min-width:1000px) and (min-height:600px){
+  body[data-screen=title] .title-menu{padding-right:260px}
 }
 
 /* ===== v33：夜墨、字号、动效、双栏、逐页不裁 ===== */
@@ -2680,3 +2686,17 @@ html[data-theme="night"] .end-actions{background:linear-gradient(180deg,rgba(249
 /* 抽屉不超过可视区，正文在卷内滚 */
 .sheet-panel{max-height:min(78dvh,calc(100dvh - var(--sat) - 12px))}
 .sect-home,.bag-list,.cult-wrap,.atlas-sheet{overflow-x:hidden;max-width:100%}
+
+/* 游玩：设 / 声横排放进行动列下方的空档，不压行囊与日志 */
+body[data-screen="main"]{--dock-clear:52px}
+body[data-screen="main"] #scr-main{padding-bottom:calc(var(--sab) + 12px + var(--dock-clear))}
+body[data-screen="main"] #audio-dock{
+  flex-direction:row;align-items:center;gap:6px;
+  top:auto;left:auto;
+  right:max(10px,env(safe-area-inset-right));
+  bottom:max(6px,env(safe-area-inset-bottom));
+}
+body[data-screen="main"] .break-seal{bottom:calc(var(--sab) + 112px + var(--dock-clear))}
+@media (orientation:landscape) and (max-height:540px) and (min-width:640px){
+  body[data-screen="main"] .break-seal{bottom:calc(var(--sab) + 72px + var(--dock-clear))}
+}
