@@ -11,9 +11,9 @@ from fontTools.ttLib import TTFont
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.environ.get('FONTSRC', '/workspace/fontsrc')
-FILES = ['index.html', 'js/data.js', 'js/game.js', 'js/ink.js', 'js/fx.js', 'js/wallpaper.js', 'js/inkgl.js', 'css/style.css']
+FILES = ['index.html', 'js/data.js', 'js/gongfa.js', 'js/story.js', 'js/core.js', 'js/game.js', 'js/ink.js', 'js/fx.js', 'js/wallpaper.js', 'js/inkgl.js', 'css/style.css']
 PUNCT = set('０１２３４５６７８９，。！？；：“”‘’（）《》、…—·「」　')
-CAO_TEXT = '筑基金丹元婴化神飞升坐化成败渡劫'   # 草书大字只用于破境/终卷
+CAO_TEXT = '筑基金丹元婴化神飞升坐化成败渡劫入魔归隐兵解身殒'   # 草书大字只用于破境/终卷
 
 def strip_comments(t, f):
     if f.endswith('.js') or f.endswith('.css'):

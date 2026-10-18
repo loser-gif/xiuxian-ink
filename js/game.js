@@ -7,7 +7,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const SAVE_KEY = 'moxian.v1';
-const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
 const root = document.documentElement;
 
 /* ================= 视觉初始化 ================= */
@@ -111,21 +110,22 @@ function inkWrite(el, text, opt = {}) {
 
 /* ================= 状态 ================= */
 let S = null;
-function sync(s = S) {
-  s.age = Math.floor(s.months / 12);
-  s.lifespan = Math.round(REALMS[s.realm].life + s.lifeBonus);
-}
+const sync = (s = S) => Core.sync(s);
 const R = () => REALMS[S.realm];
-const req = (s = S) => Math.round(REALMS[s.realm].scale * REALMS[s.realm].reqBase * (1 + REALMS[s.realm].reqGrow * s.stage));
-const unit = (s = S) => 100 * REALMS[s.realm].scale * s.lg.mult * (1 + (s.wx - 5) * 0.06);
-const isLast = (s = S) => s.stage === REALMS[s.realm].stages.length - 1;
-const bottleneck = (s = S) => isLast(s) && s.xw >= req(s);
-const realmStr = (s = S) => REALMS[s.realm].name + REALMS[s.realm].stages[s.stage];
-const timeLabel = (s = S) => `${cn(s.age)}岁 · ${['春', '夏', '秋', '冬'][Math.floor((s.months % 12) / 3)]}`;
-const fmtNum = n => n >= 100000 ? (n / 10000).toFixed(1) + '万' : String(Math.floor(n));
+const req = (s = S) => Core.req(s);
+const unit = (s = S) => Core.unit(s);
+const isLast = (s = S) => Core.isLast(s);
+const bottleneck = (s = S) => Core.bottleneck(s);
+const realmStr = (s = S) => Core.realmStr(s);
+const timeLabel = (s = S) => Core.timeLabel(s);
+const fmtNum = Core.fmtNum;
+const K = Core.K;
+const LEGACY_KEY = 'moxian.legacy';
+// 收集规则层的旁白，待主条目落笔后再依次写出
+const buffer = () => { const B = []; return { emit: e => B.push(e), flush: () => { B.forEach(pushLog); B.length = 0; } }; };
 
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
-function load() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.v === 1) { sync(s); return s; } } catch (e) {} return null; }
+function load() { try { return Core.migrate(JSON.parse(localStorage.getItem(SAVE_KEY))); } catch (e) { console.warn(e); } return null; }
 
 /* ================= 屏幕切换（卷轴） ================= */
 let curScreen = 'title';
@@ -232,10 +232,9 @@ function initCreate() {
 }
 
 function newGame(name, r) {
-  S = { v: 1, name, lg: { id: r.lg.id, name: r.lg.name, mult: r.lg.mult, bt: r.lg.bt, sect: r.lg.sect }, lgEls: r.els,
-    wx: r.wx, xj: 50, luck: r.luck, ls: 10, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
-    inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false };
-  sync();
+  let legacy = null;
+  try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {}
+  S = Core.newState(name, r, legacy);
   const lgDesc = (r.lg.id === 'wei' ? '' : r.els.join('')) + r.lg.name;
   const sectLine = {
     tian: `测得${lgDesc}，满堂皆惊。宗主亲自下山，将你收为真传弟子。同来的少年们望着你，目光里有羡慕，也有别的什么。`,
@@ -247,6 +246,7 @@ function newGame(name, r) {
   }[r.lg.id];
   pushLog({ text: `大衍历三千七百二十一年，春。青冥宗开山收徒。你名${name}，青石镇人氏，年方十六。`, cls: 'sys' });
   pushLog({ text: sectLine });
+  if (legacy) pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags: [{ t: '前世残念 · 悟性 +1', c: 'up' }], cls: 'gold' });
   pushLog({ text: '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: true });
   save();
   enterMain(false);
@@ -329,13 +329,15 @@ function render() {
   const lifeLeft = clamp((S.lifespan - S.age) / (S.lifespan - 16 || 1), 0, 1);
   const inc = $('.incense'); inc.style.setProperty('--life', (Math.max(0.02, lifeLeft) * 100).toFixed(1) + '%');
   setText('#life-num', `${S.age} / ${S.lifespan}`);
-  $('.bar-life').classList.toggle('low', S.lifespan - S.age <= Math.max(6, r.life * 0.12));
+  const lowLife = S.lifespan - S.age <= Math.max(6, (S.lifespan - 16) * 0.12);
+  $('.bar-life').classList.toggle('low', lowLife);
   const season = Math.floor((S.months % 12) / 3);
   setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
   FX.setSeason(season); FX.setGold(S.realm || 0);
   document.body.dataset.realm = S.ascended ? 5 : S.realm;
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
-  setText('#dur-tuna', cnDur(r.T * 3)); setText('#dur-biguan', cnDur(r.T * 12));
+  const tm = Core.gt(S, 'time', 1);
+  setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm))); setText('#dur-biguan', cnDur(Math.round(r.T * K.biguanMonths * tm)));
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
   setText('#bag-count', cnt ? `${cn(cnt)}物` : '空');
   $('#btn-break').hidden = !bottleneck() || S.dead || S.ascended;
@@ -344,53 +346,10 @@ function render() {
   if (bottleneck()) { msg = '瓶颈已至 · 可破境'; st.classList.add('zhu'); }
   else if (S.inj > 0) { msg = `伤势未愈 · 修炼减半`; st.classList.add('zhu'); }
   else if (S.buff) msg = `灵脉加持 · 余${cn(S.buff.n)}次`;
-  else if (S.lifespan - S.age <= Math.max(6, r.life * 0.12)) { msg = '寿元无多'; st.classList.add('zhu'); }
+  else if (lowLife) { msg = '寿元无多'; st.classList.add('zhu'); }
+  else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
+  else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
   st.textContent = msg;
-}
-
-/* ================= 数值变化 ================= */
-function addXw(amount, tags) {
-  if (amount < 0) { S.xw = Math.max(0, S.xw + amount); tags && tags.push({ t: `修为 −${fmtNum(-amount)}`, c: 'down' }); return; }
-  if (bottleneck()) { tags && tags.push({ t: '修为已满', c: '' }); return; }
-  tags && tags.push({ t: `修为 +${fmtNum(amount)}`, c: 'up' });
-  S.xw += amount;
-  const ups = [];
-  while (S.xw >= req() && !isLast()) { S.xw -= req(); S.stage++; ups.push(realmStr()); }
-  if (isLast() && S.xw >= req()) S.xw = req();
-  return ups;
-}
-function afterGain(ups) {
-  (ups || []).forEach(r => pushLog({ text: pick(TEXT.stageUp).replace('{r}', r), cls: 'gold' }));
-  if (bottleneck() && !S.bnLogged) { S.bnLogged = true; pushLog({ text: TEXT.bottleneck.replace('{r}', R().name + '圆满'.replace('圆满', S.realm === 0 ? '九层' : '圆满')), cls: 'warn' }); }
-}
-function applyFx(fx) {
-  const tags = []; let ups = [];
-  if (fx.xw) ups = addXw(Math.round(fx.xw * req()), tags) || [];
-  if (fx.ls) { const v = fx.lsRaw ? fx.ls : Math.round(fx.ls * R().lsScale); const before = S.ls; S.ls = Math.max(0, S.ls + v); const d = S.ls - before; if (d) tags.push({ t: `灵石 ${d > 0 ? '+' : '−'}${Math.abs(d)}`, c: d > 0 ? 'up' : 'down' }); }
-  if (fx.life) { const v = Math.round(fx.life * LIFE_SCALE[S.realm]); S.lifeBonus += v; tags.push({ t: `寿元 ${v > 0 ? '+' : '−'}${Math.abs(v)}年`, c: v > 0 ? 'up' : 'down' }); }
-  if (fx.xj) { const b = S.xj; S.xj = clamp(S.xj + fx.xj, 0, 100); const d = S.xj - b; if (d) tags.push({ t: `心境 ${d > 0 ? '+' : '−'}${Math.abs(d)}`, c: d > 0 ? 'up' : 'down' }); }
-  if (fx.wx) { const b = S.wx; S.wx = clamp(S.wx + fx.wx, 1, 10); if (S.wx !== b) tags.push({ t: `悟性 ${fx.wx > 0 ? '+' : '−'}${Math.abs(S.wx - b)}`, c: fx.wx > 0 ? 'up' : 'down' }); }
-  if (fx.luck) S.luck = clamp(S.luck + fx.luck, -5, 10);
-  if (fx.inj) { S.inj += fx.inj; tags.push({ t: '负伤', c: 'down' }); }
-  if (fx.item) for (const [k, n] of Object.entries(fx.item)) { S.items[k] = (S.items[k] || 0) + n; tags.push({ t: `得${k}${n > 1 ? '×' + n : ''}`, c: 'up' }); }
-  if (fx.buff) { S.buff = { ...fx.buff }; tags.push({ t: '灵脉加持', c: 'up' }); }
-  if (fx.flag) S.flags[fx.flag] = 1;
-  if (fx.time) passTime(fx.time);
-  return { tags, ups };
-}
-function passTime(m) {
-  S.months += m; sync();
-  const left = S.lifespan - S.age, span = S.lifespan - 16;
-  const k = S.realm + ':' + S.lifeBonus;
-  if (left <= span * 0.05 && !S.warned['95' + k] && left > 0) { S.warned['95' + k] = 1; pushLog({ text: TEXT.old95, cls: 'warn' }); }
-  else if (left <= span * 0.2 && !S.warned['80' + k] && left > 0) { S.warned['80' + k] = 1; pushLog({ text: TEXT.old80, cls: 'warn' }); }
-  if (S.age >= S.lifespan) S.dead = true;
-}
-function gainMul() {
-  let m = 1;
-  if (S.inj > 0) { m *= 0.5; S.inj--; }
-  if (S.buff) { m *= S.buff.mul; if (--S.buff.n <= 0) S.buff = null; }
-  return m;
 }
 
 /* ================= 行动 ================= */
@@ -402,16 +361,12 @@ function act(kind) {
   const r = R();
   if (kind === 'tuna') {
     lock(1500);
-    const mul = gainMul();
-    const g = Math.round(unit() * 0.22 * (0.9 + Math.random() * 0.2) * mul);
-    const tags = []; const ups = bottleneck() ? (tags.push({ t: '瓶颈难破，修为难进' }), []) : addXw(g, tags);
-    passTime(r.T * 3);
-    const text = pick(TEXT.tuna).replace('{d}', cnDur(r.T * 3));
+    const B = buffer(), o = Core.tuna(S, B.emit);
     save();
     // 灵气旋入丹田之后，才落笔记下这一季
     const done = () => {
       if (!S) return;
-      pushLog({ text, tags }); afterGain(ups); render(); save(); checkEnd();
+      pushLog({ text: o.text, tags: o.tags }); B.flush(); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd();
       const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
       clearTimeout(act.gt); act.gt = setTimeout(() => bx.classList.remove('gain'), 1500);
     };
@@ -421,31 +376,13 @@ function act(kind) {
   } else if (kind === 'biguan') {
     lock(1100);
     FX.cave();
-    const mul = gainMul();
-    const pXm = clamp(0.06 + (50 - S.xj) / 400, 0.02, 0.22), pDw = clamp(0.08 + S.luck * 0.006 + (S.wx - 5) * 0.012, 0.03, 0.25);
-    const roll = Math.random(); const tags = []; let text = pick(TEXT.biguan).replace(/\{d\}/g, cnDur(r.T * 12)); let cls = '', ups = [];
-    passTime(r.T * 12);
-    if (roll < pXm) {
-      text += pick(TEXT.xinmo); cls = 'warn';
-      addXw(-Math.round(req() * 0.12), tags); S.inj += 2; tags.push({ t: '负伤', c: 'down' });
-      S.xj = clamp(S.xj - 6, 0, 100); tags.push({ t: '心境 −6', c: 'down' });
-    } else {
-      let g = unit() * (0.88 + Math.random() * 0.24) * mul;
-      if (roll > 1 - pDw) { g *= 1.6; text += pick(TEXT.dunwu); cls = 'gold'; if (Math.random() < 0.25 && S.wx < 10) { S.wx++; tags.push({ t: '悟性 +1', c: 'up' }); } }
-      if (bottleneck()) tags.push({ t: '瓶颈难破，修为难进' }); else ups = addXw(Math.round(g), tags);
-      S.xj = clamp(S.xj + 1, 0, 100);
-    }
-    pushLog({ text, tags, cls });
-    afterGain(ups);
+    const B = buffer(), o = Core.biguan(S, B.emit);
+    pushLog({ text: o.text, tags: o.tags, cls: o.cls }); B.flush();
+    Core.afterGain(S, o.ups, pushLog);
   } else if (kind === 'youli') {
-    passTime(r.T * 3);
+    Core.passTime(S, r.T * K.youliMonths, pushLog);
     if (S.dead) { render(); save(); return checkEnd(); }
-    const pool = EVENTS.filter(e => !e.cond || e.cond(S));
-    const recent = S.recent || []; const pool2 = pool.filter(e => !recent.includes(e.id));
-    const use = pool2.length ? pool2 : pool;
-    let tot = use.reduce((a, e) => a + e.w, 0), x = Math.random() * tot, ev = use[0];
-    for (const e of use) { if ((x -= e.w) < 0) { ev = e; break; } }
-    S.recent = [...recent, ev.id].slice(-5);
+    const ev = Core.pickEvent(S);
     render(); save();
     busy = true; $$('.act').forEach(b => b.classList.add('busy'));
     // 先把卷上的字推上去，空出卷底的远山，山路只画在空白处
@@ -461,8 +398,9 @@ function act(kind) {
   }
   render(); save(); checkEnd();
 }
+let endT = 0;
 function checkEnd() {
-  if (S.dead) setTimeout(() => showEnd('death'), 1800);
+  if (S && S.dead && !endT) endT = setTimeout(() => { endT = 0; if (S && S.dead) showEnd(S.ending || 'zuohua'); }, 1800);
 }
 
 /* ================= 奇遇卷轴 ================= */
@@ -481,7 +419,6 @@ async function closeModal() {
   modal.hidden = true;
 }
 function openEvent(ev) {
-  S.events++;
   FX.vtext($('#ev-title'), ev.title);
   $('#ev-seal').textContent = pick(['缘', '遇', '奇', '机']);
   const text = ev.text(S);
@@ -501,8 +438,9 @@ function openEvent(ev) {
 function choose(ev, c, btn, evText) {
   const box = $('#ev-choices'); if (box.classList.contains('chosen')) return;
   btn.classList.add('picked'); box.classList.add('chosen');
-  const res = c.act(S);
-  const { tags, ups } = applyFx(res.fx || {});
+  const res = Core.resolveChoice(S, c);
+  const B = buffer(), { tags, ups } = Core.applyFx(S, res.fx || {}, B.emit);
+  if (res.fx && res.fx.gf) FX.goldMotes && setTimeout(() => { const t = $('#ev-result').getBoundingClientRect(); FX.goldMotes(t.left + t.width / 2, t.top + 20); }, 900);
   const out = $('#ev-result');
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
   const d = inkWrite(p, res.text, { immediate: true, step: 20 });
@@ -518,16 +456,14 @@ function choose(ev, c, btn, evText) {
   close.onclick = async () => {
     await closeModal();
     pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: 'event', div: true });
-    afterGain(ups);
+    B.flush(); Core.afterGain(S, ups, pushLog);
     render(); save(); checkEnd();
   };
   render(); save();
 }
 
 /* ================= 破境 ================= */
-function btChance(usePill) {
-  return clamp(R().base + S.lg.bt + (S.xj - 50) / 250 + (usePill ? 0.2 : 0) + Math.min(0.12, S.fails * 0.04) - (S.inj > 0 ? 0.15 : 0) + S.luck * 0.005, 0.05, 0.95);
-}
+const btChance = usePill => Core.btChance(S, usePill);
 const chanceWord = p => { const n = Math.round(p * 10); return n <= 1 ? '九死一生' : n >= 9 ? '十拿九稳' : `约莫${cn(n)}成`; };
 function openBreak() {
   if (!bottleneck() || busy) return;
@@ -540,6 +476,8 @@ function openBreak() {
   if (has) t += `囊中尚有${pill}一枚，服之可增二成把握。`;
   if (S.inj > 0) t += '你身上伤势未愈，此时破境，凶险倍增。';
   if (S.fails) t += `此前已败${cn(S.fails)}次，屡败屡战，心志愈坚。`;
+  if (K.btDeath[S.realm]) t += S.items['兵解玉符'] > 0 ? '此境破关，败则有身死之虞。好在袖中玉符温润，似在低语：纵使身殒，道不必绝。' : '此境破关，已非儿戏——一旦失手，便有身死道消之虞。';
+  if (S.gf && GONGFA[S.gf].mo && S.xj < 15) t += '魔功反噬在即，心神摇摇欲坠，此时破关，凶多吉少。';
   openModal();
   const d = inkWrite($('#ev-text'), t, { immediate: true, step: 20 });
   const opts = [];
@@ -559,8 +497,8 @@ function openBreak() {
 }
 async function runBreak(usePill) {
   busy = true;
-  const r = R(), from = S.realm, p = btChance(usePill), ok = Math.random() < p;
-  if (usePill) S.items[r.pill]--, S.items[r.pill] <= 0 && delete S.items[r.pill];
+  const r = R(), B = buffer(), res = Core.resolveBreak(S, usePill, B.emit), from = res.from, ok = res.ok;
+  save();
   const bt = $('#bt'); bt.className = 'bt'; bt.hidden = false;
   const lines = $('#bt-lines'), big = $('#bt-big'), a = $('#bt-a'), b = $('#bt-b'), txt = $('#bt-text'), close = $('#bt-close');
   lines.innerHTML = ''; txt.textContent = ''; close.hidden = true;
@@ -578,7 +516,7 @@ async function runBreak(usePill) {
   await sleep(1100);
   bt.classList.add('charge');
   const l2 = document.createElement('div'); lines.appendChild(l2);
-  inkWrite(l2, S.realm === 4 ? '劫云压顶……' : '引天地灵气，冲击瓶颈……', { immediate: true, step: 70 });
+  inkWrite(l2, from === 4 ? '劫云压顶……' : '引天地灵气，冲击瓶颈……', { immediate: true, step: 70 });
   await sleep(1900);
   bt.classList.remove('charge');
   bt.classList.add('reveal');
@@ -590,22 +528,10 @@ async function runBreak(usePill) {
   if (!ok) { bt.classList.add('fail', 'crack'); bt.classList.add('shake'); await sleep(500); }
   bt.classList.add('stamped');
   await sleep(500);
-  // 结算
-  let logText;
-  if (ok) {
-    const sText = TEXT.btSuccess[from];
-    if (from === 4) { S.ascended = true; }
-    else { S.realm++; S.stage = 0; S.xw = 0; S.fails = 0; S.inj = 0; S.bnLogged = false; S.xj = clamp(S.xj + 5, 0, 100); }
-    sync();
-    logText = sText + (from < 4 ? `寿元增至${cn(S.lifespan)}载。` : '');
-    inkWrite(txt, logText, { immediate: true, step: 26 });
-  } else {
-    const fText = pick(TEXT.btFail);
-    S.xw = Math.round(req() * (0.6 + Math.random() * 0.15)); S.inj += 3; S.xj = clamp(S.xj - 4, 0, 100); S.fails++; S.bnLogged = false;
-    passTime(r.T * 6);
-    logText = fText + `休养${cnDur(r.T * 6)}，方能再试。`;
-    inkWrite(txt, logText, { immediate: true, step: 26 });
-  }
+  // 结算（规则层已算定，这里只落笔）
+  const logText = res.text;
+  if (res.ending) bt.classList.add('end-' + res.ending);
+  inkWrite(txt, logText, { immediate: true, step: 26 });
   save();
   await sleep(1600);
   close.hidden = false; close.classList.add('bleed-in');
@@ -613,8 +539,9 @@ async function runBreak(usePill) {
     bt.classList.add('leave'); await sleep(900); bt.hidden = true; bt.className = 'bt';
     const cv = $('#inkfx'); if (cv.parentNode === bt) { InkGL.hide(); document.body.insertBefore(cv, $('#grain')); }
     busy = false;
-    pushLog({ title: ok ? (from === 4 ? '飞升' : `破境 · ${NEXT_REALM_NAME[from]}`) : '破境未果', text: logText, cls: ok ? 'gold' : 'warn', div: true });
-    render(); save();
+    const ttl = ok ? (from === 4 ? '飞升' : `破境 · ${NEXT_REALM_NAME[from]}`) : { bingjie: '兵解', yunluo: '身殒', rumo: '入魔' }[res.ending] || '破境未果';
+    pushLog({ title: ttl, text: logText, cls: ok ? 'gold' : 'warn', div: true });
+    B.flush(); render(); save();
     if (S.ascended) setTimeout(() => showEnd('ascend'), 1600); else checkEnd();
   };
 }
@@ -627,7 +554,21 @@ async function openSheet(title, body) {
 }
 async function closeSheet() { sheet.classList.remove('open'); await sleep(500); sheet.hidden = true; }
 $('.sheet-shade').onclick = closeSheet;
-function openBag() {
+function openBag(tab = 'bag') {
+  const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
+  wrap.innerHTML = '<div class="sheet-tabs"><button class="stab" data-t="bag">行囊</button><i class="stab-dot"></i><button class="stab" data-t="gf">功法</button></div><div class="tab-body"></div>';
+  const body = wrap.querySelector('.tab-body');
+  const show = t => {
+    wrap.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    $('#sheet-title').textContent = t === 'gf' ? '功法' : '行囊';
+    body.innerHTML = ''; body.appendChild(t === 'gf' ? gfPage() : bagPage());
+    body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
+  };
+  wrap.querySelector('.sheet-tabs').onclick = e => { const t = e.target.closest('.stab'); if (t) show(t.dataset.t); };
+  openSheet(tab === 'gf' ? '功法' : '行囊', wrap);
+  show(tab);
+}
+function bagPage() {
   const wrap = document.createElement('div');
   const keys = Object.keys(S.items).filter(k => S.items[k] > 0);
   if (!keys.length) wrap.innerHTML = '<div class="empty">行囊空空，唯有清风两袖</div>';
@@ -638,55 +579,118 @@ function openBag() {
     it.querySelector('.item-desc').textContent = PILLS[k] ? PILLS[k].desc : '';
     if (PILLS[k] && PILLS[k].use) {
       const b = document.createElement('button'); b.className = 'item-use'; b.textContent = '服用';
-      b.onclick = () => { useItem(k); closeSheet(); };
+      b.onclick = () => { if (useItem(k)) closeSheet(); };
       it.appendChild(b);
     }
     wrap.appendChild(it);
   });
-  openSheet('行囊', wrap);
+  return wrap;
+}
+const layerDots = lv => Array.from({ length: GF_LAYERS }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
+const gfElWord = (id) => { const g = GONGFA[id]; return (g.el ? (g.el === '五行' ? '五行' : g.el + '行') : '无属') + ' · ' + Core.gfMatchWord(S, id); };
+function gfPage() {
+  const wrap = document.createElement('div'); wrap.className = 'gf-page';
+  if (!S.gf) {
+    wrap.innerHTML = `<div class="gf-scroll gf-none"><div class="gf-vname">${[...'无法可依'].map(c => `<i>${c}</i>`).join('')}</div>
+      <div class="gf-info"><p class="gf-desc">胸中尚无一部功法。你只凭本能吐纳，像在夜里摸索山路——走得动，却走不快。</p>
+      <div class="gf-speed">行功之速 <b>×${K.noGf.toFixed(2)}</b></div><div class="gf-src">游历、宗门、坊市，皆可遇得功法。</div></div></div>`;
+  } else {
+    const g = GONGFA[S.gf], e = S.gfs[S.gf];
+    const card = document.createElement('div'); card.className = 'gf-scroll g' + g.grade + (g.mo ? ' mo' : '');
+    card.innerHTML = `<div class="gf-vname">${[...g.name].map(c => `<i>${c}</i>`).join('')}</div>
+      <div class="gf-info">
+        <div class="gf-meta"><span class="gf-seal">${GF_GRADE[g.grade]}</span><span class="gf-el">${gfElWord(S.gf)}</span></div>
+        <div class="gf-layers">${layerDots(e.lv)}<em>${e.lv >= GF_LAYERS ? '大成' : '第' + cn(e.lv) + '层'}</em></div>
+        <div class="gf-speed">行功之速 <b>×${Core.gfSpeed(S).toFixed(2)}</b></div>
+        <div class="gf-trait">${g.trait}</div>
+        <p class="gf-desc"></p>
+        <div class="gf-src">得自 · ${g.src}</div>
+      </div>`;
+    card.querySelector('.gf-desc').textContent = g.desc;
+    wrap.appendChild(card);
+  }
+  const others = Object.keys(S.gfs).filter(id => id !== S.gf);
+  const h = document.createElement('div'); h.className = 'gf-list-h'; h.innerHTML = `<span>胸中所藏</span><em>${cn(Object.keys(S.gfs).length)}部</em>`;
+  wrap.appendChild(h);
+  if (!others.length) { const em = document.createElement('div'); em.className = 'empty small'; em.textContent = '别无他法 · 机缘未至'; wrap.appendChild(em); }
+  const c = Core.switchCost(S);
+  others.sort((a, b) => GONGFA[b].grade - GONGFA[a].grade).forEach(id => {
+    const g = GONGFA[id], e = S.gfs[id];
+    const row = document.createElement('div'); row.className = 'gf-row g' + g.grade + (g.mo ? ' mo' : '');
+    row.innerHTML = `<span class="gf-seal">${GF_GRADE[g.grade]}</span>
+      <div class="gf-row-info"><div class="gf-row-name">${g.name}<em>${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
+      <div class="gf-row-sub">${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g.trait}</div>
+      <div class="gf-cost">散功转修：修为 −${fmtNum(c.xw)} · 心境 −${c.xj} · 耗时${cnDur(c.months)}</div></div>
+      <button class="item-use">转修</button>`;
+    const btn = row.querySelector('button');
+    btn.onclick = async () => {
+      if (!row.classList.contains('confirm')) { wrap.querySelectorAll('.gf-row.confirm').forEach(r => { r.classList.remove('confirm'); r.querySelector('button').textContent = '转修'; }); row.classList.add('confirm'); btn.textContent = '确定'; return; }
+      await closeSheet();
+      Core.switchGf(S, id, pushLog); render(); save(); checkEnd();
+    };
+    wrap.appendChild(row);
+  });
+  return wrap;
 }
 function useItem(k) {
-  if (!(S.items[k] > 0)) return;
-  const tags = []; let text = '', ups = [];
-  if (k === '聚气丹') {
-    if (bottleneck()) { toast('瓶颈当前，丹药无益'); return; }
-    ups = addXw(Math.round(unit() * 0.35), tags) || []; text = '丹药入腹，化作一股温润灵流，沿经脉缓缓散开。';
-  } else if (k === '回春丹') {
-    if (S.inj <= 0) { toast('身无伤患，留待日后'); return; }
-    S.inj = 0; S.xj = clamp(S.xj + 2, 0, 100); tags.push({ t: '伤势痊愈', c: 'up' }); text = '回春丹化开，周身暖意融融，旧伤处的隐痛渐渐消散。';
-  } else if (k === '延寿果') {
-    const v = Math.round(5 * LIFE_SCALE[S.realm] * 2); S.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); text = '朱果入口即化，一股勃勃生机自丹田升起，鬓边白发竟转青了几根。';
-  }
-  S.items[k]--; if (S.items[k] <= 0) delete S.items[k];
-  pushLog({ text, tags, cls: 'sys' }); afterGain(ups); render(); save();
+  const o = Core.useItem(S, k);
+  if (o.err) { toast(o.err); return false; }
+  pushLog({ text: o.text, tags: o.tags, cls: 'sys' }); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd();
+  return true;
 }
 function openMenu() {
   const w = document.createElement('div'); w.className = 'menu-list';
   w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>此卷随笔随存，合上亦不失。</div>
     <button class="menu-item" data-m="resume">继续修行</button>
     <button class="menu-item" data-m="title">回到卷首</button>
+    ${Core.canRetire(S) ? '<button class="menu-item" data-m="retire">归隐山林<small>放下长生，此卷即终</small></button>' : ''}
     <button class="menu-item danger" data-m="reset">焚卷重来</button>`;
   w.onclick = async e => {
     const m = e.target.dataset.m; if (!m) return;
     await closeSheet();
     if (m === 'title') { save(); initTitle(); unrollTo('title'); }
+    if (m === 'retire' && confirm('此去不问长生。归隐之后，此卷即终。确定么？')) {
+      Core.retire(S); pushLog({ title: '归隐', text: '你解下腰牌，放在洞府石案上，转身下山。山道上的石阶，你走了许多年，今日才觉出它这样长。', cls: 'event', div: true });
+      render(); save(); setTimeout(() => showEnd('guiyin'), 900);
+    }
     if (m === 'reset' && confirm('焚去此卷，前尘尽忘。确定么？')) { localStorage.removeItem(SAVE_KEY); S = null; resetCreate(); unrollTo('create'); }
   };
   openSheet('卷首', w);
 }
 
 /* ================= 终卷 ================= */
+const END_ART = {
+  ascend: `<svg viewBox="0 0 320 120"><g class="ea-rays">${Array.from({ length: 13 }, (_, i) => { const a = (-90 + (i - 6) * 13) * Math.PI / 180; return `<path d="M160 118 L${(160 + Math.cos(a) * 190).toFixed(1)} ${(118 + Math.sin(a) * 190).toFixed(1)}" />`; }).join('')}</g><circle class="ea-sun" cx="160" cy="118" r="34"/></svg>`,
+  zuohua: `<svg viewBox="0 0 320 120"><path class="ea-smoke" d="M160 104 C150 86 172 74 160 58 C148 42 170 32 162 14"/><path class="ea-smoke s2" d="M160 104 C168 90 150 80 158 66 C166 52 150 44 156 28"/><rect class="ea-stick" x="158.6" y="100" width="2.8" height="20" rx="1"/><circle class="ea-ember" cx="160" cy="100" r="2.2"/></svg>`,
+  rumo: `<svg viewBox="0 0 320 120"><g class="ea-drips">${[[92, 26, 2.2, 6], [121, 64, 4.5, 2], [150, 18, 1.6, 10], [174, 48, 3.2, 0], [207, 82, 5.5, 4], [236, 34, 2.6, 12]].map(([x, h, w, y0], i) => `<path d="M${x - w} ${y0} C${x - w * .6} ${y0 + h * .55} ${x - w * .9} ${y0 + h} ${x} ${y0 + h + w * 1.6} C${x + w * .9} ${y0 + h} ${x + w * .6} ${y0 + h * .55} ${x + w} ${y0}Z" style="animation-delay:${(.4 + i * .19).toFixed(2)}s"/>`).join('')}</g></svg>`,
+  guiyin: `<svg viewBox="0 0 320 120"><circle class="ea-moon" cx="244" cy="30" r="16"/><g class="ea-boat"><path d="M96 80 Q160 98 226 77 L214 88 Q160 104 108 90Z"/><path class="ea-pole" d="M146 84 L198 26"/></g><g class="ea-boat ea-refl"><path d="M96 98 Q160 84 226 100 L214 93 Q160 80 108 92Z"/></g><g class="ea-waves"><path d="M30 96 Q60 92 90 96 T150 96 T210 96 T290 96"/><path d="M70 108 Q100 104 130 108 T190 108 T250 108"/></g></svg>`,
+  bingjie: `<svg viewBox="0 0 320 120"><g class="ea-sword"><path class="ea-blade1" d="M104 92 L168 52 Q172 51 173 55 L110 97Z"/><path class="ea-blade2" d="M180 46 L236 12 Q240 12 239 16 L186 52Z"/><path class="ea-guard" d="M92 82 Q98 80 116 104 Q112 108 108 104 Q100 92 90 86Z"/><path class="ea-hilt" d="M100 100 L80 116"/></g><g class="ea-motes">${Array.from({ length: 16 }, (_, i) => `<circle cx="${176 + (i * 37) % 64 - 20}" cy="${50 - (i * 23) % 42}" r="${1 + (i % 3) * .8}" style="animation-delay:${(i * .19).toFixed(2)}s"/>`).join('')}</g></svg>`,
+  yunluo: `<svg viewBox="0 0 320 120"><path class="ea-bolt" d="M184 -4 L156 42 L172 44 L142 92 L160 94 L132 124 L166 88 L150 86 L182 38 L166 36 L192 -4Z"/><path class="ea-bolt thin" d="M156 42 L134 58 L140 64 L116 86 L146 60 L140 56 L162 44Z"/></svg>`,
+};
 function showEnd(kind) {
+  if (!S) return;
+  kind = kind || S.ending || 'zuohua';
   const e = $('#end'); e.hidden = false;
-  const r = R();
-  if (kind === 'ascend') {
-    $('#end-title').textContent = '飞升';
-    $('#end-epitaph').textContent = `${S.name}，以${S.lg.name}之资，历${cn(S.age)}载春秋，终渡九重天劫，白日飞升。青冥山下的樵夫说，那一日，满山松涛都静了一瞬。`;
-  } else {
-    $('#end-title').textContent = '坐化';
-    $('#end-epitaph').textContent = `${cn(S.age)}岁那年冬天，你在洞府中静静合上了眼。生前修至${realmStr()}，${S.events ? '历奇遇' + cn(S.events) + '桩' : '一生未逢奇遇'}。山风穿过石门，吹散了案上未写完的手札。` + pick(['青山不语，白云自去。', '一生求长生，长生终未得。', '此身原是客，何处不归途。']);
-  }
-  $('#end-stats').innerHTML = `${S.name} · ${S.lgEls.join('')}${S.lg.name}<br>境界 <b>${kind === 'ascend' ? '飞升' : realmStr()}</b>　享年 <b>${cn(S.age)}</b><br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>`;
+  e.className = 'end end-' + kind;
+  let art = e.querySelector('.end-art');
+  if (!art) { art = document.createElement('div'); art.className = 'end-art'; e.querySelector('.end-paper').prepend(art); }
+  art.innerHTML = END_ART[kind] || '';
+  const age = cn(S.age), rs = realmStr(), evs = S.events ? '历奇遇' + cn(S.events) + '桩' : '一生未逢奇遇';
+  const T = {
+    ascend: ['飞升', `${S.name}，以${S.lg.name}之资，历${age}载春秋，终渡九重天劫，白日飞升。青冥山下的樵夫说，那一日，满山松涛都静了一瞬。`],
+    zuohua: ['坐化', `${age}岁那年冬天，你在洞府中静静合上了眼。生前修至${rs}，${evs}。山风穿过石门，吹散了案上未写完的手札。` + pick(['青山不语，白云自去。', '一生求长生，长生终未得。', '此身原是客，何处不归途。'])],
+    rumo: ['入魔', `${age}岁那年，${S.gf && GONGFA[S.gf].mo ? '《' + GONGFA[S.gf].name + '》在你体内' : '心魔在你识海中'}日夜低语，终于有一夜，你再也分不清哪一个声音是自己。后来有人在血雾谷见过一个赤瞳之人，修为通天，却认不得任何一位故人。` + pick(['一念成魔，万劫难复。', '墨落成血，再难洗白。'])],
+    guiyin: ['归隐', `${S.name}修至${rs}，于${age}岁那年放下了长生。此后青冥山中少了一位修士，桃花溪上多了一叶扁舟。有渔人说，常见一个老者在江心垂钓，钓线上从不挂饵；后来，连那舟也不见了，只剩空船自横。`],
+    bingjie: ['兵解', `${rs}破关之际，天威如山，肉身寸寸崩解。袖中兵解玉符应声而碎，一缕真灵遁出，没入茫茫轮回。此生修为尽散，道心未绝——来世入道之时，或可忆起今日。`],
+    yunluo: ['身殒', `${rs}破关失利，经脉寸断，${age}载苦修化作山间一缕青烟。同门在你的洞府前立了一块无字碑，碑前的野草，年年都长得很高。` + pick(['大道无情，从不等人。', '天道之下，众生皆刍狗。'])],
+  }[kind] || ['坐化', ''];
+  $('#end-title').textContent = T[0];
+  $('#end-epitaph').textContent = T[1];
+  const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
+  const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
+  const leg = kind === 'bingjie' ? '<br><span class="end-legacy">前世残念 · 来世悟性 +1</span>' : '';
+  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
+  if (kind === 'bingjie') try { localStorage.setItem(LEGACY_KEY, JSON.stringify({ wx: 1 })); } catch (er) {}
   save();
   $('#btn-reborn').onclick = () => { localStorage.removeItem(SAVE_KEY); e.hidden = true; S = null; resetCreate(); unrollTo('create'); };
 }
@@ -709,5 +713,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core };
 })();

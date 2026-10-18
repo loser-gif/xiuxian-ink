@@ -1,0 +1,86 @@
+/* 墨仙录 · 功法 */
+'use strict';
+const GF_GRADE = ['凡', '灵', '地', '天'];
+const GF_GRADE_MUL = [1, 1.18, 1.38, 1.6];
+const GF_LAYERS = 9;
+// t：功法特性 —— spd 修炼速度 · dunwu 闭关顿悟率 · xinmo 心魔率倍数 · time 光阴流速（寿元消耗）· life 寿元加成
+//               bt 破境率 · btXj 破境耗心境 · qiyu 游历机缘 · heal 伤势愈合 · xjGain 闭关养心 · mo 魔功
+const GONGFA = {
+  qingming: { name: '青冥引气诀', el: null, grade: 0, src: '青冥宗入门心法',
+    desc: '青冥宗代代相传的入门心法，字句朴拙，不偏五行。祖师批注只有一句：“根基如屋基，不可不厚。”',
+    t: {}, trait: '中正平和，不偏五行' },
+  gengjin: { name: '庚金锻脉诀', el: '金', grade: 0, src: '藏经阁',
+    desc: '以庚金锐气洗炼经脉，行功时如有细针游走周身。经脉磨得坚了，关隘便也薄了。',
+    t: { bt: 0.03 }, trait: '破境把握 略增' },
+  qingteng: { name: '青藤养气诀', el: '木', grade: 0, src: '藏经阁',
+    desc: '仿古藤攀石之势，一呼一吸皆缓而韧。行此功者，面色总比旁人红润几分。',
+    t: { life: 0.06 }, trait: '寿元 略增' },
+  hantan: { name: '寒潭澄心诀', el: '水', grade: 0, src: '藏经阁',
+    desc: '观想寒潭一泓，杂念落入其中，便如石子沉底，不起涟漪。',
+    t: { xinmo: 0.75 }, trait: '心魔 略减' },
+  yanyang: { name: '炎阳炼气诀', el: '火', grade: 0, src: '藏经阁',
+    desc: '晨起面东，引初升阳气入丹田，炼之如炉中添炭。修行虽快，却难免燥了心火。',
+    t: { spd: 1.06, xinmo: 1.15 }, trait: '修炼略快 · 心火稍燥' },
+  houtu: { name: '厚土培元功', el: '土', grade: 0, src: '药园老杂役',
+    desc: '药园里一个老杂役传下的土法子：躺在田垄间，听地气一寸寸往上涌。笨，却稳。',
+    t: { time: 0.92 }, trait: '光阴流速 略缓' },
+
+  baihong: { name: '白虹剑典', el: '金', grade: 1, src: '剑冢',
+    desc: '剑修入门之典。以剑意养气，气随剑走，一往无前。翻至末页，墨迹凌厉如剑痕：“剑在，人在。”',
+    t: { bt: 0.05, qiyu: 0.1 }, trait: '剑修 · 破境把握增 · 游历善战' },
+  changchun: { name: '青木长春功', el: '木', grade: 1, src: '宗门赐法',
+    desc: '一株枯木逢春的图卷，配着三百字口诀。行功日久，鬓发不白，草木见之亦生。',
+    t: { life: 0.15, heal: 1 }, trait: '寿元增 · 伤势易愈' },
+  guicang: { name: '玄水归藏经', el: '水', grade: 1, src: '宗门赐法',
+    desc: '水善利万物而不争。此经教人藏锋敛气，把一身灵力收成一滴深水。',
+    t: { xinmo: 0.5, xjGain: 1 }, trait: '心魔大减 · 闭关养心' },
+  lihuo: { name: '离火焚心诀', el: '火', grade: 1, src: '宗门赐法',
+    desc: '以心火焚尽杂念，顿悟往往在烈焰最盛之时。只是火候稍过，便灼了自己。',
+    t: { spd: 1.08, dunwu: 0.06, xinmo: 1.2 }, trait: '顿悟增 · 修炼快 · 心火燥' },
+  kunyuan: { name: '坤元载物经', el: '土', grade: 1, src: '宗门赐法',
+    desc: '地势坤，君子以厚德载物。行此经者气息绵长，一年光阴，只耗得十月寿元。',
+    t: { time: 0.84, heal: 1 }, trait: '光阴流速缓 · 伤势易愈' },
+  xiaoyao: { name: '逍遥游', el: null, grade: 1, src: '湖心空舟',
+    desc: '一卷无名氏手抄的《逍遥游》，字缝里夹着运气之法。读之令人想出门走走。',
+    t: { qiyu: 0.3 }, trait: '游历机缘 大增' },
+
+  taibai: { name: '太白庚金剑经', el: '金', grade: 2, src: '剑冢',
+    desc: '太白剑宗镇派之经。剑气不出则已，出则如白虹贯日。修至高深处，破境如斩薄纸。',
+    t: { bt: 0.08, qiyu: 0.15, spd: 1.04 }, trait: '剑修 · 破境把握大增' },
+  yimu: { name: '乙木回春真解', el: '木', grade: 2, src: '古木洞天',
+    desc: '一株万年古木的年轮里，刻着这卷真解。读完最后一圈，你已在树下坐了三年。',
+    t: { life: 0.3, heal: 2 }, trait: '寿元大增 · 伤势速愈' },
+  jiuyou: { name: '九幽玄水真经', el: '水', grade: 2, src: '潭底玉匣',
+    desc: '九幽之水，深不见底。此经修心先于修气，心若深潭，魔从何起？',
+    t: { xinmo: 0.3, xjGain: 2, dunwu: 0.04 }, trait: '心魔几绝 · 闭关养心' },
+  chixiao: { name: '赤霄焚天诀', el: '火', grade: 2, src: '火山遗府',
+    desc: '上古火修所遗，字字如炭火未熄，握久了掌心发烫。修行一日千里，心火却也一日盛过一日。',
+    t: { spd: 1.15, dunwu: 0.08, xinmo: 1.3 }, trait: '修炼极快 · 顿悟增 · 心火炽' },
+  houtuzy: { name: '后土镇岳经', el: '土', grade: 2, src: '山腹石碑',
+    desc: '刻在山腹石碑上的古经，以山岳为鼎，以己身为药。行此经者，岁月从身边绕道而行。',
+    t: { time: 0.72, heal: 1, bt: 0.02 }, trait: '光阴流速大缓 · 根基稳' },
+  tianmo: { name: '天魔噬元功', el: null, grade: 2, mo: true, src: '血色玉简',
+    desc: '血色玉简，入手冰凉。噬天地灵气如鲸吞，修行之速冠绝诸法——代价是心神一日日被蚕食。心境若溃，便是走火入魔。',
+    t: { spd: 1.75, mo: 1, xinmo: 1.5 }, trait: '魔功 · 修炼神速 · 心境日损 · 恐走火入魔' },
+
+  wangqing: { name: '太上忘情录', el: null, grade: 3, src: '忘情崖',
+    desc: '太上忘情，最下不及情。此录教人斩断七情，以无情之心观天道。破关如探囊取物，只是每破一关，心中便空去一块。',
+    t: { bt: 0.15, btXj: 10, xinmo: 0.1 }, trait: '破境把握极增 · 每破一关心境大损' },
+  zixiao: { name: '紫霄神雷诀', el: '雷', grade: 3, src: '雷池',
+    desc: '紫霄雷池中淬炼万年的雷纹，非雷灵根者触之即焚。雷动九天，一念之间，灵力奔涌如电。',
+    t: { spd: 1.12, bt: 0.06, dunwu: 0.05 }, trait: '雷法 · 修炼快 · 破境增' },
+  yufeng: { name: '御风逍遥篇', el: '风', grade: 3, src: '天外风眼',
+    desc: '风无形，故无所不至。修此篇者身轻如羽，游历四方，处处逢缘。',
+    t: { qiyu: 0.35, time: 0.85, spd: 1.04 }, trait: '风法 · 游历机缘极增 · 光阴缓' },
+  taiyin: { name: '太阴玄冰经', el: '冰', grade: 3, src: '月下冰湖',
+    desc: '采太阴月华凝而为冰，冰封心湖，万念不侵。冰中自有一点灵光，千年不灭。',
+    t: { xinmo: 0.2, life: 0.25, xjGain: 1 }, trait: '冰法 · 心魔几绝 · 寿元增' },
+  wuxing: { name: '五行归一真经', el: '五行', grade: 3, src: '五行残碑',
+    desc: '世人皆以杂灵根为废，此经独以为宝：五行相生，周而复始，根越杂，转得越圆。',
+    t: { spd: 1.0 }, trait: '五行相生 · 灵根愈杂愈强' },
+};
+// 宗门赐法：筑基时按首个灵根赐灵品功法；金丹时内门弟子再赐地品
+const GF_SECT = { 1: { 金: 'baihong', 木: 'changchun', 水: 'guicang', 火: 'lihuo', 土: 'kunyuan' },
+                  2: { 金: 'taibai', 木: 'yimu', 水: 'jiuyou', 火: 'chixiao', 土: 'houtuzy' } };
+const GF_FAN = ['gengjin', 'qingteng', 'hantan', 'yanyang', 'houtu'];
+const GF_BY_EL = { 金: 'gengjin', 木: 'qingteng', 水: 'hantan', 火: 'yanyang', 土: 'houtu' };

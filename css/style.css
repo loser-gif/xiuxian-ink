@@ -650,3 +650,130 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .path-ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .3s}
 .path-ink.on{opacity:1}.path-ink.out{opacity:0;transition:opacity .9s var(--ease-silk)}
 @media (prefers-reduced-motion:reduce){.path-ink{display:none}}
+
+/* =========================================================
+   v0.6 道途 · 功法 / 终卷诸相
+   ========================================================= */
+.sheet-tabs{display:flex;align-items:center;justify-content:center;gap:14px;margin:-2px 0 12px}
+.stab{position:relative;font-family:var(--f-head);font-size:18px;letter-spacing:.32em;padding:4px 2px 8px 8px;color:var(--ink4);transition:color .35s}
+.stab::after{content:"";position:absolute;left:4px;right:4px;bottom:0;height:7px;background:var(--brush-bar) center/100% 100% no-repeat;opacity:0;transform:scaleX(.2);transition:all .45s var(--ease-ink)}
+.stab.on{color:var(--ink)}
+.stab.on::after{opacity:.75;transform:none}
+.stab-dot{width:4px;height:4px;border-radius:50%;background:var(--zhu);opacity:.6}
+.tab-in{animation:tabIn .5s var(--ease-ink) both}
+@keyframes tabIn{from{opacity:0;transform:translate3d(0,6px,0);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
+.empty.small{font-size:13px;padding:14px 0 8px}
+.menu-item small{display:block;margin-top:4px;font-size:11.5px;letter-spacing:.2em;color:var(--ink4)}
+
+/* 竹简：一片片竹签以两道麻绳编起 */
+.gf-scroll{position:relative;display:flex;gap:14px;padding:22px 18px 18px 14px;border-radius:3px;overflow:hidden;color:var(--ink);
+  background:
+    linear-gradient(180deg,transparent 13px,rgba(70,48,26,.55) 13px,rgba(70,48,26,.55) 15px,transparent 15px,transparent calc(100% - 15px),rgba(70,48,26,.55) calc(100% - 15px),rgba(70,48,26,.55) calc(100% - 13px),transparent calc(100% - 13px)),
+    repeating-linear-gradient(90deg,rgba(255,250,235,.0) 0,rgba(255,250,235,.35) 3px,rgba(120,92,52,.0) 16px,rgba(120,92,52,.12) 29px,rgba(60,42,22,.42) 30px,rgba(60,42,22,.0) 31.5px),
+    linear-gradient(180deg,#eadfbf,#e0d1a8 60%,#d8c697);
+  box-shadow:inset 0 0 0 1px rgba(60,42,22,.18),inset 0 0 26px rgba(90,64,30,.22),0 6px 16px rgba(40,28,14,.16)}
+.gf-scroll::before{content:"";position:absolute;inset:0;background:var(--paper-img);background-size:220px;mix-blend-mode:multiply;opacity:.35;pointer-events:none}
+.gf-scroll>*{position:relative}
+.gf-vname{flex:none;display:flex;flex-direction:column;align-items:center;padding:4px 6px 0;min-width:40px;
+  font-family:var(--f-head);font-size:30px;line-height:1.12;color:var(--ink);text-shadow:0 0 1px rgba(27,24,20,.35)}
+.gf-vname i{font-style:normal;display:block}
+.gf-info{flex:1;min-width:0;padding-top:2px}
+.gf-meta{display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:.14em;color:var(--ink2)}
+.gf-seal{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:3px;
+  font-family:var(--f-head);font-size:17px;line-height:1;color:#f7efe0;background:var(--zhu);box-shadow:inset 0 0 0 1.5px rgba(247,239,224,.55),0 0 0 1px rgba(179,48,42,.4);transform:rotate(-4deg)}
+.g0 .gf-seal{background:#6e6457}
+.g2 .gf-seal{background:#8e2420}
+.g3 .gf-seal{background:linear-gradient(135deg,#a8452c,#7a1c18);box-shadow:inset 0 0 0 1.5px rgba(232,196,120,.85),0 0 10px rgba(200,150,60,.45)}
+.mo .gf-seal{background:#3a0d0c;box-shadow:inset 0 0 0 1.5px rgba(200,40,30,.8)}
+.gf-layers{display:flex;align-items:center;gap:5px;margin:12px 0 6px}
+.gf-layers i{width:9px;height:9px;border-radius:50%;border:1.2px solid rgba(27,24,20,.5)}
+.gf-layers i.on{background:var(--ink);border-color:var(--ink);box-shadow:0 0 0 1.5px rgba(27,24,20,.12)}
+.mo .gf-layers i.on{background:#7d1612;border-color:#7d1612}
+.gf-layers em{font-style:normal;margin-left:8px;font-size:13px;letter-spacing:.15em;color:var(--zhu)}
+.gf-speed{font-size:13px;letter-spacing:.14em;color:var(--ink3)}
+.gf-speed b{font-weight:400;color:var(--ink);font-size:15px}
+.gf-trait{margin-top:6px;font-family:var(--f-head);font-size:16px;letter-spacing:.08em;color:var(--zhu)}
+.mo .gf-trait{color:#7d1612}
+.gf-desc{margin:10px 0 8px;font-size:14px;line-height:1.95;text-align:justify;color:var(--ink2)}
+.gf-src{font-size:11.5px;letter-spacing:.2em;color:var(--ink3);text-align:right}
+.gf-none .gf-vname{color:var(--ink3)}
+.gf-list-h{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 4px;padding-bottom:6px;font-family:var(--f-head);font-size:17px;letter-spacing:.3em;
+  background:var(--brush-line) left bottom/100% 3px no-repeat}
+.gf-list-h em{font-style:normal;font-family:var(--f-body);font-size:12px;color:var(--ink3);letter-spacing:.15em}
+.gf-row{display:flex;align-items:flex-start;gap:12px;padding:13px 2px;border-bottom:1px solid rgba(27,24,20,.08)}
+.gf-row .gf-seal{margin-top:3px;width:24px;height:24px;font-size:15px}
+.gf-row-info{flex:1;min-width:0}
+.gf-row-name{font-family:var(--f-head);font-size:19px;letter-spacing:.08em}
+.gf-row-name em{font-style:normal;font-family:var(--f-body);font-size:12px;color:var(--zhu);margin-left:8px;letter-spacing:.1em}
+.gf-row-sub{font-size:12px;letter-spacing:.1em;color:var(--ink3);margin-top:2px}
+.gf-row-trait{font-size:12.5px;color:var(--ink2);margin-top:2px}
+.gf-cost{max-height:0;overflow:hidden;opacity:0;font-size:12px;letter-spacing:.08em;color:var(--zhu);transition:all .4s var(--ease-ink)}
+.gf-row.confirm .gf-cost{max-height:40px;opacity:1;margin-top:6px}
+.gf-row.confirm .item-use{background:var(--zhu);color:#f7efe0}
+.gf-row .item-use{margin-top:6px}
+
+/* ---------- 终卷诸相 ---------- */
+.end-art{height:96px;margin:-14px -6px 0;pointer-events:none}
+.end-art:empty{display:none}
+.end-art svg{width:100%;height:100%;display:block;overflow:visible}
+.end-legacy{color:var(--zhu);letter-spacing:.2em}
+/* 飞升：金光自地平线放出 */
+.end-ascend .end-title{color:#8a6a2a;text-shadow:0 0 18px rgba(214,170,80,.45)}
+.ea-rays path{stroke:rgba(196,150,62,.5);stroke-width:1.2;stroke-dasharray:200;stroke-dashoffset:200;animation:eaDraw 2.4s .5s var(--ease-ink) forwards}
+.ea-sun{fill:rgba(214,170,80,.28);transform-origin:160px 118px;animation:eaSun 2.6s .3s var(--ease-ink) both}
+@keyframes eaDraw{to{stroke-dashoffset:0}}
+@keyframes eaSun{from{transform:scale(0);opacity:0}to{transform:none;opacity:1}}
+/* 坐化：残香一缕 */
+.ea-smoke{fill:none;stroke:rgba(56,50,43,.45);stroke-width:1.6;stroke-linecap:round;stroke-dasharray:120;stroke-dashoffset:120;animation:eaSmoke 4s .8s ease-out forwards}
+.ea-smoke.s2{stroke:rgba(56,50,43,.25);animation-delay:1.4s}
+@keyframes eaSmoke{60%{opacity:1}to{stroke-dashoffset:0;opacity:.35}}
+.ea-stick{fill:#5b4a36}
+.ea-ember{fill:#b3302a;animation:eaEmber 3s 1s ease-in forwards}
+@keyframes eaEmber{to{fill:#5b4a36;opacity:.4}}
+/* 入魔：血墨泼纸 */
+.end-rumo{background:rgba(26,6,5,.8)}
+.end-rumo .end-paper{background:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(130,20,16,.16),transparent 70%),linear-gradient(rgba(246,238,226,.92),rgba(246,238,226,.92)),var(--paper-img);background-size:auto,auto,256px}
+.end-rumo .end-paper::before{content:"";position:absolute;left:-12%;top:-18%;width:124%;height:62%;z-index:0;pointer-events:none;
+  background:#8a1712;-webkit-mask:var(--blot-big) center/contain no-repeat;mask:var(--blot-big) center/contain no-repeat;opacity:.0;
+  animation:eaBlood 2.2s .2s var(--ease-ink) forwards}
+@keyframes eaBlood{0%{opacity:0;transform:scale(.3) rotate(-12deg)}100%{opacity:.2;transform:scale(1) rotate(6deg)}}
+.end-rumo .end-title{color:#8a1712;text-shadow:2px 1px 0 rgba(138,23,18,.25)}
+.end-rumo .end-stats b{color:#7d1612}
+.ea-drips path{fill:#8a1712;opacity:.0;transform-origin:center top;transform:scaleY(0);animation:eaDrip 1.6s var(--ease-ink) forwards}
+@keyframes eaDrip{to{opacity:.78;transform:none}}
+/* 归隐：江心空船，月下自横 */
+.end-guiyin{background:rgba(22,26,28,.66)}
+.end-guiyin .end-title{color:var(--qing)}
+.ea-moon{fill:none;stroke:rgba(61,85,96,.45);stroke-width:1.2;animation:fadeIn 3s 1s both}
+.ea-boat{fill:rgba(27,24,20,.78);animation:eaBoat 18s ease-in-out infinite alternate}
+.ea-pole{stroke:rgba(27,24,20,.7);stroke-width:1.4;fill:none}
+@keyframes eaBoat{0%{transform:translate(-26px,0) rotate(-.6deg)}50%{transform:translate(0,2px) rotate(.8deg)}100%{transform:translate(26px,0) rotate(-.4deg)}}
+.ea-waves path{fill:none;stroke:rgba(61,85,96,.4);stroke-width:1.1;stroke-linecap:round;animation:eaWave 9s ease-in-out infinite alternate}
+.ea-waves path+path{stroke:rgba(61,85,96,.25);animation-duration:12s}
+@keyframes eaWave{from{transform:translateX(-12px)}to{transform:translateX(12px)}}
+/* 兵解：断剑化墨而散 */
+.end-bingjie .end-title{color:var(--ink2);letter-spacing:.2em}
+.ea-sword path{fill:rgba(27,24,20,.82)}
+.ea-hilt{fill:none!important;stroke:rgba(27,24,20,.85);stroke-width:4.5;stroke-linecap:round}
+.ea-refl{opacity:.13;animation-name:eaBoatR}
+@keyframes eaBoatR{0%{transform:translate(-26px,0)}50%{transform:translate(0,-2px)}100%{transform:translate(26px,0)}}
+.ea-blade2{animation:eaShatter 3.2s .8s var(--ease-ink) forwards}
+@keyframes eaShatter{to{transform:translate(24px,-14px) rotate(8deg);opacity:0;filter:blur(3px)}}
+.ea-motes circle{fill:rgba(27,24,20,.6);opacity:0;animation:eaMote 3.6s ease-out infinite}
+@keyframes eaMote{0%{opacity:0;transform:none}20%{opacity:.8}100%{opacity:0;transform:translate(30px,-40px)}}
+/* 身殒：劫雷裂纸 */
+.end-yunluo{background:rgba(10,9,8,.82)}
+.end-yunluo .end-title{color:#4a443c}
+.end-yunluo .end-paper{filter:saturate(.7)}
+.ea-bolt{fill:rgba(27,24,20,.88);clip-path:inset(0 0 100% 0);animation:eaBolt .55s .55s cubic-bezier(.7,0,.3,1) forwards}
+.ea-bolt.thin{fill:rgba(27,24,20,.5);animation-delay:.95s}
+@keyframes eaBolt{to{clip-path:inset(0 0 0 0)}}
+.end-yunluo .end-paper::before,.end-bingjie .end-paper::before{content:"";position:absolute;left:-6%;top:-14%;width:112%;height:56%;z-index:0;pointer-events:none;
+  background:#2a2622;-webkit-mask:var(--blot-big) center/contain no-repeat;mask:var(--blot-big) center/contain no-repeat;opacity:0;animation:eaWash 2.4s .3s var(--ease-ink) forwards}
+.end-bingjie .end-paper::before{width:80%;left:10%;height:44%;top:-8%}
+@keyframes eaWash{0%{opacity:0;transform:scale(.4)}100%{opacity:.09;transform:none}}
+.end-yunluo .end-paper{animation:unrollV 1.4s var(--ease-ink) both,shake .5s 1.2s}
+@media (prefers-reduced-motion:reduce){
+  .end-art *,.end-rumo .end-paper::before{animation-duration:.01s!important;animation-iteration-count:1!important;animation-delay:0s!important}
+}
+.ea-boat{transform-box:fill-box;transform-origin:center}
