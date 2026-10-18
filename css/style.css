@@ -1382,6 +1382,14 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   .sun{left:19%;top:21%;width:104px;height:104px}
   .crane{width:74px;height:37px}.crane.c2{width:56px;height:28px}
 }
+/* 宽屏：斗法舞台放大、秘境/拍卖已在上文 */
+@media (min-width:700px) and (min-height:520px){
+  .duel{padding:calc(var(--sat) + 24px) 40px calc(var(--sab) + 24px)}
+  .duel-name{font-size:36px}
+  .duel-tell,.duel-text{max-width:520px;font-size:16.5px}
+  .duel-moves{max-width:560px;margin:0 auto;width:100%}
+  .dmove{min-height:72px}
+}
 @media (min-width:1600px) and (min-height:880px){
   #scr-main{grid-template-columns:minmax(260px,330px) minmax(0,800px) minmax(260px,330px);padding-top:40px}
   .entry-text{font-size:18px}.entry-title{font-size:23px}
