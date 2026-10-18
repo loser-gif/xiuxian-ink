@@ -19,7 +19,7 @@ function boot() {
     TextEncoder, TextDecoder, Uint8Array, btoa, atob,
     localStorage: makeLS(),
   });
-  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'core', 'codec', 'samsara', 'jianghu', 'slots']) {
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'core', 'codec', 'samsara', 'jianghu', 'slots']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
   }
   return ctx;
@@ -48,12 +48,13 @@ function root(id) {
   delete fresh.played;
   const raw = JSON.parse(JSON.stringify(fresh));
   const m = Core.migrate(raw);
-  if (!m || m.v !== 11) note('fail', 'v10 存档未能迁到 v11');
+  if (!m || m.v !== 12) note('fail', 'v10 存档未能迁到 v12');
   else {
     if (m.xw !== xw) note('fail', '迁移改动了修为 xw');
     if (!Array.isArray(m.marks)) note('fail', '迁移后缺少 marks');
     if (m.played !== Math.round(acts * 6500)) note('fail', '旧档游玩时长估算不对：' + m.played);
-    if (!findings.some(f => f.kind === 'fail')) note('ok', 'v10→v11：补 marks 与 played，修为未缩放');
+    if (!m.life || typeof m.life !== 'object' || m.life.goal != null) note('fail', '迁移后 life 缺省不对');
+    if (!findings.some(f => f.kind === 'fail')) note('ok', 'v10→v12：补 marks、played 与 life，修为未缩放');
   }
 }
 

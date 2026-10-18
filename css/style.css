@@ -1488,7 +1488,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 }
 
 /* 宽屏：卷轴居中，左右两栏 */
-@media (min-width:1000px) and (min-height:600px){
+@media (min-width:1280px) and (min-height:600px){
   #scr-main{max-width:none;display:grid;grid-template-columns:minmax(210px,290px) minmax(0,720px) minmax(210px,290px);grid-template-rows:minmax(0,1fr) auto auto;
     column-gap:clamp(22px,3.2vw,56px);justify-content:center;padding:30px 36px 16px}
   .hud,.side-card{position:relative;background:linear-gradient(rgba(250,246,234,.74),rgba(250,246,234,.74)),var(--paper-img);background-size:auto,256px;
@@ -1575,7 +1575,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   .auc-me{font-size:13px}
   .al{font-size:15.5px}.al b{font-size:16.5px}
 }
-@media (min-width:1000px) and (min-height:600px) and (max-width:1180px){
+@media (min-width:1280px) and (min-height:600px) and (max-width:1399px){
   #scr-main{grid-template-columns:220px minmax(0,1fr) 220px;column-gap:22px;padding-left:24px;padding-right:24px}
   .realm-name{font-size:48px}
   .log{padding:24px 28px 28px}
@@ -2332,3 +2332,310 @@ body[data-screen=main] .scroll-paper{
   .title-menu .title-subbtn small{font-size:10.5px;letter-spacing:.04em}
   body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))}
 }
+
+/* ===== v33：夜墨、字号、动效、双栏、逐页不裁 ===== */
+
+/* 奇遇正文可滚，选项不再被横卷裁掉 */
+.hscroll{min-height:0}
+.hpaper{display:flex;min-height:0;max-height:100%}
+.hpaper-inner{min-height:0;overflow:hidden}
+.ev-main{min-height:0;overflow-y:auto}
+.ev-side{min-height:0}
+.choice{flex-wrap:wrap;align-items:flex-start}
+.choice>span{flex:1 1 8em;min-width:0;line-height:1.45}
+.choice small{max-width:46%;white-space:normal;text-align:right;line-height:1.35}
+.choice small:empty{display:none}
+.chips{flex-wrap:wrap;row-gap:6px}
+.chip{min-width:0}
+.chip-goal em{font-family:var(--f-head);letter-spacing:.1em}
+.hpaper,.hroller{transition-duration:.64s}
+.sheet-panel{transition-duration:.42s}
+
+/* 字号三档：只改阅读字，大印与按钮仍守住视口 */
+html[data-font="sm"] .entry-text{font-size:14.5px;line-height:1.85}
+html[data-font="sm"] .entry-title{font-size:19px}
+html[data-font="sm"] .ev-text,.html[data-font="sm"] .ev-result .r-text{font-size:15px;line-height:1.9}
+html[data-font="sm"] .choice{font-size:15.5px}
+html[data-font="sm"] .act-t{font-size:22px}
+html[data-font="sm"] .realm-name{font-size:34px}
+html[data-font="sm"] .item-desc,.html[data-font="sm"] .menu-note,.html[data-font="sm"] .sheet-body{font-size:13px}
+html[data-font="lg"] .entry-text{font-size:18.5px;line-height:2}
+html[data-font="lg"] .entry-title{font-size:23px}
+html[data-font="lg"] .ev-text,.html[data-font="lg"] .ev-result .r-text{font-size:18.5px;line-height:2}
+html[data-font="lg"] .choice{font-size:18.5px}
+html[data-font="lg"] .item-name{font-size:22px}
+html[data-font="lg"] .item-desc{font-size:15px}
+html[data-font="lg"] .menu-item{font-size:18px}
+html[data-font="lg"] .end-epitaph,.html[data-font="lg"] .end-judge{font-size:17px}
+html[data-font="lg"] .lg-flavor{font-size:17px}
+html[data-font="lg"] #inp-name{font-size:32px}
+
+/* 窄屏：条、芯片、终卷、仪式不再顶出视口 */
+@media (max-width:390px){
+  .bar{gap:6px}
+  .bar-label{width:2.6em;letter-spacing:.12em}
+  .bar-num{min-width:0;font-size:11px}
+  .realm-name{font-size:32px}
+  .who-name{font-size:17px}
+  .chip{font-size:11px;letter-spacing:.04em}
+  .chip em{font-size:13px}
+  .act{height:70px}
+  .act-t{font-size:22px}
+  .end{padding:calc(var(--sat) + 8px) 10px calc(var(--sab) + 10px)}
+  .end-paper{width:100%;padding:18px 14px 16px;max-height:calc(100dvh - var(--sat) - var(--sab) - 16px)}
+  .end-title{font-size:clamp(36px,15vw,52px)}
+  .end-epitaph-long{max-height:20vh}
+  .path-cer-title{font-size:clamp(30px,10vw,44px)}
+  .path-cer{padding:max(8px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
+  #inp-name{font-size:28px;letter-spacing:.1em}
+  html[data-font="lg"] .realm-name{font-size:30px}
+  html[data-font="lg"] .entry-text,html[data-font="lg"] .ev-text{font-size:17px}
+  html[data-font="lg"] .act-t{font-size:22px}
+  html[data-font="lg"] #inp-name{font-size:28px}
+}
+@media (max-height:700px){
+  .hpaper-inner{padding:14px 12px 12px 14px;max-height:calc(100dvh - var(--sat) - var(--sab) - 28px)}
+  .ev-title{font-size:24px}
+  .choice{padding:9px 4px 9px 24px}
+  .end-paper{max-height:calc(100dvh - var(--sat) - var(--sab) - 12px)}
+  .sheet-panel{max-height:min(88dvh,calc(100dvh - var(--sat) - 8px))}
+  .stone-wrap{margin:2.5vh 0 1.5vh}
+}
+@media (max-height:480px){
+  .path-cer-sealbox{width:36px;height:36px;margin-bottom:4px}
+  .path-cer-lead{min-height:0;font-size:13px;line-height:1.7}
+  .path-opt{padding:8px}
+  .stone-wrap{--st:min(26vh,110px);margin:1vh 0}
+  .create-head{padding-top:0}
+  .ch-title{font-size:28px}
+  .lg-result{min-height:0}
+  .title-block{top:calc(var(--sat) + 2vh)}
+}
+@media (max-width:520px){
+  #audio-dock{flex-direction:column;align-items:center;gap:6px}
+  .audio-vol{display:none!important}
+}
+
+/* 喘息、绝笔、所求、平生、纸墨 */
+.entry.breath .entry-title{font-family:var(--f-head);font-size:16px;letter-spacing:.28em;color:var(--qing)}
+.entry.breath .entry-text{color:var(--ink2);font-size:15px;line-height:2;letter-spacing:.04em}
+.goal-title{font-family:var(--f-head);letter-spacing:.32em;font-size:clamp(36px,9vw,52px)}
+.end-judge{margin:4px 0 12px;font-size:14.5px;line-height:1.95;letter-spacing:.06em;color:var(--ink2);text-align:justify}
+.end-judge[hidden]{display:none!important}
+.end-judge-inline{display:inline}
+.look-sheet{padding:2px 2px 12px}
+.look-lead,.look-note{font-size:13.5px;line-height:1.85;letter-spacing:.05em;color:var(--ink3);margin:0 2px 12px}
+.look-note{margin-top:8px;margin-bottom:0}
+.look-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid rgba(27,24,20,.08)}
+.look-row b{flex:none;width:3em;font-family:var(--f-head);font-weight:400;font-size:18px;letter-spacing:.2em}
+.look-opts{flex:1;display:flex;gap:8px;min-width:0}
+.look-opt{flex:1;min-width:0;min-height:40px;padding:6px 4px;font-family:var(--f-head);font-size:16px;letter-spacing:.16em;color:var(--ink2);
+  background:var(--brush-img-ink-l) center/100% 100% no-repeat}
+.look-opt.on{color:var(--paper-hi);background-image:var(--brush-img-zhu)}
+.annals{padding:2px 2px 8px}
+.annals-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.annals-seal{flex:none;width:48px;height:48px;line-height:48px;text-align:center;font-family:var(--f-head);font-size:26px;color:#f3ead6;background:#8e2420;border-radius:4px}
+.annals-head b{display:block;font-family:var(--f-head);font-weight:400;font-size:22px;letter-spacing:.16em}
+.annals-head em{display:block;font-style:normal;font-size:13px;letter-spacing:.08em;color:var(--ink3);line-height:1.6}
+.annals-head em.zhu{color:var(--zhu)}
+.annals-block{margin:0 0 12px}
+.annals-block h4,.annals-year h4{font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.28em;color:var(--ink3);margin:0 0 6px}
+.annals-block p,.annals-year p{font-size:14.5px;line-height:1.85;color:var(--ink2);text-align:justify}
+.annals-empty{color:var(--ink4)!important;letter-spacing:.08em}
+.annals-people{list-style:none;display:flex;flex-direction:column;gap:6px}
+.annals-people li{display:flex;gap:8px;align-items:baseline;font-size:14px;color:var(--ink2)}
+.annals-people b{font-family:var(--f-head);font-weight:400;letter-spacing:.08em}
+.annals-people em{font-style:normal;color:var(--zhu);font-size:12px;letter-spacing:.06em}
+.annals-people span{flex:1;min-width:0;color:var(--ink3);font-size:13px}
+.annals-scroll{margin-top:4px;padding-top:8px;border-top:1px dashed rgba(27,24,20,.16)}
+.annals-year{margin:0 0 14px}
+.annals-year article{margin:0 0 8px;padding-left:10px;border-left:1px solid rgba(27,24,20,.12)}
+.annals-year article b{display:block;font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.12em;margin-bottom:2px}
+.annals-year article.gold b,.annals-year article.warn b{color:var(--zhu)}
+
+/* 平板与 iPad：左笺右卷，两栏铺满 */
+@media (min-width:760px) and (max-width:1279px) and (min-height:620px){
+  #scr-main{max-width:none;display:grid;grid-template-columns:minmax(248px,340px) minmax(0,1fr);
+    grid-template-rows:minmax(0,1fr) auto auto;column-gap:clamp(18px,2.4vw,36px);justify-content:stretch;
+    padding:calc(var(--sat) + 18px) calc(var(--sar) + 22px) calc(var(--sab) + 14px) calc(var(--sal) + 22px)}
+  #scr-main .hud{grid-column:1;grid-row:1;align-self:stretch;overflow:auto;min-height:0;margin:0;
+    padding:22px 18px 16px;position:relative;
+    background:linear-gradient(rgba(250,246,234,.9),rgba(250,246,234,.9)),var(--paper-img);background-size:auto,256px;
+    box-shadow:0 10px 28px rgba(60,40,20,.1),inset 0 0 0 1px rgba(27,24,20,.06)}
+  #scr-main .hud::before,#scr-main .hud::after{content:"";position:absolute;left:-6px;right:-6px;height:11px;border-radius:6px;
+    background:linear-gradient(180deg,#5b4433,#2d2119 40%,#1a130e 65%,#3c2d22)}
+  #scr-main .hud::before{top:-6px}#scr-main .hud::after{bottom:-6px}
+  #scr-main .realm-name{font-size:44px}
+  #scr-main .chips{flex-direction:row;flex-wrap:wrap}
+  #scr-main .scroll{grid-column:2;grid-row:1;margin:6px 0}
+  #scr-main .status-line{grid-column:2;grid-row:2}
+  #scr-main .actions{grid-column:2;grid-row:3;width:100%;max-width:640px;justify-self:center}
+  #scr-main .side{display:flex;flex-direction:column;gap:10px;grid-column:1;grid-row:2/4;align-self:stretch;
+    min-height:0;max-height:min(42vh,340px);overflow:auto;margin:8px 0 0}
+  #scr-main .side-card{display:block;width:100%;text-align:left;padding:10px 14px;border-radius:2px;
+    background:linear-gradient(rgba(250,246,234,.9),rgba(250,246,234,.9)),var(--paper-img);background-size:auto,256px;
+    box-shadow:inset 0 0 0 1px rgba(27,24,20,.06)}
+  #scr-main .side-card h3{display:flex;align-items:center;gap:8px;font-family:var(--f-head);font-weight:400;font-size:13px;letter-spacing:.36em;color:var(--ink3);margin-bottom:4px}
+  #scr-main .sd-name{display:block;font-family:var(--f-head);font-weight:400;font-size:18px;letter-spacing:.06em}
+  #scr-main .sd-row{display:block;font-size:12px;line-height:1.7;color:var(--ink3)}
+  #scr-main .sd-empty{font-size:13px;color:var(--ink4);letter-spacing:.16em}
+  #scr-create{max-width:720px}
+  html[data-theme="night"] #scr-main .hud,
+  html[data-theme="night"] #scr-main .side-card{
+    --ink:#1c1814;--ink2:#3a332b;--ink3:#6e6457;--ink4:#8d8274;--zhu:#9d342e;color:var(--ink)}
+}
+
+/* 手机横屏：左笺右卷，收起行藏，避免上下被裁 */
+@media (orientation:landscape) and (max-height:540px) and (min-width:640px){
+  #scr-main{max-width:none;display:grid;grid-template-columns:minmax(188px,240px) minmax(0,1fr);
+    grid-template-rows:minmax(0,1fr) auto;column-gap:14px;
+    padding:calc(var(--sat) + 8px) calc(var(--sar) + 12px) calc(var(--sab) + 8px) calc(var(--sal) + 12px)}
+  #scr-main .hud{grid-column:1;grid-row:1/3;align-self:center;overflow:auto;max-height:100%;padding:10px 12px;position:relative;
+    background:linear-gradient(rgba(250,246,234,.88),rgba(250,246,234,.88)),var(--paper-img);background-size:auto,256px;
+    box-shadow:inset 0 0 0 1px rgba(27,24,20,.06)}
+  #scr-main .realm-name{font-size:30px}
+  #scr-main .realm-stage{font-size:14px}
+  #scr-main .bars{margin-top:8px;gap:6px}
+  #scr-main .chips{margin-top:8px}
+  #scr-main .scroll{grid-column:2;grid-row:1;margin:0}
+  #scr-main .log{padding:12px 16px 14px}
+  #scr-main .status-line{display:none}
+  #scr-main .actions{grid-column:2;grid-row:2}
+  #scr-main .act{height:58px}
+  #scr-main .act-t{font-size:20px}
+  #scr-main .side{display:none}
+  .break-seal{bottom:calc(var(--sab) + 72px);width:64px;height:64px;margin-left:-32px}
+  html[data-theme="night"] #scr-main .hud{--ink:#1c1814;--ink2:#3a332b;--ink3:#6e6457;--zhu:#9d342e;color:var(--ink)}
+  .title-v{font-size:clamp(48px,12vh,72px)}
+  .title-menu{bottom:calc(var(--sab) + 4px)}
+}
+
+@media (min-width:1000px) and (min-height:600px){
+  html[data-theme="night"] body[data-screen="main"] .hud,
+  html[data-theme="night"] body[data-screen="main"] .side-card{
+    --ink:#1c1814;--ink2:#3a332b;--ink3:#6e6457;--ink4:#8d8274;--zhu:#9d342e;color:var(--ink)}
+}
+
+/* 省电：手机少一层远山与流雾；简 / 低帧率停掉循环 */
+@media (hover:none) and (pointer:coarse) and (max-width:900px){
+  .m1,.mist1{animation:none}
+  .mist1{opacity:.32}
+  .m2{animation-duration:120s}
+}
+html[data-motion="lite"] .mtn,
+html[data-motion="lite"] .mist,
+html[data-fx="thin"] .mtn,
+html[data-fx="thin"] .mist,
+html[data-motion="lite"] .cranes,
+html[data-fx="thin"] .cranes,
+html[data-motion="lite"] .ember,
+html[data-fx="thin"] .ember,
+html[data-motion="lite"] .ea-boat,
+html[data-fx="thin"] .ea-boat{animation:none!important}
+html[data-motion="lite"] .hpaper,
+html[data-motion="lite"] .hroller,
+html[data-fx="thin"] .hpaper,
+html[data-fx="thin"] .hroller{transition-duration:.24s}
+html[data-motion="lite"] .sheet-panel,
+html[data-fx="thin"] .sheet-panel{transition-duration:.24s}
+html[data-motion="lite"] .log,
+html[data-fx="thin"] .log{scroll-behavior:auto}
+html[data-motion="lite"] .ink-ch,
+html[data-fx="thin"] .ink-ch{animation-duration:.32s;animation-delay:calc(var(--i) * 6ms)}
+html[data-motion="lite"] .path-cer,
+html[data-fx="thin"] .path-cer{transition-duration:.2s}
+
+/* 夜墨：深纸、淡墨、Muted 朱印。卷面仍是暖宣，字仍是浓墨。 */
+html[data-theme="night"],
+html[data-theme="night"] body,
+html[data-theme="night"] body[data-season="0"],
+html[data-theme="night"] body[data-season="1"],
+html[data-theme="night"] body[data-season="2"],
+html[data-theme="night"] body[data-season="3"]{
+  --paper:#14110e;
+  --paper-hi:#f4ecdc;
+  --ink:#f0e6d6;
+  --ink2:#d9cbb6;
+  --ink3:#b7a892;
+  --ink4:#8e8170;
+  --zhu:#c46a62;
+  --zhu-soft:rgba(168,90,84,.22);
+  --qing:#9eb4bc;
+  --paper-tint:rgba(196,160,110,.045);
+  --paper-stain:rgba(180,140,90,.05);
+  --paper-stain2:rgba(120,90,60,.04);
+  --paper-realm:transparent;
+  --sb-thumb:rgba(236,224,204,.4);
+  --sb-thumb-hover:rgba(246,236,220,.66);
+  --sb-track:rgba(20,16,12,.45);
+  color-scheme:dark;
+}
+html[data-theme="night"] #paper{background-color:#14110e}
+html[data-theme="night"] #paper-veil{mix-blend-mode:soft-light;opacity:.7}
+html[data-theme="night"] #fiber{mix-blend-mode:soft-light;opacity:.07}
+html[data-theme="night"] #vignette{
+  background:radial-gradient(120% 90% at 50% 42%,transparent 46%,rgba(0,0,0,.42) 100%);
+}
+html[data-theme="night"] #scenery .mtn,
+html[data-theme="night"] #scenery .pine,
+html[data-theme="night"] #scenery .lake{
+  filter:invert(.88) sepia(.28) brightness(1.12) contrast(.92);
+}
+html[data-theme="night"] .sun{opacity:.72;filter:saturate(.7)}
+html[data-theme="night"] .title-v,
+html[data-theme="night"] .tch b{color:#f6eee2;text-shadow:0 1px 0 rgba(0,0,0,.45)}
+html[data-theme="night"] .brush-btn:not(.light):not(#btn-continue) .bb-ink{background-image:var(--brush-img-zhu)}
+html[data-theme="night"] .brush-btn.light,
+html[data-theme="night"] #btn-continue{color:var(--ink)}
+html[data-theme="night"] .brush-btn.light .bb-ink,
+html[data-theme="night"] #btn-continue .bb-ink{background-image:var(--brush-night-ink,var(--brush-img-light))}
+html[data-theme="night"] .audio-btn{color:#f4ecdc;background-image:var(--brush-img-zhu);opacity:.88}
+html[data-theme="night"] #btn-menu svg rect{fill:#8e3e3a}
+html[data-theme="night"] .scroll-paper,
+html[data-theme="night"] .hpaper,
+html[data-theme="night"] .sheet-panel,
+html[data-theme="night"] .end-paper,
+html[data-theme="night"] .ask-card,
+html[data-theme="night"] .fabao-scroll,
+html[data-theme="night"] .splash-paper,
+html[data-theme="night"] #sw-refresh,
+html[data-theme="night"] .slot-card,
+html[data-theme="night"] .map{
+  --ink:#1c1814;--ink2:#3a332b;--ink3:#6e6457;--ink4:#8d8274;--zhu:#9d342e;--qing:#3d5560;--paper-hi:#f7f1e3;
+  color:var(--ink);
+}
+html[data-theme="night"] .entry.warn .entry-text{color:#8a3028}
+html[data-theme="night"] .ink-cadence .ink-ch{color:#4a433a}
+html[data-theme="night"] #splash{background:#14110e}
+html[data-theme="night"] .splash-char{color:#f0e6d6}
+html[data-theme="night"] .modal-shade{background:radial-gradient(ellipse at 50% 50%,rgba(8,6,5,.55),rgba(6,5,4,.78))}
+html[data-theme="night"] .sheet-shade{background:rgba(6,5,4,.62)}
+html[data-theme="night"] .end{background:rgba(8,6,5,.78)}
+html[data-theme="night"] .scroll-hint{color:#f4ecdc}
+
+/* 终卷：正文可滚，三枚印钮始终落在卷内可见处 */
+.end{padding:calc(var(--sat) + 10px) 12px calc(var(--sab) + 10px)}
+.end-paper{display:flex;flex-direction:column;overflow:hidden;
+  max-height:calc(100dvh - var(--sat) - var(--sab) - 20px);padding:22px 18px 12px}
+.end-title{flex:none;font-size:clamp(40px,12vw,72px)}
+.end-epitaph{flex:none;max-height:22vh;overflow:auto;margin:8px 0}
+.end-judge{flex:none;max-height:16vh;overflow:auto}
+.end-epitaph-long{flex:1 1 auto;min-height:0;max-height:none;margin:6px 0}
+.end-stats{flex:none;max-height:18vh;overflow:auto;margin-bottom:8px}
+.end-actions{flex:none;position:sticky;bottom:0;z-index:2;gap:8px;padding-top:8px;
+  background:linear-gradient(180deg,rgba(249,245,233,0),rgba(249,245,233,.97) 30%)}
+html[data-theme="night"] .end-actions{background:linear-gradient(180deg,rgba(249,245,233,0),rgba(249,245,233,.97) 30%)}
+@media (max-height:700px){
+  .end-title{font-size:clamp(34px,11vw,52px)}
+  .end-epitaph{max-height:16vh}
+  .end-stats{max-height:14vh}
+  .end-paper{padding:14px 14px 8px}
+}
+@media (max-width:360px){
+  .end-actions .brush-btn.small{min-width:0;width:min(100%,220px);padding:8px 16px}
+  .end-actions .bb-text{font-size:18px;letter-spacing:.16em}
+}
+
+/* 抽屉不超过可视区，正文在卷内滚 */
+.sheet-panel{max-height:min(78dvh,calc(100dvh - var(--sat) - 12px))}
+.sect-home,.bag-list,.cult-wrap,.atlas-sheet{overflow-x:hidden;max-width:100%}

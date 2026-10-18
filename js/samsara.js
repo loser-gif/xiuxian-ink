@@ -91,6 +91,8 @@ const Samsara = (() => {
     }
     // 法相残影（仅图鉴用，不直接继承法相）
     if (s.path && s.path.faxiang) leg.faxiang = s.path.faxiang;
+    if (s.life && s.life.thread) leg.thread = s.life.thread;
+    if (s.life && s.life.goal) leg.goal = s.life.goal;
     return leg;
   }
 
@@ -145,6 +147,10 @@ const Samsara = (() => {
       tags.push({ t: '皇命印记', c: 'gold' });
     }
     if (legacy.faxiang) s.flags.faxiangMem = legacy.faxiang;
+    if (legacy.thread) {
+      s.flags.threadText = legacy.thread;
+      tags.push({ t: '前世绝笔', c: 'gold' });
+    }
     return tags;
   }
 

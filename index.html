@@ -15,15 +15,30 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:url" content="https://loser-gif.github.io/xiuxian-ink/">
 <meta name="theme-color" content="#efe6d3">
+<script>
+(function () {
+  try {
+    var p = JSON.parse(localStorage.getItem('moxian.look') || '{}') || {};
+    var dark = p.theme === 'night' || (p.theme !== 'day' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dark ? 'night' : 'day';
+    document.documentElement.dataset.font = (p.font === 'lg' || p.font === 'sm') ? p.font : 'md';
+    document.documentElement.dataset.motion = p.motion === 'lite' ? 'lite' : 'full';
+    if (p.motion === 'lite' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches))
+      document.documentElement.dataset.fx = 'thin';
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#16130f' : '#efe6d3');
+  } catch (e) {}
+})();
+</script>
 <meta name="format-detection" content="telephone=no">
 <title>纸上仙途 · 水墨修仙</title>
-<link rel="manifest" href="manifest.webmanifest?v=32">
-<link rel="icon" href="icon.svg?v=32" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=32">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=32" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=32" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=32">
-<link rel="stylesheet" href="css/style.css?v=32">
+<link rel="manifest" href="manifest.webmanifest?v=33">
+<link rel="icon" href="icon.svg?v=33" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=33">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=33" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=33" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=33">
+<link rel="stylesheet" href="css/style.css?v=33">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -179,6 +194,7 @@
         <span class="chip"><b>心境</b><em id="c-xj">平和</em></span>
         <span class="chip"><b>灵石</b><em id="c-ls">十</em></span>
         <span class="chip" id="chip-court" hidden><b>朝</b><em id="c-court">—</em></span>
+        <span class="chip chip-goal" id="chip-goal" hidden><b>求</b><em id="c-goal">长生</em></span>
       </div>
       <div class="path-seals" id="path-seals" hidden></div>
     </header>
@@ -307,6 +323,25 @@
   </div>
 </div>
 
+<!-- 此生所求 -->
+<div id="goal-cer" class="path-cer goal-cer" hidden>
+  <div class="path-cer-shade"></div>
+  <div class="path-cer-panel">
+    <div class="path-cer-head">
+      <div class="path-cer-sealbox"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font" id="goal-seal">求</text></g></svg></div>
+      <h2 class="path-cer-title goal-title" id="goal-title">此生所求</h2>
+      <p class="path-cer-lead" id="goal-lead"></p>
+    </div>
+    <div class="path-cer-body">
+      <div class="path-cer-opts" id="goal-opts"></div>
+    </div>
+    <div class="path-cer-foot" id="goal-foot">
+      <p class="path-cer-hint" id="goal-hint"></p>
+      <button class="brush-btn small light primary" id="goal-confirm"><span class="bb-ink"></span><span class="bb-text">落定</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- 大比 -->
 <div id="duel" class="duel" hidden>
   <div class="duel-shade"></div>
@@ -355,6 +390,7 @@
   <div class="end-paper">
     <div class="end-title" id="end-title">坐化</div>
     <div class="end-epitaph" id="end-epitaph"></div>
+    <p class="end-judge" id="end-judge" hidden></p>
     <pre class="end-epitaph-long" id="end-epitaph-long" hidden></pre>
     <div class="end-stats" id="end-stats"></div>
     <div class="end-actions">
@@ -385,32 +421,33 @@
   </div>
 </div>
 
-<script src="js/data.js?v=32"></script>
-<script src="js/gongfa.js?v=32"></script>
-<script src="js/gear.js?v=32"></script>
-<script src="js/story.js?v=32"></script>
-<script src="js/sect.js?v=32"></script>
-<script src="js/baijia.js?v=32"></script>
-<script src="js/world.js?v=32"></script>
-<script src="js/tianxia.js?v=32"></script>
-<script src="js/karma.js?v=32"></script>
-<script src="js/path.js?v=32"></script>
-<script src="js/core.js?v=32"></script>
-<script src="js/codec.js?v=32"></script>
-<script src="js/slots.js?v=32"></script>
-<script src="js/samsara.js?v=32"></script>
-<script src="js/jianghu.js?v=32"></script>
-<script src="js/ink.js?v=32"></script>
-<script src="js/ding.js?v=32"></script>
-<script src="js/map.js?v=32"></script>
-<script src="js/audio.js?v=32"></script>
-<script src="js/fx.js?v=32"></script>
-<script src="js/btfx.js?v=32"></script>
-<script src="js/fabaoart.js?v=32"></script>
-<script src="js/wallpaper.js?v=32"></script>
-<script src="js/inkgl.js?v=32"></script>
-<script src="js/jhui.js?v=32"></script>
-<script src="js/scrollart.js?v=32"></script>
-<script src="js/game.js?v=32"></script>
+<script src="js/data.js?v=33"></script>
+<script src="js/gongfa.js?v=33"></script>
+<script src="js/gear.js?v=33"></script>
+<script src="js/story.js?v=33"></script>
+<script src="js/sect.js?v=33"></script>
+<script src="js/baijia.js?v=33"></script>
+<script src="js/world.js?v=33"></script>
+<script src="js/tianxia.js?v=33"></script>
+<script src="js/karma.js?v=33"></script>
+<script src="js/life.js?v=33"></script>
+<script src="js/path.js?v=33"></script>
+<script src="js/core.js?v=33"></script>
+<script src="js/codec.js?v=33"></script>
+<script src="js/slots.js?v=33"></script>
+<script src="js/samsara.js?v=33"></script>
+<script src="js/jianghu.js?v=33"></script>
+<script src="js/ink.js?v=33"></script>
+<script src="js/ding.js?v=33"></script>
+<script src="js/map.js?v=33"></script>
+<script src="js/audio.js?v=33"></script>
+<script src="js/fx.js?v=33"></script>
+<script src="js/btfx.js?v=33"></script>
+<script src="js/fabaoart.js?v=33"></script>
+<script src="js/wallpaper.js?v=33"></script>
+<script src="js/inkgl.js?v=33"></script>
+<script src="js/jhui.js?v=33"></script>
+<script src="js/scrollart.js?v=33"></script>
+<script src="js/game.js?v=33"></script>
 </body>
 </html>

@@ -5,6 +5,13 @@ const Wallpaper = (() => {
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
+  const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
+  const coarse = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 1000);
+  function fogN(n) {
+    let m = coarse() ? 0.5 : 1;
+    if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.45;
+    return Math.max(2, Math.round(n * m));
+  }
   const R = Ink.mulberry(2024);
   const rnd = (a, b) => a + R() * (b - a);
 
@@ -145,9 +152,11 @@ const Wallpaper = (() => {
     const m = $('#scenery ' + mtnSel);
     if (m && m.width) sil.getContext('2d').drawImage(m, m.offsetLeft * K, m.offsetTop * K, m.offsetWidth * K, m.offsetHeight * K);
     const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
-    const fog = Array.from({ length: nFog }, () => ({ x: rnd(-.2, 1.2) * W, y: rnd(band[0], band[1]) * H, rw: rnd(90, 210), rh: rnd(22, 48), v: rnd(3, 9) * (R() < .3 ? -1 : 1), a: rnd(.35, .7), ph: rnd(0, 6.28), bob: rnd(3, 9) }));
-    const sh = Array.from({ length: nShadow }, (_, i) => ({ x: (i / nShadow) * W * 1.6 - W * .3, y: rnd(.25, .75) * H, rw: rnd(140, 240), rh: rnd(70, 130), v: rnd(4, 7), a: rnd(.5, .8) }));
-    return { cv, c: cv.getContext('2d'), sil, tmp, tc: tmp.getContext('2d'), fog, sh, w, h, W, H };
+    const fogBase = nFog, shBase = nShadow;
+    const nF = fogN(fogBase), nS = thinNow() ? 1 : (coarse() ? Math.min(2, shBase) : shBase);
+    const fog = Array.from({ length: nF }, () => ({ x: rnd(-.2, 1.2) * W, y: rnd(band[0], band[1]) * H, rw: rnd(90, 210), rh: rnd(22, 48), v: rnd(3, 9) * (R() < .3 ? -1 : 1), a: rnd(.35, .7), ph: rnd(0, 6.28), bob: rnd(3, 9) }));
+    const sh = Array.from({ length: nS }, (_, i) => ({ x: (i / Math.max(1, nS)) * W * 1.6 - W * .3, y: rnd(.25, .75) * H, rw: rnd(140, 240), rh: rnd(70, 130), v: rnd(4, 7), a: rnd(.5, .8) }));
+    return { cv, c: cv.getContext('2d'), sil, tmp, tc: tmp.getContext('2d'), fog, sh, fogBase, shBase, band, w, h, W, H };
   }
   function drawLayer(L, t, dt) {
     const { c, tc, w, h, W } = L;
@@ -172,13 +181,32 @@ const Wallpaper = (() => {
   function tick(now) {
     A.raf = 0;
     if (document.hidden || document.body.dataset.screen !== 'title') return;
+    if (reduced() || document.documentElement.dataset.motion === 'lite') return;
     A.raf = requestAnimationFrame(tick);
     if (++A.frame % 2) return;                 // 30fps 足够：雾很慢，且画布被放大柔化
     const dt = A.last ? Math.min(.1, (now - A.last) / 1000) : .033; A.last = now;
     const t = now / 1000;
     for (const L of A.layers) drawLayer(L, t, dt);
   }
-  function start() { if (!A.raf && !reduced() && A.layers.length) { A.last = 0; A.raf = requestAnimationFrame(tick); } }
+  function start() {
+    if (reduced() || document.documentElement.dataset.motion === 'lite') return;
+    if (!A.raf && A.layers.length) { A.last = 0; A.raf = requestAnimationFrame(tick); }
+  }
+  function refill(L) {
+    const W = innerWidth, H = innerHeight;
+    const nF = fogN(L.fogBase), nS = thinNow() ? 1 : (coarse() ? Math.min(2, L.shBase) : L.shBase);
+    while (L.fog.length < nF) L.fog.push({ x: rnd(-.2, 1.2) * W, y: rnd(L.band[0], L.band[1]) * H, rw: rnd(90, 210), rh: rnd(22, 48), v: rnd(3, 9), a: rnd(.35, .7), ph: rnd(0, 6.28), bob: rnd(3, 9) });
+    if (L.fog.length > nF) L.fog.length = nF;
+    while (L.sh.length < nS) L.sh.push({ x: rnd(0, W), y: rnd(.25, .75) * H, rw: rnd(140, 240), rh: rnd(70, 130), v: rnd(4, 7), a: rnd(.5, .8) });
+    if (L.sh.length > nS) L.sh.length = nS;
+  }
+  function syncMotion() {
+    if (A.raf) cancelAnimationFrame(A.raf);
+    A.raf = 0;
+    if (reduced()) return;
+    for (const L of A.layers) refill(L);
+    if (document.documentElement.dataset.motion !== 'lite') start();
+  }
 
   function build() {
     fogImg = fogImg || sprite('246,241,229', .95);
@@ -196,5 +224,5 @@ const Wallpaper = (() => {
     document.addEventListener('visibilitychange', start);
     new MutationObserver(start).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
   }
-  return { init, rebuild: build };
+  return { init, rebuild: build, syncMotion };
 })();

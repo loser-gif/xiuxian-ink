@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 11;
+  const SAVE_V = 12;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -399,6 +399,16 @@ const Core = (() => {
     return !e.cond || e.cond(s);
   }
   function pickEvent(s, filt, wmul) {
+    if (typeof Life !== 'undefined' && Life.dueEvent) {
+      const forced = Life.dueEvent(s);
+      if (forced && (!filt || filt(forced))) {
+        const recent0 = s.recent || [];
+        s.recent = [...recent0, forced.id].slice(-8);
+        s.seen[forced.id] = (s.seen[forced.id] || 0) + 1;
+        s.events++; s.acts++; s.evFoe = null;
+        return forced;
+      }
+    }
     const recent = s.recent || [], ok = e => eventOk(s, e) && (!filt || filt(e));
     let pool = EVENTS.filter(e => ok(e) && !recent.includes(e.id));
     if (!pool.length) pool = EVENTS.filter(ok);
@@ -441,6 +451,8 @@ const Core = (() => {
     if (fx.gf) learn(s, fx.gf, tags, emit);
     if (fx.gfXp && s.gf) { practice(s, fx.gfXp, null, emit); tags.push({ t: `《${GONGFA[s.gf].name}》精进`, c: 'up' }); }
     if (fx.flag) s.flags[fx.flag] = 1;
+    if (fx.heart && typeof Life !== 'undefined' && Life.tint) Life.tint(s, fx.heart);
+    if (fx.vendetta && s.life) s.life.vendetta = 1;
     if (fx.karma && typeof karmaPlant === 'function') {
       const ok = karmaPlant(s, fx.karma.id, fx.karma.years != null ? fx.karma.years : 20, fx.karma.data);
       if (ok) tags.push({ t: '因果已种', c: 'gold' });
@@ -598,8 +610,9 @@ const Core = (() => {
   /* ---------- 破境 ---------- */
   function btChance(s, usePill) {
     const mem = (typeof Samsara !== 'undefined' && Samsara.daojiAffinity && s.path) ? Samsara.daojiAffinity(s, s.path.daoji) : 0;
+    const scar = (typeof Life !== 'undefined' && Life.scarPen) ? Life.scarPen(s) : 0;
     return clamp(REALMS[s.realm].base + s.lg.bt + (s.xj - 50) / 250 + (usePill ? 0.2 : 0) + Math.min(0.12, s.fails * 0.04)
-      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt + mem, 0.05, 0.95);
+      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt + mem - scar, 0.05, 0.95);
   }
   // 返回 {ok, text, ending}；会直接改写 s；宗门赐法等追加日志走 emit
   function resolveBreak(s, usePill, emit) {
@@ -754,7 +767,8 @@ const Core = (() => {
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
       seen: {}, recent: [], acts: 0, ending: null, marks: [], played: 0,
       court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 },
-      karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] } };
+      karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] },
+      life: typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, goalChanges: 0, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 } };
     const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
     if (startGf && GONGFA[startGf]) { s.gf = startGf; s.gfs[startGf] = { lv: 1, xp: 0 }; }
     else if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
@@ -843,6 +857,10 @@ const Core = (() => {
       s.marks = Array.isArray(s.marks) ? s.marks : [];
       if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
     }
+    if (s.v === 11) {  // v1.1 → v1.2：此生（所求／回响／心魔／平生）。修为倍率未改
+      s.v = 12;
+      s.life = s.life || (typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 });
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
@@ -851,6 +869,8 @@ const Core = (() => {
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
     s.marks = Array.isArray(s.marks) ? s.marks : [];
     if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
+    if (!s.life || typeof s.life !== 'object') s.life = typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 };
+    if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);
     sync(s); return s;
   }
   function retire(s) { s.dead = true; s.ending = 'guiyin'; }
@@ -950,6 +970,7 @@ const Core = (() => {
     const n = s.npc[id]; if (!n) return;
     const first = !n.met; n.met = true;
     n.a = clamp(n.a + d, -100, 100);
+    if (first && typeof Life !== 'undefined' && Life.meet) Life.meet(s, NPCS[id].name, '初见');
     if (tags && d) tags.push({ t: `${NPCS[id].name} ${d > 0 ? '情谊 +' + d : '情谊 −' + (-d)}`, c: d > 0 ? 'up' : 'down' });
     else if (tags && first) tags.push({ t: `结识${NPCS[id].name}`, c: 'up' });
   }

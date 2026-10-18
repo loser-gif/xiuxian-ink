@@ -188,6 +188,10 @@ function makeJHUI(G) {
     await closeMap(true);
     if (tr) logTravel(tr);
     else if (gt.length) pushLog({ text: `你在${LOC[to].name}左近盘桓，顺手采了些灵草。`, tags: gt, cls: 'sys' });
+    if (typeof Life !== 'undefined') {
+      const v = Life.takeVignette(G.S, 'road');
+      if (v) pushLog({ title: v.title, text: v.text, cls: 'breath' });
+    }
     G.busy = false; openEvent(ev);
   }
   async function wander() {
@@ -195,7 +199,12 @@ function makeJHUI(G) {
     Core.passTime(G.S, Math.max(1, Math.round(REALMS[G.S.realm].T * K.youliMonths / (Core.pathYouliMul ? Core.pathYouliMul(G.S) : 1))), pushLog);
     if (G.S.dead) { await closeMap(); return afterDeath(); }
     const ev = J.pickAt(G.S, null); render(); save();
-    await closeMap(true); G.busy = false; openEvent(ev);
+    await closeMap(true);
+    if (typeof Life !== 'undefined') {
+      const v = Life.takeVignette(G.S, 'road');
+      if (v) pushLog({ title: v.title, text: v.text, cls: 'breath' });
+    }
+    G.busy = false; openEvent(ev);
   }
 
   /* ================= 坊市 ================= */

@@ -86,7 +86,11 @@ const ScrollArt = (() => {
     if (path) lines.push(path);
     else if (gf) lines.push('《' + gf + '》');
     if (court && court !== '白身') lines.push(court);
-    return lines.slice(0, 5);
+    if (typeof Life !== 'undefined' && Life.judgeLine) {
+      const j = Life.judgeLine(s, s.ending);
+      if (j) lines.push(j.replace(/。/g, ''));
+    }
+    return lines.slice(0, 6);
   }
 
   async function ensureFonts() {

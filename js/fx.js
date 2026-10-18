@@ -3,6 +3,8 @@
 const FX = (() => {
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
+  const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
+  const coarsePhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   const $ = s => document.querySelector(s);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -92,8 +94,15 @@ const FX = (() => {
     W.cv.width = Math.round(W.w * k); W.cv.height = Math.round(W.h * k); W.c.setTransform(k, 0, 0, k, 0, 0);
     if (W.parts && W.season >= 0) fitParts();
   }
-  // 粒子数随画面面积增长（以 390×844 为基准，最多 2.4 倍），宽屏不显稀疏
-  const partN = s => Math.round([12, 40, 11, 36][s] * Math.min(2.4, Math.max(1, Math.sqrt(W.w * W.h / (390 * 844)))));
+  // 粒子数随画面面积增长（以 390×844 为基准，最多 2.4 倍），宽屏不显稀疏。
+  // 手机与「简」再收一截，少画少合成。
+  function partMul() {
+    let m = 1;
+    if (coarsePhone()) m *= 0.38;
+    if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.34;
+    return m;
+  }
+  const partN = s => Math.max(4, Math.round([12, 40, 11, 36][s] * Math.min(2.4, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
   function fitParts() {
     const n = partN(W.season);
     while (W.parts.length < n) { const p = {}; spawn(p, true); W.parts.push(p); }
@@ -108,10 +117,16 @@ const FX = (() => {
     else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(9, 15) * p.z; }
     else { p.vy = rnd(16, 30) * p.z; p.vx = rnd(8, 20); p.size = rnd(6, 10.5) * p.z; }
   }
+  function haltWeather() {
+    if (W.raf) cancelAnimationFrame(W.raf);
+    W.raf = 0; W.parts = []; W.gold = [];
+    if (W.c && W.w) { W.c.setTransform(1, 0, 0, 1, 0, 0); W.c.clearRect(0, 0, W.cv.width, W.cv.height); }
+  }
   function setSeason(s) {
-    if (reduced()) return;
-    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
-    if (s === W.season) return;
+    if (reduced()) { haltWeather(); return; }
+    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !reduced() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
+    armFps();
+    if (s === W.season && W.parts.length === partN(s)) return;
     W.season = s;
     const n = partN(s);
     W.parts = Array.from({ length: n }, () => { const p = {}; spawn(p, true); return p; });
@@ -119,12 +134,16 @@ const FX = (() => {
   }
   function setGold(realm) {
     if (reduced() || !W.cv) return;
-    const n = realm >= 2 ? Math.min(12, 5 + (realm - 2) * 2) : 0;
+    let n = realm >= 2 ? Math.min(12, 5 + (realm - 2) * 2) : 0;
+    if (thinNow()) n = Math.min(n, 3);
+    else if (coarsePhone()) n = Math.min(n, 5);
     if ((W.gold || []).length === n) return;
     W.gold = Array.from({ length: n }, () => ({ x: rnd(0, W.w), y: rnd(0, W.h), vy: rnd(5, 12), s: rnd(2, 3.6), spin: rnd(.6, 1.4), ph: rnd(0, 6.28) }));
   }
   function wTick(t) {
-    if (document.hidden) { W.raf = 0; return; }
+    if (document.hidden || reduced()) { W.raf = 0; return; }
+    W.frame = (W.frame || 0) + 1;
+    if (thinNow() && (W.frame & 1)) { W.raf = requestAnimationFrame(wTick); return; }
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 14 + Math.sin(time * 0.071) * 10;
@@ -155,6 +174,44 @@ const FX = (() => {
     }
     if (W.gold && W.gold.length) { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
     W.raf = requestAnimationFrame(wTick);
+  }
+
+  /* 低帧率连续两段即把动效收薄；「全」可在纸墨里再打开 */
+  let fpsLast = 0, fpsN = 0, fpsBad = 0, fpsArmed = false;
+  function fpsTick(t) {
+    if (!fpsArmed) return;
+    requestAnimationFrame(fpsTick);
+    if (document.hidden) { fpsLast = 0; fpsN = 0; return; }
+    if (!fpsLast) { fpsLast = t; return; }
+    fpsN++;
+    const span = t - fpsLast;
+    if (span < 1600) return;
+    const fps = fpsN * 1000 / span;
+    fpsLast = t; fpsN = 0;
+    const root = document.documentElement;
+    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) { fpsBad = 0; return; }
+    if (fps < 40) {
+      fpsBad++;
+      if (fpsBad >= 2) {
+        root.dataset.fx = 'thin';
+        syncMotion();
+        if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
+      }
+    } else fpsBad = 0;
+  }
+  function armFps() {
+    if (fpsArmed || reduced()) return;
+    fpsArmed = true;
+    requestAnimationFrame(fpsTick);
+  }
+  function syncMotion() {
+    if (reduced()) { haltWeather(); return; }
+    armFps();
+    if (W.season >= 0 && W.cv) {
+      fitParts();
+      if (W.gold && thinNow()) W.gold.length = Math.min(W.gold.length, 3);
+      if (!W.raf && !document.hidden) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
+    }
   }
 
   /* ---------- 一次性粒子（吐纳聚气 / 破境金屑） ---------- */
@@ -369,5 +426,5 @@ const FX = (() => {
     ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(ev => window.addEventListener(ev, off, { passive: true }));
   }
 
-  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, initPress, reduced };
+  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, initPress, reduced, syncMotion, thinNow };
 })();

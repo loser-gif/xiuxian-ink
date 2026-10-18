@@ -491,8 +491,11 @@ function newGame(name, r, choice) {
     delete S.flags._legacyJoinText;
   }
   pushLog({ text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: true });
+  if (legacy && legacy.thread) pushLog({ title: '前世绝笔', text: legacy.thread, cls: 'breath' });
+  else if (S.flags && S.flags.threadText) pushLog({ title: '前世绝笔', text: S.flags.threadText, cls: 'breath' });
   save();
   enterMain(false);
+  if (!trial) setTimeout(() => { if (S && !(S.life && S.life.goal)) openGoalPicker(); }, 800);
 }
 
 async function openBaishan(roll) {
@@ -581,6 +584,7 @@ function noteMark(e) {
   if (last && last.t === e.title) return;
   S.marks.push({ t: e.title, y: S.age | 0, c: e.cls || '', d: clipMark(e.text) });
   if (S.marks.length > 24) S.marks.splice(0, S.marks.length - 24);
+  if (typeof Life !== 'undefined' && Life.note) Life.note(S, { y: S.age | 0, t: e.title, d: clipMark(e.text), k: e.cls || '' });
 }
 function pushLog(e) {
   e.time = timeLabel();
@@ -671,6 +675,12 @@ function render() {
     const on = !!(S.court && S.court.rank >= 0);
     chipC.hidden = !on;
     if (on) setText('#c-court', courtRankName(S) || '白身');
+  }
+  const chipG = $('#chip-goal');
+  if (chipG) {
+    const gn = (typeof Life !== 'undefined' && Life.goalName) ? Life.goalName(S) : '';
+    chipG.hidden = !gn;
+    if (gn) setText('#c-goal', gn);
   }
   const tm = Core.gt(S, 'time', 1);
   setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm))); setText('#dur-biguan', cnDur(Math.round(r.T * K.biguanMonths * tm)));
@@ -771,6 +781,11 @@ function act(kind) {
     const B = buffer(), o = Core.biguan(S, B.emit);
     pushLog({ text: o.text, tags: o.tags, cls: o.cls }); B.flush();
     Core.afterGain(S, o.ups, pushLog);
+    if (typeof Life !== 'undefined') {
+      const v = Life.takeVignette(S, 'biguan');
+      if (v) pushLog({ title: v.title, text: v.text, cls: 'breath' });
+      if (Life.shouldAskGoal(S) && !uiBlocked()) setTimeout(() => openEvent(Life.goalShiftEvent(S)), 500);
+    }
     render(); save(); checkEnd(); maybeWanderNudge(); maybeGuide();
     maybeFabaoCeremony();
     return;
@@ -822,7 +837,7 @@ function guideEvent(g) {
 function uiBlocked() {
   if (busy) return true;
   if (document.querySelector('.ask')) return true;
-  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'modal', 'sheet', 'mj', 'map', 'scroll-view']) {
+  for (const id of ['end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'goal-cer', 'modal', 'sheet', 'mj', 'map', 'scroll-view']) {
     const el = document.getElementById(id);
     if (el && !el.hidden) return true;
   }
@@ -837,7 +852,11 @@ function finishGuide() {
 }
 function maybeGuide() {
   if (!S || S.dead || S.ascended || !S.flags || !S.flags.guide || S.flags.trial) return;
-  if (uiBlocked()) return;
+  if (uiBlocked()) {
+    if ((maybeGuide._n | 0) < 16) { maybeGuide._n = (maybeGuide._n | 0) + 1; setTimeout(maybeGuide, 500); }
+    return;
+  }
+  maybeGuide._n = 0;
   const g = GUIDES.find(x => !S.flags[x.id] && (S.acts | 0) >= x.min);
   if (!g) return;
   openEvent(guideEvent(g));
@@ -866,17 +885,21 @@ function checkEnd() {
 
 /* ================= 奇遇卷轴 ================= */
 const modal = $('#modal');
+function snappy() {
+  const root = document.documentElement;
+  return root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || (typeof FX !== 'undefined' && FX.reduced());
+}
 async function openModal() {
   modal.hidden = false;
   const hs = $('#hscroll');
   hs.style.setProperty('--half', (hs.offsetWidth / 2 - 10) + 'px');
   $('.ev-main').scrollTop = 0;
-  await sleep(30);
+  await sleep(snappy() ? 16 : 30);
   modal.classList.add('open');
 }
 async function closeModal() {
   modal.classList.remove('open');
-  await sleep(850);
+  await sleep(snappy() ? 240 : 640);
   modal.hidden = true;
 }
 function openEvent(ev) {
@@ -888,8 +911,8 @@ function openEvent(ev) {
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
   openModal();
-  const d = inkWrite($('#ev-text'), text, { immediate: true, step: 20, cadence: true });
-  const startAt = 650 + d * 0.55;
+  const d = inkWrite($('#ev-text'), text, { immediate: true, step: snappy() ? 6 : 20, cadence: !snappy() });
+  const startAt = (snappy() ? 80 : 420) + d * 0.35;
   ev.choices(S).forEach((c, i) => {
     const b = document.createElement('button'); b.className = 'choice'; b.disabled = !!c.disabled;
     b.style.animationDelay = (startAt + i * 120) + 'ms';
@@ -925,11 +948,12 @@ function choose(ev, c, btn, evText) {
       if (c.skipAll) { GUIDES.forEach(g => { S.flags[g.id] = 1; }); finishGuide(); }
       else if (GUIDES.every(g => S.flags[g.id])) finishGuide();
     }
-    pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: 'event', div: true, guide: !!ev.guide });
+    pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: ev.xinmo ? 'warn' : 'event', div: true, guide: !!ev.guide });
     B.flush(); Core.afterGain(S, ups, pushLog);
     render(); save(); checkEnd();
     if (!ev.guide) maybeGuide();
     if (res.after && !S.dead) res.after();
+    if (res.afterBreak && !S.dead && !S.ascended && bottleneck()) setTimeout(() => { if (!uiBlocked()) openBreak(); }, 280);
   };
   render(); save();
 }
@@ -941,6 +965,11 @@ const btChance = usePill => Core.btChance(S, usePill);
 const chanceWord = p => { const n = Math.round(p * 10); return n <= 1 ? '九死一生' : n >= 9 ? '十拿九稳' : `约莫${cn(n)}成`; };
 function openBreak() {
   if (!bottleneck() || busy) return;
+  if (typeof Life !== 'undefined' && Life.xinmoPending(S) && !openBreak._skip) {
+    openEvent(Life.xinmoEvent(S));
+    return;
+  }
+  openBreak._skip = false;
   const r = R(), next = NEXT_REALM_NAME[S.realm], pill = r.pill, has = S.items[pill] > 0;
   FX.vtext($('#ev-title'), S.realm === 4 ? '渡劫' : '破境');
   $('#ev-seal').textContent = '劫';
@@ -1765,6 +1794,8 @@ function openMenu() {
   const ds = (typeof Samsara !== 'undefined') ? Samsara.dailyStatus() : { claimed: true };
   const trialNote = (S.flags && S.flags.trial) ? '<br><span class="menu-trial">试炼境 · 不入轮回簿</span>' : '';
   w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
+    <button class="menu-item" data-m="annals">平生<small>逐年 · 所遇 · 所求</small></button>
+    <button class="menu-item" data-m="look">纸墨<small>昼夜 · 字号 · 动效</small></button>
     <button class="menu-item" data-m="resume">继续修行</button>
     <button class="menu-item" data-m="slots">存档<small>三卷 · 导出 · 导入</small></button>
     <button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>
@@ -1777,6 +1808,8 @@ function openMenu() {
     const btn = e.target.closest('[data-m]'); if (!btn) return;
     const m = btn.dataset.m;
     if (m === 'slots') { await closeSheet(); openSlots(); return; }
+    if (m === 'annals') { await closeSheet(); openAnnals(); return; }
+    if (m === 'look') { await closeSheet(); openLook(); return; }
     if (m === 'path') { await closeSheet(); openCult('path'); return; }
     if (m === 'atlas') { await closeSheet(); openAtlasSheet(); return; }
     if (m === 'daily') {
@@ -2012,6 +2045,8 @@ function showEnd(kind) {
     quancheng: ['权臣', `${S.name}修至${rs}，${courtLine}于${age}岁摄政，不篡位号。诏令出其手，军权归其心。史书不敢直书其名，只写「摄政如天」。`],
   }[kind] || ['坐化', ''];
   $('#end-title').textContent = T[0];
+  const composed = (typeof Life !== 'undefined' && Life.compose) ? Life.compose(S, kind, T[1]) : null;
+  const recLine = composed ? [T[1], composed.juebi, composed.variant, composed.judge].filter(Boolean).join('') : T[1];
   const isTrial = !!(S.flags && S.flags.trial);
   let rec = null;
   if (typeof Samsara !== 'undefined' && Samsara.recordLife) {
@@ -2019,20 +2054,30 @@ function showEnd(kind) {
       const m = Samsara.loadMeta();
       Samsara.unlockAtlas(m, S, kind);
       Samsara.saveMeta(m);
-      rec = { epitaph: Samsara.epitaphLong(S, kind, T[1]), legacy: null };
+      rec = { epitaph: Samsara.epitaphLong(S, kind, recLine), legacy: null };
     } else {
-      rec = Samsara.recordLife(S, kind, T[1]);
+      rec = Samsara.recordLife(S, kind, recLine);
     }
   }
-  const longEp = (rec && rec.epitaph) || T[1];
-  $('#end-epitaph').textContent = T[1];
+  const longEp = (composed && [composed.full, composed.thread].filter(Boolean).join('\n')) || (rec && rec.epitaph) || T[1];
+  $('#end-epitaph').textContent = composed ? composed.juebi : T[1];
   const longEl = $('#end-epitaph-long');
   if (longEl) { longEl.textContent = longEp; longEl.hidden = false; }
+  const judgeEl = $('#end-judge');
+  if (judgeEl) {
+    const bits = [];
+    if (composed && composed.judge) bits.push(composed.judge);
+    if (composed && composed.variant) bits.push(composed.variant);
+    if (composed && composed.thread && (kind === 'zuohua' || kind === 'rumo' || kind === 'yunluo' || kind === 'bingjie')) bits.push(composed.thread);
+    judgeEl.textContent = bits.join('');
+    judgeEl.hidden = !bits.length;
+  }
   const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>`, renhuang: `境界 <b>${rs}</b>　人皇 <b>${age}岁</b>`, quancheng: `境界 <b>${rs}</b>　摄政 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
   const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
   const pth = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
   const pfl = pth ? `<br>定型 <b>${pth}</b>` : '';
   const fbl = S.fabao ? `<br>本命 <b>${S.fabao.name}</b>·${FABAO_STAGE[S.fabao.stage|0]}` : '';
+  const goalBit = (composed && composed.judge) ? `<br><span class="end-judge-inline">${esc(composed.judge)}</span>` : '';
   const legObj = rec && rec.legacy;
   const carry = [];
   if (legObj) {
@@ -2045,7 +2090,7 @@ function showEnd(kind) {
   }
   const leg = carry.length ? `<br><span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
     : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '');
-  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
+  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}${goalBit}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
   save();
   $('#btn-reborn').onclick = async () => {
     const kept = typeof Slots !== 'undefined' && Slots.firstEmpty() >= 0;
@@ -2106,6 +2151,114 @@ function closeScrollView() {
 const JHUI = typeof makeJHUI === 'function' ? makeJHUI({ get S() { return S; }, get busy() { return busy; }, set busy(v) { busy = v; },
   $, sleep, pick, render, save, pushLog, openEvent, openSheet, closeSheet, toast, inkWrite, buffer, checkEnd, runDuel, realmStr, fmtNum, K, chanceWord }) : undefined;
 
+/* ================= 此生所求 / 平生 / 纸墨 ================= */
+const LOOK_KEY = 'moxian.look';
+function readLook() {
+  try { return JSON.parse(localStorage.getItem(LOOK_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function applyLook(partial) {
+  const prev = readLook();
+  const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, prev, partial || {});
+  try { localStorage.setItem(LOOK_KEY, JSON.stringify({ theme: p.theme, font: p.font, motion: p.motion })); } catch (e) {}
+  const dark = p.theme === 'night' || (p.theme !== 'day' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'night' : 'day';
+  document.documentElement.dataset.font = (p.font === 'lg' || p.font === 'sm') ? p.font : 'md';
+  document.documentElement.dataset.motion = p.motion === 'lite' ? 'lite' : 'full';
+  const wantThin = p.motion === 'lite' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (wantThin) document.documentElement.dataset.fx = 'thin';
+  else if (partial && partial.motion === 'full') delete document.documentElement.dataset.fx;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', dark ? '#16130f' : '#efe6d3');
+  const apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (apple) apple.setAttribute('content', dark ? 'black' : 'default');
+  root.style.setProperty('--brush-night-ink', brushBtnImg(44, '#e7dcc8', 0.7));
+  root.style.setProperty('--brush-img-zhu', brushBtnImg(27, dark ? '#a85a54' : '#b3302a', dark ? 0.8 : 0.92));
+  if (typeof FX !== 'undefined' && FX.syncMotion) FX.syncMotion();
+  if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
+}
+function openLook() {
+  const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, readLook());
+  const w = document.createElement('div');
+  w.className = 'look-sheet';
+  const row = (k, label, opts) => `<div class="look-row" data-k="${k}"><b>${label}</b><div class="look-opts">${opts.map(([id, name]) => `<button type="button" class="look-opt${p[k] === id ? ' on' : ''}" data-v="${id}">${name}</button>`).join('')}</div></div>`;
+  w.innerHTML = `<p class="look-lead">纸还是那张纸。昼夜、字号与动效都记在这卷之外，不入存档。</p>
+    ${row('theme', '昼夜', [['auto', '自动'], ['day', '昼'], ['night', '夜']])}
+    ${row('font', '字号', [['sm', '小'], ['md', '中'], ['lg', '大']])}
+    ${row('motion', '动效', [['full', '全'], ['lite', '简']])}
+    <p class="look-note">夜墨是深纸与淡墨，卷面仍暖。简则收雾、落花与翻卷。若画面吃力，动效会自己变薄。</p>`;
+  w.addEventListener('click', e => {
+    const b = e.target.closest('.look-opt'); if (!b) return;
+    const rowEl = b.closest('.look-row');
+    const k = rowEl.dataset.k, v = b.dataset.v;
+    rowEl.querySelectorAll('.look-opt').forEach(x => x.classList.toggle('on', x === b));
+    applyLook({ [k]: v });
+  });
+  openSheet('纸墨', w);
+}
+function openGoalPicker() {
+  if (!S || typeof Life === 'undefined') return Promise.resolve(null);
+  const pc = $('#goal-cer'); if (!pc) return Promise.resolve(null);
+  return new Promise(resolve => {
+    pc.hidden = false; pc.className = 'path-cer goal-cer go';
+    const seal = $('#goal-seal'); if (seal) seal.textContent = '求';
+    const lead = $('#goal-lead');
+    if (lead) lead.textContent = '';
+    const opts = $('#goal-opts'); opts.innerHTML = '';
+    const foot = $('#goal-foot'); foot.hidden = false;
+    const conf = $('#goal-confirm'); conf.disabled = true;
+    const hint = $('#goal-hint'); if (hint) hint.textContent = '择一愿。闭关时，或可再改';
+    let selected = S.life && S.life.goal;
+    inkWrite(lead, '入山之前，先问自己一句。此生所求，不必告诉别人。卷终时，纸会记得你有没有做到。', { immediate: true, step: snappy() ? 8 : 18 });
+    Life.GOALS.forEach((g, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'path-opt' + (selected === g.id ? ' on' : '');
+      b.style.animationDelay = (0.05 * i) + 's';
+      b.innerHTML = `<span class="po-seal"></span><span class="po-body"><b></b><em></em><p></p></span>`;
+      b.querySelector('.po-seal').textContent = g.seal;
+      b.querySelector('b').textContent = g.name;
+      b.querySelector('em').textContent = '此生所求';
+      b.querySelector('p').textContent = g.hint;
+      b.onclick = () => {
+        selected = g.id;
+        opts.querySelectorAll('.path-opt').forEach(x => x.classList.toggle('on', x === b));
+        conf.disabled = false;
+        if (hint) hint.textContent = '落定 · ' + g.name;
+      };
+      opts.appendChild(b);
+    });
+    if (selected) conf.disabled = false;
+    conf.onclick = async () => {
+      if (!selected) return;
+      const g = Life.setGoal(S, selected, !!(S.life && S.life.goal && S.life.goal !== selected));
+      pc.classList.add('leave');
+      await sleep(snappy() ? 180 : 420);
+      pc.hidden = true; pc.className = 'path-cer goal-cer';
+      if (g) pushLog({ title: '此生所求', text: `你在心里写下一行很小的字：${g.name}。${g.hint}`, cls: 'gold' });
+      render(); save();
+      resolve(g);
+    };
+  });
+}
+function openAnnals() {
+  if (!S || typeof Life === 'undefined') { toast('平生未启'); return; }
+  const c = Life.chronicle(S);
+  const w = document.createElement('div');
+  w.className = 'annals';
+  const goal = c.goal ? `${c.goal.name}` : '尚未落笔';
+  const scars = c.scars.length ? c.scars.map(x => x.text).slice(0, 3).map(t => `<p>${esc(t)}</p>`).join('') : '<p class="annals-empty">识海尚无暗伤。</p>';
+  const people = c.people.length ? c.people.map(p => `<li><b>${esc(p.name)}</b><em>${cn(p.y)}岁</em><span>${esc(p.note || '')}</span></li>`).join('') : '<li class="annals-empty">还没有记下谁。</li>';
+  const years = c.years.length ? c.years.map(y => `<section class="annals-year"><h4>${cn(y.y)}岁</h4>${y.items.map(it => `<article class="${esc(it.k || '')}"><b>${esc(it.t || '·')}</b><p>${esc(it.d || '')}</p></article>`).join('')}</section>`).join('') : '<p class="annals-empty">这一卷还薄。去活一活，字会自己来。</p>';
+  const deeds = (c.deeds || []).filter(d => !d.done && S.months >= d.due).length;
+  w.innerHTML = `<header class="annals-head">
+      <div class="annals-seal">${esc(c.heart.slice(0, 1))}</div>
+      <div><b>${esc(S.name)}</b><em>心性 · ${esc(c.heart)}</em><em>所求 · ${esc(goal)}</em>${deeds ? `<em class="zhu">回响将至</em>` : ''}</div>
+    </header>
+    <section class="annals-block"><h4>暗伤</h4>${scars}</section>
+    <section class="annals-block"><h4>所遇</h4><ul class="annals-people">${people}</ul></section>
+    <div class="annals-scroll">${years}</div>`;
+  openSheet('平生', w);
+}
+
 /* ================= 启动 ================= */
 $$('.act').forEach(b => b.addEventListener('click', () => {
   b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 500);
@@ -2123,6 +2276,15 @@ $('#path-seals').onclick = e => {
 FX.initPress(); FX.initParallax();
 if (typeof MoAudio !== 'undefined') {
   MoAudio.mountUI();
+  const dock = document.getElementById('audio-dock');
+  if (dock && !document.getElementById('btn-look')) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.id = 'btn-look'; b.className = 'audio-btn';
+    b.setAttribute('aria-label', '纸墨');
+    b.innerHTML = '<span class="audio-lab">设</span>';
+    b.addEventListener('click', e => { e.stopPropagation(); openLook(); });
+    dock.insertBefore(b, dock.firstChild);
+  }
   document.addEventListener('click', e => {
     const t = e.target.closest('button, .map-tag, .choice, .item-use, .ab, .mc-btn, .stab, .mini-seal, .menu-seal');
     if (t && !t.closest('#audio-dock')) MoAudio.uiTap();
@@ -2139,7 +2301,7 @@ const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
 function topLayer() {
   const ask = document.querySelector('.ask'); if (ask) return ask;
-  for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
+  for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'goal-cer', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
   return null;
 }
 addEventListener('keydown', e => {
@@ -2203,6 +2365,11 @@ addEventListener('keydown', e => {
 });
 setScreen('title');
 initTitle(); initCreate();
+applyLook();
+try {
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  if (mq && mq.addEventListener) mq.addEventListener('change', () => { if ((readLook().theme || 'auto') === 'auto') applyLook(); });
+} catch (e) {}
 if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) document.documentElement.dataset.standalone = '1';
 const scrollClose = $('#scroll-close');
 if (scrollClose) scrollClose.onclick = () => closeScrollView();
@@ -2225,7 +2392,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=32').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=33').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -2257,6 +2424,7 @@ Promise.all([
   initVisuals(),
   Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
 ]).catch(() => {}).then(() => splashWait()).then(() => {
+  applyLook();
   const sp = document.getElementById('splash');
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
@@ -2272,5 +2440,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, openGoalPicker, openAnnals, openLook, applyLook };
 })();
