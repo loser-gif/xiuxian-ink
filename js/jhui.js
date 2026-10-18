@@ -42,6 +42,11 @@ function makeJHUI(G) {
         <div class="map-roller r"></div><div class="map-loading">研墨铺纸……</div></div>
       <div class="map-card" id="map-card"></div>`;
     mapEl.hidden = false; await sleep(20); mapEl.classList.add('open');
+    if (typeof MoAudio !== 'undefined') {
+      MoAudio.play('paper');
+      MoAudio.startAmbient('map');
+      MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
+    }
     $('#map-close').onclick = () => closeMap();
     $('#map-rand').onclick = () => wander();
     renderWhere();
@@ -65,6 +70,11 @@ function makeJHUI(G) {
   }
   async function closeMap(keepBusy) {
     mapEl.classList.remove('open');
+    if (typeof MoAudio !== 'undefined') {
+      MoAudio.play('paper');
+      MoAudio.startAmbient('main');
+      MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
+    }
     await sleep(420);
     // 释放解码后的位图：移除 <img>，避免常驻 GPU 内存
     mapEl.querySelectorAll('img').forEach(i => { i.removeAttribute('src'); i.remove(); });
@@ -89,7 +99,7 @@ function makeJHUI(G) {
       tag.dataset.id = l.id; tag.style.left = x + '%'; tag.style.top = ly + '%';
       const mjOpenHere = l.mj && J.mjOpen(G.S, l.mj), auc = l.market && aucWindow();
       tag.innerHTML = `<span class="tag-slip">${vtext(l.name)}</span><span class="tag-seal">${l.seal}</span>${mjOpenHere ? '<span class="tag-flag">秘境</span>' : ''}${auc ? '<span class="tag-flag gold">拍卖</span>' : ''}`;
-      tag.onclick = () => { if (mapBusy) return; sel = l.id; box.querySelectorAll('.map-tag').forEach(t => t.classList.toggle('sel', t.dataset.id === sel)); renderCard(); centerOn(sel, true); };
+      tag.onclick = () => { if (mapBusy) return; sel = l.id; box.querySelectorAll('.map-tag').forEach(t => t.classList.toggle('sel', t.dataset.id === sel)); if (typeof MoAudio !== 'undefined') MoAudio.setPlace(sel); renderCard(); centerOn(sel, true); };
       box.appendChild(tag);
       const pt = document.createElement('i'); pt.className = 'map-pt'; pt.style.left = x + '%'; pt.style.top = y + '%'; box.appendChild(pt);
     });
@@ -162,6 +172,7 @@ function makeJHUI(G) {
       requestAnimationFrame(step);
     });
     const tr = J.travel(G.S, to, pushLog); tr.from = from;
+    if (typeof MoAudio !== 'undefined') MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
     render(); save(); renderWhere();
     await sleep(FX.reduced() ? 0 : 380);
     mapBusy = false;
@@ -264,6 +275,7 @@ function makeJHUI(G) {
       <nav class="auc-btns" id="auc-btns"></nav>
       <div class="auc-stamp" id="auc-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="auc-stamp-t">得</text></g></svg></div>`;
     aucEl.hidden = false; await sleep(20); aucEl.classList.add('open');
+    if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('auction');
     const allTags = [], got = [];
     addLine({ t: pick(AUC_OPEN) }, true); await sleep(1200);
     let l;
@@ -273,6 +285,7 @@ function makeJHUI(G) {
       await sleep(300);
     }
     aucEl.classList.remove('open'); await sleep(500); aucEl.hidden = true; aucEl.innerHTML = '';
+    if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('main');
     G.busy = false;
     pushLog({ title: '听雨楼拍卖', text: got.length ? `三件宝物落槌，你拍得${got.join('、')}。下楼时，夜风里还飘着檀香。` : '三件宝物各有所归，你两手空空地下了楼。有些东西，原本就不是灵石能争来的。', tags: allTags, cls: got.length ? 'gold' : 'event', div: true });
     render(); save(); checkEnd();
@@ -299,6 +312,7 @@ function makeJHUI(G) {
       const finish = async (won, line) => {
         btns.innerHTML = '';
         if (line) addLine(line);
+        if (typeof MoAudio !== 'undefined') MoAudio.play('gavel');
         $('#auc-stamp-t').textContent = won ? '得' : '落'; await sleep(300); $('#auc-stamp').classList.add('on', won ? 'won' : 'lost');
         await sleep(900);
         btns.innerHTML = `<button class="brush-btn small light" id="auc-next"><span class="bb-ink"></span><span class="bb-text">${a.i < a.lots.length - 1 ? '下一件' : '散场'}</span></button>`;
@@ -315,6 +329,7 @@ function makeJHUI(G) {
           const k = +b.dataset.k;
           if (!k) { btns.classList.remove('wait'); btns.onclick = null; const r = J.aucPass(G.S, a); return finish(null, { who: r.winner, t: r.line }); }
           const bid = Math.max(a.price + 1, Math.round(a.price * (1 + k)));
+          if (typeof MoAudio !== 'undefined') MoAudio.play('gavel');
           addLine({ who: 'you', t: bid < 10000 ? `${cn(bid)}。` : `${fmtNum(bid)}灵石。` });
           const r = J.aucRaise(G.S, a, k); await sleep(700);
           a.lines.forEach(x => addLine(x)); upd(); btns.classList.remove('wait');
@@ -368,16 +383,23 @@ function makeJHUI(G) {
     danEl.classList.toggle('nogl', !ctl);
     G.furnace = ctl;
     await sleep(20); danEl.classList.add('open', 'fire');
+    if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('dan');
     inkWrite($('#dan-text'), pick(['文火温养，药香初起……', '炉火渐旺，药气在鼎中翻涌……', '引火入炉，凝神看着火候……']), { immediate: true, step: 40 });
     const B = buffer(); const res = J.craft(G.S, id, B.emit); save();
     await sleep(FX.reduced() ? 300 : 2600);
     const kind = res.ok ? (res.q >= 2 ? 'gold' : 'ok') : res.boom ? 'boom' : 'waste';
     danEl.classList.remove('fire'); danEl.classList.add(kind);
     if (ctl) ctl.set(kind);
+    if (typeof MoAudio !== 'undefined') {
+      if (res.boom) MoAudio.play('boom');
+      else if (res.ok) { MoAudio.play(res.q >= 2 ? 'gold' : 'splash'); }
+      else MoAudio.play('fail');
+    }
     if (res.boom && navigator.vibrate) try { navigator.vibrate([20, 40, 30]); } catch (e) {}
     $('#dan-text').textContent = '';
     await sleep(res.boom ? 900 : res.ok ? 1100 : 700);
     $('#dan-stamp-t').textContent = res.ok ? (res.q >= 2 ? DAN_Q[res.q].slice(0, 1) : '成') : res.boom ? '炸' : '废';
+    if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
     $('#dan-stamp').classList.add('on');
     const t = inkWrite($('#dan-text'), res.text, { immediate: true, step: 18 });
     await sleep(Math.min(t, 1600) + 300);
@@ -389,6 +411,7 @@ function makeJHUI(G) {
       danEl.classList.remove('open'); await sleep(500);
       if (ctl) ctl.stop(); G.furnace = null;
       danEl.hidden = true; danEl.innerHTML = ''; danEl.className = 'dan';
+      if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('main');
       G.busy = false;
       pushLog({ title: `开炉 · ${r.name}`, text: res.text, tags: res.tags, cls: res.ok && res.q >= 2 ? 'gold' : 'event', div: true }); B.flush();
       render(); save(); checkEnd();

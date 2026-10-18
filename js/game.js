@@ -136,11 +136,17 @@ let curScreen = 'title';
 function setScreen(id) {
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
+  if (typeof MoAudio !== 'undefined') {
+    const mode = id === 'title' ? 'title' : (id === 'main' || id === 'create' ? 'main' : 'off');
+    MoAudio.startAmbient(mode);
+    if (id === 'main' && S) MoAudio.setPlace(S.loc, Math.floor((S.months % 12) / 3));
+  }
 }
 let lastTap = null;
 document.addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]; }, { passive: true, capture: true });
 async function unrollTo(id) {
   const t = lastTap; lastTap = null;
+  if (typeof MoAudio !== 'undefined') { MoAudio.unlock(); MoAudio.play('paper'); }
   await FX.wash(async () => { setScreen(id); await sleep(60); }, t && t[0], t && t[1]);
 }
 
@@ -360,6 +366,7 @@ function render() {
   const season = Math.floor((S.months % 12) / 3);
   setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
   FX.setSeason(season); FX.setGold(S.realm || 0);
+  if (typeof MoAudio !== 'undefined') MoAudio.setSeason(season);
   document.body.dataset.realm = S.ascended ? 5 : S.realm;
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
   const tm = Core.gt(S, 'time', 1);
@@ -408,6 +415,7 @@ function act(kind) {
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
+    if (typeof MoAudio !== 'undefined') MoAudio.play('breath');
     lock(1500);
     const B = buffer(), o = Core.tuna(S, B.emit);
     save();
@@ -422,6 +430,7 @@ function act(kind) {
     else { const sp = $('.scroll-paper').getBoundingClientRect(); FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, done); }
     return;
   } else if (kind === 'biguan') {
+    if (typeof MoAudio !== 'undefined') MoAudio.play('cave');
     lock(1100);
     FX.cave();
     const B = buffer(), o = Core.biguan(S, B.emit);
@@ -576,10 +585,15 @@ async function runBreak(usePill) {
   bt.classList.add('reveal');
   if (ok) {
     await sleep(500); bt.classList.add('glory');
+    if (typeof MoAudio !== 'undefined') { MoAudio.play('splash'); MoAudio.play('gold'); }
     const bb = $('#bt-big').getBoundingClientRect(); FX.goldMotes(bb.left + bb.width / 2, bb.top + bb.height / 2);
     await sleep(800);
   } else await sleep(1300);
-  if (!ok) { bt.classList.add('fail', 'crack'); bt.classList.add('shake'); await sleep(500); }
+  if (!ok) {
+    if (typeof MoAudio !== 'undefined') MoAudio.play('fail');
+    bt.classList.add('fail', 'crack'); bt.classList.add('shake'); await sleep(500);
+  }
+  if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
   bt.classList.add('stamped');
   await sleep(500);
   // 结算（规则层已算定，这里只落笔）
@@ -847,7 +861,9 @@ function runDuel(t, r, o = {}) {
         if (d.over) {
           el.classList.add('over', d.over === 'win' ? 'won' : 'lost');
           $('#duel-stamp-t').textContent = d.over === 'win' ? '胜' : '负';
-          await sleep(500); $('#duel-stamp').classList.add('on');
+          await sleep(500);
+          if (typeof MoAudio !== 'undefined') MoAudio.play(d.over === 'win' ? 'stamp' : 'fail');
+          $('#duel-stamp').classList.add('on');
           await sleep(900);
           const nx = $('#duel-next'); nx.hidden = false; nx.classList.remove('bleed-in'); void nx.offsetWidth; nx.classList.add('bleed-in');
           nx.querySelector('.bb-text').textContent = o.last ? (d.over === 'win' ? '收剑' : '退走') : d.over === 'win' && r < 2 ? '再战' : '下台';
@@ -864,6 +880,7 @@ async function playClash(res, d) {
   $('#dc-o').textContent = DM[res.o].ch; $('#dc-m').textContent = DM[res.m].ch;
   el.classList.remove('clash-on', 'strike', 'hit-me', 'hit-o', 'big'); void el.offsetWidth;
   el.classList.add('clash-on');
+  if (typeof MoAudio !== 'undefined') MoAudio.play('clash');
   await sleep(FX.reduced() ? 60 : 520);
   // 笔锋：胜者一笔斩向败者
   const toO = res.dmg[0] > 0, toM = res.dmg[1] > 0, stall = !toO && !toM;
@@ -1042,12 +1059,20 @@ const JHUI = typeof makeJHUI === 'function' ? makeJHUI({ get S() { return S; }, 
 /* ================= 启动 ================= */
 $$('.act').forEach(b => b.addEventListener('click', () => {
   b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 500);
+  if (typeof MoAudio !== 'undefined') MoAudio.uiTap();
   act(b.dataset.act);
 }));
 $('#btn-break').onclick = openBreak;
 $('#btn-menu').onclick = openMenu;
 $('#btn-sect').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openSect(); };
 FX.initPress(); FX.initParallax();
+if (typeof MoAudio !== 'undefined') {
+  MoAudio.mountUI();
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button, .map-tag, .choice, .item-use, .ab, .mc-btn, .stab, .mini-seal, .menu-seal');
+    if (t && !t.closest('#audio-dock')) MoAudio.uiTap();
+  }, true);
+}
 $('#side').onclick = e => {
   const c = e.target.closest('.side-card'); if (!c || busy || !S || S.dead || S.ascended) return;
   const k = c.dataset.open; if (k === 'gf') openBag('gf'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else act('youli');
@@ -1112,5 +1137,5 @@ Promise.all([
   requestAnimationFrame(() => document.body.classList.add('go'));
   setTimeout(() => document.body.classList.add('intro-done'), 4200);
 });
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), JHUI };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, act, openBreak, openBag, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), JHUI, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null };
 })();

@@ -1397,3 +1397,26 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   .sd-name{font-size:23px}.sd-list li{font-size:15px}
   .act{height:92px}.act-t{font-size:28px}
 }
+
+
+/* ---------- 氛围音效开关 ---------- */
+#audio-dock{position:fixed;z-index:55;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:8px;pointer-events:none}
+#audio-dock>*{pointer-events:auto}
+.audio-btn{width:44px;height:44px;border:0;border-radius:50%;cursor:pointer;font-family:var(--f-head);font-size:18px;letter-spacing:.15em;
+  color:var(--ink2);background:var(--brush-img-ink-l) center/100% 100% no-repeat;opacity:.72;transition:opacity .3s,filter .3s,transform .2s;
+  display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}
+.audio-btn:hover{opacity:1}.audio-btn:active{transform:scale(.94)}
+.audio-btn.muted{opacity:.42;color:var(--ink4);filter:grayscale(.35)}
+.audio-btn .audio-lab{transform:translateY(1px)}
+.audio-vol{display:none;width:88px;height:28px;accent-color:#6a5a48;opacity:.75;cursor:pointer}
+@media (hover:hover) and (pointer:fine){
+  #audio-dock:hover .audio-vol,#audio-dock:focus-within .audio-vol{display:block}
+  .audio-vol{display:none}
+}
+body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom));right:max(16px,env(safe-area-inset-right))}
+@media (min-width:1000px) and (min-height:600px){
+  #audio-dock{right:max(28px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom))}
+  .audio-vol{display:block;opacity:.55}
+  #audio-dock:hover .audio-vol{opacity:.9}
+}
