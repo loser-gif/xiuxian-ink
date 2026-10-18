@@ -67,7 +67,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-
 .seal-font{font-family:var(--f-head)}
 
 /* ---------- 纸 / 景 ---------- */
-#paper{position:fixed;inset:0;background-color:var(--paper);background-image:var(--paper-img);background-size:256px 256px;z-index:0}
+#paper{position:fixed;inset:0;z-index:0;background-color:var(--paper);background-image:var(--paper-img);background-size:256px 256px;
+  transition:background-color 2.8s var(--ease-ink)}
+#paper-veil{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 40%, var(--paper-tint, transparent), transparent 70%),
+    radial-gradient(ellipse 80% 55% at 8% 92%, var(--paper-stain, rgba(90,60,30,.05)), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 94% 8%, var(--paper-stain2, rgba(70,50,35,.045)), transparent 50%),
+    linear-gradient(180deg, var(--paper-realm, transparent), transparent 42%);
+  opacity:1;transition:opacity 2.4s var(--ease-ink),background 2.8s var(--ease-ink);mix-blend-mode:multiply}
+#fiber{position:fixed;inset:0;z-index:71;pointer-events:none;opacity:.055;
+  background-image:var(--fiber-img);background-size:280px 280px;mix-blend-mode:multiply}
 #vignette{position:fixed;inset:0;pointer-events:none;z-index:1;
   background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(92,68,40,.16) 88%,rgba(70,50,28,.32) 100%),
              linear-gradient(180deg,rgba(80,60,35,.10),transparent 9%,transparent 91%,rgba(80,60,35,.12))}
@@ -270,6 +280,7 @@ body.go .title-menu{animation:fadeUp 1.4s 3.5s var(--ease-ink) both}
 /* 卷轴日志 */
 .scroll{position:relative;flex:1;min-height:0;margin:12px 4px 6px;display:flex;flex-direction:column}
 .roller{position:relative;flex:none;height:15px;margin:0 -10px;border-radius:7px;z-index:2;
+  filter:drop-shadow(0 3px 4px rgba(30,20,10,.28)) drop-shadow(0 -1px 2px rgba(30,20,10,.12));
   background:linear-gradient(180deg,#5b4433 0%,#2d2119 35%,#1a130e 60%,#3c2d22 85%,#20170f 100%);box-shadow:0 2px 3px rgba(30,20,10,.35)}
 .roller::before,.roller::after{content:"";position:absolute;top:-2px;width:14px;height:19px;border-radius:4px;
   background:linear-gradient(180deg,#e9e2cf,#c7bc9f 45%,#a59a7d 70%,#d8cfb8);box-shadow:0 1px 2px rgba(0,0,0,.3)}
@@ -1461,9 +1472,9 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 /* 平板及以上：抽屉改为居中的纸笺 */
 @media (min-width:700px) and (min-height:520px){
   .sheet-panel{left:50%;right:auto;top:50%;bottom:auto;width:min(660px,calc(100vw - 72px));max-width:none;max-height:min(84dvh,880px);margin:0;
-    padding:20px 32px 26px;border-radius:3px;opacity:0;transform:translate3d(-50%,-47%,0) scale(.985);
-    transition:transform .45s var(--ease-ink),opacity .35s var(--ease-ink);box-shadow:0 24px 64px rgba(20,14,8,.32),inset 0 0 0 1px rgba(27,24,20,.07)}
-  .sheet.open .sheet-panel{opacity:1;transform:translate3d(-50%,-50%,0)}
+    padding:20px 32px 26px;border-radius:3px;opacity:0;transform:translate3d(-50%,-46%,0) scale(.978) rotateX(3deg);
+    transition:transform .5s var(--ease-curl),opacity .35s var(--ease-curl);box-shadow:0 24px 64px rgba(20,14,8,.32),inset 0 0 0 1px rgba(27,24,20,.07)}
+  .sheet.open .sheet-panel{opacity:1;transform:translate3d(-50%,-50%,0) scale(1) rotateX(0deg)}
   .sheet-panel::before,.sheet-panel::after{content:"";position:absolute;left:-7px;right:-7px;height:11px;border-radius:6px;background:linear-gradient(180deg,#5b4433,#2d2119 40%,#1a130e 65%,#3c2d22);box-shadow:0 2px 3px rgba(30,20,10,.3)}
   .sheet-panel::before{top:-6px}.sheet-panel::after{bottom:-6px}
   .sheet-handle{visibility:hidden;height:2px;margin-bottom:6px}
@@ -1867,4 +1878,172 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 @media (min-width:1000px){
   .hud-seals{gap:8px;margin-right:4px}
   .item-acts{min-width:72px}
+}
+
+
+/* ===== 宣纸光感 / 卷轴物理 ===== */
+:root{
+  --paper:#efe6d3;
+  --paper-tint:rgba(120,130,100,.03);
+  --paper-stain:rgba(90,60,30,.05);
+  --paper-stain2:rgba(70,50,35,.04);
+  --paper-realm:transparent;
+  --ease-curl:cubic-bezier(.22,.7,.18,1);
+}
+/* 四季纸色：优雅微差 */
+body[data-season="0"]{--paper:#f1ead8;--paper-tint:rgba(110,140,100,.045);--paper-stain:rgba(80,100,70,.045)} /* 春 */
+body[data-season="1"]{--paper:#f3ebcf;--paper-tint:rgba(200,160,70,.05);--paper-stain:rgba(140,90,40,.05)} /* 夏 */
+body[data-season="2"]{--paper:#efe0c8;--paper-tint:rgba(180,100,50,.055);--paper-stain:rgba(130,70,35,.06)} /* 秋 */
+body[data-season="3"]{--paper:#e8e4dc;--paper-tint:rgba(90,110,130,.05);--paper-stain:rgba(60,70,80,.05);--paper-stain2:rgba(50,60,75,.04)} /* 冬 */
+/* 时辰：晨清、午暖、暮沉（叠一层，不依赖 color-mix） */
+body[data-tod="dawn"] #paper-veil{box-shadow:inset 0 0 120px rgba(160,190,200,.045)}
+body[data-tod="noon"] #paper-veil{box-shadow:inset 0 0 100px rgba(220,190,120,.04)}
+body[data-tod="dusk"] #paper-veil{box-shadow:inset 0 0 130px rgba(160,90,50,.055)}
+/* 境界：金气上染 */
+body[data-realm="1"]{--paper-realm:rgba(61,85,96,.035)}
+body[data-realm="2"]{--paper-realm:rgba(196,146,62,.055)}
+body[data-realm="3"]{--paper-realm:rgba(120,92,140,.05)}
+body[data-realm="4"]{--paper-realm:rgba(214,168,72,.07)}
+body[data-realm="5"]{--paper-realm:rgba(236,196,104,.09)}
+
+html,body{background:var(--paper);transition:background-color 2.8s var(--ease-ink)}
+
+/* 纸面边渍：卷轴 / 抽屉 / 横卷 / 终卷 */
+.scroll-paper,.sheet-panel,.hpaper,.end-paper,.map{
+  background-image:
+    radial-gradient(ellipse 100% 28% at 50% 0%, rgba(55,40,25,.07), transparent 60%),
+    radial-gradient(ellipse 100% 24% at 50% 100%, rgba(55,40,25,.06), transparent 55%),
+    radial-gradient(ellipse 40% 50% at 0% 30%, rgba(90,60,30,.045), transparent 70%),
+    radial-gradient(ellipse 40% 50% at 100% 70%, rgba(90,60,30,.04), transparent 70%),
+    linear-gradient(rgba(250,246,234,.78),rgba(250,246,234,.78)),
+    var(--paper-img);
+  background-size:auto,auto,auto,auto,auto,256px;
+}
+.hpaper{
+  background-image:
+    radial-gradient(ellipse 28% 100% at 0% 50%, rgba(55,40,25,.08), transparent 65%),
+    radial-gradient(ellipse 28% 100% at 100% 50%, rgba(55,40,25,.08), transparent 65%),
+    radial-gradient(ellipse 100% 24% at 50% 100%, rgba(55,40,25,.05), transparent 55%),
+    linear-gradient(rgba(249,245,233,.84),rgba(249,245,233,.84)),
+    var(--paper-img);
+  background-size:auto,auto,auto,auto,256px;
+}
+.map{
+  background-image:
+    radial-gradient(ellipse 100% 30% at 50% 0%, rgba(55,40,25,.06), transparent 55%),
+    radial-gradient(ellipse 80% 40% at 10% 100%, rgba(90,60,30,.05), transparent 50%),
+    linear-gradient(rgba(242,235,219,.92),rgba(242,235,219,.92)),
+    var(--paper-img);
+  background-size:auto,auto,auto,256px;
+}
+
+/* 轴棍阴影加重（圆柱感） */
+.roller{
+  box-shadow:
+    0 4px 8px rgba(30,18,8,.32),
+    0 -2px 4px rgba(30,18,8,.14),
+    inset 0 2px 3px rgba(255,248,230,.22),
+    inset 0 -3px 4px rgba(20,12,6,.35) !important;
+}
+.hroller{
+  box-shadow:
+    3px 0 8px rgba(20,12,6,.38),
+    -1px 0 3px rgba(20,12,6,.15),
+    inset -2px 0 4px rgba(255,248,230,.12),
+    inset 3px 0 5px rgba(10,6,3,.4) !important;
+}
+.map-roller{
+  box-shadow:
+    2px 0 6px rgba(30,18,8,.3),
+    -2px 0 6px rgba(30,18,8,.3),
+    inset 0 0 0 1px rgba(255,248,230,.08);
+}
+
+/* 卷轴启合：微卷曲 */
+.scroll{perspective:900px}
+.scroll-paper{
+  transform-origin:50% 0%;
+  transition:transform .7s var(--ease-curl), box-shadow .7s var(--ease-curl);
+}
+body[data-screen=main] .scroll-paper{
+  animation:paperSettle .9s var(--ease-curl) both;
+}
+@keyframes paperSettle{
+  from{transform:rotateX(4deg) scaleY(.985);filter:brightness(.97)}
+  to{transform:none;filter:none}
+}
+
+/* 抽屉：自下卷起 */
+.sheet{perspective:1400px}
+.sheet-panel{
+  transform:translate3d(0,105%,0) rotateX(7deg);
+  transform-origin:50% 100%;
+  transition:transform .6s var(--ease-curl), box-shadow .6s var(--ease-curl);
+  box-shadow:
+    0 -12px 36px rgba(0,0,0,.28),
+    inset 0 16px 18px -14px rgba(40,28,16,.16),
+    inset 0 1px 0 rgba(255,248,230,.2) !important;
+}
+.sheet.open .sheet-panel{
+  transform:translate3d(0,0,0) rotateX(0deg);
+  box-shadow:
+    0 -10px 28px rgba(0,0,0,.22),
+    inset 0 10px 12px -10px rgba(40,28,16,.1),
+    inset 0 1px 0 rgba(255,248,230,.12) !important;
+}
+
+/* 奇遇横卷：启合时轴侧微卷高光 */
+.hscroll{perspective:1000px}
+.hpaper{
+  box-shadow:
+    0 12px 32px rgba(0,0,0,.28),
+    inset 18px 0 28px -18px rgba(40,28,16,.22),
+    inset -18px 0 28px -18px rgba(40,28,16,.22) !important;
+}
+.modal:not(.open) .hpaper{
+  filter:brightness(.96);
+}
+.modal.open .hroller.left{filter:drop-shadow(4px 0 6px rgba(20,12,6,.35))}
+.modal.open .hroller.right{filter:drop-shadow(-4px 0 6px rgba(20,12,6,.35))}
+
+/* 地图：铺纸微落 */
+.map{
+  opacity:0;
+  transform:translate3d(0,10px,0) scale(.988);
+  transform-origin:50% 40%;
+  transition:opacity .45s var(--ease-curl), transform .55s var(--ease-curl);
+}
+.map.open{opacity:1;transform:none}
+.map-scroll{
+  box-shadow:
+    inset 12px 0 16px -12px rgba(40,28,16,.42),
+    inset -12px 0 16px -12px rgba(40,28,16,.42),
+    inset 0 8px 10px -8px rgba(40,28,16,.18),
+    inset 0 -8px 10px -8px rgba(40,28,16,.18) !important;
+}
+
+/* 破境落定重量（轻） */
+.bt.glory .bt-big{
+  animation:btSettle .85s var(--ease-curl) both;
+}
+@keyframes btSettle{
+  0%{transform:scale(1.05);filter:blur(.4px)}
+  55%{transform:scale(.985)}
+  100%{transform:scale(1);filter:none}
+}
+.bt.glory .bt-stamp{
+  filter:drop-shadow(0 6px 10px rgba(20,10,5,.45));
+}
+
+@media (prefers-reduced-motion:reduce){
+  #paper,#paper-veil,html,body{transition:none!important}
+  #fiber{opacity:.04}
+  #grain{animation:none!important;opacity:.05}
+  .scroll-paper,.sheet-panel,.map,.hpaper,.hroller{transition:opacity .2s ease!important;animation:none!important;transform:none!important;filter:none!important}
+  .sheet-panel{transform:translate3d(0,105%,0)!important}
+  .sheet.open .sheet-panel{transform:none!important}
+  .map{opacity:0;transform:none}
+  .map.open{opacity:1}
+  .bt.glory .bt-big{animation:none!important}
+  body[data-screen=main] .scroll-paper{animation:none!important}
 }

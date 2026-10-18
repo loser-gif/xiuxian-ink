@@ -65,6 +65,7 @@ async function initVisuals() {
   root.style.setProperty('--blot-stone', `url(${stone})`); root.style.setProperty('--blot-big', `url(${big})`);
   try { Wallpaper.init(); wallpaperOn = true; } catch (e) { console.warn(e); }
   root.style.setProperty('--grain-img', `url(${grainTile()})`);
+  root.style.setProperty('--fiber-img', `url(${fiberTile()})`);
   try { InkGL.init(); InkGL.setPaper(paper); } catch (e) { console.warn(e); }
 }
 function grainTile() {
@@ -72,6 +73,26 @@ function grainTile() {
   const img = c.createImageData(s, s), d = img.data;
   for (let i = 0; i < d.length; i += 4) { const v = Math.random(); const dark = v < .5; d[i] = d[i + 1] = d[i + 2] = dark ? 20 : 255; d[i + 3] = Math.pow(Math.random(), 3) * 120; }
   c.putImageData(img, 0, 0); return cv.toDataURL();
+}
+/* 宣纸纤维：极淡横丝，静帧贴图（不动画，保 60fps） */
+function fiberTile() {
+  const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s; const c = cv.getContext('2d');
+  c.clearRect(0, 0, s, s);
+  for (let i = 0; i < 90; i++) {
+    const y = Math.random() * s, x0 = Math.random() * s;
+    const len = 20 + Math.random() * 70, w = 0.4 + Math.random() * 0.9;
+    c.strokeStyle = `rgba(40,32,24,${0.04 + Math.random() * 0.07})`;
+    c.lineWidth = w; c.beginPath();
+    c.moveTo(x0, y);
+    c.quadraticCurveTo(x0 + len * 0.4, y + (Math.random() - 0.5) * 3, x0 + len, y + (Math.random() - 0.5) * 2);
+    c.stroke();
+  }
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * s, y = Math.random() * s;
+    c.fillStyle = `rgba(90,70,40,${0.015 + Math.random() * 0.03})`;
+    c.beginPath(); c.ellipse(x, y, 8 + Math.random() * 18, 3 + Math.random() * 6, Math.random() * 0.4, 0, 7); c.fill();
+  }
+  return cv.toDataURL();
 }
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => drawMountains(false), 250); });
@@ -164,7 +185,11 @@ function initTitle() {
   } else {
     const bc = $('#btn-continue'); if (bc) bc.hidden = true;
   }
-  FX.setSeason(s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0); FX.setGold(0);
+  const _sea = s && !s.dead && !s.ascended ? Math.floor((s.months % 12) / 3) : 0;
+  FX.setSeason(_sea); FX.setGold(0);
+  document.body.dataset.season = _sea;
+  document.body.dataset.tod = 'dawn';
+  if (!(s && !s.dead && !s.ascended)) document.body.dataset.realm = '0';
   const subAtlas = $('#atlas-sub');
   if (subAtlas && typeof Samsara !== 'undefined') {
     const st = Samsara.atlasStats();
@@ -500,6 +525,10 @@ function render() {
   FX.setSeason(season); FX.setGold(S.realm || 0);
   if (typeof MoAudio !== 'undefined') MoAudio.setSeason(season);
   document.body.dataset.realm = S.ascended ? 5 : S.realm;
+  document.body.dataset.season = season;
+  // 时辰感：按月份内进度微移（晨／午／暮），只影响纸色，不改玩法
+  const mIn = S.months % 3; // 0..2 within season quarter-ish
+  document.body.dataset.tod = mIn === 0 ? 'dawn' : mIn === 1 ? 'noon' : 'dusk';
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
   const chipC = $('#chip-court');
   if (chipC) {
