@@ -110,27 +110,84 @@ document.addEventListener('gesturestart', e => e.preventDefault());
 /* ================= 墨晕文字 ================= */
 const PUNCT = '，。、；：？！”’）》」…—·';
 let inkBusyUntil = 0;
-function inkWrite(el, text, opt = {}) {
-  const now = performance.now();
-  const backlog = Math.max(0, inkBusyUntil - now);
-  const start = opt.immediate ? 0 : Math.min(backlog, 1400);
-  const step = opt.step || (backlog > 1200 ? 9 : 22);
-  const frag = document.createDocumentFragment();
+function splitUnits(text) {
   const units = [];
   for (const ch of text) {
     if (units.length && (PUNCT.includes(ch) || ch === ' ')) units[units.length - 1] += ch;
     else if (units.length && '“‘（《「'.includes(units[units.length - 1].slice(-1))) units[units.length - 1] += ch;
     else units.push(ch);
   }
-  units.forEach((u, i) => {
-    const sp = document.createElement('span'); sp.className = 'ink-ch'; sp.textContent = u;
-    sp.style.animationDelay = (start + i * step) + 'ms'; frag.appendChild(sp);
+  return units;
+}
+function splitSentences(text) {
+  const sentences = [];
+  const chars = [...text];
+  let buf = '';
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    buf += ch;
+    if ('。！？'.includes(ch)) {
+      while (i + 1 < chars.length && '”’》」'.includes(chars[i + 1])) { i++; buf += chars[i]; }
+      sentences.push(buf); buf = '';
+    }
+  }
+  if (buf) sentences.push(buf);
+  return sentences.length ? sentences : [''];
+}
+function bareLen(s) { return s.replace(/[\s，。、；：？！“”‘’（《》「」…—·]/g, '').length; }
+function inkWrite(el, text, opt = {}) {
+  const now = performance.now();
+  const backlog = Math.max(0, inkBusyUntil - now);
+  const start = opt.immediate ? 0 : Math.min(backlog, 1400);
+  const step = opt.step || (backlog > 1200 ? 9 : 22);
+  const cadence = !!opt.cadence;
+  const quiet = cadence && typeof FX !== 'undefined' && FX.reduced && FX.reduced();
+  if (cadence) el.classList.add('ink-cadence');
+  else el.classList.remove('ink-cadence');
+  const frag = document.createDocumentFragment();
+  const sentences = splitSentences(text);
+  const lastSent = sentences.length - 1;
+  const pauseScale = text.length > 140 ? 0.62 : 1;
+  let delay = start;
+  let count = 0;
+  sentences.forEach((sentence, si) => {
+    const units = splitUnits(sentence);
+    const bare = bareLen(sentence);
+    let key = lastSent;
+    while (key > 0 && bareLen(sentences[key]) < 2) key--;
+    const dense = sentences.length === 1
+      ? bare > 0 && bare <= 16
+      : (si === key || (/！/.test(sentence) && bare >= 2 && bare <= 20));
+    units.forEach((u, ui) => {
+      const sp = document.createElement('span');
+      sp.className = 'ink-ch';
+      if (cadence) {
+        if (dense) sp.classList.add('ink-dense');
+        else if (ui === 0) sp.classList.add('ink-dry');
+        else if (/[。！？，、；：…][”’》」]*$/.test(u)) sp.classList.add('ink-press');
+      }
+      sp.textContent = u;
+      const jitter = cadence && !quiet ? ((u.charCodeAt(0) * 17) % 11) : 0;
+      sp.style.animationDelay = (quiet ? 0 : delay) + 'ms';
+      frag.appendChild(sp);
+      count++;
+      if (!quiet) {
+        delay += step + jitter;
+        if (cadence) {
+          if (/[。！？…][”’》」]*$/.test(u)) delay += Math.round(step * 13 * pauseScale);
+          else if (/[，、；：][”’》」]*$/.test(u)) delay += Math.round(step * 4.5 * pauseScale);
+        }
+      }
+    });
   });
   el.textContent = ''; el.appendChild(frag);
-  const total = start + units.length * step + 1100;
-  inkBusyUntil = now + start + units.length * step + 200;
-  setTimeout(() => { if (el.isConnected && el.querySelector('.ink-ch')) el.textContent = text; }, total + 50);
-  return start + units.length * step;
+  const written = quiet ? 0 : delay;
+  inkBusyUntil = now + written + 200;
+  if (!cadence) {
+    const total = start + count * step + 1100;
+    setTimeout(() => { if (el.isConnected && el.querySelector('.ink-ch')) el.textContent = text; }, total + 50);
+  }
+  return written;
 }
 
 /* ================= 状态 ================= */
@@ -687,7 +744,7 @@ function openEvent(ev) {
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
   openModal();
-  const d = inkWrite($('#ev-text'), text, { immediate: true, step: 20 });
+  const d = inkWrite($('#ev-text'), text, { immediate: true, step: 20, cadence: true });
   const startAt = 650 + d * 0.55;
   ev.choices(S).forEach((c, i) => {
     const b = document.createElement('button'); b.className = 'choice'; b.disabled = !!c.disabled;
@@ -706,7 +763,7 @@ function choose(ev, c, btn, evText) {
   if (res.fx && res.fx.gf) FX.goldMotes && setTimeout(() => { const t = $('#ev-result').getBoundingClientRect(); FX.goldMotes(t.left + t.width / 2, t.top + 20); }, 900);
   const out = $('#ev-result');
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
-  const d = inkWrite(p, res.text, { immediate: true, step: 20 });
+  const d = inkWrite(p, res.text, { immediate: true, step: 20, cadence: true });
   const tg = document.createElement('div'); tg.className = 'entry-tags'; tg.style.opacity = 0;
   tg.innerHTML = tags.map(x => `<span class="${x.c || ''}">${x.t}</span>`).join('') || '<span>无事发生</span>';
   out.appendChild(tg);
@@ -747,7 +804,7 @@ function openBreak() {
   if (K.btDeath[S.realm]) t += S.items['兵解玉符'] > 0 ? '此境破关，败则有身死之虞。好在袖中玉符温润，似在低语：纵使身殒，道不必绝。' : '此境破关，已非儿戏——一旦失手，便有身死道消之虞。';
   if (S.gf && GONGFA[S.gf].mo && S.xj < 15) t += '魔功反噬在即，心神摇摇欲坠，此时破关，凶多吉少。';
   openModal();
-  const d = inkWrite($('#ev-text'), t, { immediate: true, step: 20 });
+  const d = inkWrite($('#ev-text'), t, { immediate: true, step: 20, cadence: true });
   const opts = [];
   if (has) opts.push({ label: `服${pill}，破境`, sub: chanceWord(btChance(true)), go: true, pill: true });
   opts.push({ label: has ? '不服丹，强行破境' : '凝神静气，破境', sub: chanceWord(btChance(false)), go: true, pill: false });
@@ -798,10 +855,9 @@ async function runBreak(usePill) {
   else {
     bt.classList.add('reveal');
     if (ok) {
-      await sleep(500); bt.classList.add('glory');
+      await sleep(500); bt.classList.add('glory', 'weight');
       if (typeof MoAudio !== 'undefined') { MoAudio.play('splash'); MoAudio.play('gold'); }
-      const bb = $('#bt-big').getBoundingClientRect(); FX.goldMotes(bb.left + bb.width / 2, bb.top + bb.height / 2);
-      await sleep(800);
+      await sleep(760);
     } else await sleep(1300);
     if (!ok) {
       if (typeof MoAudio !== 'undefined') MoAudio.play('fail');
