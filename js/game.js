@@ -413,7 +413,7 @@ function initTitle() {
     const ds = Samsara.dailyStatus();
     btnDaily.hidden = false;
     const sm = btnDaily.querySelector('small');
-    if (sm) sm.textContent = ds.claimed ? '今日已领' : '晨露一缕';
+    if (sm) sm.textContent = ds.claimed ? '今日已领' : '此卷晨露';
     btnDaily.classList.toggle('dim', !!ds.claimed);
     btnDaily.onclick = () => {
       FX.requestTilt();
@@ -436,10 +436,16 @@ function initTitle() {
     btnTrial.hidden = false;
     btnTrial.onclick = async () => {
       FX.requestTilt();
+      const ok = await inkConfirm(
+        '今日试炼：以金丹初期之身入局，年四十，灵石一百二十。',
+        '入局',
+        false,
+        '二十载内须破一障。此局不入轮回簿，只解锁图鉴。'
+      );
+      if (!ok) return;
       if (!(await pickSlotForNew(true))) return;
       window.__trialStart = true;
       resetCreate(); unrollTo('create');
-      toast('试炼境：金丹起步 · 二十载');
     };
   }
   const btnAtlas = $('#btn-atlas');
@@ -464,13 +470,15 @@ async function pickSlotForNew(trial) {
 
 /* ================= 墨笺问询：替代原生 confirm ================= */
 let askOpen = null;
-function inkConfirm(text, ok = '确定', danger = false) {
+function inkConfirm(text, ok = '确定', danger = false, sub = '确定么？') {
   return new Promise(res => {
     const el = document.createElement('div'); el.className = 'ask'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
-    el.innerHTML = `<div class="ask-shade"></div><div class="ask-card"><p class="ask-text"></p><p class="ask-sub">确定么？</p>
+    el.innerHTML = `<div class="ask-shade"></div><div class="ask-card"><p class="ask-text"></p><p class="ask-sub"></p>
       <div class="ask-btns"><button class="brush-btn small ask-no"><span class="bb-ink"></span><span class="bb-text">且慢</span></button>
       <button class="brush-btn small ask-ok${danger ? ' danger' : ''}" id="ask-ok"><span class="bb-ink"></span><span class="bb-text"></span></button></div></div>`;
-    el.querySelector('.ask-text').textContent = text; el.querySelector('.ask-ok .bb-text').textContent = ok;
+    el.querySelector('.ask-text').textContent = text;
+    el.querySelector('.ask-sub').textContent = sub;
+    el.querySelector('.ask-ok .bb-text').textContent = ok;
     document.body.appendChild(el);
     const done = v => { if (!askOpen) return; askOpen = null; el.classList.remove('open'); setTimeout(() => el.remove(), 320); res(v); };
     askOpen = done;
@@ -485,9 +493,17 @@ function inkConfirm(text, ok = '确定', danger = false) {
 let roll = null, rerolls = 2, testing = false;
 function resetCreate() {
   roll = null; rerolls = 2; testing = false;
+  const trial = !!window.__trialStart;
+  const ch = document.querySelector('#scr-create .chapter');
+  const ban = $('#trial-banner');
+  if (ch) ch.textContent = trial ? '试炼境' : '第一卷';
+  if (ban) {
+    ban.hidden = !trial;
+    ban.textContent = trial ? '今日试炼：以金丹初期之身入局，年四十，灵石一百二十。二十载内须破一障，不入轮回簿。' : '';
+  }
   $('#inp-name').value = '';
   $('#lg-name').textContent = ''; $('#lg-stats').textContent = '';
-  const f = $('#lg-flavor'); f.textContent = '以指触石，可知灵根。'; f.className = 'lg-flavor dim';
+  const f = $('#lg-flavor'); f.textContent = trial ? '灵根随你。入局之后，已是金丹初期。' : '以指触石，可知灵根。'; f.className = 'lg-flavor dim';
   $('#btn-test').querySelector('.bb-text').textContent = '测灵根'; $('#btn-test').disabled = false;
   $('#btn-start').hidden = true;
   $$('.el').forEach(e => e.classList.remove('on'));
@@ -591,8 +607,14 @@ function newGame(name, r, choice, originId) {
     sectLine = `测得${lgDesc}。山门之内，尘埃落定。`;
   }
   const who = (typeof Juan !== 'undefined' && Juan.originName) ? Juan.originName(S) : '青石镇少年';
+  const rankWord = Core.rankName(S);
   if (trial) {
-    pushLog({ text: `试炼境开启。你以金丹之姿落子，出身${who}，名${name}。二十载内须破一障；此局不入轮回簿，可解锁图鉴。`, cls: 'sys', tags: [{ t: '试炼', c: 'gold' }] });
+    pushLog({
+      title: '试炼',
+      text: `今日试炼：以金丹${rankWord}之身入局。出身${who}，名${name}，年四十，随身灵石一百二十。二十载内须破一障；此局不入轮回簿，可解锁图鉴。`,
+      cls: 'gold',
+      tags: [{ t: '金丹初期', c: 'gold' }, { t: '二十载', c: 'gold' }]
+    });
   } else {
     const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(S) : `你名${name}，青石镇人氏，年方十六。`;
     pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
@@ -611,7 +633,7 @@ function newGame(name, r, choice, originId) {
     pushLog({ text: S.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
     delete S.flags._legacyJoinText;
   }
-  pushLog({ text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: true });
+  pushLog({ text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
   if (legacy && legacy.thread) pushLog({ title: '前世绝笔', text: legacy.thread, cls: 'breath' });
   else if (S.flags && S.flags.threadText) pushLog({ title: '前世绝笔', text: S.flags.threadText, cls: 'breath' });
   save();
@@ -720,17 +742,10 @@ function enterMain(fromSave) {
     // 先铺陈旧事，最后三条以墨晕写出
     render();
     logs.forEach((e, i) => renderEntry(e, fromSave ? i >= logs.length - 2 : true));
-    scrollLog();
+    if (fromSave) scrollLog();
+    else { const l = $('#log'); if (l) l.scrollTop = 0; }
     if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
     if (fromSave) setTimeout(() => ensurePendingPath(), 900);
-    if (typeof Samsara !== 'undefined' && !fromSave && !(S.flags && S.flags.guide)) {
-      const ds = Samsara.dailyStatus();
-      if (!ds.claimed) setTimeout(() => {
-        if (!S || (S.flags && S.flags.guide)) return;
-        const r = Samsara.claimDaily(S, pushLog);
-        if (r && r.ok) { save(); render(); }
-      }, 1200);
-    }
     if (S.flags && S.flags.guide) setTimeout(() => maybeGuide(), fromSave ? 600 : 1100);
   });
   render();
@@ -755,7 +770,10 @@ function pushLog(e) {
   if (typeof Juan !== 'undefined' && Juan.onLog) Juan.onLog(S, e);
   noteMark(e);
   S.log.push(e); if (S.log.length > 60) S.log.splice(0, S.log.length - 60);
-  if (curScreen === 'main' && !document.getElementById('scr-main').hidden) { renderEntry(e, true); scrollLog(); }
+  if (curScreen === 'main' && !document.getElementById('scr-main').hidden) {
+    renderEntry(e, true); scrollLog();
+    if (e.colo) renderSeals();
+  }
 }
 function renderEntry(e, animate) {
   const log = $('#log');
@@ -778,6 +796,15 @@ function renderEntry(e, animate) {
     el.appendChild(tg);
   }
   while (log.children.length > 80) log.removeChild(log.firstChild);
+  syncColo();
+}
+function syncColo() {
+  const last = (S && S.colophon && S.colophon.length) ? S.colophon[S.colophon.length - 1] : null;
+  document.querySelectorAll('#log .entry-colo').forEach(colo => {
+    const title = colo.parentElement && colo.parentElement.querySelector('.entry-title');
+    const onMargin = !!(last && colo.textContent === last.line && title && title.textContent === last.t);
+    colo.hidden = onMargin;
+  });
 }
 function scrollLog() { const l = $('#log'); requestAnimationFrame(() => l.scrollTop = l.scrollHeight); }
 
@@ -921,6 +948,7 @@ function renderSeals() {
     note.classList.toggle('land', changed && !!line);
     setNote(!!line);
   } else setNote(false);
+  syncColo();
 }
 // 宽屏右栏：功法 / 宗门 / 行囊 / 行迹 一览（窄屏隐藏时不渲染）
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

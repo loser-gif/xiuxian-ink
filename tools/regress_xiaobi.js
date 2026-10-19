@@ -79,4 +79,15 @@ if (dec.data.name !== '江问心' || dec.data.gfs[id].lv !== G.GF_LAYERS) fail('
 const legacy = Codec.decode(code);
 if (!legacy.ok || legacy.data.v !== 13) fail('旧格式解档失败');
 
-if (!process.exitCode) console.log('回归通过', '行功', spd0.toFixed(2), '→', Core.gfSpeed(JSON.parse(JSON.stringify(kept2))).toFixed(2), '售价样例', offer.price);
+// 试炼开局是固定预设：金丹初期、四十岁、灵石一百二十。日缘不会改境界。
+const wei = LINGGEN.find(l => l.id === 'wei');
+const trial = Core.newState('青石', { lg: wei, els: ['金', '木', '水', '火', '土'], wx: 4, luck: 1, org: 'sx', trial: 1, origin: 'qingshi' });
+if (trial.realm !== 2 || trial.stage !== 0) fail('试炼境界应为金丹初期');
+if (Math.floor(trial.months / 12) !== 40) fail('试炼年岁应为四十，实为 ' + Math.floor(trial.months / 12));
+if (trial.ls !== 120 || trial.xw !== 0) fail('试炼灵石/修为不对 ' + trial.ls + '/' + trial.xw);
+if ((trial.flags && trial.flags.trialYears) !== 20) fail('试炼应为二十载');
+const idn = `${Core.rankName(trial)}·${trial.lg.name}`;
+if (idn !== '行客·伪灵根') fail('散修盟伪灵根应是行客·伪灵根，实为 ' + idn);
+if (trial.lifespan !== 380) fail('寿元应为 380，实为 ' + trial.lifespan);
+
+if (!process.exitCode) console.log('回归通过', '行功', spd0.toFixed(2), '→', Core.gfSpeed(JSON.parse(JSON.stringify(kept2))).toFixed(2), '售价样例', offer.price, '试炼', idn, trial.lifespan);
