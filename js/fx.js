@@ -121,6 +121,14 @@ const FX = (() => {
     if (parseFloat(getComputedStyle(el).opacity) < 0.15) return null;
     return r;
   }
+  /* 卷首只在绘卷中段落几片，不铺满题字与开卷 */
+  function paintZone() {
+    if (document.body.dataset.screen === 'title') {
+      const w = W.w || innerWidth, h = W.h || innerHeight;
+      return { left: w * 0.1, right: w * 0.9, top: h * 0.34, bottom: h * 0.6, width: w * 0.8, height: h * 0.26 };
+    }
+    return scapeBox();
+  }
   function blockBoxes() {
     if ((W.frame & 7) && W.block) return W.block;
     const list = [];
@@ -146,7 +154,7 @@ const FX = (() => {
   }
   function spawn(p, init) {
     const s = W.season;
-    const z = scapeBox();
+    const z = paintZone();
     if (z) {
       p.x = rnd(z.left + 6, Math.max(z.left + 8, z.right - 6));
       p.y = init ? rnd(z.top + 4, Math.max(z.top + 8, z.bottom - 4)) : rnd(z.top - 16, z.top + 4);
@@ -159,6 +167,7 @@ const FX = (() => {
     else if (s === 3) { p.vy = rnd(12, 26) * p.z; p.vx = rnd(-5, 5); p.size = rnd(3.4, 5.2) * p.z; }
     else if (s === 2) { p.vy = rnd(18, 32) * p.z; p.vx = rnd(6, 14); p.size = rnd(5, 7.2) * p.z; }
     else { p.vy = rnd(10, 18) * p.z; p.vx = rnd(4, 10); p.size = rnd(5.4, 7.6) * p.z; }
+    if (document.body.dataset.screen === 'title') p.size *= 0.62;
   }
   function haltWeather() {
     if (W.raf) cancelAnimationFrame(W.raf);
@@ -169,9 +178,10 @@ const FX = (() => {
     if (thinNow()) { haltWeather(); return; }
     if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !thinNow() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
     armFps();
-    if (s === W.season && W.parts.length === partN(s)) return;
+    let n = partN(s);
+    if (document.body.dataset.screen === 'title') n = Math.min(n, 4);
+    if (s === W.season && W.parts.length === n) return;
     W.season = s;
-    const n = partN(s);
     W.parts = Array.from({ length: n }, () => { const p = {}; spawn(p, true); return p; });
     if (!W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
   }
@@ -191,7 +201,7 @@ const FX = (() => {
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 8 + Math.sin(time * 0.071) * 5;
-    const zone = scapeBox();
+    const zone = paintZone();
     blockBoxes();
     for (const p of W.parts) {
       p.y += p.vy * dt; p.x += (p.vx + wind * p.z) * dt;
