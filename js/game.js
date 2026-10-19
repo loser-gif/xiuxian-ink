@@ -436,12 +436,7 @@ function initTitle() {
     btnTrial.hidden = false;
     btnTrial.onclick = async () => {
       FX.requestTilt();
-      const ok = await inkConfirm(
-        '今日试炼：以金丹初期之身入局，年四十，灵石一百二十。',
-        '入局',
-        false,
-        '二十载内须破一障。此局不入轮回簿，只解锁图鉴。'
-      );
+      const ok = await trialBrief();
       if (!ok) return;
       if (!(await pickSlotForNew(true))) return;
       window.__trialStart = true;
@@ -466,6 +461,43 @@ async function pickSlotForNew(trial) {
   window.__slotTarget = i;
   Slots.setActive(i);
   return true;
+}
+
+/* ================= 试炼入局笺 ================= */
+function trialBrief() {
+  return new Promise(res => {
+    const el = document.createElement('div');
+    el.className = 'ask trial-brief';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.innerHTML = `<div class="ask-shade"></div>
+      <div class="ask-card trial-card">
+        <div class="trial-chop" aria-hidden="true">试炼</div>
+        <h3 class="trial-card-title">试炼境</h3>
+        <p class="trial-lead">以金丹初期之身入局。</p>
+        <p class="trial-rule"><i>起手</i><span>年四十，修为自零起，灵石一百二十。</span></p>
+        <p class="trial-rule"><i>所求</i><span>二十载内，须破一障。</span></p>
+        <p class="trial-rule"><i>卷末</i><span>不入轮回簿。图鉴仍可解锁。</span></p>
+        <p class="trial-rule"><i>此身</i><span>灵根与名分仍随你所测、所拜。</span></p>
+        <div class="ask-btns">
+          <button class="brush-btn small ask-no" type="button"><span class="bb-ink"></span><span class="bb-text">且慢</span></button>
+          <button class="brush-btn small ask-ok" type="button" id="ask-ok"><span class="bb-ink"></span><span class="bb-text">入局</span></button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    const done = v => {
+      if (!askOpen) return;
+      askOpen = null;
+      el.classList.remove('open');
+      setTimeout(() => el.remove(), 320);
+      res(v);
+    };
+    askOpen = done;
+    el.querySelector('.ask-ok').onclick = () => done(true);
+    el.querySelector('.ask-no').onclick = () => done(false);
+    el.querySelector('.ask-shade').onclick = () => done(false);
+    requestAnimationFrame(() => { el.classList.add('open'); el.querySelector('.ask-ok').focus({ preventScroll: true }); });
+  });
 }
 
 /* ================= 墨笺问询：替代原生 confirm ================= */
@@ -839,6 +871,8 @@ function render() {
   if (!S) return; sync();
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
+  const trialSeal = $('#trial-seal');
+  if (trialSeal) trialSeal.hidden = !(S.flags && S.flags.trial);
   setText('#h-name', S.name);
   const cr = typeof courtRankName === 'function' ? courtRankName(S) : '';
   setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
