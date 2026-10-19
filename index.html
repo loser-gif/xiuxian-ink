@@ -32,13 +32,13 @@
 </script>
 <meta name="format-detection" content="telephone=no">
 <title>纸上仙途 · 水墨修仙</title>
-<link rel="manifest" href="manifest.webmanifest?v=35">
-<link rel="icon" href="icon.svg?v=35" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=35">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=35" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=35" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=35">
-<link rel="stylesheet" href="css/style.css?v=35">
+<link rel="manifest" href="manifest.webmanifest?v=36">
+<link rel="icon" href="icon.svg?v=36" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=36">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=36" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=36" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=36">
+<link rel="stylesheet" href="css/style.css?v=36">
 </head>
 <body>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
@@ -80,7 +80,46 @@
   <canvas class="pine"></canvas>
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
+ <svg id="realm-scape" viewBox="0 0 480 220" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+  <g class="rs-moon"><circle cx="46" cy="36" r="14" fill="rgba(255,252,244,.92)" stroke="none"/><circle cx="40" cy="32" r="11" fill="rgba(186,196,208,.28)" stroke="none"/></g>
+  <g class="rs rs-0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 200 H440" stroke-width="3" opacity=".35"/>
+    <path d="M78 200 V118 H168 V200" stroke-width="6"/><path d="M62 118 H184" stroke-width="7"/>
+    <path d="M104 200 V148 H142 V200" stroke-width="4"/>
+    <path d="M214 200 V62 M214 108 H236 M214 148 H192" stroke-width="5"/>
+    <path d="M258 200 V78 M258 122 H280 M258 158 H236" stroke-width="4.5"/>
+    <path d="M300 200 V52 M300 100 H278 M300 142 H322" stroke-width="5"/>
+    <path d="M342 200 V90 M342 132 H364" stroke-width="4"/>
+  </g>
+  <g class="rs rs-1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 150 Q150 118 250 142 T468 128" stroke-width="4" opacity=".55"/>
+    <path d="M8 176 Q170 148 270 170 T472 158" stroke-width="3.5" opacity=".4"/>
+    <path d="M214 200 L292 28 L370 200" stroke-width="7"/>
+    <path d="M248 108 H336" stroke-width="3" opacity=".45"/>
+  </g>
+  <g class="rs rs-2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 200 L92 86 L166 200" stroke-width="6"/>
+    <path d="M118 202 L214 22 L310 202" stroke-width="7"/>
+    <path d="M270 202 L368 70 L466 202" stroke-width="6"/>
+    <path class="cinnabar" d="M196 48 q22 28 0 52" stroke-width="4.5"/>
+    <path d="M24 206 H456" stroke-width="3" opacity=".35"/>
+  </g>
+  <g class="rs rs-3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 202 L100 58 L176 202" stroke-width="6"/>
+    <path d="M312 202 L400 40 L476 202" stroke-width="6"/>
+    <path d="M240 18 V204" stroke-width="4.5"/>
+    <path d="M214 70 q28 18 26 0 M206 112 q40 22 38 0 M198 156 q50 24 48 0" stroke-width="3.5"/>
+  </g>
+  <g class="rs rs-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <g class="stars" fill="currentColor" stroke="none"><circle cx="64" cy="36" r="3.2"/><circle cx="118" cy="22" r="2.2"/><circle cx="168" cy="48" r="2.6"/><circle cx="300" cy="20" r="2"/><circle cx="360" cy="40" r="2.8"/><circle cx="424" cy="24" r="2.2"/><circle cx="210" cy="28" r="1.6"/></g>
+    <path d="M12 132 Q140 96 250 124 T470 108" stroke-width="3.5" opacity=".5"/>
+    <path d="M248 16 V206" stroke-width="5"/>
+    <path d="M222 64 q30 18 26 0 M214 108 q42 22 38 0 M206 154 q52 24 48 0" stroke-width="3.6"/>
+  </g>
+ </svg>
+ <div id="season-veil" aria-hidden="true"></div>
 </div>
+<div id="pale-moon" aria-hidden="true"></div>
 <div id="vignette" aria-hidden="true"></div>
 <canvas id="weather" aria-hidden="true"></canvas>
 <div id="intro" aria-hidden="true"><div class="drop"></div><div class="bloom"></div></div>
@@ -202,6 +241,8 @@
     <div class="scroll">
       <div class="roller roller-top"></div>
       <div class="scroll-paper">
+        <div class="margin-note" id="margin-note" hidden></div>
+        <div class="margin-col" id="margin-seals" hidden></div>
         <div class="log" id="log"></div>
       </div>
       <div class="roller roller-bot"></div>
@@ -240,6 +281,7 @@
           <div class="seal seal-small"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="4" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="50" fill="#f3ead6" class="seal-font" id="ev-seal">缘</text></g></svg></div>
         </aside>
         <div class="ev-main">
+          <div class="ev-portrait" id="ev-portrait" hidden></div>
           <div class="ev-text" id="ev-text"></div>
           <div class="ev-choices" id="ev-choices"></div>
           <div class="ev-result" id="ev-result"></div>
@@ -262,6 +304,7 @@
 
 <!-- 破境 · 分境仪式 -->
 <div id="bt" class="bt" hidden>
+  <div class="bt-pomo" aria-hidden="true"></div>
   <div class="bt-shade"></div>
   <div class="bt-ink" id="bt-ink"></div>
   <div class="bt-stage" id="bt-stage" aria-hidden="true">
@@ -300,6 +343,25 @@
     <div class="path-cer-foot" id="path-cer-foot" hidden>
       <p class="path-cer-hint" id="path-cer-hint"></p>
       <button class="brush-btn small light primary" id="path-cer-confirm"><span class="bb-ink"></span><span class="bb-text">落定</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- 出身 -->
+<div id="origin-cer" class="path-cer origin-cer" hidden>
+  <div class="path-cer-shade"></div>
+  <div class="path-cer-panel">
+    <div class="path-cer-head">
+      <div class="path-cer-sealbox"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font" id="origin-seal">身</text></g></svg></div>
+      <h2 class="path-cer-title" id="origin-title">出身</h2>
+      <p class="path-cer-lead" id="origin-lead"></p>
+    </div>
+    <div class="path-cer-body">
+      <div class="path-cer-opts" id="origin-opts"></div>
+    </div>
+    <div class="path-cer-foot" id="origin-foot" hidden>
+      <p class="path-cer-hint" id="origin-hint"></p>
+      <button class="brush-btn small light primary" id="origin-confirm"><span class="bb-ink"></span><span class="bb-text">落墨</span></button>
     </div>
   </div>
 </div>
@@ -421,33 +483,35 @@
   </div>
 </div>
 
-<script src="js/data.js?v=35"></script>
-<script src="js/gongfa.js?v=35"></script>
-<script src="js/gear.js?v=35"></script>
-<script src="js/story.js?v=35"></script>
-<script src="js/sect.js?v=35"></script>
-<script src="js/baijia.js?v=35"></script>
-<script src="js/world.js?v=35"></script>
-<script src="js/tianxia.js?v=35"></script>
-<script src="js/karma.js?v=35"></script>
-<script src="js/life.js?v=35"></script>
-<script src="js/path.js?v=35"></script>
-<script src="js/core.js?v=35"></script>
-<script src="js/codec.js?v=35"></script>
-<script src="js/slots.js?v=35"></script>
-<script src="js/samsara.js?v=35"></script>
-<script src="js/jianghu.js?v=35"></script>
-<script src="js/ink.js?v=35"></script>
-<script src="js/ding.js?v=35"></script>
-<script src="js/map.js?v=35"></script>
-<script src="js/audio.js?v=35"></script>
-<script src="js/fx.js?v=35"></script>
-<script src="js/btfx.js?v=35"></script>
-<script src="js/fabaoart.js?v=35"></script>
-<script src="js/wallpaper.js?v=35"></script>
-<script src="js/inkgl.js?v=35"></script>
-<script src="js/jhui.js?v=35"></script>
-<script src="js/scrollart.js?v=35"></script>
-<script src="js/game.js?v=35"></script>
+<script src="js/data.js?v=36"></script>
+<script src="js/gongfa.js?v=36"></script>
+<script src="js/gear.js?v=36"></script>
+<script src="js/story.js?v=36"></script>
+<script src="js/sect.js?v=36"></script>
+<script src="js/baijia.js?v=36"></script>
+<script src="js/world.js?v=36"></script>
+<script src="js/tianxia.js?v=36"></script>
+<script src="js/karma.js?v=36"></script>
+<script src="js/life.js?v=36"></script>
+<script src="js/juan.js?v=36"></script>
+<script src="js/path.js?v=36"></script>
+<script src="js/core.js?v=36"></script>
+<script src="js/codec.js?v=36"></script>
+<script src="js/slots.js?v=36"></script>
+<script src="js/samsara.js?v=36"></script>
+<script src="js/jianghu.js?v=36"></script>
+<script src="js/ink.js?v=36"></script>
+<script src="js/ding.js?v=36"></script>
+<script src="js/map.js?v=36"></script>
+<script src="js/audio.js?v=36"></script>
+<script src="js/fx.js?v=36"></script>
+<script src="js/btfx.js?v=36"></script>
+<script src="js/fabaoart.js?v=36"></script>
+<script src="js/wallpaper.js?v=36"></script>
+<script src="js/inkgl.js?v=36"></script>
+<script src="js/jhui.js?v=36"></script>
+<script src="js/scrollart.js?v=36"></script>
+<script src="js/portraits.js?v=36"></script>
+<script src="js/game.js?v=36"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ const Samsara = (() => {
       guide: 0,
       daily: { day: '', claimed: false },
       best: { age: 0, realm: 0, ascend: 0 },
+      relics: [],
     };
   }
 
@@ -26,6 +27,7 @@ const Samsara = (() => {
       m.epitaphs = Array.isArray(m.epitaphs) ? m.epitaphs : [];
       m.daily = m.daily || { day: '', claimed: false };
       m.best = m.best || { age: 0, realm: 0, ascend: 0 };
+      m.relics = Array.isArray(m.relics) ? m.relics : [];
       m.lives = m.lives | 0;
       return m;
     } catch (e) { return emptyMeta(); }
@@ -68,12 +70,15 @@ const Samsara = (() => {
     if (!s) return null;
     const leg = { v: 1, ending: ending || s.ending || 'zuohua', name: s.name, age: s.age | 0, realm: s.realm | 0, wx: 0 };
     // 悟性残念：兵解／飞升／归隐略厚，身殒／入魔略薄
-    const wxMap = { bingjie: 1, ascend: 2, guiyin: 1, renhuang: 1, quancheng: 1, zuohua: 0, rumo: 0, yunluo: 0 };
+    const wxMap = { bingjie: 1, ascend: 2, guiyin: 1, renhuang: 1, quancheng: 1, huashen: 1, zhenmo: 1, chuanshuo: 1, zuohua: 0, rumo: 0, yunluo: 0 };
     leg.wx = wxMap[leg.ending] != null ? wxMap[leg.ending] : 0;
-    // 法宝残魂
+    // 法宝残魂：已祭炼的厚，未成器的也留一声轻鸣
     if (typeof Core !== 'undefined' && Core.fabaoOnDeath) {
       const ch = Core.fabaoOnDeath(s);
       if (ch) leg.canhun = ch;
+    }
+    if (!leg.canhun && s.fabao) {
+      leg.canhun = { id: s.fabao.id, name: s.fabao.name, seal: s.fabao.seal, stage: 0, el: s.fabao.el, bond: 0, flavor: s.fabao.flavor || '残魂尚轻，只余一声鸣。', weak: 1 };
     }
     // 道基残忆
     if (s.path && s.path.daoji) leg.daoji = s.path.daoji;
@@ -93,7 +98,27 @@ const Samsara = (() => {
     if (s.path && s.path.faxiang) leg.faxiang = s.path.faxiang;
     if (s.life && s.life.thread) leg.thread = s.life.thread;
     if (s.life && s.life.goal) leg.goal = s.life.goal;
+    const place = (typeof LOC !== 'undefined' && s.loc && LOC[s.loc]) ? LOC[s.loc].name : '旧洞';
+    if ((s.realm | 0) >= 1 || (s.age | 0) >= 48) leg.cave = { name: place, modest: (s.realm | 0) < 2 };
+    rememberRelics(leg);
     return leg;
+  }
+
+  function markRelic(kind, name) {
+    const m = loadMeta();
+    m.relics = m.relics || [];
+    const key = kind + ':' + (name || '');
+    if (!m.relics.some(r => r && r.k === key)) {
+      m.relics.unshift({ k: key, kind, name: name || '', at: Date.now() });
+      if (m.relics.length > 24) m.relics.length = 24;
+      saveMeta(m);
+    }
+  }
+  function rememberRelics(leg) {
+    if (!leg) return;
+    if (leg.cave) markRelic('cave', leg.cave.name);
+    if (leg.canhun) markRelic('fabao', leg.canhun.name);
+    if (leg.auxPage) markRelic('page', leg.auxPage);
   }
 
   function writeLegacy(leg) {
@@ -150,6 +175,10 @@ const Samsara = (() => {
     if (legacy.thread) {
       s.flags.threadText = legacy.thread;
       tags.push({ t: '前世绝笔', c: 'gold' });
+    }
+    if (legacy.cave && legacy.cave.name) {
+      s.flags.heirCave = legacy.cave;
+      tags.push({ t: '旧洞残钥', c: 'gold' });
     }
     return tags;
   }
@@ -217,6 +246,9 @@ const Samsara = (() => {
       yunluo: '无字碑前，野草年年。',
       renhuang: '仙凡一统，山门钟哑。',
       quancheng: '摄政如天，史不敢名。',
+      huashen: '祠前无门，风替人点头。',
+      zhenmo: '裂口合拢，剑作镇纸。',
+      chuanshuo: '册子无名，句子还在。',
     }[ending] || '青石一方，记此一念。';
     lines.push(seal);
     return lines.filter((x, i, a) => x !== '' || (a[i - 1] !== '')).join('\n');
@@ -328,7 +360,8 @@ const Samsara = (() => {
       faxiang: count(a.faxiang), faxiangMax: typeof FAXIANG !== 'undefined' ? Object.keys(FAXIANG).length : 5,
       shenqi: count(a.shenqi), shenqiMax: typeof SHENQI_ZHI !== 'undefined' ? SHENQI_ZHI.length : 6,
       ending: count(a.ending),
-      endingMax: 8,
+      endingMax: 11,
+      relics: (m.relics || []).length,
       encounter: count(a.encounter),
       encounterMax: encounterCatalog().length,
       epitaphs: (m.epitaphs || []).length,
@@ -343,6 +376,6 @@ const Samsara = (() => {
     daojiAffinity, onJoinOrg, applyCourtMark, courtLegacyBoost,
     dailyStatus, claimDaily, todayKey,
     trialSeed, isTrial, atlasStats,
-    encounterCatalog, seeEncounter,
+    encounterCatalog, seeEncounter, markRelic,
   };
 })();

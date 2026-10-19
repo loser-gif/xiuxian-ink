@@ -8,7 +8,25 @@ const ScrollArt = (() => {
   const ZHU = '#9a332c';
   const PAPER = '#efe6d3';
   const URL = 'https://loser-gif.github.io/xiuxian-ink/';
-  const SEAL_CH = { ascend: '升', zuohua: '化', rumo: '魔', guiyin: '隐', bingjie: '解', yunluo: '殒', renhuang: '皇', quancheng: '摄' };
+  const SEAL_CH = { ascend: '升', zuohua: '化', rumo: '魔', guiyin: '隐', bingjie: '解', yunluo: '殒', renhuang: '皇', quancheng: '摄', huashen: '山', zhenmo: '镇', chuanshuo: '传' };
+
+  function heartOf(s, kind) {
+    if (kind === 'huashen') return 'shrine';
+    if (kind === 'zhenmo') return 'sealcrack';
+    if (kind === 'chuanshuo') return 'stele';
+    const g = s && s.life && s.life.goal;
+    if (g === 'changsheng' || kind === 'ascend') return 'crane';
+    if (g === 'diwei' || kind === 'renhuang' || kind === 'quancheng') return 'palace';
+    if (g === 'xiaoyao' || kind === 'guiyin') return 'boat';
+    if (g === 'shouyi') return 'cups';
+    if (g === 'zhangmen') return 'gate';
+    if (g === 'xuechou') return 'broken';
+    if (g === 'qingshi' || g === 'wendao') return 'stele';
+    if (kind === 'bingjie') return 'broken';
+    if (kind === 'rumo') return 'drip';
+    if (kind === 'zuohua' || kind === 'yunluo') return 'incense';
+    return 'crane';
+  }
 
   function rng(seed) {
     let s = seed | 0 || 1;
@@ -228,7 +246,7 @@ const ScrollArt = (() => {
       base: 0.8, amp: 0.38, peaks: 7, width: 0.08, sharp: 1.65,
       fade: 0.58, wash: 0.5, cun: 0.06, cunLen: 1, folds: 2,
       line: 0.8, dots: 0.03,
-      trees: kind === 'zuohua' || kind === 'yunluo' || kind === 'guiyin' ? 3 : 1,
+      trees: kind === 'incense' || kind === 'boat' || kind === 'zuohua' || kind === 'yunluo' || kind === 'guiyin' ? 3 : 1,
       treeSize: 0.62, bottomFade: true, hero: 3,
     });
     fadeEdge(far, 0.34, true);
@@ -245,7 +263,7 @@ const ScrollArt = (() => {
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    if (kind === 'ascend') {
+    if (kind === 'ascend' || kind === 'crane') {
       const sx = x + w * 0.62, sy = y + h * 0.22;
       const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, 54);
       g.addColorStop(0, 'rgba(176,148,96,0.28)');
@@ -258,7 +276,7 @@ const ScrollArt = (() => {
       ctx.lineWidth = 1.1;
       crane(ctx, x + w * 0.28, y + h * 0.3, 0.9);
       crane(ctx, x + w * 0.4, y + h * 0.18, 0.62);
-    } else if (kind === 'zuohua' || kind === 'yunluo') {
+    } else if (kind === 'zuohua' || kind === 'yunluo' || kind === 'incense') {
       ctx.strokeStyle = 'rgba(40,34,30,0.4)';
       ctx.lineWidth = 1.15;
       const bx = x + w * 0.3, by = y + h * 0.62;
@@ -277,7 +295,7 @@ const ScrollArt = (() => {
       ctx.moveTo(bx - 16, by + 2);
       ctx.lineTo(bx + 22, by + 6);
       ctx.stroke();
-    } else if (kind === 'renhuang' || kind === 'quancheng') {
+    } else if (kind === 'renhuang' || kind === 'quancheng' || kind === 'palace') {
       ctx.strokeStyle = 'rgba(36,32,28,0.32)';
       ctx.lineWidth = 1.2;
       const rx = x + w * 0.58, ry = y + h * 0.48;
@@ -295,7 +313,7 @@ const ScrollArt = (() => {
       ctx.moveTo(rx + 52, ry + 2);
       ctx.lineTo(rx + 50, ry + 26);
       ctx.stroke();
-    } else if (kind === 'guiyin') {
+    } else if (kind === 'guiyin' || kind === 'boat') {
       ctx.strokeStyle = 'rgba(36,32,28,0.34)';
       ctx.lineWidth = 1.15;
       const bx = x + w * 0.34, by = y + h * 0.58;
@@ -308,7 +326,7 @@ const ScrollArt = (() => {
       ctx.beginPath();
       ctx.arc(x + w * 0.72, y + h * 0.2, 11, 0, 7);
       ctx.stroke();
-    } else if (kind === 'bingjie') {
+    } else if (kind === 'bingjie' || kind === 'broken') {
       ctx.strokeStyle = 'rgba(36,32,28,0.4)';
       ctx.lineWidth = 1.3;
       const bx = x + w * 0.36, by = y + h * 0.42;
@@ -318,7 +336,48 @@ const ScrollArt = (() => {
       ctx.moveTo(bx + 34, by + 8);
       ctx.lineTo(bx + 58, by - 18);
       ctx.stroke();
-    } else if (kind === 'rumo') {
+    } else if (kind === 'shrine') {
+      ctx.strokeStyle = 'rgba(36,32,28,0.42)';
+      ctx.lineWidth = 1.3;
+      const bx = x + w * 0.34, by = y + h * 0.62;
+      ctx.beginPath();
+      ctx.moveTo(bx, by); ctx.lineTo(bx + 18, by - 28); ctx.lineTo(bx + 36, by); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(bx + 8, by); ctx.lineTo(bx + 8, by - 16); ctx.lineTo(bx + 28, by - 16); ctx.lineTo(bx + 28, by); ctx.stroke();
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.arc(bx + 54, by - 8, 7, 0, 7); ctx.stroke();
+    } else if (kind === 'sealcrack') {
+      ctx.strokeStyle = 'rgba(90,24,20,0.4)';
+      ctx.lineWidth = 1.35;
+      const bx = x + w * 0.4, by = y + h * 0.38;
+      ctx.beginPath();
+      ctx.moveTo(bx, by); ctx.lineTo(bx + 8, by + 36); ctx.lineTo(bx - 6, by + 58); ctx.stroke();
+      ctx.strokeStyle = 'rgba(36,32,28,0.45)';
+      ctx.beginPath(); ctx.moveTo(bx + 28, by + 50); ctx.lineTo(bx + 28, by + 8); ctx.stroke();
+    } else if (kind === 'stele') {
+      ctx.strokeStyle = 'rgba(36,32,28,0.4)';
+      ctx.lineWidth = 1.3;
+      const bx = x + w * 0.38, by = y + h * 0.28;
+      ctx.strokeRect(bx, by, 28, 62);
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath(); ctx.moveTo(bx + 8, by + 16); ctx.lineTo(bx + 20, by + 16); ctx.moveTo(bx + 8, by + 28); ctx.lineTo(bx + 18, by + 28); ctx.stroke();
+    } else if (kind === 'cups') {
+      ctx.strokeStyle = 'rgba(36,32,28,0.4)';
+      ctx.lineWidth = 1.2;
+      const bx = x + w * 0.36, by = y + h * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(bx, by); ctx.lineTo(bx + 8, by + 16); ctx.lineTo(bx + 22, by + 16); ctx.lineTo(bx + 30, by);
+      ctx.moveTo(bx + 40, by); ctx.lineTo(bx + 48, by + 16); ctx.lineTo(bx + 62, by + 16); ctx.lineTo(bx + 70, by);
+      ctx.stroke();
+    } else if (kind === 'gate') {
+      ctx.strokeStyle = 'rgba(36,32,28,0.42)';
+      ctx.lineWidth = 1.4;
+      const bx = x + w * 0.36, by = y + h * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(bx, by + 48); ctx.lineTo(bx, by); ctx.lineTo(bx + 56, by); ctx.lineTo(bx + 56, by + 48);
+      ctx.moveTo(bx + 18, by + 48); ctx.lineTo(bx + 18, by + 18); ctx.lineTo(bx + 38, by + 18); ctx.lineTo(bx + 38, by + 48);
+      ctx.stroke();
+    } else if (kind === 'rumo' || kind === 'drip') {
       ctx.fillStyle = 'rgba(90,24,20,0.28)';
       for (let i = 0; i < 4; i++) {
         const dx = x + w * (0.22 + i * 0.08) + rnd() * 10;
@@ -463,7 +522,26 @@ const ScrollArt = (() => {
     paper(ctx, W, H, seed);
     roller(ctx, 26, W);
     roller(ctx, H - 48, W);
-    land(ctx, 48, landTop, W - 96, landH, seed, kind || 'zuohua');
+    const heart = heartOf(s, kind || 'zuohua');
+    land(ctx, 48, landTop, W - 96, landH, seed, heart);
+    const colos = (s.colophon || []).slice(-4);
+    colos.forEach((c, i) => {
+      ctx.save();
+      ctx.translate(W - 86, landTop + 52 + i * 74);
+      ctx.scale(0.62, 0.62);
+      seal(ctx, 0, 0, (c && c.seal) || '印', seed + i * 19);
+      ctx.restore();
+    });
+    const colo = colos[colos.length - 1];
+    if (colo && colo.line) {
+      ctx.save();
+      ctx.font = '14px MoWen, serif';
+      ctx.fillStyle = 'rgba(90,40,36,0.78)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(fitLine(ctx, colo.line, W - 200), 62, landTop + landH - 18);
+      ctx.restore();
+    }
 
     ctx.save();
     ctx.fillStyle = INK;

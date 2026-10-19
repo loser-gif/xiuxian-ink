@@ -79,6 +79,11 @@ const FX = (() => {
     } else if (kind === 'leaf') {
       c.fillStyle = 'rgba(150,92,40,.85)'; c.beginPath(); c.moveTo(-13, 0); c.quadraticCurveTo(0, -9, 13, 0); c.quadraticCurveTo(0, 9, -13, 0); c.fill();
       c.strokeStyle = 'rgba(90,50,20,.6)'; c.lineWidth = 1; c.beginPath(); c.moveTo(-13, 0); c.lineTo(11, 0); c.stroke();
+    } else if (kind === 'lotus') {
+      c.strokeStyle = 'rgba(62,88,58,.62)'; c.lineWidth = 1.15;
+      c.beginPath(); c.ellipse(0, 0, 11, 5.5, -0.5, 0, 7); c.stroke();
+      c.beginPath(); c.ellipse(1, 1, 6, 3.4, 0.7, 0, 7); c.stroke();
+      c.fillStyle = 'rgba(48,72,44,.16)'; c.beginPath(); c.ellipse(0, 1, 4.5, 2.4, 0, 0, 7); c.fill();
     } else if (kind === 'snow') {
       const g = c.createRadialGradient(0, 0, 0, 0, 0, 9); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.55, 'rgba(250,250,248,.9)'); g.addColorStop(1, 'rgba(255,255,255,0)');
       c.fillStyle = 'rgba(70,82,94,.34)'; c.beginPath(); c.arc(.8, 1.1, 6.6, 0, 7); c.fill();
@@ -102,7 +107,7 @@ const FX = (() => {
     if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.34;
     return m;
   }
-  const partN = s => Math.max(4, Math.round([12, 40, 11, 36][s] * Math.min(2.4, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
+  const partN = s => Math.max(4, Math.round([12, 14, 11, 22][s] * Math.min(2.4, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
   function fitParts() {
     const n = partN(W.season);
     while (W.parts.length < n) { const p = {}; spawn(p, true); W.parts.push(p); }
@@ -112,7 +117,7 @@ const FX = (() => {
     const s = W.season;
     p.x = rnd(-20, W.w + 20); p.y = init ? rnd(-W.h * .1, W.h) : rnd(-40, -10);
     p.z = rnd(.45, 1); p.rot = rnd(0, 6.28); p.spin = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.flip = rnd(1.2, 3);
-    if (s === 1) { p.vy = rnd(520, 760) * p.z; p.vx = -p.vy * .2; p.len = rnd(10, 20) * p.z; }
+    if (s === 1) { p.vy = rnd(10, 22) * p.z; p.vx = rnd(-10, 8); p.size = rnd(9, 15) * p.z; }
     else if (s === 3) { p.vy = rnd(18, 42) * p.z; p.vx = rnd(-8, 8); p.size = rnd(4.5, 9) * p.z; }
     else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(9, 15) * p.z; }
     else { p.vy = rnd(16, 30) * p.z; p.vx = rnd(8, 20); p.size = rnd(6, 10.5) * p.z; }
@@ -147,22 +152,17 @@ const FX = (() => {
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 14 + Math.sin(time * 0.071) * 10;
-    if (s === 1) { c.strokeStyle = 'rgba(52,62,70,.26)'; c.lineWidth = 1; c.beginPath(); }
     for (const p of W.parts) {
       p.y += p.vy * dt; p.x += (p.vx + wind * p.z) * dt;
-      if (s === 1) {
-        c.moveTo(p.x, p.y); c.lineTo(p.x - p.len * 0.2, p.y - p.len);
-      } else {
-        p.x += Math.sin(time * 1.1 + p.ph) * 12 * dt * p.z; p.rot += p.spin * dt;
-        const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : 'petal'), sz = p.size;
-        const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
-        c.globalAlpha = (s === 3 ? 0.85 : 0.62) * (0.4 + p.z * 0.6);
-        c.setTransform(D * Math.cos(p.rot), D * Math.sin(p.rot), -D * Math.sin(p.rot) * fl, D * Math.cos(p.rot) * fl, p.x * D, p.y * D);
-        c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
-      }
+      p.x += Math.sin(time * (s === 1 ? 0.7 : 1.1) + p.ph) * (s === 1 ? 8 : 12) * dt * p.z; p.rot += p.spin * dt * (s === 1 ? 0.45 : 1);
+      const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : s === 1 ? 'lotus' : 'petal'), sz = p.size;
+      const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
+      c.globalAlpha = (s === 3 ? 0.85 : s === 1 ? 0.5 : 0.62) * (0.4 + p.z * 0.6);
+      c.setTransform(D * Math.cos(p.rot), D * Math.sin(p.rot), -D * Math.sin(p.rot) * fl, D * Math.cos(p.rot) * fl, p.x * D, p.y * D);
+      c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
       if (p.y > W.h + 30 || p.x < -60 || p.x > W.w + 60) spawn(p, false);
     }
-    if (s === 1) c.stroke(); else { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
+    c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1;
     // 高境界：几片金箔缓缓浮沉，翻转到正面时一闪
     for (const g of W.gold || []) {
       g.y -= g.vy * dt; g.x += (Math.sin(time * .3 + g.ph) * 6 + wind * .3) * dt;
@@ -418,6 +418,14 @@ const FX = (() => {
   }
 
   /* ---------- iOS 按压态 ---------- */
+  function bloomAt(x, y) {
+    if (x == null || y == null || thinNow()) return;
+    const b = document.createElement('i');
+    b.className = 'ink-bloom';
+    b.style.left = x + 'px'; b.style.top = y + 'px';
+    document.body.appendChild(b);
+    setTimeout(() => b.remove(), 700);
+  }
   function initPress() {
     document.addEventListener('touchstart', () => {}, { passive: true }); // 让 :active 在 iOS 生效
     const on = e => { const b = e.target.closest && e.target.closest('.brush-btn,.act'); if (b && !b.disabled) b.classList.add('pressed'); };
@@ -426,5 +434,5 @@ const FX = (() => {
     ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(ev => window.addEventListener(ev, off, { passive: true }));
   }
 
-  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, initPress, reduced, syncMotion, thinNow };
+  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, initPress, bloomAt, reduced, syncMotion, thinNow };
 })();

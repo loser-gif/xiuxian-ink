@@ -26,7 +26,15 @@ const MTN = [
   { seed: 41, rgb: [44, 46, 46], alpha: 0.78, base: 1.0, amp: 0.5, peaks: 3, width: 0.15, sharp: 2.0, fade: 0.7, wash: 0.32, cun: 0.18, cunLen: 1, folds: 2, line: 1.0, dots: 0.06, trees: 2, treeSize: 0.7 },
   { seed: 57, rgb: [26, 25, 23], alpha: 0.92, base: 1.08, amp: 0.62, peaks: 2, hero: 0, width: 0.2, sharp: 1.8, fade: 0.9, wash: 0.42, cun: 0.25, cunLen: 1.2, folds: 2, line: 1.5, dots: 0.1, trees: 3, treeSize: 1, bottomFade: false },
 ];
-let lastW = 0;
+let lastW = 0, lastRealmDraw = -1;
+const REALM_SHIFT = [
+  [22, 34, 8],
+  [-6, 14, 32],
+  [42, 10, -16],
+  [4, 8, 28],
+  [-8, 4, 36],
+  [10, 12, 30],
+];
 /* 夜墨远山：淡墨绘在透明画布上，避免整层反相把湖面切成一条硬边 */
 const MTN_NIGHT = [
   { rgb: [168, 160, 150], alpha: 0.4 },
@@ -36,10 +44,21 @@ const MTN_NIGHT = [
 ];
 function drawMountains(force) {
   const w = window.innerWidth;
-  if (!force && Math.abs(w - lastW) < 2) return;
-  lastW = w;
+  const realm = +(document.body.dataset.realm || 0);
+  if (!force && Math.abs(w - lastW) < 2 && realm === lastRealmDraw) return;
+  lastW = w; lastRealmDraw = realm;
   const night = document.documentElement.dataset.theme === 'night';
-  $$('.mtn').forEach((cv, i) => Ink.mountainLayer(cv, night ? Object.assign({}, MTN[i], MTN_NIGHT[i]) : MTN[i]));
+  const sh = night ? [0, 0, 0] : (REALM_SHIFT[realm] || [0, 0, 0]);
+  $$('.mtn').forEach((cv, i) => {
+    const base = night ? Object.assign({}, MTN[i], MTN_NIGHT[i]) : MTN[i];
+    const rgb = (base.rgb || [40, 40, 40]).map((v, k) => Math.max(0, Math.min(255, v + (sh[k] || 0) * (i < 2 ? 0.65 : 1))));
+    let shape = {};
+    if (!night && realm === 1 && i === 3) shape = { peaks: 1, amp: base.amp * 1.35, trees: 0, sharp: 2.8 };
+    else if (!night && realm === 2 && i === 2) shape = { peaks: 3, amp: base.amp * 1.15, sharp: 3.1 };
+    else if (!night && realm === 4 && i <= 1) shape = { peaks: 2, amp: base.amp * 0.55, trees: 0 };
+    const bamboo = !night && realm === 0 && i >= 2 ? { trees: (base.trees || 0) + 3, treeSize: 1.15 } : {};
+    Ink.mountainLayer(cv, Object.assign({}, base, shape, bamboo, { rgb }));
+  });
   if (wallpaperOn) Wallpaper.rebuild();
 }
 let wallpaperOn = false;
@@ -107,6 +126,7 @@ window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTi
 
 /* 触感：墨晕涟漪 */
 document.addEventListener('pointerdown', e => {
+  if (typeof FX !== 'undefined' && FX.bloomAt) FX.bloomAt(e.clientX, e.clientY);
   const t = e.target.closest('button'); if (!t || t.disabled) return;
   const r = document.createElement('div'); r.className = 'ripple';
   r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px';
@@ -247,9 +267,23 @@ function aliveSave() {
 
 /* ================= 屏幕切换（卷轴） ================= */
 let curScreen = 'title';
+function placeRealmScape() {
+  const svg = document.getElementById('realm-scape');
+  if (!svg) return;
+  const screen = document.body.dataset.screen;
+  if (screen === 'main') {
+    const paper = document.querySelector('#scr-main .scroll-paper');
+    if (paper && svg.parentElement !== paper) paper.insertBefore(svg, paper.firstChild);
+  } else {
+    const sc = document.getElementById('scenery');
+    const veil = document.getElementById('season-veil');
+    if (sc && svg.parentElement !== sc) sc.insertBefore(svg, veil || null);
+  }
+}
 function setScreen(id) {
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
+  placeRealmScape();
   if (typeof MoAudio !== 'undefined') {
     const mode = id === 'title' ? 'title' : (id === 'main' || id === 'create' ? 'main' : 'off');
     MoAudio.startAmbient(mode);
@@ -283,7 +317,9 @@ function initTitle() {
   FX.setSeason(_sea); FX.setGold(0);
   document.body.dataset.season = _sea;
   document.body.dataset.tod = 'dawn';
-  if (!(s && !s.dead && !s.ascended)) document.body.dataset.realm = '0';
+  document.body.dataset.realm = (s && !s.dead && !s.ascended) ? String(s.realm || 0) : '0';
+  shownRealm = document.body.dataset.realm;
+  drawMountains(true);
   const subAtlas = $('#atlas-sub');
   if (subAtlas && typeof Samsara !== 'undefined') {
     const st = Samsara.atlasStats();
@@ -300,6 +336,7 @@ function initTitle() {
       if (legPeek.auxPage) bits.push('功法残页');
       if (legPeek.sectMark) bits.push('门派印记');
       if (legPeek.courtMark) bits.push('皇命印记');
+      if (legPeek.cave) bits.push('旧洞残钥');
       legHint.hidden = false;
       legHint.textContent = '前世余韵待启 · ' + (bits.join(' · ') || '一缕残念');
     } else legHint.hidden = true;
@@ -442,14 +479,16 @@ function initCreate() {
     if (!roll) return;
     let name = $('#inp-name').value.trim().replace(/\s+/g, '');
     if (!name) { name = randName(); $('#inp-name').value = name; }
+    const origin = await openOrigin();
+    if (!origin) return;
     const choice = await openBaishan(roll);
     if (!choice) return;
-    newGame(name, roll, choice);
+    newGame(name, roll, choice, origin);
   };
   $('#inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
 }
 
-function newGame(name, r, choice) {
+function newGame(name, r, choice, originId) {
   let legacy = null;
   if (typeof Samsara !== 'undefined' && Samsara.consumeLegacy) legacy = Samsara.consumeLegacy();
   else { try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {} }
@@ -457,7 +496,7 @@ function newGame(name, r, choice) {
   const free = !!(choice && choice.id === 'free');
   const trial = !!window.__trialStart;
   window.__trialStart = false;
-  const rr = Object.assign({}, r, { org: orgId, free, trial });
+  const rr = Object.assign({}, r, { org: orgId, free, trial, origin: originId || 'qingshi' });
   S = Core.newState(name, rr, legacy);
   if (typeof Slots !== 'undefined') {
     const slot = window.__slotTarget != null ? window.__slotTarget : (Slots.firstEmpty() >= 0 ? Slots.firstEmpty() : Slots.newestIndex());
@@ -484,15 +523,22 @@ function newGame(name, r, choice) {
   } else {
     sectLine = `测得${lgDesc}。山门之内，尘埃落定。`;
   }
+  const who = (typeof Juan !== 'undefined' && Juan.originName) ? Juan.originName(S) : '青石镇少年';
   if (trial) {
-    pushLog({ text: `试炼境开启。你以金丹之姿落子，名${name}。二十载内须破一障；此局不入轮回簿，可解锁图鉴。`, cls: 'sys', tags: [{ t: '试炼', c: 'gold' }] });
+    pushLog({ text: `试炼境开启。你以金丹之姿落子，出身${who}，名${name}。二十载内须破一障；此局不入轮回簿，可解锁图鉴。`, cls: 'sys', tags: [{ t: '试炼', c: 'gold' }] });
   } else {
-    pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。你名${name}，青石镇人氏，年方十六。`, cls: 'sys' });
+    const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(S) : `你名${name}，青石镇人氏，年方十六。`;
+    pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
   }
   pushLog({ text: sectLine });
   if (legacy) {
     const tags = S._legacyTags || [{ t: '前世残念', c: 'gold' }];
     pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags, cls: 'gold' });
+    const bits = [];
+    if (legacy.cave) bits.push('一枚旧钥');
+    if (legacy.auxPage) bits.push('半页残卷');
+    if (legacy.canhun) bits.push('一声旧器的鸣');
+    if (bits.length) pushLog({ title: '轮回', text: `除了那些说不清的道理，你还带着${bits.join('、')}。它们会在该出现的时候出现。`, cls: 'breath' });
   }
   if (S.flags && S.flags._legacyJoinText) {
     pushLog({ text: S.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
@@ -504,6 +550,49 @@ function newGame(name, r, choice) {
   save();
   enterMain(false);
   if (!trial) setTimeout(() => { if (S && !(S.life && S.life.goal)) openGoalPicker(); }, 800);
+}
+
+async function openOrigin() {
+  const list = (typeof Juan !== 'undefined' && Juan.ORIGINS) ? Juan.ORIGINS : null;
+  const pc = $('#origin-cer');
+  if (!pc || !list || !list.length) return 'qingshi';
+  return new Promise(resolve => {
+    pc.hidden = false; pc.className = 'path-cer origin-cer go';
+    $('#origin-seal').textContent = '身';
+    $('#origin-title').textContent = '出身';
+    const opts = $('#origin-opts'); opts.innerHTML = ''; opts.className = 'path-cer-opts';
+    const foot = $('#origin-foot'); foot.hidden = false;
+    const conf = $('#origin-confirm');
+    conf.disabled = true; conf.classList.add('dim');
+    const hint = $('#origin-hint'); if (hint) hint.textContent = '点选一种出身，再落墨';
+    inkWrite($('#origin-lead'), '灵根未测之前，你已在世上活了十六年。这一页出身，会跟着你走进山门，也会在卷末轻轻偏一下。', { immediate: true, step: 22 });
+    let selected = null;
+    list.forEach((o, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'path-opt'; btn.type = 'button'; btn.style.animationDelay = (120 + i * 60) + 'ms';
+      btn.innerHTML = `<span class="po-seal${(o.seal || '').length > 1 ? ' wide' : ''}"></span><div class="po-body"><b></b><em></em><p></p></div>`;
+      btn.querySelector('.po-seal').textContent = o.seal;
+      btn.querySelector('b').textContent = o.name;
+      btn.querySelector('em').textContent = '偏向 · ' + o.lean;
+      btn.querySelector('p').textContent = o.prose;
+      btn.onclick = () => {
+        selected = o;
+        opts.querySelectorAll('.path-opt').forEach(x => x.classList.remove('on'));
+        btn.classList.add('on');
+        conf.disabled = false; conf.classList.remove('dim');
+        if (hint) hint.textContent = '确认后落墨 · Enter 亦可';
+      };
+      opts.appendChild(btn);
+    });
+    conf.onclick = async () => {
+      if (!selected || conf.disabled) return;
+      opts.classList.add('locked');
+      if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
+      pc.classList.add('leave'); await sleep(640);
+      pc.hidden = true; pc.className = 'path-cer origin-cer';
+      resolve(selected.id);
+    };
+  });
 }
 
 async function openBaishan(roll) {
@@ -596,6 +685,7 @@ function noteMark(e) {
 }
 function pushLog(e) {
   e.time = timeLabel();
+  if (typeof Juan !== 'undefined' && Juan.onLog) Juan.onLog(S, e);
   noteMark(e);
   S.log.push(e); if (S.log.length > 60) S.log.splice(0, S.log.length - 60);
   if (curScreen === 'main' && !document.getElementById('scr-main').hidden) { renderEntry(e, true); scrollLog(); }
@@ -609,6 +699,7 @@ function renderEntry(e, animate) {
   const el = document.createElement('div'); el.className = 'entry ' + (e.cls || '');
   const t = document.createElement('div'); t.className = 'entry-time'; t.textContent = e.time || ''; el.appendChild(t);
   if (e.title) { const h = document.createElement('div'); h.className = 'entry-title'; h.textContent = e.title; el.appendChild(h); }
+  if (e.colo) { const c = document.createElement('div'); c.className = 'entry-colo'; c.textContent = e.colo; el.appendChild(c); }
   const p = document.createElement('div'); p.className = 'entry-text'; el.appendChild(p);
   log.appendChild(el);
   let delay = 0;
@@ -629,6 +720,7 @@ function fitLine(el, max, min) {
   let f = max; el.style.fontSize = f + 'px'; el.style.letterSpacing = '';
   while (el.scrollWidth > el.clientWidth + 0.5 && f > min) { f -= 0.5; el.style.fontSize = f + 'px'; el.style.letterSpacing = '0.02em'; }
 }
+let shownRealm = null;
 const prev = {};
 const tweens = {};
 function setText(sel, v) {
@@ -672,7 +764,14 @@ function render() {
   setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
   FX.setSeason(season); FX.setGold(S.realm || 0);
   if (typeof MoAudio !== 'undefined') MoAudio.setSeason(season);
-  document.body.dataset.realm = S.ascended ? 5 : S.realm;
+  const nextRealm = String(S.ascended ? 5 : S.realm);
+  if (shownRealm != null && shownRealm !== nextRealm && document.body.dataset.screen === 'main' && !snappy()) {
+    document.body.classList.add('realm-shift');
+    clearTimeout(render._rs);
+    render._rs = setTimeout(() => document.body.classList.remove('realm-shift'), 980);
+  }
+  if (shownRealm !== nextRealm) { shownRealm = nextRealm; document.body.dataset.realm = nextRealm; drawMountains(true); }
+  else document.body.dataset.realm = nextRealm;
   document.body.dataset.season = season;
   // 时辰感：按月份内进度微移（晨／午／暮），只影响纸色，不改玩法
   const mIn = S.months % 3; // 0..2 within season quarter-ish
@@ -710,6 +809,7 @@ function render() {
   else if (S.xj < 15) { msg = '心境动摇 · 恐生心魔'; st.classList.add('zhu'); }
   else if (S.court && S.court.rank >= 6 && typeof canClaimThrone === 'function' && (canClaimThrone(S) || canRegent(S)) && !S.flags.jc_throne) { msg = '鼎鼐可问 · 往京城一抉'; st.classList.add('zhu'); }
   else if (S.karma && (S.karma.seeds || []).some(k => S.months >= k.due && !S.flags['karma_done_' + k.id])) { msg = '因果将至 · 游历或逢回响'; st.classList.add('zhu'); }
+  else if (S.flags && S.flags.tideDue) { msg = '天下有变 · 出山或可遇见'; st.classList.add('zhu'); }
   else if (S.flags && S.flags.guide && (S.acts | 0) < 1) msg = '先吐纳一息，或出山看看';
   else if ((S.flags && S.flags.cultRun | 0) >= 6) { msg = '闭关已久 · 山外或有机缘'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
@@ -723,6 +823,24 @@ function render() {
   }
   st.textContent = msg;
   renderSide();
+  renderSeals();
+}
+function renderSeals() {
+  const col = $('#margin-seals'), note = $('#margin-note');
+  if (!col || !S) return;
+  if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(S);
+  const list = S.colophon || [];
+  if (!list.length) {
+    col.hidden = true; col.innerHTML = '';
+    if (note) { note.hidden = true; note.textContent = ''; }
+    delete document.body.dataset.seals;
+    return;
+  }
+  document.body.dataset.seals = '1';
+  const show = list.slice(-6);
+  col.hidden = false;
+  col.innerHTML = show.map(c => `<i class="m-seal">${esc(c.seal || '印')}</i>`).join('');
+  if (note) { note.hidden = false; note.textContent = list[list.length - 1].line || ''; }
 }
 // 宽屏右栏：功法 / 宗门 / 行囊 / 行迹 一览（窄屏隐藏时不渲染）
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -739,7 +857,10 @@ function renderSide() {
     : (fabaoLine || pathLine ? `${fabaoLine}${pathLine}` : '<span class="sd-empty">胸中尚无功法</span>');
   const o = Core.org(S);
   const bond = [];
-  if (S.karma && S.karma.mate && typeof NPCS !== 'undefined' && NPCS[S.karma.mate]) bond.push('道侣 · ' + NPCS[S.karma.mate].name);
+  if (S.bond && S.bond.lost && S.karma && S.karma.mate) bond.push('道侣已失');
+  else if (S.karma && S.karma.mate && typeof NPCS !== 'undefined' && NPCS[S.karma.mate]) bond.push('道侣 · ' + NPCS[S.karma.mate].name);
+  const discs = (S.bond && S.bond.discs) || [];
+  if (discs.length) bond.push('徒 · ' + discs.map(d => d.name + (d.fate === 'betray' ? '·叛' : d.fate === 'inherit' ? '·承' : d.fate === 'surpass' ? '·青' : '')).join('、'));
   if (S.karma && S.karma.foe && typeof NPCS !== 'undefined' && NPCS[S.karma.foe]) bond.push('宿敌 · ' + NPCS[S.karma.foe].name);
   const bondLine = bond.length ? `<span class="sd-row">${esc(bond.join(' · '))}</span>` : '';
   $('#sd-sect').innerHTML = o ? `<b class="sd-name">${esc(o.name)}</b><span class="sd-row">${esc(Core.rankName(S))} · 贡献 ${fmtNum(S.sect.gx)}</span>${bondLine}`
@@ -910,9 +1031,19 @@ async function closeModal() {
   await sleep(snappy() ? 240 : 640);
   modal.hidden = true;
 }
+function portraitHtml(ev) {
+  if (typeof InkPortrait === 'undefined' || !ev) return '';
+  if ((ev.id === 'bond_dual' || ev.id === 'bond_jie') && S && S.karma && S.karma.mate) {
+    const svg = InkPortrait.svg(S.karma.mate);
+    if (svg) return svg;
+  }
+  return InkPortrait.forEvent(ev);
+}
 function openEvent(ev) {
   if (!ev) return;
   if (!ev.guide && typeof Samsara !== 'undefined' && Samsara.seeEncounter) Samsara.seeEncounter(ev.id);
+  const slot = $('#ev-portrait');
+  if (slot) { const html = portraitHtml(ev); slot.innerHTML = html; slot.hidden = !html; }
   FX.vtext($('#ev-title'), ev.title);
   $('#ev-seal').textContent = ev.seal || pick(['缘', '遇', '奇', '机']);
   const text = ev.text(S);
@@ -1052,6 +1183,7 @@ async function runBreak(usePill) {
       bt.classList.add('fail', 'crack', 'shake'); await sleep(500);
     }
   }
+  if (!snappy()) { bt.classList.add('pomo'); await sleep(780); }
   if (typeof MoAudio !== 'undefined') MoAudio.play('stamp');
   bt.classList.add('stamped');
   await sleep(FX.reduced() ? 80 : 480);
@@ -1843,7 +1975,7 @@ function openMenu() {
 
 
 /* ================= 三卷存档 ================= */
-const END_NAME = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣' };
+const END_NAME = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣', huashen: '山神', zhenmo: '镇魔', chuanshuo: '传说' };
 function openSlots() {
   if (typeof Slots === 'undefined') { toast('存档未备'); return; }
   const w = document.createElement('div');
@@ -1971,7 +2103,7 @@ function openAtlasSheet() {
   const m = Samsara.loadMeta();
   const st = Samsara.atlasStats(m);
   const w = document.createElement('div'); w.className = 'atlas-sheet';
-  const END_N = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣' };
+  const END_N = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣', huashen: '山神', zhenmo: '镇魔', chuanshuo: '传说' };
   const sec = (title, html) => `<section class="atlas-sec"><h4>${title}</h4><div class="atlas-grid">${html}</div></section>`;
   const cell = (name, on, sub) => `<div class="atlas-cell${on ? ' on' : ''}"><b>${esc(name)}</b>${sub ? '<em>' + esc(sub) + '</em>' : ''}${on ? '' : '<i>未识</i>'}</div>`;
   const sil = i => {
@@ -1995,6 +2127,10 @@ function openAtlasSheet() {
   encKnown = knownEnc.length;
   knownEnc.forEach(e => { encH += cell(e.title, true, e.seal || '缘'); });
   unknownN.forEach(() => { encH += sil(silI++); });
+  const relicH = (m.relics || []).slice(0, 8).map(r => {
+    const lab = r.kind === 'cave' ? '旧洞' : r.kind === 'fabao' ? '旧器' : r.kind === 'page' ? '残页' : '遗';
+    return cell(lab, true, r.name || '');
+  }).join('');
   const got = (st.daoji | 0) + (st.faxiang | 0) + (st.shenqi | 0) + endKnown + encKnown;
   const max = (st.daojiMax | 0) + (st.faxiangMax | 0) + (st.shenqiMax | 0) + Object.keys(END_N).length + enc.length;
   const epis = (m.epitaphs || []).slice(0, 8).map((ep, i) => {
@@ -2007,6 +2143,7 @@ function openAtlasSheet() {
     ${sec('法相 ' + cn(st.faxiang) + '/' + cn(st.faxiangMax), faxiangH || '<p class="atlas-empty">—</p>')}
     ${sec('神器 ' + cn(st.shenqi) + '/' + cn(st.shenqiMax), shenqiH || '<p class="atlas-empty">—</p>')}
     ${sec('终局 ' + cn(endKnown) + '/' + cn(Object.keys(END_N).length), endingH)}
+    ${relicH ? sec('轮回遗物', relicH) : ''}
     ${sec('奇遇 ' + cn(encKnown) + '/' + cn(enc.length), encH || '<p class="atlas-empty">—</p>')}
     <section class="atlas-sec"><h4>墓志长卷</h4><div class="atlas-epis">${epis}</div>
       <pre class="atlas-long" id="atlas-long-view" hidden></pre></section>`;
@@ -2030,6 +2167,9 @@ const END_ART = {
   yunluo: `<svg viewBox="0 0 320 120"><path class="ea-bolt" d="M184 -4 L156 42 L172 44 L142 92 L160 94 L132 124 L166 88 L150 86 L182 38 L166 36 L192 -4Z"/><path class="ea-bolt thin" d="M156 42 L134 58 L140 64 L116 86 L146 60 L140 56 L162 44Z"/></svg>`,
   renhuang: `<svg viewBox="0 0 320 120"><g class="ea-throne"><rect x="130" y="48" width="60" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M120 48 L160 18 L200 48" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="160" cy="28" r="6" fill="currentColor" opacity=".55"/><path d="M140 100 H180" stroke="currentColor" stroke-width="2"/></g><g class="ea-rays" opacity=".45">${Array.from({length:9},(_,i)=>{const a=(-90+(i-4)*12)*Math.PI/180;return `<path d="M160 22 L${(160+Math.cos(a)*90).toFixed(1)} ${(22+Math.sin(a)*90).toFixed(1)}"/>`;}).join('')}</g></svg>`,
   quancheng: `<svg viewBox="0 0 320 120"><g class="ea-seal"><rect x="118" y="28" width="84" height="84" rx="6" fill="none" stroke="currentColor" stroke-width="2.4"/><text x="160" y="86" text-anchor="middle" font-size="42" class="seal-font" fill="currentColor" opacity=".85">摄</text></g></svg>`,
+  huashen: `<svg viewBox="0 0 320 120"><path d="M118 96 L160 42 L202 96" fill="none" stroke="currentColor" stroke-width="2"/><path d="M136 96 V72 H184 V96" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="232" cy="36" r="10" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M70 100 H250" stroke="currentColor" stroke-width="1" opacity=".45"/></svg>`,
+  zhenmo: `<svg viewBox="0 0 320 120"><path d="M150 18 V92" stroke="currentColor" stroke-width="2"/><path d="M132 40 H168" stroke="currentColor" stroke-width="1.6"/><path d="M160 96 C120 108 90 78 70 110" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".8"/><path d="M168 100 C210 112 250 70 280 104" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".7"/></svg>`,
+  chuanshuo: `<svg viewBox="0 0 320 120"><rect x="132" y="22" width="56" height="82" fill="none" stroke="currentColor" stroke-width="2"/><path d="M146 44 H174 M146 58 H168 M146 72 H170" stroke="currentColor" stroke-width="1.3"/><path d="M70 104 H250" stroke="currentColor" stroke-width="1" opacity=".4"/></svg>`,
 };
 function showEnd(kind) {
   if (!S) return;
@@ -2051,6 +2191,9 @@ function showEnd(kind) {
     yunluo: ['身殒', `${rs}破关失利，经脉寸断，${age}载苦修化作山间一缕青烟。同门在你的洞府前立了一块无字碑，碑前的野草，年年都长得很高。` + pick(['大道无情，从不等人。', '天道之下，众生皆刍狗。'])],
     renhuang: ['人皇', `${S.name}修至${rs}，${courtLine}于${age}岁登基，建元人皇。史官写下：仙凡一统，自此人主天下。山门钟声那日齐哑——有人说是敬畏，有人说是诀别。`],
     quancheng: ['权臣', `${S.name}修至${rs}，${courtLine}于${age}岁摄政，不篡位号。诏令出其手，军权归其心。史书不敢直书其名，只写「摄政如天」。`],
+    huashen: ['山神', `${S.name}修至${rs}，于${age}岁停在那座没有门的祠前。名字刻得很浅。浅，是因为山会自己把字长深。此后过路人放一枚干果，风会替你点头。`],
+    zhenmo: ['镇魔', `${S.name}修至${rs}，于${age}岁坐上裂口。剑横在膝上，不是为了杀，是做一个很沉的镇纸。潮声在身下慢慢变成普通的风。`],
+    chuanshuo: ['传说', `${S.name}修至${rs}，于${age}岁把这一生删到很薄，放进石室，封面上没有名字。后世用别人的嘴讲你。讲着讲着，就成了真的。`],
   }[kind] || ['坐化', ''];
   $('#end-title').textContent = T[0];
   const composed = (typeof Life !== 'undefined' && Life.compose) ? Life.compose(S, kind, T[1]) : null;
@@ -2080,7 +2223,7 @@ function showEnd(kind) {
     judgeEl.textContent = bits.join('');
     judgeEl.hidden = !bits.length;
   }
-  const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>`, renhuang: `境界 <b>${rs}</b>　人皇 <b>${age}岁</b>`, quancheng: `境界 <b>${rs}</b>　摄政 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
+  const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>`, renhuang: `境界 <b>${rs}</b>　人皇 <b>${age}岁</b>`, quancheng: `境界 <b>${rs}</b>　摄政 <b>${age}岁</b>`, huashen: `境界 <b>${rs}</b>　山神 <b>${age}岁</b>`, zhenmo: `境界 <b>${rs}</b>　镇魔 <b>${age}岁</b>`, chuanshuo: `境界 <b>${rs}</b>　传说 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
   const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
   const pth = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
   const pfl = pth ? `<br>定型 <b>${pth}</b>` : '';
@@ -2095,6 +2238,7 @@ function showEnd(kind) {
     if (legObj.auxPage) carry.push('功法残页');
     if (legObj.sectMark) carry.push('门派印记');
     if (legObj.courtMark) carry.push('皇命印记');
+    if (legObj.cave) carry.push('旧洞残钥');
   }
   const leg = carry.length ? `<br><span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
     : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '');
@@ -2310,7 +2454,7 @@ const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
 function topLayer() {
   const ask = document.querySelector('.ask'); if (ask) return ask;
-  for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'baishan', 'goal-cer', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
+  for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'origin-cer', 'baishan', 'goal-cer', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
   return null;
 }
 addEventListener('keydown', e => {
@@ -2325,10 +2469,10 @@ addEventListener('keydown', e => {
     if (L.id === 'sheet') { e.preventDefault(); return closeSheet(); }
     if (L.id === 'map') return click($('#map-close'));
     if (L.id === 'dan') return click($('#dan-close'));
-    if (L.id === 'path-cer' || L.id === 'baishan') {
+    if (L.id === 'path-cer' || L.id === 'baishan' || L.id === 'origin-cer') {
       e.preventDefault();
-      const btn = L.id === 'baishan' ? $('#baishan-confirm') : $('#path-cer-confirm');
-      const foot = L.id === 'baishan' ? $('#baishan-foot') : $('#path-cer-foot');
+      const btn = L.id === 'origin-cer' ? $('#origin-confirm') : L.id === 'baishan' ? $('#baishan-confirm') : $('#path-cer-confirm');
+      const foot = L.id === 'origin-cer' ? $('#origin-foot') : L.id === 'baishan' ? $('#baishan-foot') : $('#path-cer-foot');
       if (foot && !foot.hidden && btn && !btn.disabled) { btn.focus(); toast('请点「落定」确认，或按 Enter'); }
       else toast('请先点选一项，再点底部「落定」');
       return;
@@ -2369,6 +2513,11 @@ addEventListener('keydown', e => {
       if (f && !f.hidden && b && !b.disabled) return click(b);
       toast('请先点选门户'); return;
     }
+    if (L.id === 'origin-cer') {
+      const b = $('#origin-confirm'), f = $('#origin-foot');
+      if (f && !f.hidden && b && !b.disabled) return click(b);
+      toast('请先点选出身'); return;
+    }
     return click(firstVis(L, '.brush-btn:not(.ask-no)'));
   }
 });
@@ -2401,7 +2550,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=35').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=36').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -2449,5 +2598,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, openGoalPicker, openAnnals, openLook, applyLook };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, openGoalPicker, openAnnals, openLook, applyLook };
 })();

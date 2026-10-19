@@ -31,12 +31,15 @@ const Jianghu = (() => {
     }
     for (const [id, m] of Object.entries(MIJING)) {
       if (s.realm < m.rm) continue;
-      const st = s.mj[id] = s.mj[id] || { next: s.months + 12 * rint(2, 8) * T(s), open: 0, close: 0, n: 0 };
+      const slow = id === 'chenjian' || id === 'xiandao' || id === 'xingyun';
+      const st = s.mj[id] = s.mj[id] || { next: s.months + 12 * rint(slow ? 14 : 2, slow ? 26 : 8) * T(s), open: 0, close: 0, n: 0 };
       if (!st.open && s.months >= st.next) {
         st.open = s.months; st.close = s.months + K.mjWin * T(s);
         emit && emit({ title: `秘境将启 · ${m.name}`, text: m.open + `（约${cnDur(K.mjWin * T(s))}后闭合，可往${LOC[m.loc].name}一探）`, cls: 'gold', div: true });
       } else if (st.open && s.months > st.close && !(s.dive && s.dive.id === id)) {
-        st.open = 0; st.next = s.months + 12 * rint(K.mjEvery[0], K.mjEvery[1]) * T(s) / 2;
+        st.open = 0;
+        const span = slow ? 1.7 : 1;
+        st.next = s.months + 12 * rint(Math.round(K.mjEvery[0] * span), Math.round(K.mjEvery[1] * span)) * T(s) / 2;
         emit && emit({ text: `${m.name}的入口悄然合上了。下一次开启，不知又是何年。`, cls: '' });
       }
     }
@@ -248,7 +251,12 @@ const Jianghu = (() => {
 
   /* ---------- 秘境 ---------- */
   const mjOpen = (s, id) => !!(s.mj[id] && s.mj[id].open && s.months <= s.mj[id].close && s.realm >= MIJING[id].rm);
-  const mjHere = s => { const l = LOC[s.loc]; return l && l.mj && mjOpen(s, l.mj) ? l.mj : null; };
+  const mjHere = s => {
+    const l = LOC[s.loc]; if (!l) return null;
+    if (l.mj && mjOpen(s, l.mj)) return l.mj;
+    if (l.mj2 && mjOpen(s, l.mj2)) return l.mj2;
+    return null;
+  };
   function mjEnter(s, id) { s.dive = { id, node: 0, hp: 100, ling: 100, loot: { ls: 0, xw: 0, item: {} }, seen: 0 }; return s.dive; }
   const mjNode = s => s.dive && MIJING[s.dive.id].nodes[s.dive.node];
   const mjBase = (s, b) => s.dive ? b + (s.dive.hp - 60) / 300 + (s.dive.ling - 50) / 400 : b;
@@ -290,7 +298,10 @@ const Jianghu = (() => {
     if (half) { fx.inj = 2; fx.xj = (fx.xj || 0) - 4; }
     const tags = [];
     const months = T(s) * (K.mjExit + d.node);
-    s.dive = null; s.mj[d.id] = s.mj[d.id] || { n: 0 }; s.mj[d.id].open = 0; s.mj[d.id].n++; s.mj[d.id].next = s.months + 12 * rint(K.mjEvery[0], K.mjEvery[1]) * T(s) / 2;
+    s.dive = null; s.mj[d.id] = s.mj[d.id] || { n: 0 }; s.mj[d.id].open = 0; s.mj[d.id].n++;
+    const slowLeave = d.id === 'chenjian' || d.id === 'xiandao' || d.id === 'xingyun';
+    const spanL = slowLeave ? 1.7 : 1;
+    s.mj[d.id].next = s.months + 12 * rint(Math.round(K.mjEvery[0] * spanL), Math.round(K.mjEvery[1] * spanL)) * T(s) / 2;
     Core.passTime(s, months, emit);
     const o = Core.applyFx(s, fx, emit); tags.push(...o.tags);
     if (!half && L.recipe) learnRecipe(s, L.recipe, tags);

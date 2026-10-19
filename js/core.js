@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 12;
+  const SAVE_V = 13;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -324,6 +324,7 @@ const Core = (() => {
     if (!s.dead) sectTick(s, emit);
     if (!s.dead && typeof Jianghu !== 'undefined') Jianghu.tick(s, emit);
     if (!s.dead && typeof karmaTick === 'function') karmaTick(s, emit);
+    if (!s.dead && typeof Juan !== 'undefined' && Juan.tick) Juan.tick(s, emit);
   }
   function gainMul(s) {
     let m = 1;
@@ -407,6 +408,16 @@ const Core = (() => {
         s.seen[forced.id] = (s.seen[forced.id] || 0) + 1;
         s.events++; s.acts++; s.evFoe = null;
         return forced;
+      }
+    }
+    if (typeof Juan !== 'undefined' && Juan.dueEvent) {
+      const tide = Juan.dueEvent(s);
+      if (tide && (!filt || filt(tide))) {
+        const recent1 = s.recent || [];
+        s.recent = [...recent1, tide.id].slice(-8);
+        s.seen[tide.id] = (s.seen[tide.id] || 0) + 1;
+        s.events++; s.acts++; s.evFoe = null;
+        return tide;
       }
     }
     const recent = s.recent || [], ok = e => eventOk(s, e) && (!filt || filt(e));
@@ -792,6 +803,7 @@ const Core = (() => {
     if (typeof Samsara !== 'undefined' && Samsara.applyCourtMark) Samsara.applyCourtMark(s);
     s.npc = initNpc(s);
     if (typeof Jianghu !== 'undefined') Jianghu.init(s);
+    if (typeof Juan !== 'undefined' && Juan.boot) Juan.boot(s, r);
     // 试炼局：缩短寿元窗口感——不改公式，只记目标年
     if (s.flags.trial) s.flags.trialYears = 20;
     sync(s);
@@ -861,6 +873,10 @@ const Core = (() => {
       s.v = 12;
       s.life = s.life || (typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 });
     }
+    if (s.v === 12) {  // v1.2 → v1.3：出身／道侣师徒／天下大势／题跋。不发出身加成，修为不换算
+      s.v = 13;
+      if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
@@ -871,6 +887,10 @@ const Core = (() => {
     if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
     if (!s.life || typeof s.life !== 'object') s.life = typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 };
     if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);
+    if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
+    if (s.npc && typeof NPCS !== 'undefined') {
+      for (const id in NPCS) if (!s.npc[id]) s.npc[id] = { a: NPCS[id].a0, met: false };
+    }
     sync(s); return s;
   }
   function retire(s) { s.dead = true; s.ending = 'guiyin'; }

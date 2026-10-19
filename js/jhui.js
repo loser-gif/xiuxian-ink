@@ -121,28 +121,30 @@ function makeJHUI(G) {
   }
   function renderCard() {
     const l = LOC[sel], here = sel === G.S.loc, ok = J.canGo(G.S, sel), card = $('#map-card');
-    const m = J.travelMonths(G.S, sel), mjId = l.mj && J.mjOpen(G.S, l.mj) ? l.mj : null;
+    const m = J.travelMonths(G.S, sel);
+    const ids = [l.mj, l.mj2].filter(id => id && typeof MIJING !== 'undefined' && MIJING[id]);
+    const open = ids.filter(id => J.mjOpen(G.S, id));
     const btns = [];
     if (here) btns.push(['explore', '就地游历', `${cnDur(m)}`]);
     else btns.push(['go', ok ? '前往' : `需${REALMS[l.rm].name}`, ok ? `路程${cnDur(m)}` : '修为未到', !ok]);
     if (l.market) btns.push(['market', here ? '入坊市' : '赴坊市', aucWindow() ? '今有拍卖' : '买卖丹草', !ok]);
-    if (mjId) btns.push(['mj', '入秘境', MIJING[mjId].name, !ok]);
-    else if (l.mj && G.S.realm >= MIJING[l.mj].rm) btns.push(['mjx', '秘境未启', '静候天时', true]);
+    open.forEach((id, i) => btns.push([i ? 'mj2' : 'mj', i ? '再探一处' : '入秘境', MIJING[id].name, !ok, id]));
+    if (!open.length && ids.some(id => G.S.realm >= MIJING[id].rm)) btns.push(['mjx', '秘境未启', '静候天时', true]);
     card.innerHTML = `<div class="mc-head"><span class="mc-seal">${l.seal}</span><div class="mc-name">${l.name}${here ? '<em>此间</em>' : ''}</div>
         <div class="mc-danger" title="凶险"><span class="dots">${dots(l.danger)}</span><small>${dangerWord(l.danger)}</small></div></div>
       <p class="mc-desc"></p>
       <div class="mc-meta">${l.herbs.length ? `<span>物产 · ${l.herbs.join('、')}</span>` : '<span>物产 · 百货云集</span>'}${G.S.realm < l.rm ? `<span class="zhu">需${REALMS[l.rm].name}方可涉足</span>` : ''}</div>
-      <div class="mc-btns">${btns.map(b => `<button class="mc-btn${b[3] ? '' : ' on'}" data-a="${b[0]}" ${b[3] ? 'disabled' : ''}><b>${b[1]}</b><small>${b[2]}</small></button>`).join('')}</div>`;
+      <div class="mc-btns">${btns.map(b => `<button class="mc-btn${b[3] ? '' : ' on'}" data-a="${b[0]}" data-mj="${b[4] || ''}" ${b[3] ? 'disabled' : ''}><b>${b[1]}</b><small>${b[2]}</small></button>`).join('')}</div>`;
     card.querySelector('.mc-desc').textContent = l.desc;
     card.classList.remove('bleed-in'); void card.offsetWidth; card.classList.add('bleed-in');
-    card.querySelectorAll('.mc-btn').forEach(b => b.onclick = () => cardAct(b.dataset.a));
+    card.querySelectorAll('.mc-btn').forEach(b => b.onclick = () => cardAct(b.dataset.a, b.dataset.mj));
   }
-  async function cardAct(a) {
+  async function cardAct(a, mjId) {
     if (mapBusy) return; const to = sel;
     if (a === 'explore') return goEvent(to, true);
     if (a === 'go') return goEvent(to, false);
     if (a === 'market') { const tr = to !== G.S.loc ? await travelAnim(to) : null; await closeMap(); if (tr) logTravel(tr); if (G.S.dead) return afterDeath(); return openMarket(); }
-    if (a === 'mj') { const tr = to !== G.S.loc ? await travelAnim(to) : null; await closeMap(); if (tr) logTravel(tr); if (G.S.dead) return afterDeath(); return enterMj(LOC[to].mj); }
+    if (a === 'mj' || a === 'mj2') { const id = mjId || LOC[to].mj; const tr = to !== G.S.loc ? await travelAnim(to) : null; await closeMap(); if (tr) logTravel(tr); if (G.S.dead) return afterDeath(); return enterMj(id); }
   }
   const afterDeath = () => { render(); save(); checkEnd(); };
   function logTravel(tr) {

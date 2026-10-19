@@ -6,13 +6,13 @@ const Life = (() => {
 
   const GOALS = [
     { id: 'changsheng', name: '求长生', seal: '生', hint: '白日飞升，方不算辜负这身骨头', judge: s => s.ending === 'ascend' || !!s.ascended },
-    { id: 'xuechou', name: '报血仇', seal: '仇', hint: '有一笔账，要在这辈子结清', judge: s => !!(s.life && s.life.vendetta) },
+    { id: 'xuechou', name: '报血仇', seal: '仇', hint: '有一笔账，要在这辈子结清', judge: s => !!(s.life && s.life.vendetta) || s.ending === 'zhenmo' },
     { id: 'diwei', name: '登帝位', seal: '帝', hint: '问鼎人皇，仙凡都要低头', judge: s => s.ending === 'renhuang' },
     { id: 'wendao', name: '问大道', seal: '问', hint: '把那一问问到底，成败其次', judge: s => !!(s.path && s.path.wendao) || s.ending === 'ascend' },
-    { id: 'shouyi', name: '守一人', seal: '守', hint: '有人记得你的名字，你也记得', judge: s => !!(s.karma && s.karma.mate) },
-    { id: 'xiaoyao', name: '逍遥归隐', seal: '隐', hint: '放下长生，一叶扁舟便是归处', judge: s => s.ending === 'guiyin' },
+    { id: 'shouyi', name: '守一人', seal: '守', hint: '有人记得你的名字，你也记得', judge: s => !!(s.karma && s.karma.mate) && !(s.bond && s.bond.lost) },
+    { id: 'xiaoyao', name: '逍遥归隐', seal: '隐', hint: '放下长生，一叶扁舟便是归处', judge: s => s.ending === 'guiyin' || s.ending === 'huashen' },
     { id: 'zhangmen', name: '掌一门', seal: '掌', hint: '山门的钟，要为你响一次', judge: s => !!(s.sect && (s.sect.rank | 0) >= 6) },
-    { id: 'qingshi', name: '留名青史', seal: '史', hint: '史笔写下你时，不敢漏字', judge: s => s.ending === 'quancheng' || s.ending === 'renhuang' || s.ending === 'ascend' },
+    { id: 'qingshi', name: '留名青史', seal: '史', hint: '史笔写下你时，不敢漏字', judge: s => s.ending === 'quancheng' || s.ending === 'renhuang' || s.ending === 'ascend' || s.ending === 'chuanshuo' },
   ];
 
   function empty() {
@@ -332,6 +332,15 @@ const Life = (() => {
     } else if (kind === 'quancheng') {
       text = `${name}摄政多年，印玺温热。夜里独处时，仍会想起${quote}。权柄没有把这件事磨平。`;
       thread = `来世若再握印，先问自己还记不记得那一句。`;
+    } else if (kind === 'huashen') {
+      text = `${name}于${age}岁不再赶路。名字刻进山石，浅处会自己长深。此后过路的人在祠前放一枚干果，风会替你点头。`;
+      thread = `来世若在山神祠前歇脚，不必报名。山还认得你的脚步。`;
+    } else if (kind === 'zhenmo') {
+      text = `${age}岁那年，${name}坐上了那道裂口。剑横在膝上，不是为了杀，是做一个很沉的镇纸。潮在身下慢慢安静。安静，就是回答。`;
+      thread = `来世若听见西边忽然不叫的鸟，别往裂口里看太久。那里已经有人坐着。`;
+    } else if (kind === 'chuanshuo') {
+      text = `${name}把这一生删到很薄，放进石室，没有在封面上署名。${age}岁以后，世上开始用别人的嘴讲你。讲着讲着，就成了真的。`;
+      thread = `来世若在书摊底翻到没有署名的册子，读半页即可。读完，还是去活。`;
     } else {
       text = `${name}的这一卷在${age}岁合上。卷末没有境界，只有${quote}。`;
       thread = `来世翻开新卷时，旧卷的最后一行还会透上来。`;
