@@ -26,12 +26,13 @@ const InkGL = (() => {
       vec2 p = vec2((vUv.x - .5) * A, vUv.y - .5);
       float t = uTime;
       // 低频域扭曲：墨在湿纸上缓慢蠕动、呼吸
-      vec2 q = p + (vec2(fbm3(p * 1.7 + vec2(uSeed, t * .035)), fbm3(p * 1.7 + vec2(uSeed + 5.2, -t * .03))) - .5) * .16;
+      vec2 drift = vec2(fbm3(p * 1.7 + vec2(uSeed, t * .035)), fbm3(p * 1.7 + vec2(uSeed + 5.2, -t * .03))) - .5;
+      vec2 q = p + drift * vec2(.08, .14);
       if (uKind < .5) q.y *= 1.22; // 笔腹在画布中段，晕边不贴上下沿
       float d, tt = 0., cy = 0., along = 0.;
       if (uKind < .5) {
         // 笔锋留在画布内侧：起笔圆顿，收笔收尖，两端都留空
-        float span = A * .52;
+        float span = min(A * .42, max(A - 1.05, A * .28));
         float x0 = -span * .5, x1 = span * .5;
         along = (q.x - x0) / max(x1 - x0, .001);
         tt = clamp(along, 0., 1.);
@@ -41,14 +42,18 @@ const InkGL = (() => {
         float th = .148 * (1. - .9 * taper) * (1. + .55 * press);
         th *= .9 + .12 * fbm3(vec2(tt * 4.2, uSeed));
         if (along < 0.) {
-          d = length(vec2((q.x - x0) * 1.45, (q.y - cy) * .72)) - th * 1.12;
+          // 起笔是按下的圆头，横向铺开，避免一条竖直的切边
+          float wob = fbm3(vec2(q.y * 7. + uSeed, uSeed * 2.)) - .5;
+          d = length(vec2((q.x - x0) * .95, (q.y - cy) * .98)) - th * (1.04 + wob * .12);
         } else if (along > 1.) {
           float over = along - 1.;
           float pinch = smoothstep(0., .07, over);
           d = length(vec2((q.x - x1) * (1.15 + pinch * 5.), (q.y - cy) * (1. + pinch))) - th * (1. - pinch);
         } else d = abs(q.y - cy) - th;
         d -= .05 * press;
-        d += (fbm(q * vec2(5.5, 10.) + uSeed) - .5) * .04 + (noise(q * 42. + uSeed) - .5) * .008;
+        // 笔缘起伏，上下沿和起笔都不要拉成直线
+        d += (fbm(q * vec2(3.2, 8.) + uSeed) - .5) * .042;
+        d += (noise(vec2(q.x * 2.2, q.y * 26.) + uSeed) - .5) * .016;
         d += smoothstep(1.05, 1.18, along) * .45;
       } else {
         d = length(q) - .3 + (fbm(q * 2.2 + uSeed) - .5) * .2;
