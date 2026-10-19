@@ -150,7 +150,8 @@ body.go .seal-halo{animation:sealHalo 1.6s 3.55s ease-out both}
   62%{transform:scale(.94) rotate(-4deg);filter:drop-shadow(0 0 0 rgba(30,20,10,0)) brightness(.9)}
   100%{opacity:.93;transform:scale(1) rotate(-4deg);filter:none}}
 @keyframes sealHalo{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.9)}}
-.title-poem{position:absolute;top:calc(var(--sat) + 8vh);left:calc(var(--sal) + 7%);font-size:13px;--vls:.24em;--vgap:.7em;color:var(--ink3);opacity:0}
+.title-poem{position:absolute;top:calc(var(--sat) + 3.4vh);left:calc(var(--sal) + 4.5%);font-size:13px;--vls:.04em;--vgap:.42em;color:var(--ink3);opacity:0;z-index:2}
+.title-poem .vcol i{line-height:1.16}
 body.go .title-poem{animation:fadeUp 2s 2.9s var(--ease-ink) both}
 @keyframes fadeUp{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
 .title-menu{position:absolute;left:0;right:0;bottom:calc(var(--sab) + 3.5vh);display:flex;flex-direction:column;align-items:center;gap:12px;opacity:0;z-index:2;padding:0 16px;max-width:100%;box-sizing:border-box}
@@ -166,7 +167,7 @@ body.go .title-menu{animation:fadeUp 1.4s 3.5s var(--ease-ink) both}
 @media (max-height:780px){
   .title-block{top:calc(var(--sat) + 4.5vh)}
   .title-v{font-size:clamp(60px, min(16.6vw, 8.8vh), 88px)}
-  .title-poem{top:calc(var(--sat) + 5vh)}
+  .title-poem{top:calc(var(--sat) + 3vh)}
   .title-menu{bottom:calc(var(--sab) + 2.2vh);gap:10px}
   .title-menu-main{gap:10px}
   .title-menu .brush-btn:not(.title-subbtn){padding:12px 40px 10px;min-width:160px}
@@ -178,7 +179,7 @@ body.go .title-menu{animation:fadeUp 1.4s 3.5s var(--ease-ink) both}
   .title-side{gap:10px;padding-top:.6em}
   .seal-title{width:38px;height:38px}
   .title-sub{font-size:13px}
-  .title-poem{font-size:12px;top:calc(var(--sat) + 4vh);left:calc(var(--sal) + 5%)}
+  .title-poem{font-size:12px;top:calc(var(--sat) + 2.4vh);left:calc(var(--sal) + 3.5%)}
   .title-menu{bottom:calc(var(--sab) + 1.5vh);gap:8px}
   .title-menu-main{gap:8px}
   .title-menu .brush-btn:not(.title-subbtn){padding:10px 34px 9px;min-width:148px}
@@ -1587,7 +1588,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   .title-v{font-size:clamp(84px,10.4vh,118px)}
   .title-sub{font-size:18px}
   .seal-title{width:60px;height:60px}
-  .title-poem{left:11%;top:12vh;font-size:16px}
+  .title-poem{left:5%;top:4vh;font-size:15px}
   .title-block{top:calc(6.5vh);right:13%}
   .title-v{font-size:clamp(84px,10.2vh,112px)}
   .title-menu{bottom:calc(var(--sab) + 3.5vh);gap:12px}
@@ -2771,7 +2772,7 @@ html[data-theme="night"] body[data-realm="5"] #title-land .n4{display:block}
 #title-land::before,#title-land::after{content:"";position:absolute;left:0;right:0;z-index:1;pointer-events:none}
 #title-land::before{top:0;height:22%;background:linear-gradient(180deg,rgba(239,230,211,.34),rgba(239,230,211,0))}
 #title-land::after{bottom:0;height:32%;background:linear-gradient(180deg,rgba(239,230,211,0) 0%,rgba(239,230,211,.42) 46%,rgba(239,230,211,.82) 100%)}
-html[data-theme="night"] #title-land::before{background:linear-gradient(180deg,rgba(8,6,5,.62),rgba(8,6,5,0))}
+html[data-theme="night"] #title-land::before{background:none}
 html[data-theme="night"] #title-land::after{background:linear-gradient(180deg,rgba(8,6,5,0) 0%,rgba(8,6,5,.4) 42%,rgba(8,6,5,.78) 100%)}
 body[data-screen="title"] #scenery > .cam,
 body[data-screen="title"] #scenery > .cam *,
