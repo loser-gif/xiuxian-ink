@@ -30,6 +30,16 @@ if (!glance || !glance.read) fail('没有气息判读');
 const labels = choices.map(c => c.label);
 if (!labels.includes('全力以赴') || !labels.includes('点到为止，借机观摩')) fail('选项变了：' + labels.join(' / '));
 if (choices[0].odds == null) fail('全力以赴没有胜机提示');
+const prevR = s.realm, prevSt = s.stage;
+s.realm = (s.evFoe && s.evFoe.realm) || 0;
+s.stage = (s.evFoe && s.evFoe.stage) || 0;
+const hint = Core.oddsWord(s, 0.5);
+if (hint !== '胜负五五') fail('势均时应是胜负五五，实为 ' + hint);
+for (const b of [0.9, 0.62, 0.5, 0.35, 0.1]) {
+  const w = Core.oddsWord(s, b);
+  if ([...w].length > 4 || w.includes('·') || w.includes('五五之间') || w.includes('凭气运')) fail('胜机提示过长：' + w);
+}
+s.realm = prevR; s.stage = prevSt;
 console.log('小比', title, '|', Core.foeStr(s), glance.read, '|', text.slice(0, 42));
 
 // 旧档：缺 lv 补成 1；已有层数保留

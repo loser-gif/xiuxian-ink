@@ -1187,7 +1187,7 @@ function choiceSub(c, s) {
   if (c.odds != null && s && s.evFoe && typeof Core !== 'undefined' && Core.oddsWord) {
     const base = typeof c.odds === 'function' ? c.odds(s) : c.odds;
     const w = Core.oddsWord(s, base);
-    if (w) sub = sub ? (sub + ' · ' + w) : w;
+    if (w) return w;
   }
   return sub;
 }
@@ -2809,7 +2809,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=49').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=50').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();

@@ -1034,10 +1034,10 @@ const Core = (() => {
     if (dr >= 2) p = 0.92;
     else if (dr === 1) p = 0.78;
     else p = clamp((+base || 0.5) + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
-    if (p >= 0.75) return '或可从容';
+    if (p >= 0.75) return '从容可胜';
     if (p >= 0.58) return '胜机在握';
-    if (p >= 0.45) return '五五之间';
-    if (p >= 0.3) return '宜慎';
+    if (p >= 0.45) return '胜负五五';
+    if (p >= 0.3) return '出手宜慎';
     return '多半不利';
   }
   function originJab(s) {

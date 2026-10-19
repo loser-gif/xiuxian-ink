@@ -2475,9 +2475,9 @@ body[data-screen=main] .scroll-paper{
 .hpaper-inner{min-height:0;overflow:hidden}
 .ev-main{min-height:0;overflow-y:auto}
 .ev-side{min-height:0}
-.choice{flex-wrap:wrap;align-items:flex-start}
-.choice>span{flex:1 1 8em;min-width:0;line-height:1.45}
-.choice small{max-width:46%;white-space:normal;text-align:right;line-height:1.35}
+.choice{flex-wrap:nowrap;align-items:center}
+.choice>span{flex:1 1 auto;min-width:0;line-height:1.45}
+.choice small{max-width:none;white-space:nowrap;text-align:right;line-height:1.2}
 .choice small:empty{display:none}
 .chips{flex-wrap:wrap;row-gap:6px}
 .chip{min-width:0}
