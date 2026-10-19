@@ -136,9 +136,7 @@ const FX = (() => {
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
       if (el.classList.contains('log')) {
-        const pad = parseFloat(getComputedStyle(el).paddingTop) || 0;
-        const top = r.top + Math.max(0, pad - 8);
-        if (r.bottom > top) list.push({ left: r.left, top, right: r.right, bottom: r.bottom, width: r.width, height: r.bottom - top });
+        list.push(r);
         return;
       }
       list.push(r);

@@ -94,6 +94,7 @@ async function initVisuals() {
   root.style.setProperty('--brush-bar', brushImg(400, 26, 8, '#1b1814'));
   root.style.setProperty('--brush-bar-zhu', brushImg(400, 26, 8, '#b3302a'));
   drawMountains(true);
+  try { root.style.setProperty('--juan-mask', `url("${juanWashMask()}")`); } catch (e) { console.warn(e); }
   const [paper, mist, b1, b2, b3, b4, stone, big, scene] = await Promise.all([
     Ink.paperTile(512), Ink.mistSprite(),
     Ink.inkBlot(160, 3, { core: 0.32, rough: 0.08, splatter: 6, alpha: 0.95 }),
@@ -288,13 +289,55 @@ function aliveSave() {
 
 /* ================= 屏幕切换（卷轴） ================= */
 let curScreen = 'title';
+/* 卷首小景的边：中心留实。底边几道宽窄不一的墨舌，左右与顶也起伏，羽化进纸，不是直线矩形渐变。 */
+function juanWashMask() {
+  const W = 880, H = 300, R = Ink.mulberry(47);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  const lobe = (n, amp, w0) => {
+    const out = [];
+    for (let i = 0; i < n; i++) out.push({ p: 0.08 + R() * 0.84, amp: (R() * 2 - 1) * amp, w: w0 + R() * w0 });
+    return out;
+  };
+  const botL = lobe(6, 0.18, 0.042);
+  const topL = lobe(4, 0.07, 0.08);
+  const leftL = lobe(4, 0.055, 0.12);
+  const rightL = lobe(4, 0.055, 0.12);
+  const bell = (p, c0, w) => { const d = (p - c0) / w; return Math.exp(-d * d); };
+  const img = c.createImageData(W, H), data = img.data;
+  for (let y = 0; y < H; y++) {
+    const ny = y / (H - 1);
+    for (let x = 0; x < W; x++) {
+      const nx = x / (W - 1);
+      let bot = 0.80, top = 0.045, left = 0.04, right = 0.96;
+      for (const L of botL) bot += L.amp * bell(nx, L.p, L.w);
+      for (const L of topL) top += L.amp * bell(nx, L.p, L.w);
+      for (const L of leftL) left += L.amp * bell(ny, L.p, L.w);
+      for (const L of rightL) right -= L.amp * bell(ny, L.p, L.w);
+      if (bot > 0.96) bot = 0.96; else if (bot < 0.58) bot = 0.58;
+      if (top < 0) top = 0; else if (top > 0.16) top = 0.16;
+      if (left < 0) left = 0; else if (left > 0.14) left = 0.14;
+      if (right > 1) right = 1; else if (right < 0.86) right = 0.86;
+      const yIn = ny < 0.46 ? (ny - top) / 0.07 : (bot - ny) / 0.075;
+      const xIn = nx < 0.5 ? (nx - left) / 0.05 : (right - nx) / 0.05;
+      let a = yIn < xIn ? yIn : xIn;
+      if (a < 0) a = 0; else if (a > 1) a = 1;
+      a = a * a * (3 - 2 * a);
+      const i = (y * W + x) * 4;
+      data[i] = data[i + 1] = data[i + 2] = 255;
+      data[i + 3] = (a * 255 + 0.5) | 0;
+    }
+  }
+  c.putImageData(img, 0, 0);
+  return cv.toDataURL('image/png');
+}
 function placeRealmScape() {
   const svg = document.getElementById('realm-scape');
   if (!svg) return;
   const screen = document.body.dataset.screen;
   if (screen === 'main') {
-    const paper = document.querySelector('#scr-main .scroll-paper');
-    if (paper && svg.parentElement !== paper) paper.insertBefore(svg, paper.firstChild);
+    const head = document.getElementById('juan-head');
+    if (head && svg.parentElement !== head) head.insertBefore(svg, head.firstChild);
   } else {
     const sc = document.getElementById('scenery');
     const veil = document.getElementById('season-veil');
@@ -2588,7 +2631,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=46').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=47').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
