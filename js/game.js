@@ -1119,28 +1119,62 @@ function portraitHtml(ev) {
   }
   return InkPortrait.forEvent(ev);
 }
+function evTitle(ev) { return ev && typeof ev.title === 'function' ? ev.title(S) : (ev && ev.title) || ''; }
+function choiceSub(c, s) {
+  let sub = typeof c.sub === 'function' ? c.sub(s) : (c.sub || '');
+  if (c.odds != null && s && s.evFoe && typeof Core !== 'undefined' && Core.oddsWord) {
+    const base = typeof c.odds === 'function' ? c.odds(s) : c.odds;
+    const w = Core.oddsWord(s, base);
+    if (w) sub = sub ? (sub + ' · ' + w) : w;
+  }
+  return sub;
+}
+function mountFoeSlip(after) {
+  if (!after || !after.parentNode) return;
+  const old = after.parentNode.querySelector('.foe-slip');
+  if (old) old.remove();
+  if (!S || !S.evFoeMeta) return;
+  const meta = S.evFoeMeta;
+  const slip = document.createElement('div');
+  if (meta.roster && meta.roster.length) {
+    slip.className = 'foe-slip roster';
+    slip.innerHTML = meta.roster.map(r => `<div class="foe-row"><b>${esc(r.name)}</b><em>${esc(r.title || '')}</em><span>${esc(r.read || '')}</span><small>${esc(r.realm || '')}</small></div>`).join('');
+  } else if (S.evFoe && Core.glance) {
+    const g = Core.glance(S);
+    slip.className = 'foe-slip' + (g.exact ? '' : ' dim');
+    const title = meta.title ? `<em>${esc(meta.title)}</em>` : '';
+    slip.innerHTML = `<div class="foe-name">${esc(meta.name || '对手')}${title}</div>`
+      + (g.exact ? `<div class="foe-realm">${esc(g.realm)}</div>` : '')
+      + `<div class="foe-read">「${esc(g.read)}」</div>`
+      + (g.exact ? '' : `<div class="foe-rough">${esc(g.rough)}</div>`);
+  } else return;
+  after.insertAdjacentElement('afterend', slip);
+}
 function openEvent(ev) {
   if (!ev) return;
   if (!ev.guide && typeof Samsara !== 'undefined' && Samsara.seeEncounter) Samsara.seeEncounter(ev.id);
   const slot = $('#ev-portrait');
   if (slot) { const html = portraitHtml(ev); slot.innerHTML = html; slot.hidden = !html; }
-  FX.vtext($('#ev-title'), ev.title);
+  const title = evTitle(ev);
+  FX.vtext($('#ev-title'), title);
   $('#ev-seal').textContent = ev.seal || pick(['缘', '遇', '奇', '机']);
+  if (S) { S.evFoe = null; S.evFoeMeta = null; }
   const text = ev.text(S);
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
+  mountFoeSlip($('#ev-text'));
   openModal();
   const d = inkWrite($('#ev-text'), text, { immediate: true, step: snappy() ? 6 : 20, cadence: !snappy() });
   const startAt = (snappy() ? 80 : 420) + d * 0.35;
   ev.choices(S).forEach((c, i) => {
     const b = document.createElement('button'); b.className = 'choice'; b.disabled = !!c.disabled;
     b.style.animationDelay = (startAt + i * 120) + 'ms';
-    b.innerHTML = `<span></span><small></small>`; b.firstChild.textContent = c.label; b.lastChild.textContent = c.sub || '';
-    b.onclick = () => choose(ev, c, b, text);
+    b.innerHTML = `<span></span><small></small>`; b.firstChild.textContent = c.label; b.lastChild.textContent = choiceSub(c, S);
+    b.onclick = () => choose(ev, c, b, text, title);
     box.appendChild(b);
   });
 }
-function choose(ev, c, btn, evText) {
+function choose(ev, c, btn, evText, titleText) {
   const box = $('#ev-choices'); if (box.classList.contains('chosen')) return;
   btn.classList.add('picked'); box.classList.add('chosen');
   const res = Core.resolveChoice(S, c);
@@ -1167,7 +1201,7 @@ function choose(ev, c, btn, evText) {
       if (c.skipAll) { GUIDES.forEach(g => { S.flags[g.id] = 1; }); finishGuide(); }
       else if (GUIDES.every(g => S.flags[g.id])) finishGuide();
     }
-    pushLog({ title: ev.title, text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: ev.xinmo ? 'warn' : 'event', div: true, guide: !!ev.guide });
+    pushLog({ title: titleText || evTitle(ev), text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: ev.xinmo ? 'warn' : 'event', div: true, guide: !!ev.guide });
     B.flush(); Core.afterGain(S, ups, pushLog);
     render(); save(); checkEnd();
     if (!ev.guide) maybeGuide();
@@ -1654,10 +1688,22 @@ function dabiInvite() {
   const o = Core.org(S); if (!o) { S.sect.dabiDue = false; return; }
   dabiOpen = true;
   const ev = { id: 'dabi', title: o.dabi, seal: '比',
-    text: () => o.id === 'qm' ? `${o.dabi}，${cn(K.dabiYears * R().T)}年一度。演武台上的青石被扫得发亮，八名弟子的名牌挂在台前，其中一块，写着你的名字。台下人山人海，执事堂的老执事敲了三下铜锣。` : `${o.dabi}开擂，散修们从四面八方涌来，坊市里的赌档早早开了盘口。擂台边的木牌上，你的名字排在第七。`,
+    text: () => {
+      const roster = Core.dabiRoster(S);
+      S.evFoeMeta = { roster };
+      const who = roster.map(r => `${r.name}（${r.read}）`).join('、');
+      const head = {
+        qm: `${o.dabi}，${cn(K.dabiYears * R().T)}年一度。演武台上的青石被扫得发亮，八名弟子的名牌挂在台前，其中一块，写着你的名字。台下人山人海，执事堂的老执事敲了三下铜锣。`,
+        dx: `${o.dabi}开炉。丹坪上的青石被扫净，炉烟压得很低。名牌挂在台前，其中一块写着你的名字。`,
+        yy: `${o.dabi}。影坪无灯，名牌却自己浮出来，其中一块是你的。`,
+        xj: `${o.dabi}。演机坪的铜铃响了三声，名牌按机纹排开，有一块写着你的名字。`,
+        sx: `${o.dabi}开擂。坊市里的赌档早早开了盘口，木牌上你的名字排在前列。`,
+      }[o.id] || `${o.dabi}将启。名牌上有你的名字。`;
+      return `${head}这一回签上的对手，是${who}。`;
+    },
     choices: () => [
       { label: '登台', sub: '三战定名次', act: () => ({ text: '你整了整衣袍，一步步走上演武台。台下的喧哗声，忽然都远了。', fx: {}, after: startDabi }) },
-      { label: '托病不出', sub: '贡献 · 心境稍减', act: s => { s.sect.dabiDue = false; return { text: '你递了一张告假条。那块写着你名字的名牌，被执事默默摘了下来。', fx: { gx: -2, xj: -2 } }; } },
+      { label: '托病不出', sub: '贡献 · 心境稍减', act: s => { s.sect.dabiDue = false; s._dabiBracket = null; return { text: '你递了一张告假条。那块写着你名字的名牌，被执事默默摘了下来。', fx: { gx: -2, xj: -2 } }; } },
     ] };
   openEvent(ev);
   setTimeout(() => { dabiOpen = false; }, 1500);
@@ -2381,7 +2427,7 @@ function closeScrollView() {
 
 /* ================= 江湖界面 ================= */
 const JHUI = typeof makeJHUI === 'function' ? makeJHUI({ get S() { return S; }, get busy() { return busy; }, set busy(v) { busy = v; },
-  $, sleep, pick, render, save, pushLog, openEvent, openSheet, closeSheet, toast, inkWrite, buffer, checkEnd, runDuel, realmStr, fmtNum, K, chanceWord }) : undefined;
+  $, sleep, pick, render, save, pushLog, openEvent, openSheet, closeSheet, toast, inkWrite, buffer, checkEnd, runDuel, realmStr, fmtNum, K, chanceWord, mountFoeSlip, choiceSub }) : undefined;
 
 /* ================= 此生所求 / 平生 / 纸墨 ================= */
 const LOOK_KEY = 'moxian.look';
@@ -2636,7 +2682,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=48').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=49').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();

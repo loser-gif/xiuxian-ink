@@ -196,10 +196,10 @@ const EVENTS = [
   },
   {
     id: 'herb', title: '朱果与蟒', w: 7,
-    text: s => { const dr = s.realm - Core.rollFoe(s, { realm: 1, stage: 0 }).realm; return '绝壁之上，一株老藤结着三枚朱红果实，异香扑鼻，是传说中延寿的朱果。藤下盘着一条赤鳞大蟒，鳞片在日光下如烧红的炭，正吐着信子打盹。'
+    text: s => { const dr = s.realm - Core.showFoe(s, { realm: 1, stage: 0 }, { name: '赤鳞大蟒', title: '守果' }).realm; return '绝壁之上，一株老藤结着三枚朱红果实，异香扑鼻，是传说中延寿的朱果。藤下盘着一条赤鳞大蟒，鳞片在日光下如烧红的炭，正吐着信子打盹。'
       + (dr >= 2 ? '那蟒的妖力不过筑基初期，在你眼中，与一条大些的长虫无异。' : dr === 1 ? '看那妖气，不过筑基初期，比你低了一个大境界。' : dr === 0 ? '看那妖气，已有筑基初期，与你相当。' : '那蟒的妖气浓得化不开，至少已是筑基之境——远在你之上。'); },
     choices: s => [
-      { label: '拔剑夺果', sub: Core.foeDr(s) >= 1 ? '探囊取物' : '凶险', act: s => Core.fightAct(s, { name: '大蟒', base: 0.45 + s.luck * 0.03,
+      { label: '拔剑夺果', sub: Core.foeDr(s) >= 1 ? '探囊取物' : '凶险', odds: s => 0.45 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '大蟒', base: 0.45 + s.luck * 0.03,
         win: { text: '一场恶斗，山石崩飞。你终于斩下蟒首，摘得朱果。果肉入口即化，暖流直抵四肢百骸，多年积劳一扫而空。', fx: { item: { '延寿果': 1 }, life: 2, ls: 20 } },
         lose: { text: '大蟒尾鞭如铁，你被抽落山崖，幸被一株老松挂住，才捡回一条性命。', fx: { inj: 4, life: -4 } },
         crush: '你只一拂袖，那大蟒便如一截枯藤般被甩下绝壁。你摘下朱果，连衣角都没有乱。',
@@ -220,10 +220,10 @@ const EVENTS = [
   },
   {
     id: 'bandit', title: '劫修拦路', w: 8, cond: s => s.realm <= 3,
-    text: s => { Core.rollFoe(s, { rel: anyOf([-4, -2, -1, 0, 0, 1]) }); const dr = Core.foeDr(s);
+    text: s => { Core.showFoe(s, { rel: anyOf([-4, -2, -1, 0, 0, 1]) }, { name: '刀疤脸', title: '拦路劫修' }); const dr = Core.foeDr(s);
       return `峡谷狭处，三名黑衣修士拦住去路。为首一人刀疤横贯面门，气息约莫${Core.foeStr(s)}，咧嘴笑道：“此山是我开。把储物袋留下，饶你不死。”` + (dr >= 1 ? '他显然没看出你的深浅。' : ''); },
     choices: s => [
-      { label: '拔剑迎战', sub: Core.foeDr(s) >= 1 ? '不费吹灰' : '凭气运', act: s => Core.fightAct(s, { name: '刀疤脸', base: 0.5 + s.luck * 0.04,
+      { label: '拔剑迎战', sub: Core.foeDr(s) >= 1 ? '不费吹灰' : '凭气运', odds: s => 0.5 + s.luck * 0.04, act: s => Core.fightAct(s, { name: '刀疤脸', base: 0.5 + s.luck * 0.04,
         win: { text: '剑光三起三落，刀疤脸捂着咽喉跪倒。余下二人见势不妙，作鸟兽散。你从他身上搜出一袋灵石。', fx: { ls: 45, xj: -2, xw: 0.12 } },
         lose: { text: '寡不敌众，你身中数刀，拼死遁走，储物袋也丢了一半。', fx: { inj: 3, ls: -Math.floor(s.ls * 0.5), lsRaw: true } },
         crush: '你只一拂袖，三人便如落叶般翻滚出去，撞在崖壁上半晌爬不起来。刀疤脸跪地磕头，把自己的储物袋双手奉上。',
@@ -356,7 +356,13 @@ const EVENTS = [
     id: 'disciple', title: '拜师的少年', w: 5, cond: s => s.realm >= 2,
     text: () => '山门外跪着一个衣衫褴褛的少年，已跪了七天七夜。他额头磕出了血，见你经过，嘶哑着嗓子：“求仙长收我为徒！”你一眼便看出，他是伪灵根。',
     choices: s => [
-      { label: '收他为徒', sub: '', act: s => ({ text: '你扶起他，就像多年前，那个也曾被人嗤笑的自己。此后山中多了一个劈柴挑水的身影，和一声声生涩的“师父”。', fx: { xj: 12, luck: 2, flag: 'disciple', karma: { id: 'tu_return', years: 35 } } }) },
+      { label: '收他为徒', sub: '', act: s => {
+        const face = Core.rootFace(s);
+        const line = (face.band === 'high' || face.band === 'good')
+          ? `你扶起他。你自己是${face.shown}，不必拿他的根骨开玩笑——仙路难，肯跪七天的人，已经比许多天资走得认真。此后山中多了一个劈柴挑水的身影，和一声声生涩的“师父”。`
+          : '你扶起他，就像多年前，那个也曾被人嗤笑的自己。此后山中多了一个劈柴挑水的身影，和一声声生涩的“师父”。';
+        return { text: line, fx: { xj: 12, luck: 2, flag: 'disciple', karma: { id: 'tu_return', years: 35 } } };
+      } },
       { label: '赠他一卷心法', sub: '', act: s => ({ text: '你将一卷入门心法放在他面前：“仙路艰难，好自为之。”少年捧着书卷，泣不成声。', fx: { xj: 6 } }) },
     ],
   },

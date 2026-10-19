@@ -100,9 +100,9 @@ EVENTS.push(
   /* 宿敌 · 陆 */
   { id: 'yg_lu_foe', title: '旧剑', seal: '敌', w: 8, once: true, rm: [1, 4],
     cond: s => karmaDue(s, 'lu_foe') && met(s, 'lu'),
-    text: s => { Core.rollFoe(s, { rel: anyOf([0, 1]) }); return `陆沉舟立在黑风岭顶，白衣已旧。“${s.karma && s.karma.foe === 'lu' ? '宿敌' : '同辈'}，”他拔剑，“今日把从前未完的一剑，补上。”他的气息约莫${Core.foeStr(s)}。`; },
+    text: s => { Core.showFoe(s, { rel: anyOf([0, 1]) }, { name: '陆沉舟', title: '旧剑' }); return `陆沉舟立在黑风岭顶，白衣已旧。“${s.karma && s.karma.foe === 'lu' ? '宿敌' : '同辈'}，”他拔剑，“今日把从前未完的一剑，补上。”他的气息约莫${Core.foeStr(s)}。`; },
     choices: s => [
-      { label: '拔剑相迎', sub: '斗法', act: s => {
+      { label: '拔剑相迎', sub: '斗法', odds: s => 0.52 + (aff(s, 'lu') < 0 ? 0.04 : 0), act: s => {
         karmaTake(s, 'lu_foe');
         const tags = []; if (!(s.karma && s.karma.foe)) setFoe(s, 'lu', tags);
         return Core.fightAct(s, { name: '陆沉舟', base: 0.52 + (aff(s, 'lu') < 0 ? 0.04 : 0),
@@ -138,9 +138,9 @@ EVENTS.push(
   /* 拍卖黑袍回响 */
   { id: 'yg_hei_echo', title: '血印再至', seal: '怨', w: 7, once: true, rm: [1, 4],
     cond: s => karmaDue(s, 'hei_echo') && s.flags.heiGrudge >= 2,
-    text: s => { Core.rollFoe(s, { rel: anyOf([0, 1, 1]) }); return `云岳坊外旧巷。那个额刺血雾印的人又来了，修为更沉，约莫${Core.foeStr(s)}。“上次走得急，”他哑声道，“这次，把旧账算清。”`; },
+    text: s => { Core.showFoe(s, { rel: anyOf([0, 1, 1]) }, { name: '血印客', title: '旧巷' }); return `云岳坊外旧巷。那个额刺血雾印的人又来了，修为更沉，约莫${Core.foeStr(s)}。“上次走得急，”他哑声道，“这次，把旧账算清。”`; },
     choices: s => [
-      { label: '了断', sub: '斗法', act: s => {
+      { label: '了断', sub: '斗法', odds: 0.5, act: s => {
         karmaTake(s, 'hei_echo');
         return Core.fightAct(s, { name: '血印客', base: 0.5,
           win: { text: '你胜了。他跪地吐出一枚染血令牌：“谷主……不认弃子。”你收下令牌，夜色忽然干净了。', fx: { ls: 40, item: { '血菩提': 1 }, xj: 3 } },

@@ -506,6 +506,7 @@ const Life = (() => {
         const good = d && (d.kind === 'save' || d.kind === 'spare');
         const role = good ? sp.roleGood : sp.roleBad;
         const years = d ? Math.max(1, Math.round((s.months - (d.year * 12)) / 12)) : 20;
+        if (!good && typeof Core !== 'undefined' && Core.showFoe) Core.showFoe(s, { rel: 0 }, { name: role, title: '旧怨' });
         return `距你${d ? d.line : '遇见' + sp.who}，约莫${typeof cn === 'function' ? cn(years) : years}年。${sp.who}没有以旧模样出现。来的是${role}。对方看你的眼神，仍停在当年那一刻。`;
       },
       choices: s => {
@@ -534,10 +535,10 @@ const Life = (() => {
               Life.seal(s2, sp.id);
               return { text: `你没有拔剑。你把当年的事原样说了，包括你不体面的那一部分。${sp.roleBad}听完，恨意像潮水退了一寸：「……至少你还记得。」此账未清，可也不必在今天见血。`, fx: { xj: 3 } };
             }},
-          { label: '拔剑相向', sub: '斗法', act: s2 => {
+          { label: '拔剑相向', sub: '斗法', odds: 0.5, act: s2 => {
             Life.seal(s2, sp.id);
             if (typeof Core !== 'undefined' && Core.fightAct) {
-              Core.rollFoe(s2, { rel: 0 });
+              if (!s2.evFoe) Core.showFoe(s2, { rel: 0 }, { name: sp.roleBad, title: '旧怨' });
               const r = Core.fightAct(s2, {
                 name: sp.roleBad,
                 base: 0.5,

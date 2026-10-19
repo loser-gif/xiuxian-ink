@@ -167,20 +167,20 @@ const Juan = (() => {
             { label: '以灵力辟雾下行', sub: '耗灵力', ling: -18, act: () => ({ text: '你把灵力铺成一层薄罩。雾分开一掌宽，恰好够你落下。' }) },
             { label: '闭气硬闯', sub: '寒气侵体', act: () => Math.random() < 0.55 ? { text: '你屏住呼吸往下走。雾在袖上结了一层霜，人还是下去了。', ling: -8 } : { text: '寒气钻进骨缝。你在阶上跪了一跪，才把那口冷气逼出去。', hp: -16, hazard: true } },
           ] },
-          { t: '沉剑台', text: s => { if (typeof Core !== 'undefined') Core.rollFoe(s, { rel: 0 }); return '一方石台没在水里，台上插着十几柄断剑。你的脚步一近，其中一柄忽然轻鸣，剑意与你相当。'; }, choices: s => [
-            { label: '拔剑相试', sub: '斗法', act: s2 => Core.fightAct(s2, { name: '残剑意', foe: { rel: 0 }, base: 0.52,
+          { t: '沉剑台', text: s => { if (typeof Core !== 'undefined') Core.showFoe(s, { rel: 0 }, { name: '残剑意', title: '沉剑台' }); return '一方石台没在水里，台上插着十几柄断剑。你的脚步一近，其中一柄忽然轻鸣，剑意与你相当。'; }, choices: s => [
+            { label: '拔剑相试', sub: '斗法', odds: 0.52, act: s2 => Core.fightAct(s2, { name: '残剑意', foe: { rel: 0 }, base: 0.52,
               win: { text: '剑意散时，断剑里落下一块温热的铁。你收进袖中，掌心还在发麻。', fx: { item: { '古剑残片': 1 }, xw: 0.12 } },
               lose: { text: '剑鸣刺耳。你退开时，衣袖被削去一角，人还在台上。', fx: { hp: -18 } } }) },
             { label: '只观剑纹，不拔', sub: '悟', act: () => ({ text: '你在台边坐到雾色发白。剑纹像一句反复写的话，你记下了其中半句。', loot: { xw: 0.2 } }) },
           ] },
-          { t: '守渊人', text: s => { Core.rollFoe(s, { rel: 0 }); return `水面上站着一个没有影子的人，声音很轻：“渊不留无名之剑。”他的气息与你齐平，约莫${Core.foeStr(s)}。`; }, choices: s => [
-            { label: '报上名字', sub: '一战', act: s2 => Core.fightAct(s2, { name: '守渊人', foe: { rel: 0 }, base: 0.5,
+          { t: '守渊人', text: s => { Core.showFoe(s, { rel: 0 }, { name: '守渊人', title: '渊上' }); return `水面上站着一个没有影子的人，声音很轻：“渊不留无名之剑。”他的气息与你齐平，约莫${Core.foeStr(s)}。`; }, choices: s => [
+            { label: '报上名字', sub: '一战', odds: 0.5, act: s2 => Core.fightAct(s2, { name: '守渊人', foe: { rel: 0 }, base: 0.5,
               win: { text: '他听完你的名字，把路让开。“下去吧。渊底那柄，不一定肯认你。”', fx: { xj: 4, ls: 20 } },
               lose: { text: '他一掌把你送回雾里。“名字太轻。”你咳出一口水，人还活着。', fx: { hp: -22 } } }) },
             { label: '沉默，绕开他', act: () => Math.random() < 0.5 ? { text: '你不说话，贴着石壁过去。他没有追，只把脸转向更深的地方。' } : { text: '你绕到一半，被他的袖风扫中，只好退回原阶。', hp: -12, hazard: true } },
           ] },
-          { t: '渊心', boss: true, text: s => { Core.rollFoe(s, { rel: 1 }); return `渊心悬着一柄整剑，剑身无锈。剑中站出一个与你眉眼有七分像的人，修为却压你半筹，约莫${Core.foeStr(s)}。“想带走它，先胜过我。”`; }, choices: s => [
-            { label: '出剑', sub: '决战', act: s2 => Core.fightAct(s2, { name: '渊心剑灵', foe: { rel: 1 }, base: 0.48,
+          { t: '渊心', boss: true, text: s => { Core.showFoe(s, { rel: 1 }, { name: '渊心剑灵', title: '与你七分像' }); return `渊心悬着一柄整剑，剑身无锈。剑中站出一个与你眉眼有七分像的人，修为却压你半筹，约莫${Core.foeStr(s)}。“想带走它，先胜过我。”`; }, choices: s => [
+            { label: '出剑', sub: '决战', odds: 0.48, act: s2 => Core.fightAct(s2, { name: '渊心剑灵', foe: { rel: 1 }, base: 0.48,
               win: { text: '最后一剑你没有刺下去。剑灵自己散了，整剑化作一页金纹残卷，落进你掌心。', fx: { xw: 0.85, frag: 1, item: { '古剑残片': 1 } } },
               lose: { text: '剑灵收剑：“还不是时候。”一股水柱把你送出渊口，天亮时你才喘匀。', fx: { hp: -55 } } }) },
           ] },
@@ -196,9 +196,9 @@ const Juan = (() => {
             { label: '坐下，喝一口露', act: () => ({ text: '露水是甜的。你喝完，觉得经脉里有什么轻轻转了一圈。', loot: { xw: 0.22, xj: 4 } }) },
             { label: '折一枝带走', act: () => ({ text: '你折了一枝最小的。树没有生气。枝在袖中一夜，第二天变成了一小把花瓣，香气还在。', loot: { item: { '宁神花': 2 }, xj: 2 } }) },
           ] },
-          { t: '问岛主', text: s => { Core.rollFoe(s, { rel: 0 }); return `一个白衣人从桃后走出来，看不出年纪。“岛不招待贪的人，”他说，气息却与你相当，约莫${Core.foeStr(s)}。“你来做什么？”`; }, choices: s => [
+          { t: '问岛主', text: s => { Core.showFoe(s, { rel: 0 }, { name: '岛上白衣', title: '看不出年纪' }); return `一个白衣人从桃后走出来，看不出年纪。“岛不招待贪的人，”他说，气息却与你相当，约莫${Core.foeStr(s)}。“你来做什么？”`; }, choices: s => [
             { label: '说来看一眼春天', act: () => ({ text: '他听完，把空杯倒扣。“那就看一眼。看完，走。”你在岛上又留了半日，心是静的。', loot: { xj: 8, xw: 0.1 } }) },
-            { label: '说来寻长生', sub: '斗法', act: s2 => Core.fightAct(s2, { name: '岛上白衣', foe: { rel: 0 }, base: 0.5,
+            { label: '说来寻长生', sub: '斗法', odds: 0.5, act: s2 => Core.fightAct(s2, { name: '岛上白衣', foe: { rel: 0 }, base: 0.5,
               win: { text: '你赢了，他却笑：“长生不在岛上。”他丢给你一枚温玉，转身走入桃影。', fx: { item: { '鲛珠': 1 }, ls: 40, xw: 0.15 } },
               lose: { text: '他没有下重手，只把你点倒在石桌边。“醒了再想。”你醒时，杯子还是空的。', fx: { hp: -20 } } }) },
           ] },
@@ -206,8 +206,8 @@ const Juan = (() => {
             { label: '只沾唇', act: () => ({ text: '你只沾了一点。舌尖一热，随即清凉。你把瓮重新封好。', loot: { xj: 6 } }) },
             { label: '饮一大口', sub: '或伤', act: () => Math.random() < 0.62 ? { text: '酒入喉，像把一整座春天喝了下去。你坐了很久，修为却实实在在厚了一层。', loot: { xw: 0.35 } } : { text: '酒性比香气烈得多。你吐出一口浊气，五脏像被火舔过。', hp: -16, hazard: true } },
           ] },
-          { t: '树心', boss: true, text: s => { Core.rollFoe(s, { rel: 1 }); return `岛心一株枯而不死的古树。树洞里睁开一只眼，声音从年轮里出来：“走的人很多，留下名字的很少。”它的修为压着你，约莫${Core.foeStr(s)}。`; }, choices: s => [
-            { label: '把名字写下', sub: '决战', act: s2 => Core.fightAct(s2, { name: '岛心古树', foe: { rel: 1 }, base: 0.47,
+          { t: '树心', boss: true, text: s => { Core.showFoe(s, { rel: 1 }, { name: '岛心古树', title: '海外仙岛' }); return `岛心一株枯而不死的古树。树洞里睁开一只眼，声音从年轮里出来：“走的人很多，留下名字的很少。”它的修为压着你，约莫${Core.foeStr(s)}。`; }, choices: s => [
+            { label: '把名字写下', sub: '决战', odds: 0.47, act: s2 => Core.fightAct(s2, { name: '岛心古树', foe: { rel: 1 }, base: 0.47,
               win: { text: '你把名字刻在树根上。树眼闭上，掉下一片金边树叶，叶脉里是一卷残页。', fx: { xw: 0.9, frag: 1, xj: 6 } },
               lose: { text: '树根把你卷起，轻轻放到海边。“下次再来，把名字想清楚。”', fx: { hp: -50 } } }) },
             { label: '不留名，只作一揖', act: () => ({ text: '你作了一揖，没有刻字。树眼看了你很久，掉下一小片普通的叶子。你觉得这也够了。', loot: { xj: 10, xw: 0.25 } }) },
@@ -224,8 +224,8 @@ const Juan = (() => {
             { label: '按刻度坐一夜', act: () => ({ text: '你坐到云海发白。有一刹那，你看见自己的经脉像一条河，河上有桥。', loot: { xw: 0.4, xj: 4 } }) },
             { label: '取一块星铁', act: () => ({ text: '星铁不大，重得过分。你只取了指甲大的一块，已经觉得袖子沉了。', loot: { item: { '寒铁': 1 }, ls: 30 } }) },
           ] },
-          { t: '星兽', boss: true, text: s => { Core.rollFoe(s, { rel: 1 }); return `星铁堆里站起一头不成兽形的光，四足，无眼。它的气息比你深半境，约莫${Core.foeStr(s)}。它不吼，只把你的影子踩住。`; }, choices: s => [
-            { label: '把影子夺回来', sub: '决战', act: s2 => Core.fightAct(s2, { name: '星兽', foe: { rel: 1 }, base: 0.46,
+          { t: '星兽', boss: true, text: s => { Core.showFoe(s, { rel: 1 }, { name: '星兽', title: '星陨残谷' }); return `星铁堆里站起一头不成兽形的光，四足，无眼。它的气息比你深半境，约莫${Core.foeStr(s)}。它不吼，只把你的影子踩住。`; }, choices: s => [
+            { label: '把影子夺回来', sub: '决战', odds: 0.46, act: s2 => Core.fightAct(s2, { name: '星兽', foe: { rel: 1 }, base: 0.46,
               win: { text: '光散的时候，你的影子回到脚下。星铁核心里躺着一卷发亮的残页。', fx: { xw: 1.0, frag: 1, xj: 5 } },
               lose: { text: '它松开你的影子，像松开一件不属于它的东西。你被一股柔风送出谷口。', fx: { hp: -48 } } }) },
           ] },
@@ -276,9 +276,9 @@ const Juan = (() => {
         ] },
       { id: 'org_lh_lie', title: '夜猎', seal: '猎', w: 7, once: true, rm: [0, 1],
         wf: s => early('liehu')(s) ? 14 : 1, cond: s => early('liehu')(s) && s.flags.shanCi,
-        text: s => { if (typeof Core !== 'undefined') Core.rollFoe(s, { rel: 0 }); return '夜里有虎伤了邻家的牛。你摸黑上山，在旧猎径上看见一双眼睛。那东西的气势，竟与你此刻的修为一般高。'; },
+        text: s => { if (typeof Core !== 'undefined') Core.showFoe(s, { rel: 0 }, { name: '夜山虎', title: '旧猎径' }); return '夜里有虎伤了邻家的牛。你摸黑上山，在旧猎径上看见一双眼睛。那东西的气势，竟与你此刻的修为一般高。'; },
         choices: s => [
-          { label: '搭箭', sub: '斗法', act: s2 => Core.fightAct(s2, { name: '夜山虎', foe: { rel: 0 }, base: 0.56,
+          { label: '搭箭', sub: '斗法', odds: 0.56, act: s2 => Core.fightAct(s2, { name: '夜山虎', foe: { rel: 0 }, base: 0.56,
             win: { text: '箭正中肩。虎走了，没有死。你没有追。邻家的牛还在，你的手还稳。', fx: { item: { '妖丹': 1 }, xj: 3, xw: 0.06 } },
             lose: { text: '虎比你的箭快。你滚进灌木，小腿被刮开一道。它看了你一眼，也走了——像觉得你还不够做一顿饭。', fx: { inj: 1 } } }) },
           { label: '把牛径让开，引它走别的山', act: () => ({ text: '你敲响火石，把虎往更深的林里引。牛活了，虎也活了。你觉得这样比较像你父亲。', fx: { xj: 6 } }) },
@@ -391,11 +391,11 @@ const Juan = (() => {
         cond: s => (s.bond && s.bond.discs || []).some(d => d.stage >= 2 && !d.fate && d.aff >= 36),
         text: s => {
           const d = s.bond.discs.find(x => x.stage >= 2 && !x.fate && x.aff >= 36);
-          if (typeof Core !== 'undefined') Core.rollFoe(s, { rel: 1 });
-          return `${d.name}请你过招。不是赌气，是给他自己一个答案。他的气息竟已比你沉半筹。`;
+          if (typeof Core !== 'undefined') Core.showFoe(s, { rel: 1 }, { name: d.name, title: '你的徒弟' });
+          return `${d.name}请你过招。不是赌气，是给他自己一个答案。他的气息竟已比你沉半筹，约莫${Core.foeStr(s)}。`;
         },
         choices: s => [
-          { label: '认真过招', sub: '斗法', act: s2 => {
+          { label: '认真过招', sub: '斗法', odds: 0.48, act: s2 => {
             const d = s2.bond.discs.find(x => x.stage >= 2 && !x.fate);
             const r = Core.fightAct(s2, { name: d.name, foe: { rel: 1 }, base: 0.48,
               win: { text: `你赢了半招。${d.name}收手，眼睛却是亮的：“还差半招。下次我来补。”`, fx: { xj: 6, xw: 0.08 } },
@@ -412,6 +412,7 @@ const Juan = (() => {
         cond: s => (s.bond && s.bond.discs || []).some(d => !d.fate && d.stage >= 1 && d.aff <= 12),
         text: s => {
           const d = s.bond.discs.find(x => !x.fate && x.stage >= 1 && x.aff <= 12);
+          if (typeof Core !== 'undefined') Core.showFoe(s, { rel: 0 }, { name: d.name, title: '你的徒弟' });
           return `${d.name}没有跪。他站在你曾经教他走路的那条阶上，声音发干：“师父，你教我活，没教我一直做你的人。”`;
         },
         choices: s => [
@@ -419,7 +420,7 @@ const Juan = (() => {
             const d = s2.bond.discs.find(x => !x.fate && x.aff <= 12); if (d) d.fate = 'leave';
             return { text: '他说完就走了。没有动手。你站在阶上，觉得有一种失败比斗法输掉更安静。', fx: { xj: -4 } };
           } },
-          { label: '拦下', sub: '斗法', act: s2 => {
+          { label: '拦下', sub: '斗法', odds: 0.5, act: s2 => {
             const d = s2.bond.discs.find(x => !x.fate && x.aff <= 12);
             const r = Core.fightAct(s2, { name: d ? d.name : '徒弟', foe: { rel: 0 }, base: 0.5,
               win: { text: '你赢了。他丢掉剑，说：“赢我容易。”人走了，剑留在阶上，像一句没说完的话。', fx: { xj: -6 } },

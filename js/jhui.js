@@ -2,7 +2,7 @@
 'use strict';
 // 由 game.js 在其闭包内调用：G 提供界面工具与 S / busy 的存取
 function makeJHUI(G) {
-  const { $, sleep, pick, render, save, pushLog, openEvent, openSheet, closeSheet, toast, inkWrite, buffer, checkEnd, runDuel, realmStr, fmtNum, K, chanceWord } = G;
+  const { $, sleep, pick, render, save, pushLog, openEvent, openSheet, closeSheet, toast, inkWrite, buffer, checkEnd, runDuel, realmStr, fmtNum, K, chanceWord, mountFoeSlip, choiceSub } = G;
   const J = Jianghu;
   const vtext = (t, cls = '') => `<span class="vt ${cls}"><span class="vcol">${[...t].map(c => `<i>${c}</i>`).join('')}</span></span>`;
   const dots = (n, max = 5) => Array.from({ length: max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
@@ -481,7 +481,9 @@ function makeJHUI(G) {
     $('#mj-out').disabled = false;
     body.innerHTML = `<div class="mj-node"><h3 class="mj-nt">${vtext(nd.t)}</h3><div class="mj-main"><div class="mj-text" id="mj-text"></div><div class="ev-choices" id="mj-choices"></div><div class="mj-result" id="mj-result"></div></div></div>`;
     body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in');
+    if (G.S) { G.S.evFoe = null; G.S.evFoeMeta = null; }
     const text = typeof nd.text === 'function' ? nd.text(G.S) : nd.text;
+    if (typeof mountFoeSlip === 'function') mountFoeSlip($('#mj-text'));
     const dl = inkWrite($('#mj-text'), text, { immediate: true, step: 18 });
     const box = $('#mj-choices');
     nd.choices(G.S).forEach((c, i) => {
@@ -489,7 +491,7 @@ function makeJHUI(G) {
       const short = c.ling && d.ling + c.ling < 0;
       b.disabled = !!c.disabled || short;
       b.style.animationDelay = (400 + dl * .5 + i * 110) + 'ms';
-      b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = c.label; b.lastChild.textContent = short ? '灵力不足' : (c.sub || '');
+      b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = c.label; b.lastChild.textContent = short ? '灵力不足' : (typeof choiceSub === 'function' ? choiceSub(c, G.S) : (c.sub || ''));
       b.onclick = () => mjChoose(c, b);
       box.appendChild(b);
     });

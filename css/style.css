@@ -414,6 +414,24 @@ body.go .title-menu .brush-btn small{animation-delay:calc(var(--ink-d) + .46s),c
 .seal-small{width:30px;height:30px;transform:rotate(5deg);opacity:.9}
 .ev-main{flex:1;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:10px;border-right:1px solid rgba(27,24,20,.1)}
 .ev-text{font-size:16.5px;line-height:2;text-align:justify;color:var(--ink);letter-spacing:.02em}
+.foe-slip{position:relative;margin:12px 0 2px;padding:10px 36px 9px 12px;
+  border:1px solid rgba(27,24,20,.16);
+  background:linear-gradient(180deg,rgba(249,245,233,.62),rgba(249,245,233,.28));
+  box-shadow:inset 0 0 0 1px rgba(255,252,245,.4)}
+.foe-slip::before{content:"敌";position:absolute;right:8px;top:8px;width:22px;height:22px;line-height:20px;
+  text-align:center;font-family:var(--f-head);font-size:13px;letter-spacing:.12em;color:var(--zhu);
+  border:1px solid rgba(157,52,46,.45);transform:rotate(8deg);opacity:.8}
+.foe-name{font-family:var(--f-head);font-size:18px;letter-spacing:.12em;color:var(--ink);line-height:1.35}
+.foe-name em{font-style:normal;margin-left:8px;font-family:var(--f-body);font-size:12px;letter-spacing:.14em;color:var(--ink3)}
+.foe-realm{margin-top:2px;font-size:14px;letter-spacing:.16em;color:var(--ink2)}
+.foe-read{margin-top:1px;font-size:14px;letter-spacing:.08em;color:var(--zhu)}
+.foe-rough{font-size:12.5px;letter-spacing:.08em;color:var(--ink3)}
+.foe-slip.roster .foe-row{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(27,24,20,.08)}
+.foe-slip.roster .foe-row:last-child{border-bottom:0;padding-bottom:0}
+.foe-slip.roster .foe-row b{font-weight:500;letter-spacing:.08em}
+.foe-slip.roster .foe-row em{font-style:normal;color:var(--ink3);font-size:12px}
+.foe-slip.roster .foe-row span{margin-left:auto;color:var(--zhu);font-size:13px;letter-spacing:.06em}
+.foe-slip.roster .foe-row small{flex:none;width:100%;color:var(--ink3);font-size:12px;letter-spacing:.08em}
 .ev-choices{margin-top:14px;display:flex;flex-direction:column}
 .choice{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:10px;text-align:left;padding:13px 6px 12px 26px;font-size:17px;color:var(--ink);opacity:0;animation:fadeUp .7s var(--ease-ink) both}
 .choice::before{content:"";position:absolute;left:4px;top:50%;width:12px;height:12px;margin-top:-6px;background:var(--blot) center/contain no-repeat;opacity:.75;transition:transform .3s}
@@ -2457,6 +2475,10 @@ html[data-font="lg"] #inp-name{font-size:32px}
 
 /* 窄屏：条、芯片、终卷、仪式不再顶出视口 */
 @media (max-width:390px){
+  .foe-name{font-size:16px}
+  .foe-slip{padding:8px 32px 8px 10px}
+  .foe-slip.roster .foe-row span{margin-left:0}
+
   .bar{gap:6px}
   .bar-label{width:2.6em;letter-spacing:.12em}
   .bar-num{min-width:0;font-size:11px}
@@ -2482,6 +2504,8 @@ html[data-font="lg"] #inp-name{font-size:32px}
   .hpaper-inner{padding:14px 12px 12px 14px;max-height:calc(100vh - var(--sat) - var(--sab) - 28px);max-height:calc(100dvh - var(--sat) - var(--sab) - 28px)}
   .ev-title{font-size:24px}
   .choice{padding:9px 4px 9px 24px}
+  .foe-slip{margin:8px 0 0;padding:8px 30px 7px 10px}
+  .foe-name{font-size:16px}
   .end-paper{max-height:calc(100vh - var(--sat) - var(--sab) - 12px);max-height:calc(100dvh - var(--sat) - var(--sab) - 12px)}
   .sheet-panel{max-height:min(88vh,calc(100vh - var(--sat) - 8px));max-height:min(88dvh,calc(100dvh - var(--sat) - 8px))}
   .stone-wrap{margin:2.5vh 0 1.5vh}

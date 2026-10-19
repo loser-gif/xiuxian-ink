@@ -114,7 +114,7 @@ RITE_TEXT.sx = RITE_TEXT.sx; // already set
 /* ---------- 新宗任务 ---------- */
 MISSIONS.push(
   /* 丹霞 */
-  { id: 'dx_shouhuo', name: '守炉看火', seal: '炉', orgs: ['dx'], rank: [0, 4], rm: [0, 2], m: 2, risk: 0.1, gx: 10, ls: 3, w: 10,
+  { id: 'dx_shouhuo', name: '守炉看火', seal: '炉', orgs: ['dx'], rank: [0, 2], rm: [0, 2], m: 2, risk: 0.1, gx: 10, ls: 3, w: 10,
     brief: '丹房缺人守炉，火候差一分便废。',
     text: () => '丹房挂出牌子：今夜开炉回春丹，缺守火弟子。上一个守火的，眉毛还没长回来。',
     choices: s => [
@@ -122,9 +122,9 @@ MISSIONS.push(
       { label: '偷记火诀', sub: '险', risk: 0.18, gxm: 0.9, gfXp: 2, ...mt('你把手法刻进心里。回去行功，竟也顺了些。', '看得太入神，炉盖“砰”地掀开，燎了额头。'), ffx: { inj: 1 } },
       ...(met(s, 'dx_lian') ? [{ label: '与练清婉轮守', sub: '练清婉', risk: -0.08, gxm: 1.1, npc: { dx_lian: 5 }, item: { '宁神花': 2 }, ...mt('她教你闻焦香辨火候。夜里药香与人声都淡。', '你们困得轮流盹，险些误了辰时。') }] : []),
     ] },
-  { id: 'dx_caiyao', name: '谷后采药', seal: '药', orgs: ['dx'], rank: [0, 5], rm: [0, 3], m: 2, risk: 0.12, gx: 12, ls: 4, w: 9,
+  { id: 'dx_caiyao', name: '谷后采药', seal: '药', orgs: ['dx'], rank: [0, 3], rm: [0, 3], m: 2, risk: 0.12, gx: 12, ls: 4, w: 9,
     brief: '药园缺雾隐草与赤阳花。',
-    text: () => '药园执事缺一味雾隐草。谷后雾大，崖顶据说有百年灵芝——采到的人，能免半年杂役。',
+    text: () => '药园执事缺一味雾隐草。谷后雾大，崖顶据说有百年灵芝。',
     choices: s => [
       { label: '稳妥采摘', risk: -0.05, gxm: 1, item: { '青叶草': 2, '赤阳花': 1 }, ...mt('叶不沾泥，根须完整。执事少见地点了点头。', '雾里转了两日，只得半筐。') },
       { label: '攀崖取灵芝', sub: '险', risk: 0.22, gxm: 1.5, item: { '紫云芝': 1 }, ...mt('你连土捧下灵芝，霍长明看了半晌，丢给你一枚聚气丹。', '岩松手，挂在藤上半个时辰。'), ffx: { inj: 2 }, itemOk: { '聚气丹': 1 } },
@@ -137,7 +137,7 @@ MISSIONS.push(
       { label: '引他重炼一炉', sub: '耗时', risk: 0.1, gxm: 1.3, time: 2, ...mt('你带着他重炼。成丹那一瞬，他哭了。你忽然想起自己第一炉。', '又炸了。你们俩眉毛都短了一截。'), ffx: { inj: 1 } },
     ] },
   /* 幽荧 */
-  { id: 'yy_xunying', name: '巡影', seal: '影', orgs: ['yy'], rank: [0, 4], rm: [0, 2], m: 3, risk: 0.14, gx: 12, ls: 3, w: 10,
+  { id: 'yy_xunying', name: '巡影', seal: '影', orgs: ['yy'], rank: [0, 3], rm: [0, 2], m: 3, risk: 0.14, gx: 12, ls: 3, w: 10,
     brief: '殿廊夜巡，近来影子不太安分。',
     text: () => '殿廊的影子近来会自己走动。影司排了巡影，给你一盏幽荧、一口铜哨。',
     choices: s => [
@@ -154,13 +154,13 @@ MISSIONS.push(
     ] },
   { id: 'yy_zhuisha', name: '追煞', seal: '煞', orgs: ['yy'], rank: [2, 6], rm: [1, 4], m: 4, risk: 0.32, gx: 36, ls: 14, w: 6, fight: true,
     brief: '有叛殿影修在外开杀戒，殿令追回。',
-    text: s => `一名内殿弟子携影遁走，在凡人镇上开了杀戒。殿令：影必须归，人——可生可死。他曾与你一廊巡影。`,
+    text: s => { Core.showFoe(s, { rel: 1 }, { name: '叛殿弟子', title: '旧日同巡' }); return '一名内殿弟子携影遁走，在凡人镇上开了杀戒。殿令：影必须归，人——可生可死。他曾与你一廊巡影。'; },
     choices: s => [
       { label: '千里追影', risk: 0, gxm: 1, ...mt('你在破庙截住他。他跪着把影灯交还，一句话没有。', '他比影更滑。你只追回一只空灯笼。'), ffx: { xj: -3 } },
       { label: '劝他回头', sub: '心境', fight: true, risk: -0.05, gxm: 0.85, xj: 6, ...mt('你讲起同巡的雨夜。天亮时他把刀放下了。', '他笑了一下，刀光先到。'), ffx: { inj: 3 } },
     ] },
   /* 玄机 */
-  { id: 'xj_buzhen', name: '布阵功课', seal: '阵', orgs: ['xj'], rank: [0, 4], rm: [0, 2], m: 2, risk: 0.1, gx: 11, ls: 3, w: 10,
+  { id: 'xj_buzhen', name: '布阵功课', seal: '阵', orgs: ['xj'], rank: [0, 2], rm: [0, 2], m: 2, risk: 0.1, gx: 11, ls: 3, w: 10,
     brief: '机房要你布一座「困步小阵」。',
     text: () => '机房考校：用十二枚铜钱布困步小阵，困住学徒三息即为过。',
     choices: s => [
@@ -168,7 +168,7 @@ MISSIONS.push(
       { label: '加一暗扣', sub: '险', risk: 0.15, gxm: 1.35, ...mt('暗扣生效，学徒原地愣了半晌。阵无虚远远点了点头。', '暗扣反噬，你自己转了三圈。'), ffx: { xj: -2 } },
       ...(met(s, 'xj_zhen') ? [{ label: '请阵无虚指点', sub: '阵无虚', risk: -0.1, gxm: 1.1, npc: { xj_zhen: 5 }, ...mt('他改了你两处步距。阵成时，连空气都紧了一线。', '他叹了口气：「你量路，像量仇人。」') }] : []),
     ] },
-  { id: 'xj_qiushi', name: '器房杂役', seal: '器', orgs: ['xj'], rank: [0, 3], rm: [0, 2], m: 2, risk: 0.08, gx: 9, ls: 2, w: 9,
+  { id: 'xj_qiushi', name: '器房杂役', seal: '器', orgs: ['xj'], rank: [0, 1], rm: [0, 2], m: 2, risk: 0.08, gx: 9, ls: 2, w: 9,
     brief: '器阿末缺人拉风箱。',
     text: () => '器房锤声震天。器阿末头也不抬：「拉风箱。拉歪了，锤砸你脚。」',
     choices: s => [
@@ -185,14 +185,14 @@ MISSIONS.push(
   /* 散修盟 richer */
   { id: 'sx_biao', name: '盟中镖', seal: '镖', orgs: ['sx'], rank: [0, 5], rm: [0, 3], m: 3, risk: 0.2, gx: 14, ls: 16, w: 9,
     brief: '护送一车药材过黑风岭。',
-    text: s => '独眼老贾拍你肩：「一车货，过黑风岭。岭上近来不太平。成了，银子你一半。」',
+    text: s => { Core.showFoe(s, { rel: 1 }, { name: '劫修', title: '黑风岭' }); return '独眼老贾拍你肩：「一车货，过黑风岭。岭上近来不太平。成了，银子你一半。」'; },
     choices: s => [
       { label: '绕官道', sub: '多耗时', risk: -0.1, gxm: 1, time: 2, ...mt('官道远，货全。老贾多给你一包糖炒栗子。', '桥断了，货霉了一半。') },
       { label: '硬闯黑风岭', sub: '险', risk: 0.15, gxm: 1.3, lsm: 1.5, fight: true, ...mt('你亮出盟令，又劈开巨石，劫修散了。', '货没保住，人保住了。老贾抽烟不说话。'), ffx: { inj: 2 } },
     ] },
   { id: 'sx_lei', name: '群英报名', seal: '擂', orgs: ['sx'], rank: [1, 4], rm: [0, 3], m: 1, risk: 0.05, gx: 8, ls: 2, w: 7,
     brief: '群英擂将开，盟中征人热场。',
-    text: () => '群英擂前夜，老贾让你上台走两招热场：「打不打得赢不论，别把台子拆了。」',
+    text: s => { Core.showFoe(s, { rel: 0 }, { name: '热场对手', title: '散修' }); return '群英擂前夜，老贾让你上台走两招热场：「打不打得赢不论，别把台子拆了。」'; },
     choices: s => [
       { label: '点到为止走两招', risk: -0.05, gxm: 1, xj: 2, ...mt('台下叫好。你拱手下台，腰包多了点打赏。', '你太认真，把对手打翻下台。老贾捂脸。') },
       { label: '真打一场', sub: '险', risk: 0.12, gxm: 1.4, fight: true, ...mt('你赢了。有散修塞你一瓶不知名的药。', '你输了，但台下记住了你的名字。'), ffx: { inj: 1 } },

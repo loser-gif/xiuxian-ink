@@ -19,6 +19,47 @@ Object.assign(PILLS, {
 
 // 按灵根挑一卷凡品功法（异灵根/伪灵根则随缘）
 const gfFor = s => (ELEMENTS.includes(s.lgEls[0]) ? GF_BY_EL[s.lgEls[0]] : GF_FAN[Math.floor(Math.random() * GF_FAN.length)]);
+const XIAOBI = {
+  qm: {
+    outer: { title: '外门小比', yard: '演武坪', who: '外门', foe: '金线弟子', ft: '外门弟子' },
+    inner: { title: '内门大比', yard: '问道台', who: '内门', foe: '青袍师兄', ft: '内门弟子' },
+    watch: { title: '外门观礼', yard: '演武坪', role: '判官' },
+  },
+  dx: {
+    outer: { title: '外谷小比', yard: '丹坪', who: '外谷', foe: '赤袖弟子', ft: '外谷弟子' },
+    inner: { title: '内谷论丹', yard: '丹霞内坪', who: '内谷', foe: '守炉师兄', ft: '内谷弟子' },
+    watch: { title: '外谷观礼', yard: '丹坪', role: '判官' },
+  },
+  yy: {
+    outer: { title: '外殿小比', yard: '影坪', who: '外殿', foe: '黑纱弟子', ft: '外殿弟子' },
+    inner: { title: '内殿夺影', yard: '幽荧内殿', who: '内殿', foe: '影中人', ft: '内殿弟子' },
+    watch: { title: '外殿观礼', yard: '影坪', role: '前辈' },
+  },
+  xj: {
+    outer: { title: '外楼小比', yard: '演机坪', who: '外楼', foe: '铜环弟子', ft: '外楼弟子' },
+    inner: { title: '内楼演机', yard: '璇玑台', who: '内楼', foe: '机纹师兄', ft: '内楼弟子' },
+    watch: { title: '外楼观礼', yard: '演机坪', role: '前辈' },
+  },
+  sx: {
+    outer: { title: '盟中小擂', yard: '客栈后院', who: '盟中', foe: '行客', ft: '散修行客' },
+    inner: { title: '客卿论道', yard: '盟中议事厅', who: '客卿', foe: '客卿', ft: '散修客卿' },
+    watch: { title: '小擂观礼', yard: '客栈后院', role: '前辈' },
+  },
+};
+function wuxingWin(s) {
+  const id = s.lg && s.lg.id;
+  const tail = '碑上的字缓缓剥落，飞入你的眉心——《五行归一真经》。';
+  if (id === 'tian' || id === 'yi') return `五道光柱自残碑升起，在你头顶交汇。你那条本就清澈的灵根被五气一冲，几乎散开，又在眉心重新聚成一线。${tail}`;
+  if (id === 'shuang') return `五道光柱自残碑升起，在你头顶交汇。你体内两道灵根第一次不再各行其是，而是首尾相衔，锁成一个环。${tail}`;
+  return `五道光柱自残碑升起，在你头顶交汇。你体内驳杂的灵根第一次不再相互掣肘，而是首尾相衔，转成一个圆。${tail}`;
+}
+function xiaobiPack(s) {
+  const id = (s.sect && s.sect.org) || 'qm';
+  const pack = XIAOBI[id] || XIAOBI.qm;
+  const band = Core.sectBand(s);
+  const kind = band === 'inner' ? 'inner' : (band === 'core' || band === 'elder' ? 'watch' : 'outer');
+  return { kind, face: pack[kind], org: id };
+}
 const gfOther = (s, not) => { const pool = GF_FAN.filter(id => id !== not && !s.gfs[id]); return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; };
 const gfn = id => GONGFA[id].name;
 
@@ -39,12 +80,27 @@ const gfn = id => GONGFA[id].name;
 
 EVENTS.push(
   /* ===================== 炼气 ===================== */
-  { id: 'cangjing', title: '藏经阁扫尘', w: 9, rm: [0, 0], once: true, cond: s => s.lg.id !== 'wei',
-    text: () => '轮到你去藏经阁扫尘。一层书架上落满了灰，竹简的绳结一碰便断。守阁的老道士打着盹，眼也不睁：“扫完了，许你挑一卷带走。莫贪，莫挑花眼。”',
-    choices: s => { const a = gfFor(s), b = gfOther(s, a) || a; return [
-      { label: `取《${gfn(a)}》`, sub: `${GONGFA[a].el}行 · ${GONGFA[a].trait}`, act: () => ({ text: `你在角落里抽出一卷《${gfn(a)}》，竹简上的字迹被人摩挲得发亮。老道士眯眼看了看，嘟囔一句：“倒也识货。”`, fx: { gf: a } }) },
-      ...(b !== a ? [{ label: `取《${gfn(b)}》`, sub: `${GONGFA[b].el}行 · ${GONGFA[b].trait}`, act: () => ({ text: `你挑了《${gfn(b)}》。老道士翻了个身：“与你灵根未必相合，自己的路，自己走。”`, fx: { gf: b } }) }] : []),
-      { label: '不取，只抄一页口诀', sub: '', act: () => ({ text: '你把书架擦得一尘不染，只在《青冥引气诀》的旧注里抄了一页心得。老道士忽然睁眼，看了你很久。', fx: { gfXp: 4, xj: 4 } }) },
+  { id: 'cangjing', title: s => {
+      const band = Core.sectBand(s);
+      if (band === 'elder' || band === 'core') return '巡阁取卷';
+      if (band === 'inner') return '点校内册';
+      return '藏经阁扫尘';
+    }, w: 9, rm: [0, 0], once: true, cond: s => s.lg.id !== 'wei',
+    text: s => {
+      const o = s.sect && s.sect.org && typeof ORGS !== 'undefined' ? ORGS[s.sect.org] : null;
+      const lib = o ? o.lib : '藏经阁';
+      const band = Core.sectBand(s);
+      if (band === 'elder' || band === 'core') return `你以${Core.rankName(s)}之身巡过${lib}。高阁只对这个身份开一隙，守阁人起身让座：“要哪一卷，尽管取。莫贪。”`;
+      if (band === 'inner') return `${lib}点校的差事落到你头上。内册错页、虫蛀、朱批，都要过目。守阁人打着盹：“看完了，许你挑一卷带走。莫贪，莫挑花眼。”`;
+      return `轮到你去${lib}扫尘。一层书架上落满了灰，竹简的绳结一碰便断。守阁的老道士打着盹，眼也不睁：“扫完了，许你挑一卷带走。莫贪，莫挑花眼。”`;
+    },
+    choices: s => { const a = gfFor(s), b = gfOther(s, a) || a;
+      const orgO = s.sect && s.sect.org && typeof ORGS !== 'undefined' ? ORGS[s.sect.org] : null;
+      const book = orgO && orgO.startGf && GONGFA[orgO.startGf] ? GONGFA[orgO.startGf].name : '青冥引气诀';
+      return [
+      { label: `取《${gfn(a)}》`, sub: `${GONGFA[a].el}行 · ${GONGFA[a].trait}`, act: () => ({ text: `你在角落里抽出一卷《${gfn(a)}》，竹简上的字迹被人摩挲得发亮。守阁人眯眼看了看，嘟囔一句：“倒也识货。”`, fx: { gf: a } }) },
+      ...(b !== a ? [{ label: `取《${gfn(b)}》`, sub: `${GONGFA[b].el}行 · ${GONGFA[b].trait}`, act: () => ({ text: `你挑了《${gfn(b)}》。守阁人翻了个身：“与你灵根未必相合，自己的路，自己走。”`, fx: { gf: b } }) }] : []),
+      { label: '不取，只抄一页口诀', sub: '', act: () => ({ text: `你把书架擦得一尘不染，只在《${book}》的旧注里抄了一页心得。守阁人忽然睁眼，看了你很久。`, fx: { gfXp: 4, xj: 4 } }) },
     ]; } },
   { id: 'herbold', title: '药园老人', w: 7, rm: [0, 0], once: true,
     text: () => '药园角落里住着一个老杂役，佝偻着腰，日日蹲在田垄间，侧着耳朵，像在听什么。有人说他年轻时也是内门弟子，后来犯了事，便再没出过这片药园。',
@@ -54,26 +110,48 @@ EVENTS.push(
         : { text: '老人收下了你的水，却始终一言不发。季末那天，他把一株开得正好的灵草塞进你怀里，挥手让你走。', fx: { item: { '聚气丹': 1 }, xj: 5, time: 3 } } },
       { label: '敬而远之', sub: '', act: () => ({ text: '犯过事的人，还是少沾为妙。你绕开那片药园，只是夜里偶尔会想，他究竟在听什么。', fx: {} }) },
     ] },
-  { id: 'xiaobi', title: '外门小比', w: 7, rm: [0, 0], cond: s => s.lg.id !== 'wei',
-    text: () => '外门三年一度小比，擂台设在演武坪上。你的对手早你两年入门，袖口绣着一道金线，抱臂冷笑：“杂灵根也配上台？”台下一阵哄笑。',
-    choices: s => [
-      { label: '全力以赴', sub: '凭气运与悟性', act: s => Core.fightAct(s, { name: '金线弟子', foe: { rel: 2 }, base: 0.45 + s.luck * 0.03 + s.wx * 0.02,
-        win: { text: '第三十七招，你一掌拍在他肩头，金线袖口撕开一道口子。台下骤然安静。执事长老敲了敲铜锣，把头名的赏赐推到你面前。', fx: { ls: 30, item: { '聚气丹': 1 }, xj: 5 } },
-        lose: { text: '你被一脚踹下擂台，滚了满身泥。他在台上掸了掸袖口。那天夜里，你在后山对着一棵老松，一掌一掌，打到天亮。', fx: { inj: 1, xj: -3, xw: 0.2 } } }) },
-      { label: '点到为止，借机观摩', sub: '', act: () => ({ text: '你早早认输，下台后却在擂台边看了一整天。三十几场比斗看下来，各家路数在心里慢慢理出了脉络。', fx: { xw: 0.35 } }) },
-    ] },
+  { id: 'xiaobi', title: s => {
+      const p = xiaobiPack(s); return p.face.title;
+    }, w: 7, rm: [0, 0], cond: s => !!(s.sect && s.sect.org),
+    text: s => {
+      const p = xiaobiPack(s), face = Core.rootFace(s), f = p.face;
+      if (p.kind === 'watch') {
+        return `你以${Core.rankName(s)}之身，被请到${f.yard}做${f.role}。台上是一场给后辈的小比，少年们意气飞扬。执事把朱笔递到你手里：“前辈看一眼，便是他们的名次。”`;
+      }
+      Core.showFoe(s, { rel: 2 }, { name: f.foe, title: f.ft });
+      if (p.kind === 'inner') {
+        return `${f.title}。${f.yard}上名牌里有你的名字，对手是早你两年入门的${f.foe}。${face.peer}`;
+      }
+      return `${f.who}三年一度小比，擂台设在${f.yard}上。你的对手早你两年入门，抱臂冷笑：“${face.taunt}”${face.aside}`;
+    },
+    choices: s => {
+      const p = xiaobiPack(s), f = p.face;
+      if (p.kind === 'watch') return [
+        { label: '公正落笔', sub: '后辈的名次', act: () => ({ text: `你把名次写得很慢。台上那几个少年下台时朝你拱手，像看见了自己以后的路。`, fx: { gx: 8, xj: 4, xw: 0.25, ls: 12 } }) },
+        { label: '点到即止，放他们一马', sub: '', act: () => ({ text: '你没有把输的人写得太难看。散场时有个少年追出来，塞给你一包自己烘的茶，说不出谢谢。', fx: { xj: 6, xw: 0.35 } }) },
+      ];
+      const base = s => 0.45 + s.luck * 0.03 + s.wx * 0.02;
+      return [
+        { label: '全力以赴', sub: '凭气运与悟性', odds: base, act: s => Core.fightAct(s, { name: f.foe, foe: { rel: 2 }, base: base(s),
+          win: { text: p.kind === 'inner'
+            ? `第三十七招，你一掌拍在${f.foe}肩头。台下骤然安静。执事敲了敲铜锣，把头名的赏赐推到你面前。`
+            : '第三十七招，你一掌拍在他肩头。台下骤然安静。执事敲了敲铜锣，把头名的赏赐推到你面前。', fx: { ls: 30, item: { '聚气丹': 1 }, xj: 5 } },
+          lose: { text: '你被一脚踹下擂台，滚了满身泥。那天夜里，你在后山对着一棵老松，一掌一掌，打到天亮。', fx: { inj: 1, xj: -3, xw: 0.2 } } }) },
+        { label: '点到为止，借机观摩', sub: '', act: () => ({ text: '你早早认输，下台后却在擂台边看了一整天。三十几场比斗看下来，各家路数在心里慢慢理出了脉络。', fx: { xw: 0.35 } }) },
+      ];
+    } },
   { id: 'wolf', title: '独眼妖狼', w: 7, rm: [0, 0],
-    text: () => '采药归来，暮色里一头独眼妖狼拦在山道上，涎水滴在石阶上，嘶嘶冒着白气。它比寻常狼大了一圈，脖颈上还套着半截断链——像是从谁家兽栏里逃出来的。',
+    text: s => { Core.showFoe(s, { realm: 0, stage: 5 }, { name: '妖狼', title: '山道拦路' }); return '采药归来，暮色里一头独眼妖狼拦在山道上，涎水滴在石阶上，嘶嘶冒着白气。它比寻常狼大了一圈，脖颈上还套着半截断链——像是从谁家兽栏里逃出来的。'; },
     choices: s => [
-      { label: '拔剑', sub: '凶险', act: s => Core.fightAct(s, { name: '妖狼', foe: { realm: 0, stage: 5 }, base: 0.5 + s.luck * 0.03,
+      { label: '拔剑', sub: '凶险', odds: s => 0.5 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '妖狼', foe: { realm: 0, stage: 5 }, base: 0.5 + s.luck * 0.03,
         win: { text: '它扑上来的那一刻，你侧身一剑，从断链底下刺入。妖狼哀嚎着倒地，喉间滚出一枚浑浊的妖丹。你提着剑站了很久，手才不抖。', fx: { ls: 25, xw: 0.3, xj: 2 } },
         lose: { text: '狼爪撕开了你的肩膀。你滚下山坡，在溪水里躲了一夜，天亮才敢爬出来。', fx: { inj: 3, xj: -2 } } }) },
       { label: '抛下药篓，引开它', sub: '', act: () => ({ text: '你把一篓药草远远抛进林子，妖狼循着血腥气扑了过去。一季的辛苦白费了，命总算还在。', fx: { xj: 2 } }) },
     ] },
   { id: 'letter', title: '无名信', w: 6, rm: [0, 0], once: true, cond: s => s.lg.id !== 'wei',
-    text: () => '一封没有署名的信塞在你门缝里，字迹清秀：“明日卯时，后山断桥，有一样东西要交给你。”',
+    text: s => { Core.showFoe(s, { rel: 1 }, { name: '蒙面弟子', title: '不知来历', hide: true }); return '一封没有署名的信塞在你门缝里，字迹清秀：“明日卯时，后山断桥，有一样东西要交给你。”来人把修为敛得很死，你只摸到一个大概。'; },
     choices: s => [
-      { label: '赴约', sub: '', act: s => Core.fightAct(s, { name: '蒙面弟子', foe: { rel: 1 }, base: 0.62 + s.luck * 0.03,
+      { label: '赴约', sub: '或是局', odds: s => 0.62 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '蒙面弟子', foe: { rel: 1 }, base: 0.62 + s.luck * 0.03,
         win: { text: '断桥边站着一个面生的师姐。她递过一只布包，说是你那早逝的同乡临终托付。布包里是两粒丹药，和一张字条，墨迹被水洇过：“替我走得远些。”', fx: { item: { '聚气丹': 2 }, xj: 6 } },
         lose: { text: '断桥边没有人，只有几个蒙面弟子从林中闪出。原来是有人嫉你资质，设局相诱。你拼着挨了两拳才脱身。', fx: { inj: 2, xj: -3 } } }) },
       { label: '置之不理', sub: '', act: () => ({ text: '你把信纸凑到灯上烧了。灰烬里那个“走”字最后才卷起来。', fx: {} }) },
@@ -134,9 +212,9 @@ EVENTS.push(
       { label: '潭边打坐', sub: '', act: () => ({ text: '你在潭边坐了一夜。月影沉在墨色的水里，一动不动。你忽然觉得，自己心里也有这样一潭水。', fx: { xj: 8, xw: 0.25 } }) },
     ]; } },
   { id: 'heifeng', title: '黑风岭', w: 6, rm: [1, 2],
-    text: s => { Core.rollFoe(s, { rel: anyOf([0, 1, 1, 2]) }); return `一伙劫修盘踞黑风岭，近来连劫了三支商队，杀人不留活口。镇上的悬赏告示贴满了城门，赏格一涨再涨。据逃回来的车夫说，贼首已是${Core.foeStr(s)}的修为。`; },
+    text: s => { Core.showFoe(s, { rel: anyOf([0, 1, 1, 2]) }, { name: '贼首', title: '黑风岭' }); return `一伙劫修盘踞黑风岭，近来连劫了三支商队，杀人不留活口。镇上的悬赏告示贴满了城门，赏格一涨再涨。据逃回来的车夫说，贼首已是${Core.foeStr(s)}的修为。`; },
     choices: s => [
-      { label: '独闯黑风岭', sub: '凶险', act: s => Core.fightAct(s, { name: '贼首', base: 0.5 + s.luck * 0.03,
+      { label: '独闯黑风岭', sub: '凶险', odds: s => 0.5 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '贼首', base: 0.5 + s.luck * 0.03,
         win: { text: '你借着夜雨摸上山寨，一盏茶工夫，寨中便只剩风声。你在贼首的密室里找到了三支商队的货单，和一瓶没开封的丹药。', fx: { ls: 90, item: { '回春丹': 1 }, xw: 0.3, xj: 3 } },
         lose: { text: s => `那名${Core.foeStr(s)}的贼首果然名不虚传，寨中又布了阵。你身中三刀，拼死杀出重围。`, fx: { inj: 4, life: -3 } } }) },
       { label: '邀同道共剿', sub: '耗时一季', act: () => ({ text: '你联络了几位散修，围山三月，终将劫修一网打尽。赏银分下来不多，城门口的告示却终于撕了。', fx: { ls: 40, xj: 5, time: 3 } }) },
@@ -153,9 +231,9 @@ EVENTS.push(
       { label: '取些火精便走', sub: '', act: () => ({ text: '你在洞口凿下几块火精石，趁岩浆未涌，迅速退走。', fx: { ls: 60 } }) },
     ] },
   { id: 'zhanjiao', title: '江心恶蛟', w: 6, rm: [2, 2],
-    text: s => { Core.rollFoe(s, { rel: anyOf([0, 1, 2]) }); return `江心有蛟作乱，掀翻渔船无数。那蛟修行千年，妖力约与${Core.foeStr(s)}相当。沿岸渔民凑了一袋碎银、一坛老酒，跪在你面前。碎银于你不值一文，那坛酒却是他们过年才舍得开的。`; },
+    text: s => { Core.showFoe(s, { rel: anyOf([0, 1, 2]) }, { name: '恶蛟', title: '江心' }); return `江心有蛟作乱，掀翻渔船无数。那蛟修行千年，妖力约与${Core.foeStr(s)}相当。沿岸渔民凑了一袋碎银、一坛老酒，跪在你面前。碎银于你不值一文，那坛酒却是他们过年才舍得开的。`; },
     choices: s => [
-      { label: '斩蛟', sub: '凶险', act: s => Core.fightAct(s, { name: '恶蛟', base: 0.57 + s.luck * 0.03,
+      { label: '斩蛟', sub: '凶险', odds: s => 0.57 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '恶蛟', base: 0.57 + s.luck * 0.03,
         win: { text: '你踏浪而行，剑光一闪，江面裂开一道白痕。恶蛟翻着肚皮浮上来时，岸上的渔民已经跪成一片。那坛酒，你喝了一口，剩下的留给了他们。', fx: { xw: 0.7, ls: 50, xj: 8, luck: 2 } },
         lose: { text: '恶蛟比你想的更狡猾。你被拖入江底，呛了满腹泥水，好不容易才将它重创逼退。渔民们依旧向你磕头，你却有些不敢受。', fx: { inj: 4, xj: 4 } } }) },
       { label: '布阵镇之', sub: '耗时半载', act: () => ({ text: '你沿江布下七十二道镇水符，蛟龙从此不敢出水。渔民在江边为你立了块石碑，你没有留名。', fx: { xj: 10, time: 6 } }) },
@@ -164,8 +242,8 @@ EVENTS.push(
   { id: 'wuxingbei', title: '五行残碑', w: 5, rm: [2, 3], once: true, wf: s => ({ si: 14, wei: 18, san: 9 }[s.lg.id] || 4),
     text: () => '荒原深处，五块残碑围成一圈，分刻金、木、水、火、土五字。碑上苔痕斑驳，唯独中央一方空地寸草不生，像在等一个人坐下。',
     choices: s => [
-      { label: '坐入碑阵中央', sub: '灵根愈杂，机缘愈深', act: s => Math.random() < 0.25 + (s.lg.id === 'yi' ? 0 : s.lgEls.length * 0.12) + s.luck * 0.02
-        ? { text: '五道光柱自残碑升起，在你头顶交汇。你体内驳杂的灵根第一次不再相互掣肘，而是首尾相衔，转成一个圆。碑上的字缓缓剥落，飞入你的眉心——《五行归一真经》。', fx: { gf: 'wuxing' } }
+      { label: '坐入碑阵中央', sub: ({ si: '灵根愈杂，机缘愈深', wei: '灵根愈杂，机缘愈深', san: '灵根愈杂，机缘愈深', shuang: '两根相衔，或可成圆' }[s.lg.id] || '清根遇五气，成毁参半'), act: s => Math.random() < 0.25 + (s.lg.id === 'yi' ? 0 : s.lgEls.length * 0.12) + s.luck * 0.02
+        ? { text: wuxingWin(s), fx: { gf: 'wuxing' } }
         : { text: '五行之气在你经脉中横冲直撞，你吐了一口血，被弹出碑阵。残碑静立如初。', fx: { inj: 3, xj: -4 } } },
       { label: '拓下碑文', sub: '', act: () => ({ text: '你拓了五张碑文带回洞府，日日对照参悟，虽未得其门而入，周天运转却顺畅了许多。', fx: { xw: 0.4, gfXp: 3 } }) },
     ] },
@@ -179,13 +257,15 @@ EVENTS.push(
   { id: 'shoutu', title: '首徒', w: 9, rm: [2, 3], once: true, cond: s => s.flags.disciple,
     text: () => '当年你收下的那个伪灵根少年，如今跪在你洞府外，额头抵着石阶，声音发颤：“师父……弟子，筑基了。”',
     choices: s => [
-      { label: '扶他起来', sub: '', act: () => ({ text: '你扶起他，才发现他鬓边也有了白发。为这一步，他走了四十年。你忽然明白了当年那个嗤笑你的长老，为何最后没有赶你下山。', fx: { xj: 18, luck: 2 } }) },
+      { label: '扶他起来', sub: '', act: s => ({ text: (Core.rootFace(s).band === 'high' || Core.rootFace(s).band === 'good')
+        ? `你扶起他，才发现他鬓边也有了白发。为这一步，他走了四十年。你自己是${Core.rootFace(s).shown}，不必拿他的根骨开玩笑——肯跪着走完这一程的人，已经比许多天资走得认真。`
+        : '你扶起他，才发现他鬓边也有了白发。为这一步，他走了四十年。你忽然明白了当年那个嗤笑你的长老，为何最后没有赶你下山。', fx: { xj: 18, luck: 2 } }) },
       { label: '传他心法', sub: '', act: () => ({ text: '你把自己这些年的修行心得写成一卷，放在他手里。他捧着书卷，又一次跪了下去。这一次，你没有扶。', fx: { xj: 12, gfXp: 3 } }) },
     ] },
   { id: 'xueji', title: '西荒血祭', w: 5, rm: [2, 3],
-    text: () => '血煞宗在西荒设下血祭大阵，掳了三千凡人。正道传檄天下，邀各派修士共赴西荒。檄文上说，阵成之日，便是三千人化作血水之时。',
+    text: s => { Core.showFoe(s, { rel: 3 }, { name: '血煞阵主', title: '血煞宗' }); return '血煞宗在西荒设下血祭大阵，掳了三千凡人。正道传檄天下，邀各派修士共赴西荒。檄文上说，阵成之日，便是三千人化作血水之时。'; },
     choices: s => [
-      { label: '赴西荒', sub: '九死一生', act: s => Core.fightAct(s, { name: '血煞阵主', foe: { rel: 3 }, base: 0.62 + s.luck * 0.03,
+      { label: '赴西荒', sub: '九死一生', odds: s => 0.62 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '血煞阵主', foe: { rel: 3 }, base: 0.62 + s.luck * 0.03,
         win: { text: '你与众修士血战七昼夜，终于斩断阵眼。被救出的凡人里，有个小女孩把一朵干枯的野花塞给你。你把它夹在了那卷功法里。', fx: { xw: 0.9, xj: 10, item: { '清心丹': 1 } } },
         lose: { text: s => `坐镇阵眼的是一名${Core.foeStr(s)}的血煞宗长老。阵中血煞之气侵入经脉，你几乎被炼成血傀，最后被同道拖了出来。阵破了，你却在床上躺了许久。`, fx: { inj: 5, life: -6, xj: 6 } } }) },
       { label: '闭门不出', sub: '', act: () => ({ text: '你关上洞府石门。三个月后，西荒传来消息：阵破了，死了很多人，活下来的不多。', fx: { xj: -10 } }) },

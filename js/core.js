@@ -406,7 +406,7 @@ const Core = (() => {
         const recent0 = s.recent || [];
         s.recent = [...recent0, forced.id].slice(-8);
         s.seen[forced.id] = (s.seen[forced.id] || 0) + 1;
-        s.events++; s.acts++; s.evFoe = null;
+        s.events++; s.acts++; s.evFoe = null; s.evFoeMeta = null;
         return forced;
       }
     }
@@ -416,7 +416,7 @@ const Core = (() => {
         const recent1 = s.recent || [];
         s.recent = [...recent1, tide.id].slice(-8);
         s.seen[tide.id] = (s.seen[tide.id] || 0) + 1;
-        s.events++; s.acts++; s.evFoe = null;
+        s.events++; s.acts++; s.evFoe = null; s.evFoeMeta = null;
         return tide;
       }
     }
@@ -430,14 +430,14 @@ const Core = (() => {
     for (const e of pool) { if ((x -= wt(e)) < 0) { ev = e; break; } }
     s.recent = [...recent, ev.id].slice(-8);
     s.seen[ev.id] = (s.seen[ev.id] || 0) + 1;
-    s.events++; s.acts++; s.evFoe = null;
+    s.events++; s.acts++; s.evFoe = null; s.evFoeMeta = null;
     return ev;
   }
   // 游历机缘：选择时暂借气运，正向修为收益放大
   function resolveChoice(s, c) {
     const q = gt(s, 'qiyu', 0) + (s.sect && s.sect.free ? K.freeQiyu : 0), lb = Math.round(q * 10);
     s.luck += lb;
-    let res; try { res = c.act(s); } finally { s.luck -= lb; s.evFoe = null; }
+    let res; try { res = c.act(s); } finally { s.luck -= lb; s.evFoe = null; s.evFoeMeta = null; }
     if (res.fx && res.fx.xw > 0 && q) res.fx = { ...res.fx, xw: res.fx.xw * (1 + q) };
     return res;
   }
@@ -909,11 +909,118 @@ const Core = (() => {
     while (st < 0 && r > 0) { r--; st += REALMS[r].stages.length; }
     return { realm: r, stage: clamp(st, 0, REALMS[r].stages.length - 1) };
   }
+  function placeLv(realm, stage) {
+    let r = clamp(realm | 0, 0, REALMS.length - 1), st = stage || 0;
+    while (st >= REALMS[r].stages.length && r < REALMS.length - 1) { st -= REALMS[r].stages.length; r++; }
+    while (st < 0 && r > 0) { r--; st += REALMS[r].stages.length; }
+    return { realm: r, stage: clamp(st, 0, REALMS[r].stages.length - 1) };
+  }
   // 事件开场时掷定敌手：{rel:n} 相对玩家 n 个小境界；{realm, stage} 固定境界
-  function rollFoe(s, spec) { const f = typeof spec === 'function' ? spec(s) : spec; s.evFoe = f.rel != null ? shiftLv(s, f.rel) : { realm: f.realm, stage: f.stage || 0 }; return s.evFoe; }
+  function rollFoe(s, spec) {
+    const f = typeof spec === 'function' ? spec(s) : spec;
+    s.evFoe = f.rel != null ? shiftLv(s, f.rel) : placeLv(f.realm, f.stage || 0);
+    if (f.hide) s.evFoe.hide = true;
+    return s.evFoe;
+  }
   const foe = s => s.evFoe || { realm: s.realm, stage: s.stage };
   const foeStr = (s, f = foe(s)) => REALMS[f.realm].name + REALMS[f.realm].stages[f.stage];
   const foeDr = (s, f = foe(s)) => s.realm - f.realm;
+  // 开场先亮出敌手，供选项前的名帖使用。已掷定则只补名帖。
+  function showFoe(s, spec, meta) {
+    if (spec) rollFoe(s, spec);
+    const m = Object.assign({ name: '对手', title: '', hide: false }, meta || {});
+    if (m.hide && s.evFoe) s.evFoe.hide = true;
+    s.evFoeMeta = m;
+    return foe(s);
+  }
+  function roughTier(gap) {
+    if (gap <= -1) return '大约高出你一境';
+    if (gap <= -0.35) return '大约高你一筹';
+    if (gap >= 1) return '大约低你一境';
+    if (gap >= 0.35) return '大约低你一筹';
+    return '大约与你同一层';
+  }
+  function glance(s) {
+    const f = foe(s);
+    const gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
+    const hidden = !!((s.wx | 0) <= 3 || (s.evFoeMeta && s.evFoeMeta.hide) || f.hide);
+    const realm = foeStr(s, f);
+    const rough = (s.evFoeMeta && s.evFoeMeta.rough) || roughTier(gap);
+    let read;
+    if (hidden) read = '气息晦暗难辨';
+    else if (gap <= -0.35) read = '气息稳于你';
+    else if (gap >= 0.35) read = '弱于你';
+    else read = '与你相仿';
+    return { exact: !hidden, realm, rough, read, gap };
+  }
+  function oddsWord(s, base) {
+    const f = foe(s);
+    const gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
+    const dr = s.realm - f.realm;
+    let p;
+    if (dr >= 2) p = 0.92;
+    else if (dr === 1) p = 0.78;
+    else p = clamp((+base || 0.5) + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
+    if (p >= 0.75) return '或可从容';
+    if (p >= 0.58) return '胜机在握';
+    if (p >= 0.45) return '五五之间';
+    if (p >= 0.3) return '宜慎';
+    return '多半不利';
+  }
+  function originJab(s) {
+    const id = (s && s.origin) || 'qingshi';
+    return ({
+      qingshi: '青石镇出来的，袖口还沾着土腥',
+      shijia: '世家庶出，正厅的灯从来不为你留',
+      liehu: '猎户出身，一身山腥',
+      shusheng: '落第书生，卷子都没中',
+      xiaohuan: '宫墙根下长大的，连姓都不全',
+      moyi: '魔门遗孤，血衣还没褪干净',
+    })[id] || '来路不清';
+  }
+  function rootFace(s) {
+    const id = (s.lg && s.lg.id) || 'san';
+    const name = (s.lg && s.lg.name) || '灵根';
+    const els = (s.lgEls || []).filter(Boolean).join('');
+    const shown = id === 'wei' ? '伪灵根' : (els ? els + name : name);
+    let band = 'mid';
+    if (id === 'tian' || id === 'yi') band = 'high';
+    else if (id === 'shuang') band = 'good';
+    else if (id === 'si') band = 'low';
+    else if (id === 'wei') band = 'waste';
+    const jab = originJab(s);
+    let taunt, aside, peer;
+    if (band === 'high') {
+      taunt = `${shown}又怎样？${jab}，上台也压不住那一身来历。`;
+      aside = '台下却有人低声啧了一句，像是羡慕，又不敢大声。';
+      peer = `对方拱了拱手，目光在你的${shown}上停了停：“天资是好。今日便看火候。”`;
+    } else if (band === 'good') {
+      taunt = `${shown}又怎样？${jab}，上台也压不住那一身来历。`;
+      aside = '话是酸的。台下却有人小声说：这等灵根，倒真让人眼红。';
+      peer = `对方看了你一眼，语气里有点酸：“${shown}，倒是让人眼红。今日台上见。”`;
+    } else if (band === 'mid') {
+      taunt = `${shown}，中人之资，也配站这台上？`;
+      aside = '台下笑了几声，不重，却刺耳。';
+      peer = `对方抱臂：“${shown}，中人之资。台上不讲客气。”`;
+    } else if (band === 'low') {
+      taunt = `${shown}也配上台？`;
+      aside = '台下一阵哄笑。';
+      peer = `对方冷笑：“${shown}，也敢来论这一场？”`;
+    } else {
+      taunt = '伪灵根也配上台？';
+      aside = '台下哄笑里夹着几声「废材」。';
+      peer = '对方盯着你：“伪灵根……倒想看看你怎么站到这里。”';
+    }
+    return { id, name, shown, band, taunt, aside, peer, jab };
+  }
+  function sectBand(s) {
+    if (!s.sect || !s.sect.org) return 'none';
+    const r = s.sect.rank | 0;
+    if (r <= 1) return 'outer';
+    if (r === 2) return 'inner';
+    if (r === 3) return 'core';
+    return 'elder';
+  }
   function scaleFx(fx, k, lsK) {
     const o = { ...fx };
     if (o.xw > 0) o.xw = +(o.xw * k).toFixed(3);
@@ -925,7 +1032,9 @@ const Core = (() => {
   }
   // o: {name, base, win:{text,fx}, lose:{text,fx}, crush?:text, dominant?:text, foe?}
   function fightAct(s, o) {
-    const f = o.foe ? rollFoe(s, o.foe) : foe(s), dr = s.realm - f.realm, gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
+    // 开场已经亮过名帖时，沿用那一个敌手，避免预览与实战各掷一次
+    const f = (s.evFoe && !o.reroll) ? foe(s) : (o.foe ? rollFoe(s, o.foe) : foe(s));
+    const dr = s.realm - f.realm, gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
     const nm = o.name || '对手', lsK = REALMS[f.realm].lsScale / REALMS[s.realm].lsScale;
     const meta = { gap: +gap.toFixed(2), dr, foe: foeStr(s, f) };
     if (dr >= 2) return { text: (o.crush || pick(TEXT.crush)).replace(/\{f\}/g, nm), fx: { ...scaleFx(o.win.fx, 0, lsK), ...(o.crushFx || {}) }, fight: { ...meta, tier: 'crush' } };
@@ -1104,7 +1213,11 @@ const Core = (() => {
     const info = missionInfo(s, mi); if (!info) return null;
     const m = info.m;
     return { id: 'm_' + m.id, title: info.name, seal: m.seal, mission: true, text: () => m.text(s),
-      choices: () => m.choices(s).map(c => ({ label: c.label, sub: (c.sub ? c.sub + ' · ' : '') + riskWord(missionRisk(s, m, c)), act: s2 => missionAct(s2, uid, m, c) })) };
+      choices: () => m.choices(s).map(c => {
+        const o = { label: c.label, sub: (c.sub ? c.sub + ' · ' : '') + riskWord(missionRisk(s, m, c)), act: s2 => missionAct(s2, uid, m, c) };
+        if ((c.fight || (m.fight && !c.time)) && s.evFoe) o.odds = 1 - missionRisk(s, m, c);
+        return o;
+      }) };
   }
   function missionAct(s, uid, m, c) {
     s.sect.missions = s.sect.missions.filter(x => x.uid !== uid);
@@ -1160,10 +1273,22 @@ const Core = (() => {
     return Math.sqrt(gfSpeed(s) / 1.2) * (1 + 0.02 * (gfLv(s) - 1)) * (1 + 0.03 * (s.wx - 5))
       * (1 + 0.05 * s.stage / Math.max(1, REALMS[s.realm].stages.length - 1)) * (s.inj > 0 ? 0.85 : 1) * mul;
   }
-  function dabiNew(s) {
-    s.sect.dabiDue = false;
-    const metIds = ['shi', 'su', 'wen', 'lu'].filter(id => s.npc[id].met && s.sect.org === 'qm');
-    const gen = (q) => ({ name: (s.sect.org === 'qm' ? '内门 · ' : '散修 · ') + pick(NAMES_XING) + pick(NAMES_MING), npc: null, style: pick(['gang', 'wen', 'gui']), rel: 0.7, q });
+  function dabiTag(s) {
+    const o = org(s);
+    if (!o) return '散修';
+    const inner = (s.sect.rank | 0) >= 2;
+    const tags = { qm: ['外门', '内门'], dx: ['外谷', '内谷'], yy: ['外殿', '内殿'], xj: ['外楼', '内楼'], sx: ['行客', '客卿'] };
+    const pair = tags[o.id] || [o.short || '同门', o.short || '同门'];
+    return inner ? pair[1] : pair[0];
+  }
+  function qRead(q) {
+    if (q >= 1.06) return '气息稳于你';
+    if (q <= 0.94) return '弱于你';
+    return '与你相仿';
+  }
+  function buildDabi(s) {
+    const metIds = ['shi', 'su', 'wen', 'lu'].filter(id => s.npc[id] && s.npc[id].met && s.sect.org === 'qm');
+    const gen = (q) => ({ name: dabiTag(s) + ' · ' + pick(NAMES_XING) + pick(NAMES_MING), npc: null, style: pick(['gang', 'wen', 'gui']), rel: 0.7, q });
     const fromNpc = (id, q) => {
       const n = NPCS[id]; let qq = q;
       if (id === 'lu') qq += s.npc.lu.a < 0 ? 0.06 : 0;
@@ -1177,6 +1302,24 @@ const Core = (() => {
     const r1 = mid.length && Math.random() < 0.7 ? fromNpc(pick(mid), 0.99 * jit() + lift) : gen(0.99 * jit() + lift);
     const r2 = metIds.includes('lu') ? fromNpc('lu', 1.1 * jit() + lift) : gen(1.12 * jit() + lift);
     return { round: 0, opps: [r0, r1, r2], place: -1 };
+  }
+  function dabiPeek(s) {
+    if (!s._dabiBracket || !s._dabiBracket.opps) s._dabiBracket = buildDabi(s);
+    return s._dabiBracket;
+  }
+  function dabiRoster(s) {
+    return dabiPeek(s).opps.map(op => {
+      const bits = String(op.name).split(' · ');
+      const title = op.npc && typeof NPCS !== 'undefined' && NPCS[op.npc] ? NPCS[op.npc].title : (bits.length > 1 ? bits[0] : '同门');
+      const name = bits.length > 1 ? bits.slice(1).join('') : op.name;
+      return { name, title, read: qRead(op.q), realm: REALMS[s.realm].name + '同阶' };
+    });
+  }
+  function dabiNew(s) {
+    s.sect.dabiDue = false;
+    const t = dabiPeek(s);
+    s._dabiBracket = null;
+    return t;
   }
   function duelNew(s, opp) {
     const P = duelPower(s);
@@ -1233,9 +1376,9 @@ const Core = (() => {
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
     btChance, resolveBreak, useItem, useBatchCap, newState, migrate, retire, canRetire,
-    lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct,
+    lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct, showFoe, glance, oddsWord, rootFace, sectBand,
     org, rankName, caveMul, join, defect, addGx, npcAdd, npcWord, npcLine, npcHelp, canPromote, promote, sectTick,
     ensureMissions, missionInfo, missionEvent, missionAct, riskWord, libList, learnLib,
-    duelPower, dabiNew, duelNew, duelTell, duelRound, dabiFinish, DUEL_BEATS: BEATS };
+    duelPower, dabiNew, dabiPeek, dabiRoster, qRead, duelNew, duelTell, duelRound, dabiFinish, DUEL_BEATS: BEATS };
 })();
 if (typeof module !== 'undefined') module.exports = Core;

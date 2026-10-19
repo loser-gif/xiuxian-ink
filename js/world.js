@@ -155,9 +155,9 @@ EVENTS.push(
       { label: '请她亲手演示', sub: '', act: s => ({ text: '她挽起袖子，一边看火一边讲。火光映着她的侧脸，你一句也没记住，只记得药香。她嗔你一眼，把丹方塞进你袖中。', fx: { recipe: s.dan.rec.includes('huichun') ? 'qingxin' : 'huichun', npc: { su: 10 } } }) },
     ] },
   { id: 'xw_altar', title: '血祭坛', seal: '坛', w: 7, rm: [2, 4],
-    text: s => { Core.rollFoe(s, { rel: anyOf([0, 1, 1, 2]) }); return `谷底雾气最浓处，一座白骨垒成的祭坛上燃着幽绿的火。坛下锁着七八个凡人，个个面无血色。坛主背对着你，袍角绣着血色骷髅，气息约莫${Core.foeStr(s)}。`; },
+    text: s => { Core.showFoe(s, { rel: anyOf([0, 1, 1, 2]) }, { name: '坛主', title: '血祭坛' }); return `谷底雾气最浓处，一座白骨垒成的祭坛上燃着幽绿的火。坛下锁着七八个凡人，个个面无血色。坛主背对着你，袍角绣着血色骷髅，气息约莫${Core.foeStr(s)}。`; },
     choices: s => [
-      { label: '出手救人', sub: '凶险', act: s => Core.fightAct(s, { name: '坛主', base: 0.52 + s.luck * 0.03,
+      { label: '出手救人', sub: '凶险', odds: s => 0.52 + s.luck * 0.03, act: s => Core.fightAct(s, { name: '坛主', base: 0.52 + s.luck * 0.03,
         win: { text: '你一剑劈开祭坛，幽火四散。坛主惨嚎着化作一团血雾遁走，凡人们抱头痛哭。你在坛下捡到一袋来路不明的灵石，和几颗血菩提。', fx: { xw: 0.35, ls: 40, xj: 8, item: { '血菩提': 2 } } },
         lose: { text: s => `那名${Core.foeStr(s)}的坛主回身一掌，血雾如潮。你护着两个孩子退出谷口，自己却被血煞侵了经脉。`, fx: { inj: 4, life: -3, xj: 6 } } }) },
       { label: '暗中记下方位，报与宗门', sub: '', act: s => ({ text: '你悄然退出，把祭坛方位刻在玉简上送回宗门。三月后听说，祭坛被拔了，人救出来四个。', fx: { xj: 3, gx: 10 } }) },
@@ -196,18 +196,18 @@ EVENTS.push(
     ] },
 );
 EVENTS.push({ id: 'hei_ambush', title: '夜路', seal: '袭', w: 30, cond: s => s.flags && s.flags.heiGrudge === 1,
-  text: s => { Core.rollFoe(s, { rel: anyOf([0, 1, 1]) }); return `拍卖散场，你踏着月色出坊。巷子尽头立着一个黑袍人，袍角在风里一动不动。“东西留下，”他说，声音像砂纸，“我不想杀人。”他的气息，约莫${Core.foeStr(s)}。`; },
+  text: s => { Core.showFoe(s, { rel: anyOf([0, 1, 1]) }, { name: '黑袍客', title: '巷中' }); return `拍卖散场，你踏着月色出坊。巷子尽头立着一个黑袍人，袍角在风里一动不动。“东西留下，”他说，声音像砂纸，“我不想杀人。”他的气息，约莫${Core.foeStr(s)}。`; },
   choices: s => [
-    { label: '拔剑', sub: '凶险', act: s => { s.flags.heiGrudge = 2; if (typeof karmaPlant === 'function') karmaPlant(s, 'hei_echo', 28); return Core.fightAct(s, { name: '黑袍客', base: 0.5 + s.luck * 0.03,
+    { label: '拔剑', sub: '凶险', odds: s => 0.5 + s.luck * 0.03, act: s => { s.flags.heiGrudge = 2; if (typeof karmaPlant === 'function') karmaPlant(s, 'hei_echo', 28); return Core.fightAct(s, { name: '黑袍客', base: 0.5 + s.luck * 0.03,
       win: { text: '三招之后，黑袍被你一剑挑落——底下是一张苍白的年轻的脸，额上刺着血雾谷的印记。他咬牙遁入夜色，丢下一只储物袋。', fx: { ls: 50, xj: 4 } },
       lose: { text: s => `那名${Core.foeStr(s)}的黑袍客出手如鬼魅。你护住了拍来的宝物，肋下却挨了一记血煞掌。`, fx: { inj: 3, xj: -2 } } }); } },
     { label: '掉头回坊，借坊主之势', sub: '', act: s => { s.flags.heiGrudge = 2; if (typeof karmaPlant === 'function') karmaPlant(s, 'hei_echo', 28); return { text: '你转身回了听雨楼，在楼上坐到天明。黑袍人没有跟进来。坊主笑眯眯地收了你一笔“茶钱”。', fx: { ls: -Math.floor(s.ls * 0.08), lsRaw: true } }; } },
   ] });
 LOC_EV.yunyue.push('hei_ambush');
 EVENTS.push({ id: 'bh_jiao', title: '冰下', seal: '蛟', w: 9, rm: [3, 4],
-  text: s => { Core.rollFoe(s, { rel: anyOf([-1, 0, 0, 1]) }); return `北海的冰面下有黑影游过，粗如殿柱。冰层一声闷响，裂开一道长缝——一条冰蛟探出头来，鳞上结着百年的霜。看它吐纳的气象，约莫${Core.foeStr(s)}。`; },
+  text: s => { Core.showFoe(s, { rel: anyOf([-1, 0, 0, 1]) }, { name: '冰蛟', title: '北海' }); return `北海的冰面下有黑影游过，粗如殿柱。冰层一声闷响，裂开一道长缝——一条冰蛟探出头来，鳞上结着百年的霜。看它吐纳的气象，约莫${Core.foeStr(s)}。`; },
   choices: s => [
-    { label: '斩蛟', sub: '取其内丹', act: s => Core.fightAct(s, { name: '冰蛟', base: 0.52,
+    { label: '斩蛟', sub: '取其内丹', odds: 0.52, act: s => Core.fightAct(s, { name: '冰蛟', base: 0.52,
       win: { text: '你一剑劈开冰浪，第二剑刺入逆鳞。冰蛟哀鸣着沉入海底，海面浮起一枚莹白的内丹，寒气逼人。', fx: { item: { '妖丹': 2 }, xw: 0.12, ls: 40 } },
       dominant: '冰蛟刚一扑起，你已立在它头顶。它僵了一僵，乖乖沉回冰下，吐出一枚内丹作买路钱。',
       crush: '冰蛟只看了你一眼，便缩回了海底，连水花都不敢溅起。',
@@ -215,9 +215,9 @@ EVENTS.push({ id: 'bh_jiao', title: '冰下', seal: '蛟', w: 9, rm: [3, 4],
     { label: '绕冰而行', act: s => ({ text: '你踏着浮冰远远绕开。回头时，那道裂缝已重新冻上，像什么也没发生过。', fx: {} }) },
   ] });
 EVENTS.push({ id: 'yh_guard', title: '守阶', seal: '阶', w: 9, rm: [4, 4],
-  text: s => { Core.rollFoe(s, { rel: anyOf([0, 0, 0, -1]) }); return `天阶第九百级上，坐着一尊披甲的石像。你走近时，石像睁开眼，甲叶簌簌落下尘土。“登此阶者，先过我。”它的气息浩荡如潮，约莫${Core.foeStr(s)}。`; },
+  text: s => { Core.showFoe(s, { rel: anyOf([0, 0, 0, -1]) }, { name: '守阶天将', title: '天阶' }); return `天阶第九百级上，坐着一尊披甲的石像。你走近时，石像睁开眼，甲叶簌簌落下尘土。“登此阶者，先过我。”它的气息浩荡如潮，约莫${Core.foeStr(s)}。`; },
   choices: s => [
-    { label: '应战', sub: '问道于剑', act: s => Core.fightAct(s, { name: '守阶天将', base: 0.5,
+    { label: '应战', sub: '问道于剑', odds: 0.5, act: s => Core.fightAct(s, { name: '守阶天将', base: 0.5,
       win: { text: '百招之后，石像的长戟断成两截。它低头看了看，侧身让开石阶：“去罢。往上，便是另一番天地。”', fx: { xw: 0.15, xj: 5 } },
       dominant: '石像接了你三招，收戟行礼，让开了道路。',
       crush: '你尚未出手，石像已默默起身，让开了石阶。',
@@ -239,8 +239,8 @@ const MIJING = {
         { label: '以灵力强破', sub: '耗灵力', ling: -25, act: s => Math.random() < 0.7 ? { text: '你双掌按门，灵力如潮涌入。符文一根根崩断，石门轰然洞开。', loot: { ls: 15 } } : { text: '符文反噬，一道电光顺着手臂窜上来，你踉跄后退。门还是开了，只是开得狼狈。', hp: -15, hazard: true } },
         { label: '寻机关绕行', sub: '凭悟性', act: s => Math.random() < 0.35 + s.wx * 0.05 ? { text: '你在门侧石壁上摸到一处凹痕，按下去，旁边无声地滑开一道窄门。', loot: { xw: 0.1 } } : { text: '你摸索了半日，才在一堆碎石下找到暗道，灵力耗去不少。', ling: -15 } },
       ] },
-      { t: '傀儡长廊', text: s => { Core.rollFoe(s, { rel: 0 }); return `长廊两侧立着十二尊石傀，眼眶里嵌着暗红的晶石。你踏进第一步，最近的那尊便转过头来——它的气息，恰与你一般无二。`; }, choices: s => [
-        { label: '拔剑破傀', sub: '一战', ling: -15, act: s => Core.fightAct(s, { name: '石傀', base: Jianghu.mjBase(s, 0.55),
+      { t: '傀儡长廊', text: s => { Core.showFoe(s, { rel: 0 }, { name: '石傀', title: '洞府守卫' }); return `长廊两侧立着十二尊石傀，眼眶里嵌着暗红的晶石。你踏进第一步，最近的那尊便转过头来——它的气息，恰与你一般无二。`; }, choices: s => [
+        { label: '拔剑破傀', sub: '一战', odds: s => Jianghu.mjBase(s, 0.55), ling: -15, act: s => Core.fightAct(s, { name: '石傀', base: Jianghu.mjBase(s, 0.55),
           win: { text: '剑光过处，石傀碎成一地。你从它眼眶里抠出两颗晶石，入手温热。', fx: { ls: 30, item: { '寒铁': 1 } } },
           lose: { text: '石傀的拳头比山还重。你挨了两下，才寻到它关节处的破绽。', fx: { hp: -30 } } }) },
         { label: '屏息潜行', sub: '凭气运', act: s => Math.random() < 0.5 + s.luck * 0.04 ? { text: '你贴着墙根，一步一息。十二尊石傀的目光从你身上滑过，没有一尊动。' } : { text: '一块碎石在你脚下滚落。十二尊石傀齐齐转头，你只得一路狂奔，冲出长廊时，背上挨了一记。', hp: -20, fight: { dr: 0, gap: 0, foe: '石傀', tier: 'flee' } } },
@@ -253,8 +253,8 @@ const MIJING = {
         { label: '入书阁', sub: '悟道', act: s => Math.random() < 0.6 ? { text: '你在竹简堆里翻了三天，找到一卷洞府主人的修行札记，字字珠玑。', loot: { xw: 0.3 } } : { text: '竹简大多已经朽了，你只拼出半篇心得。', loot: { xw: 0.12 } } },
         { label: '探剑池', sub: '寒气侵骨', ling: -10, act: s => Math.random() < 0.6 ? { text: '你潜入池底，捞起一柄断剑，剑身上还刻着铭文。池水冷得刺骨。', loot: { ls: 50, item: { '古剑残片': 1 } } } : { text: '池水里的剑意比想的更烈，你捞起一枚残片，手掌被割得鲜血淋漓。', hp: -15, loot: { item: { '古剑残片': 1 } }, hazard: true } },
       ] },
-      { t: '主室', boss: true, text: s => { Core.rollFoe(s, { rel: 1 }); return `主室正中一具枯骨端坐蒲团之上。你踏进门槛时，枯骨眼中亮起两点青火，一道残魂自骨中站起——${Core.foeStr(s)}，比你高了半筹。“后生，”他说，“过得了我，洞府归你。”`; }, choices: s => [
-        { label: '请前辈赐教', sub: '决战', act: s => Core.fightAct(s, { name: '残魂', base: Jianghu.mjBase(s, 0.5),
+      { t: '主室', boss: true, text: s => { Core.showFoe(s, { rel: 1 }, { name: '残魂', title: '洞府主人' }); return `主室正中一具枯骨端坐蒲团之上。你踏进门槛时，枯骨眼中亮起两点青火，一道残魂自骨中站起——${Core.foeStr(s)}，比你高了半筹。“后生，”他说，“过得了我，洞府归你。”`; }, choices: s => [
+        { label: '请前辈赐教', sub: '决战', odds: s => Jianghu.mjBase(s, 0.5), act: s => Core.fightAct(s, { name: '残魂', base: Jianghu.mjBase(s, 0.5),
           win: { text: '残魂散尽之前，朝你点了点头：“好。”枯骨化作飞灰，蒲团下露出一只玉匣。', fx: { xw: 0.6, ls: 80, frag: 1 } },
           lose: { text: '残魂一指点在你眉心，你神魂剧震，被一股柔力推出了洞府。“再修些年。”他的声音远远传来。', fx: { hp: -60 } } }) },
       ] },
@@ -262,8 +262,8 @@ const MIJING = {
   zhanchang: { name: '上古战场', loc: 'xihuang', rm: 2, seal: '战', tint: 'rust',
     open: '西荒的风沙停了三天。第四天夜里，沙海中央升起一面残破的血旗，旗下，是一整片没有掩埋的上古战场。',
     nodes: [
-      { t: '白骨荒原', text: s => { Core.rollFoe(s, { rel: 0 }); return `白骨铺地，一眼望不到头。月光下，几具披甲的骸骨慢慢站了起来，空洞的眼眶对准了你。阴兵的煞气，与你的修为恰好相当。`; }, choices: s => [
-        { label: '斩开一条路', sub: '一战', ling: -15, act: s => Core.fightAct(s, { name: '阴兵', base: Jianghu.mjBase(s, 0.58),
+      { t: '白骨荒原', text: s => { Core.showFoe(s, { rel: 0 }, { name: '阴兵', title: '上古战场' }); return `白骨铺地，一眼望不到头。月光下，几具披甲的骸骨慢慢站了起来，空洞的眼眶对准了你。阴兵的煞气，与你的修为恰好相当。`; }, choices: s => [
+        { label: '斩开一条路', sub: '一战', odds: s => Jianghu.mjBase(s, 0.58), ling: -15, act: s => Core.fightAct(s, { name: '阴兵', base: Jianghu.mjBase(s, 0.58),
           win: { text: '你斩碎了七具阴兵，骨片落了一地。骸骨堆里埋着几颗血菩提。', fx: { item: { '血菩提': 2 }, ls: 25 } },
           lose: { text: '阴兵不知疼痛，砍倒了又站起来。你杀出重围时，铠甲的锈刃在你身上留了三道口子。', fx: { hp: -30 } } }) },
         { label: '绕行沙丘', sub: '费灵力', ling: -20, act: s => ({ text: '你借着沙丘遮掩，绕了一个大圈。阴兵在原地站了一会儿，又慢慢躺了回去。' }) },
@@ -280,7 +280,7 @@ const MIJING = {
         { label: '以灵力硬闯', sub: '耗灵力', ling: -30, act: s => Math.random() < 0.65 ? { text: '你周身灵光大盛，一步一步走过阵心。阵纹在你脚下寸寸熄灭。' } : { text: '阵纹骤然收紧，血光如刀，你冲出阵时，护体灵光已经碎了。', hp: -25, hazard: true } },
         { label: '推演阵眼', sub: '凭悟性', act: s => Math.random() < 0.3 + s.wx * 0.06 ? { text: '你在阵外推演了三日，找到了那根断了的阵纹。轻轻一挑，整座阵便停了。', loot: { xw: 0.15 } } : { text: '推演到第三日，你算错了一步，被阵力扫中。', hp: -15, ling: -10, hazard: true } },
       ] },
-      { t: '剑魂', boss: true, duel: true, text: s => `血旗之下站着一个披甲的人影，半透明，手按长剑。他看了你很久，开口时声音像是从万年前传来：“我等了很久。”——剑魂的修为，随你而涨，始终高你一线。`, choices: s => [
+      { t: '剑魂', boss: true, duel: true, text: s => { Core.showFoe(s, { rel: 2 }, { name: '剑魂', title: '上古遗灵' }); return `血旗之下站着一个披甲的人影，半透明，手按长剑。他看了你很久，开口时声音像是从万年前传来：“我等了很久。”——剑魂的修为，随你而涨，约莫${Core.foeStr(s)}，始终高你一线。`; }, choices: s => [
         { label: '拔剑', sub: '对决 · 攻守术奇', duelOpp: s => ({ name: '剑魂', npc: null, style: 'ao', rel: 0.72, q: 1.08 }),
           win: { text: '最后一剑，你们同时出手。剑魂的剑停在你喉前一寸，你的剑穿过了他的胸口。他笑了：“好剑。”血旗轰然倒下，旗杆里藏着一卷残页。', fx: { xw: 0.7, frag: 1, ls: 60 } },
           lose: { text: '剑魂收剑：“回去罢，你还没准备好。”一阵狂风卷起黄沙，你再睁眼时，已在战场之外。', fx: { hp: -60 } } },
@@ -293,11 +293,11 @@ const MIJING = {
         { label: '御水而下', sub: '耗灵力', ling: -20, act: s => ({ text: '你以灵力撑开一圈水罩，沿着台阶一路下行。头顶的月光越来越小，最后只剩一个白点。' }) },
         { label: '纵身一跃', sub: '凭气运', act: s => Math.random() < 0.55 + s.luck * 0.04 ? { text: '你跃入漩涡，被暗流一卷，竟直接送到了龙宫门前。', ling: 10 } : { text: '暗流比想的更急，你被卷着撞上了礁石。', hp: -20, hazard: true } },
       ] },
-      { t: '珊瑚迷阵', text: '龙宫外是一片血红的珊瑚林，枝枝相连，结成迷阵。珊瑚枝上挂着历代闯入者的骸骨。', choices: s => [
+      { t: '珊瑚迷阵', text: s => { Core.showFoe(s, { rel: 0 }, { name: '巡海夜叉', title: '龙宫守卫' }); return '龙宫外是一片血红的珊瑚林，枝枝相连，结成迷阵。珊瑚枝上挂着历代闯入者的骸骨。硬斩珊瑚，会惊动守阵的夜叉。'; }, choices: s => [
         { label: '顺水流而行', sub: '凭悟性', act: s => Math.random() < 0.35 + s.wx * 0.05 ? { text: '你注意到珊瑚的枝杈都朝着一个方向弯——那是水流的方向。你顺着水流，走出了迷阵。', loot: { item: { '鲛珠': 1 } } } : { text: '你在迷阵里转了七天，灵力耗了大半，才摸到出口。', ling: -25 } },
-        { label: '斩开珊瑚', sub: '惊动守卫', act: s => { Core.rollFoe(s, { rel: 0 }); return Core.fightAct(s, { name: '巡海夜叉', base: Jianghu.mjBase(s, 0.55),
+        { label: '斩开珊瑚', sub: '惊动守卫', odds: s => Jianghu.mjBase(s, 0.55), act: s => Core.fightAct(s, { name: '巡海夜叉', base: Jianghu.mjBase(s, 0.55),
           win: { text: '珊瑚断处，冲出一队巡海夜叉。你斩了领头的那个，余者四散。夜叉的腰牌是一片龙鳞。', fx: { item: { '龙鳞': 1 }, ls: 40 } },
-          lose: { text: '巡海夜叉的钢叉从四面八方刺来，你突围而出，肩上多了两个血洞。', fx: { hp: -30 } } }); } },
+          lose: { text: '巡海夜叉的钢叉从四面八方刺来，你突围而出，肩上多了两个血洞。', fx: { hp: -30 } } }) },
       ] },
       { t: '鲛人', text: '一个鲛人坐在龙宫门前的礁石上梳头，鱼尾拍着水。她看见你，并不害怕：“又是来偷宝的？”', choices: s => [
         { label: '以灵石换她指路', sub: '灵石', act: s => ({ text: '她收了灵石，指给你一条暗道：“从这里走，可以绕过龙王的眼睛。”临走时，她把一颗鲛珠塞进你手里。', loot: { ls: -60, item: { '鲛珠': 1 } }, ling: 15 }) },
@@ -308,8 +308,8 @@ const MIJING = {
         { label: '取丹方', sub: '', act: s => ({ text: '龙筋松开，丹方上是化婴丹的炼法，还附着龙宫历代丹师的批注。', loot: s.dan && !s.dan.rec.includes('huaying') ? { recipe: 'huaying' } : { dan: 4, ls: 60 } }) },
         { label: '什么都不拿', sub: '', act: s => ({ text: '你转身离开了宝库。龙吟声停了。', loot: { xj: 10 }, ling: 20 }) },
       ] },
-      { t: '守宫老龙', boss: true, text: s => { Core.rollFoe(s, { rel: 2 }); return `宝库之后，一条白鳞老龙盘在玉柱上，龙须垂地，一只眼已经瞎了。“三千年了，”他说，“你是第一个走到这里的。”他的修为深不可测，约莫${Core.foeStr(s)}。`; }, choices: s => [
-        { label: '请战', sub: '决战', act: s => Core.fightAct(s, { name: '老龙', base: Jianghu.mjBase(s, 0.55),
+      { t: '守宫老龙', boss: true, text: s => { Core.showFoe(s, { rel: 2 }, { name: '老龙', title: '守宫' }); return `宝库之后，一条白鳞老龙盘在玉柱上，龙须垂地，一只眼已经瞎了。“三千年了，”他说，“你是第一个走到这里的。”他的修为深不可测，约莫${Core.foeStr(s)}。`; }, choices: s => [
+        { label: '请战', sub: '决战', odds: s => Jianghu.mjBase(s, 0.55), act: s => Core.fightAct(s, { name: '老龙', base: Jianghu.mjBase(s, 0.55),
           win: { text: '老龙收了爪，长叹一声：“走罢，带上你该带的。”他吐出一颗龙珠，在你掌心化作一卷金色残页。', fx: { xw: 0.8, frag: 1, item: { '龙鳞': 2 } } },
           lose: { text: '龙尾一扫，海水倒灌，你被冲出海眼，落在冰面上，咳出一口带冰碴的血。', fx: { hp: -60 } } }) },
         { label: '与他说话', sub: '', act: s => ({ text: '你没有拔剑，坐下来听他讲了三天三夜。讲上古，讲龙族，讲他瞎掉的那只眼。临别时，他送了你一片逆鳞：“留个念想。”', loot: { item: { '龙鳞': 1 }, xj: 15, xw: 0.4 } }) },
