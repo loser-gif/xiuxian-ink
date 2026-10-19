@@ -236,6 +236,38 @@ const Ink = (() => {
         c.moveTo(cx + Math.cos(a) * base * 0.95, cy + Math.sin(a) * base * 0.95); c.lineTo(cx + Math.cos(a) * d, cy + Math.sin(a) * d); c.stroke();
       }
     }
+    // 飞白与浓淡：大泼墨不能是一块平灰
+    if (opt.feibai) {
+      c.save();
+      c.globalCompositeOperation = 'destination-out';
+      for (let i = 0; i < 18; i++) {
+        const a = R() * Math.PI * 2;
+        const x = cx + (R() - 0.5) * base * 0.85, y = cy + (R() - 0.5) * base * 0.85;
+        const len = base * (0.55 + R() * 0.9);
+        c.strokeStyle = `rgba(0,0,0,${0.28 + R() * 0.55})`;
+        c.lineWidth = 16 + R() * (i % 3 === 0 ? 52 : 28);
+        c.lineCap = 'round';
+        c.beginPath();
+        c.moveTo(x, y);
+        c.quadraticCurveTo(x + Math.cos(a + 0.7) * len * 0.55, y + Math.sin(a + 0.7) * len * 0.55, x + Math.cos(a) * len, y + Math.sin(a) * len);
+        c.stroke();
+      }
+      for (let i = 0; i < 7; i++) {
+        const a = R() * 7, d = R() * base * 0.35, r = base * (0.1 + R() * 0.2);
+        c.beginPath(); c.ellipse(cx + Math.cos(a) * d, cy + Math.sin(a) * d, r, r * (0.28 + R() * 0.45), a, 0, 7); c.fill();
+      }
+      c.restore();
+      c.save();
+      c.globalCompositeOperation = 'source-atop';
+      for (let i = 0; i < 10; i++) {
+        const a = R() * 7, d = R() * base * 0.55, r = base * (0.12 + R() * 0.28);
+        const g = c.createRadialGradient(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 0, cx + Math.cos(a) * d, cy + Math.sin(a) * d, r);
+        g.addColorStop(0, R() < 0.5 ? 'rgba(0,0,0,0.28)' : 'rgba(255,248,236,0.16)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = g; c.fillRect(0, 0, size, size);
+      }
+      c.restore();
+    }
     // 外圈淡墨晕
     if (opt.halo) {
       const g = c.createRadialGradient(cx, cy, base * 0.9, cx, cy, base * 1.6);

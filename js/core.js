@@ -888,6 +888,11 @@ const Core = (() => {
     if (!s.life || typeof s.life !== 'object') s.life = typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 };
     if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
+    // 缺月数的残档按已记下的岁数补回；有月数的旧档一律不动
+    if (typeof s.months !== 'number' || !isFinite(s.months) || s.months < 0) {
+      const y = (typeof s.age === 'number' && isFinite(s.age) && s.age >= 0) ? Math.floor(s.age) : 16;
+      s.months = y * 12;
+    }
     if (s.npc && typeof NPCS !== 'undefined') {
       for (const id in NPCS) if (!s.npc[id]) s.npc[id] = { a: NPCS[id].a0, met: false };
     }

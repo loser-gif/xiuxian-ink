@@ -81,7 +81,7 @@ async function initVisuals() {
     Ink.inkBlot(160, 15, { core: 0.33, rough: 0.08, splatter: 7, alpha: 0.95 }),
     Ink.inkBlot(160, 22, { core: 0.3, rough: 0.08, splatter: 4, alpha: 0.95 }),
     Ink.inkBlot(420, 31, { core: 0.3, rough: 0.04, splatter: 14, alpha: 0.92, halo: 0.18 }),
-    Ink.inkBlot(1000, 77, { core: 0.3, rough: 0.05, splatter: 70, alpha: 0.97, halo: 0.3, rgb: [16, 14, 12] }),
+    Ink.inkBlot(1000, 77, { core: 0.3, rough: 0.16, splatter: 150, alpha: 0.94, halo: 0.07, rgb: [18, 14, 12], feibai: true }),
     Ink.scene(800, 220),
   ]);
   root.style.setProperty('--mtn-img', `url(${scene})`);
@@ -281,6 +281,7 @@ function placeRealmScape() {
   }
 }
 function setScreen(id) {
+  if (curScreen === 'title' && id !== 'title') document.body.classList.add('intro-done');
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
   placeRealmScape();
@@ -2550,7 +2551,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=36').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=37').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -2585,7 +2586,8 @@ Promise.all([
   applyLook();
   const sp = document.getElementById('splash');
   requestAnimationFrame(() => document.body.classList.add('go'));
-  setTimeout(() => document.body.classList.add('intro-done'), 4200);
+  // 首访不在中途打 intro-done，否则题字动画会从头再来，屏上只剩一个「纸」
+  setTimeout(() => { const intro = document.getElementById('intro'); if (intro) intro.hidden = true; }, 1200);
   if (sp) setTimeout(() => { sp.hidden = true; }, 700);
 });
 

@@ -630,16 +630,16 @@ body[data-realm="4"] .realm-name,body[data-realm="5"] .realm-name{animation:aura
 .mtn,.mist,.sun,.pine,.lake,.atmo,.cranes{translate:0 0}
 
 /* 季节飘落 */
-#weather{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+#weather{position:fixed;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
 
 /* 开卷：一滴墨落下，洇成山水 */
 #intro{position:fixed;inset:0;z-index:3;pointer-events:none}
 #intro .drop{position:absolute;left:var(--bx,50%);top:var(--by,44%);margin-top:-8px;width:12px;height:16px;margin-left:-6px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#1b1814;opacity:0}
-#intro .bloom{position:absolute;left:var(--bx,50%);top:var(--by,44%);width:110vmax;height:110vmax;margin:-55vmax 0 0 -55vmax;background:var(--blot-big) center/contain no-repeat;opacity:0;transform:scale(0)}
+#intro .bloom{position:absolute;left:var(--bx,50%);top:var(--by,44%);width:86vmin;height:86vmin;margin:-43vmin 0 0 -43vmin;background:var(--blot-big) center/contain no-repeat;opacity:0;transform:scale(0)}
 body.go #intro .drop{animation:drop .62s cubic-bezier(.55,0,1,.45) both}
-body.go #intro .bloom{animation:bloom 2.2s .58s cubic-bezier(.15,.7,.2,1) both}
+body.go #intro .bloom{animation:bloom 1.05s .26s cubic-bezier(.18,.55,.2,1) both}
 @keyframes drop{0%{opacity:0;transform:translate3d(0,-34vh,0) scale(.5,.7)}20%{opacity:.92}96%{opacity:1;transform:translate3d(0,0,0) scale(.9,1.2)}100%{opacity:0;transform:translate3d(0,0,0) scale(1.6,.5)}}
-@keyframes bloom{0%{opacity:.78;transform:scale(.01) rotate(0)}14%{opacity:.46}55%{opacity:.12}100%{opacity:0;transform:scale(1) rotate(18deg)}}
+@keyframes bloom{0%{opacity:0;transform:scale(.1) rotate(-11deg)}16%{opacity:.9;transform:scale(.74) rotate(-3deg)}34%{opacity:.42;transform:scale(.9) rotate(5deg)}62%{opacity:0;transform:scale(1.04) rotate(12deg)}100%{opacity:0;transform:scale(1.04) rotate(12deg)}}
 body:not(.go) #scenery{opacity:0}
 body.go[data-screen=title] #scenery{animation:sceneIn 2.6s .75s var(--ease-ink) both}
 @keyframes sceneIn{0%{opacity:0;transform:scale(1.06) translate3d(0,2%,0)}100%{opacity:1;transform:none}}
@@ -1897,10 +1897,10 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
   --ease-curl:cubic-bezier(.22,.7,.18,1);
 }
 /* 四季纸色：优雅微差 */
-body[data-season="0"]{--paper:#f1ead8;--paper-tint:rgba(110,140,100,.045);--paper-stain:rgba(80,100,70,.045)} /* 春 */
-body[data-season="1"]{--paper:#f3ebcf;--paper-tint:rgba(200,160,70,.05);--paper-stain:rgba(140,90,40,.05)} /* 夏 */
-body[data-season="2"]{--paper:#efe0c8;--paper-tint:rgba(180,100,50,.055);--paper-stain:rgba(130,70,35,.06)} /* 秋 */
-body[data-season="3"]{--paper:#e8e4dc;--paper-tint:rgba(90,110,130,.05);--paper-stain:rgba(60,70,80,.05);--paper-stain2:rgba(50,60,75,.04)} /* 冬 */
+body[data-season="0"]{--paper:#f4d5d0;--paper-tint:rgba(196,110,114,.18);--paper-stain:rgba(176,86,92,.14);--season-sheet:rgba(206,92,98,.26)} /* 春 */
+body[data-season="1"]{--paper:#efe6b8;--paper-tint:rgba(120,150,80,.16);--paper-stain:rgba(150,120,40,.12);--season-sheet:rgba(110,140,58,.20)} /* 夏 */
+body[data-season="2"]{--paper:#f0cba8;--paper-tint:rgba(186,96,42,.20);--paper-stain:rgba(140,70,28,.14);--season-sheet:rgba(186,92,32,.24)} /* 秋 */
+body[data-season="3"]{--paper:#d5dee8;--paper-tint:rgba(90,120,150,.18);--paper-stain:rgba(70,90,120,.12);--paper-stain2:rgba(50,70,100,.10);--season-sheet:rgba(126,156,186,.30)} /* 冬 */
 /* 时辰：晨清、午暖、暮沉（叠一层，不依赖 color-mix） */
 body[data-tod="dawn"] #paper-veil{box-shadow:inset 0 0 120px rgba(160,190,200,.045)}
 body[data-tod="noon"] #paper-veil{box-shadow:inset 0 0 100px rgba(220,190,120,.04)}
@@ -2702,29 +2702,64 @@ body[data-screen="main"] .break-seal{bottom:calc(var(--sab) + 112px + var(--dock
 }
 
 /* ===== v0.15 绘卷：四季、换景、小像、墨晕、题跋、出身 ===== */
-#realm-scape{position:absolute;left:0;right:0;top:auto;bottom:40%;width:100%;height:15%;z-index:3;pointer-events:none;color:rgba(32,30,26,.72);opacity:0;transition:opacity .8s ease}
-body[data-screen="title"] #scenery > #realm-scape{opacity:.8;top:14%;bottom:auto;height:32%;
-  -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 22%,transparent 38%,transparent 62%,#000 78%,#000 100%);
-  mask-image:linear-gradient(90deg,#000 0%,#000 22%,transparent 38%,transparent 62%,#000 78%,#000 100%)}
-#realm-scape .rs{display:none}
-#realm-scape .rs-moon{display:none}
-body[data-realm="0"] #realm-scape .rs-0,
-body[data-realm="1"] #realm-scape .rs-1,
-body[data-realm="2"] #realm-scape .rs-2,
-body[data-realm="3"] #realm-scape .rs-3,
-body[data-realm="4"] #realm-scape .rs-4,
-body[data-realm="5"] #realm-scape .rs-4{display:block}
-#realm-scape .cinnabar{stroke:#9a332c}
-html[data-theme="night"] #scenery > #realm-scape{color:rgba(232,224,208,.86)}
-html[data-theme="night"] #scenery > #realm-scape .cinnabar{stroke:#e7c2a2}
-html[data-theme="night"] #scr-main .scroll-paper > #realm-scape .rs-moon{display:block}
+#realm-scape{position:absolute;left:0;top:16%;width:min(62%,300px);height:56%;z-index:3;pointer-events:none;opacity:0;overflow:hidden}
+#realm-scape .ra{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 46%;display:none}
+body[data-realm="0"] #realm-scape .ra-0,
+body[data-realm="1"] #realm-scape .ra-1,
+body[data-realm="2"] #realm-scape .ra-2,
+body[data-realm="3"] #realm-scape .ra-3,
+body[data-realm="4"] #realm-scape .ra-4,
+body[data-realm="5"] #realm-scape .ra-4{display:block}
+body[data-screen="title"] #scenery > #realm-scape{
+  left:-1%;top:18%;width:min(88%,400px);height:42%;opacity:.96;
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 58%,transparent 94%),linear-gradient(180deg,transparent 0%,#000 16%,#000 78%,transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,#000 0%,#000 58%,transparent 94%),linear-gradient(180deg,transparent 0%,#000 16%,#000 78%,transparent 100%);
+  mask-composite:intersect}
+body[data-screen="title"] #scenery > #realm-scape .ra{object-fit:contain;object-position:left center}
+html[data-theme="night"] body[data-screen="title"] #scenery > #realm-scape{
+  filter:invert(1) sepia(.28) saturate(.35) brightness(1.12) contrast(1.05)}
 body.realm-shift #realm-scape{animation:realmFade .9s ease}
-@keyframes realmFade{0%{opacity:.15}100%{opacity:.9}}
-#scr-main .scroll-paper > #realm-scape{position:absolute;left:0;right:0;top:0;width:100%;height:84px;z-index:2;opacity:.9;color:rgba(36,32,28,.78);pointer-events:none;
-  -webkit-mask-image:linear-gradient(180deg,#000 58%,transparent);mask-image:linear-gradient(180deg,#000 58%,transparent)}
-html[data-theme="night"] #scr-main .scroll-paper > #realm-scape{color:rgba(36,32,28,.8)}
-html[data-theme="night"] #scr-main .scroll-paper > #realm-scape .cinnabar{stroke:#9a332c}
-#scr-main .log{padding-top:110px}
+@keyframes realmFade{0%{opacity:.2}100%{opacity:.94}}
+#scr-main .scroll-paper > #realm-scape{position:absolute;left:0;right:0;top:0;width:100%;height:156px;z-index:2;opacity:.96;filter:none;
+  -webkit-mask-image:linear-gradient(180deg,#000 68%,transparent);
+  mask-image:linear-gradient(180deg,#000 68%,transparent)}
+html[data-theme="night"] #scr-main .scroll-paper > #realm-scape{filter:none}
+#scr-main .log{padding-top:164px;z-index:1}
+.season-wash{position:absolute;inset:0;z-index:0;pointer-events:none}
+body[data-season="0"] .season-wash{background:
+  radial-gradient(28px 14px at 18% 28%,rgba(214,96,104,.78),transparent 72%),
+  radial-gradient(20px 11px at 34% 46%,rgba(196,80,90,.62),transparent 70%),
+  radial-gradient(24px 13px at 72% 36%,rgba(220,110,112,.7),transparent 72%),
+  radial-gradient(18px 10px at 58% 62%,rgba(200,90,96,.5),transparent 70%),
+  linear-gradient(180deg,rgba(214,120,116,.16),transparent 42%)}
+body[data-season="1"] .season-wash{background:
+  radial-gradient(30px 14px at 16% 30%,rgba(64,110,52,.55),transparent 72%),
+  radial-gradient(22px 11px at 30% 48%,rgba(90,130,60,.42),transparent 70%),
+  radial-gradient(26px 12px at 74% 38%,rgba(120,150,60,.4),transparent 72%),
+  linear-gradient(180deg,rgba(140,160,70,.14),transparent 46%)}
+body[data-season="2"] .season-wash{background:
+  radial-gradient(26px 14px at 14% 28%,rgba(176,72,24,.72),transparent 72%),
+  radial-gradient(20px 12px at 32% 46%,rgba(160,64,20,.58),transparent 70%),
+  radial-gradient(24px 13px at 70% 36%,rgba(190,96,32,.64),transparent 72%),
+  linear-gradient(180deg,rgba(186,100,40,.16),transparent 46%)}
+body[data-season="3"] .season-wash{background:
+  radial-gradient(18px 18px at 16% 30%,rgba(255,255,255,.92),transparent 70%),
+  radial-gradient(14px 14px at 28% 48%,rgba(244,248,252,.9),transparent 70%),
+  radial-gradient(16px 16px at 62% 34%,rgba(255,255,255,.8),transparent 72%),
+  radial-gradient(12px 12px at 78% 58%,rgba(236,242,248,.85),transparent 70%),
+  linear-gradient(180deg,rgba(150,176,200,.2),transparent 48%)}
+#scr-main .scroll-paper{
+  background-image:
+    linear-gradient(var(--season-sheet,transparent),var(--season-sheet,transparent)),
+    radial-gradient(ellipse 100% 28% at 50% 0%, rgba(55,40,25,.07), transparent 60%),
+    radial-gradient(ellipse 100% 24% at 50% 100%, rgba(55,40,25,.06), transparent 55%),
+    radial-gradient(ellipse 40% 50% at 0% 30%, rgba(90,60,30,.045), transparent 70%),
+    radial-gradient(ellipse 40% 50% at 100% 70%, rgba(90,60,30,.04), transparent 70%),
+    linear-gradient(rgba(250,246,234,.7),rgba(250,246,234,.7)),
+    var(--paper-img);
+  background-size:auto,auto,auto,auto,auto,auto,256px;
+}
 #pale-moon{display:none;position:fixed;right:18%;top:11%;width:36px;height:36px;border-radius:50%;pointer-events:none;z-index:1;
   background:radial-gradient(circle at 38% 36%,rgba(255,252,244,.96),rgba(214,210,198,.55) 46%,rgba(214,210,198,0) 70%);
   box-shadow:0 0 16px rgba(236,230,214,.28)}
@@ -2761,7 +2796,7 @@ html[data-theme="night"] .ink-bloom{background:radial-gradient(circle,rgba(239,2
 .margin-note{position:absolute;top:8px;left:78px;right:12px;z-index:4;pointer-events:none;
   font-size:11px;letter-spacing:.04em;color:rgba(122,48,40,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
 .margin-note[hidden]{display:none!important}
-.margin-col{position:absolute;top:92px;right:6px;bottom:18px;width:30px;z-index:3;pointer-events:none;
+.margin-col{position:absolute;top:160px;right:6px;bottom:18px;width:30px;z-index:3;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:5px;overflow:hidden}
 .margin-col[hidden]{display:none!important}
 .m-seal{width:24px;height:24px;border-radius:2px;background:#9a332c;color:#f6f0e2;font-family:var(--f-head);font-size:13px;line-height:24px;text-align:center;transform:rotate(-8deg);box-shadow:1px 1px 0 rgba(80,20,16,.25);flex:none}
@@ -2795,9 +2830,9 @@ body[data-seals="1"] #scr-main .log{padding-right:46px}
   .origin-cer .path-opt b{font-size:16px;margin-bottom:0}
   .origin-cer .path-opt em{margin-bottom:2px}
   .origin-cer .path-cer-foot{padding:6px 12px 8px}
-  #scr-main .scroll-paper > #realm-scape{height:64px}
-  #scr-main .log{padding-top:96px}
-  #scr-main .margin-col{top:84px}
+  #scr-main .scroll-paper > #realm-scape{height:96px}
+  #scr-main .log{padding-top:104px}
+  #scr-main .margin-col{top:100px}
 }
 @media (prefers-reduced-motion:reduce){
   .ink-bloom,.bt.pomo .bt-pomo,.ev-portrait,body.realm-shift #realm-scape{animation:none!important}

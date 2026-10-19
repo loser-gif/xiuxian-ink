@@ -103,11 +103,11 @@ const FX = (() => {
   // 手机与「简」再收一截，少画少合成。
   function partMul() {
     let m = 1;
-    if (coarsePhone()) m *= 0.38;
+    if (coarsePhone()) m *= 0.72;
     if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.34;
     return m;
   }
-  const partN = s => Math.max(4, Math.round([12, 14, 11, 22][s] * Math.min(2.4, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
+  const partN = s => Math.max(8, Math.round([40, 24, 32, 46][s] * Math.min(2.2, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
   function fitParts() {
     const n = partN(W.season);
     while (W.parts.length < n) { const p = {}; spawn(p, true); W.parts.push(p); }
@@ -117,10 +117,10 @@ const FX = (() => {
     const s = W.season;
     p.x = rnd(-20, W.w + 20); p.y = init ? rnd(-W.h * .1, W.h) : rnd(-40, -10);
     p.z = rnd(.45, 1); p.rot = rnd(0, 6.28); p.spin = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.flip = rnd(1.2, 3);
-    if (s === 1) { p.vy = rnd(10, 22) * p.z; p.vx = rnd(-10, 8); p.size = rnd(9, 15) * p.z; }
-    else if (s === 3) { p.vy = rnd(18, 42) * p.z; p.vx = rnd(-8, 8); p.size = rnd(4.5, 9) * p.z; }
-    else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(9, 15) * p.z; }
-    else { p.vy = rnd(16, 30) * p.z; p.vx = rnd(8, 20); p.size = rnd(6, 10.5) * p.z; }
+    if (s === 1) { p.vy = rnd(10, 22) * p.z; p.vx = rnd(-10, 8); p.size = rnd(11, 18) * p.z; }
+    else if (s === 3) { p.vy = rnd(18, 42) * p.z; p.vx = rnd(-8, 8); p.size = rnd(6, 12) * p.z; }
+    else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(11, 18) * p.z; }
+    else { p.vy = rnd(14, 28) * p.z; p.vx = rnd(6, 18); p.size = rnd(12, 20) * p.z; }
   }
   function haltWeather() {
     if (W.raf) cancelAnimationFrame(W.raf);
@@ -128,8 +128,8 @@ const FX = (() => {
     if (W.c && W.w) { W.c.setTransform(1, 0, 0, 1, 0, 0); W.c.clearRect(0, 0, W.cv.width, W.cv.height); }
   }
   function setSeason(s) {
-    if (reduced()) { haltWeather(); return; }
-    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !reduced() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
+    if (thinNow()) { haltWeather(); return; }
+    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !thinNow() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
     armFps();
     if (s === W.season && W.parts.length === partN(s)) return;
     W.season = s;
@@ -146,7 +146,8 @@ const FX = (() => {
     W.gold = Array.from({ length: n }, () => ({ x: rnd(0, W.w), y: rnd(0, W.h), vy: rnd(5, 12), s: rnd(2, 3.6), spin: rnd(.6, 1.4), ph: rnd(0, 6.28) }));
   }
   function wTick(t) {
-    if (document.hidden || reduced()) { W.raf = 0; return; }
+    if (thinNow()) { haltWeather(); return; }
+    if (document.hidden) { W.raf = 0; return; }
     W.frame = (W.frame || 0) + 1;
     if (thinNow() && (W.frame & 1)) { W.raf = requestAnimationFrame(wTick); return; }
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
@@ -157,7 +158,7 @@ const FX = (() => {
       p.x += Math.sin(time * (s === 1 ? 0.7 : 1.1) + p.ph) * (s === 1 ? 8 : 12) * dt * p.z; p.rot += p.spin * dt * (s === 1 ? 0.45 : 1);
       const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : s === 1 ? 'lotus' : 'petal'), sz = p.size;
       const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
-      c.globalAlpha = (s === 3 ? 0.85 : s === 1 ? 0.5 : 0.62) * (0.4 + p.z * 0.6);
+      c.globalAlpha = (s === 3 ? 0.92 : s === 1 ? 0.7 : 0.82) * (0.55 + p.z * 0.45);
       c.setTransform(D * Math.cos(p.rot), D * Math.sin(p.rot), -D * Math.sin(p.rot) * fl, D * Math.cos(p.rot) * fl, p.x * D, p.y * D);
       c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
       if (p.y > W.h + 30 || p.x < -60 || p.x > W.w + 60) spawn(p, false);
@@ -205,7 +206,7 @@ const FX = (() => {
     requestAnimationFrame(fpsTick);
   }
   function syncMotion() {
-    if (reduced()) { haltWeather(); return; }
+    if (thinNow()) { haltWeather(); return; }
     armFps();
     if (W.season >= 0 && W.cv) {
       fitParts();
