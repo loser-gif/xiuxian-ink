@@ -79,7 +79,10 @@ const Jianghu = (() => {
   const pillOf = s => REALMS[Math.min(4, s.realm)].pill;
   function baseVal(s, k) {
     const v = ITEM_VAL[k]; if (!v) return 0;
-    return Math.round(v.base * REALMS[v.rel ? s.realm : v.tier].lsScale);
+    const tier = v.rel ? s.realm : Math.min(4, v.tier || 0);
+    let scale = REALMS[tier].lsScale;
+    if (!v.rel && (v.tier || 0) < s.realm && v.base <= 20) scale = Math.max(scale, REALMS[s.realm].lsScale * 0.1);
+    return Math.round(v.base * scale);
   }
   function mktRefresh(s, force) {
     if (!force && s.months - s.mkt.t < K.mktEvery * T(s)) return false;
@@ -125,8 +128,10 @@ const Jianghu = (() => {
   const aucOpen = s => s.loc === 'yunyue' && s.auc && s.months >= s.auc.next && s.months <= s.auc.next + K.aucWin * T(s) && !s.auc.done;
   function aucNew(s) {
     const L = REALMS[s.realm].lsScale, lots = [];
+    const pill = pillOf(s), pv = ITEM_VAL[pill];
+    const pillV = pv ? Math.round(pv.base * REALMS[pv.rel ? s.realm : (pv.tier || 0)].lsScale * 1.05) : 160 * L;
     const pool = [
-      { k: pillOf(s), v: 160 * L, w: 3 },
+      { k: pill, v: pillV, w: 3 },
       { k: '聚气丹', v: (s.realm === 0 ? 20 : 36) * L, w: s.realm === 0 ? 4 : 0 },
       { k: '延寿果', v: 170 * L, w: 2 },
       { k: '天品残页', v: 260 * L, w: 2, frag: 1 },
@@ -204,7 +209,7 @@ const Jianghu = (() => {
   const hasHerbs = (s, id) => Object.entries(RECIPES[id].need).every(([h, n]) => (s.items[h] || 0) >= n);
   function danChance(s, id) {
     const r = RECIPES[id];
-    let bonus = (s.lgEls.includes('火') ? 0.05 : 0) + (s.npc && s.npc.su && s.npc.su.a >= 50 ? 0.04 : 0);
+    let bonus = (s.lgEls.includes('火') ? 0.05 : 0) + (Core.npcAlive(s, 'su') && s.npc.su.a >= 50 ? 0.04 : 0);
     if (s.path && s.path.daoji === 'dan' && typeof DAOJI !== 'undefined') bonus += DAOJI.dan.craft || 0;
     if (s.sect && s.sect.org && typeof ORGS !== 'undefined' && ORGS[s.sect.org] && ORGS[s.sect.org].craft) bonus += ORGS[s.sect.org].craft;
     return clamp(0.56 + 0.065 * (s.dan.lv - 1) - 0.1 * r.diff + 0.03 * (s.wx - 5) + bonus, 0.05, 0.95);

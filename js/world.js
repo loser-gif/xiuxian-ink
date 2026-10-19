@@ -76,8 +76,8 @@ Object.assign(PILLS, {
 });
 // 物价：base 为灵石，tier 为物品品阶（按 lsScale 折算）；rel 表示随买者境界折算
 const ITEM_VAL = {
-  '聚气丹': { base: 16, rel: 1 }, '回春丹': { base: 26, rel: 1 }, '清心丹': { base: 36, rel: 1 }, '延寿丹': { base: 110, rel: 1 }, '破障丹': { base: 90, rel: 1 }, '延寿果': { base: 160, rel: 1 },
-  '筑基丹': { base: 150, tier: 0 }, '凝元丹': { base: 150, tier: 1 }, '化婴丹': { base: 150, tier: 2 }, '问神丹': { base: 150, tier: 3 }, '渡厄符': { base: 150, tier: 4 },
+  '聚气丹': { base: 22, rel: 1 }, '回春丹': { base: 34, rel: 1 }, '清心丹': { base: 48, rel: 1 }, '延寿丹': { base: 140, rel: 1 }, '破障丹': { base: 120, rel: 1 }, '延寿果': { base: 180, rel: 1 },
+  '筑基丹': { base: 120, tier: 0 }, '凝元丹': { base: 140, tier: 1 }, '化婴丹': { base: 160, tier: 2 }, '问神丹': { base: 180, tier: 3 }, '渡厄符': { base: 200, tier: 4 },
   '青叶草': { base: 3, tier: 0 }, '宁神花': { base: 5, tier: 0 }, '赤阳花': { base: 6, tier: 0 }, '紫云芝': { base: 6, tier: 1 }, '龙血藤': { base: 7, tier: 2 },
   '血菩提': { base: 8, tier: 2 }, '雪莲': { base: 7, tier: 3 }, '九叶灵芝': { base: 9, tier: 4 },
   '妖丹': { base: 12, rel: 1 }, '火精石': { base: 14, tier: 2 }, '寒铁': { base: 10, tier: 1 }, '古剑残片': { base: 12, tier: 2 }, '鲛珠': { base: 12, tier: 3 }, '龙鳞': { base: 14, tier: 3 },
@@ -147,7 +147,7 @@ EVENTS.push(
           : { text: '一刀下去，满地石屑，里头空空如也。摊主摊手：“赌石嘛。”', fx: { ls: -p, lsRaw: true, xj: -1 } }; } },
       { label: '看别人开', sub: '', act: () => ({ text: '你看了一下午。有人一刀暴富，有人倾家荡产。你忽然觉得，修行也不过如此。', fx: { xj: 3 } }) },
     ]; } },
-  { id: 'su_recipe', title: '丹房传方', seal: '丹', w: 8, cond: s => s.npc && s.npc.su.met && s.npc.su.a >= 30 && s.dan && !(s.dan.rec.includes('huichun') && s.dan.rec.includes('qingxin')),
+  { id: 'su_recipe', title: '丹房传方', seal: '丹', w: 8, cond: s => Core.npcAlive(s, 'su') && s.npc.su.a >= 30 && s.dan && !(s.dan.rec.includes('huichun') && s.dan.rec.includes('qingxin')),
     text: () => '苏晚晴把一张泛黄的丹方推到你面前，纸角卷着，字迹娟秀。“这是我师父留下的，”她说，“你常往外跑，学会了，受了伤也不至于干熬着。”',
     choices: s => [
       { label: '郑重收下', sub: '习得丹方', act: s => { const id = s.dan.rec.includes('huichun') ? 'qingxin' : 'huichun';
@@ -325,9 +325,9 @@ EVENTS.push(
     cond: s => !s.flags.got_shen_gu && s.realm >= 1,
     text: s => '荒谷深处一座白骨堆成的祭坛，坛上插着一柄骨白短刃，无护手，刃口沁着薄红。周围静得可怕——连风都绕道走。你识海中那一点灵光隐隐发烫，似在提醒：此物有灵，亦有主。',
     choices: s => [
-      { label: '以心血温之，强行认主', sub: '得噬主骨刃 · 寿元与心境皆有损', act: s => {
+      { label: '以心血温之，强行认主', toll: { life: -6 }, sub: '得噬主骨刃', act: s => {
         s.flags.got_shen_gu = 1;
-        return { text: '你刺破指尖，血珠滴上刃身。骨刃嗡鸣一声，钻入你袖中。只是那一瞬，鬓角似又白了一寸，心头也空了一块。', fx: { gear: '噬主骨刃', life: -0.08, xj: -8, flag: 'got_shen_gu' } };
+        return { text: '你刺破指尖，血珠滴上刃身。骨刃嗡鸣一声，钻入你袖中。只是那一瞬，鬓角似又白了一寸，心头也空了一块。', fx: { gear: '噬主骨刃', life: -6, xj: -8, flag: 'got_shen_gu' } };
       }},
       { label: '以土掩之，不去招惹', sub: '心境略安', act: s => ({ text: '你拨开黄土，把祭坛埋了半截。走出谷口时，背后似有骨节轻响——你没有回头。', fx: { xj: 3, flag: 'got_shen_gu' } }) },
       { label: '试着拨开骨刃，看清铭文', sub: '或有机缘，或被反噬', act: s => {
@@ -340,9 +340,9 @@ EVENTS.push(
     cond: s => !s.flags.got_shen_deng && s.realm >= 2,
     text: s => '月下冰湖中央，一盏青荧小灯悬在水面上，照不见前路，只照见你来时的脚印。灯旁立一石碣，三字：「寿可赎」。',
     choices: s => [
-      { label: '以寿元点亮青灯', sub: '得忘川灯 · 折损寿元', act: s => {
+      { label: '以寿元点亮青灯', toll: { life: -8 }, sub: '得忘川灯', act: s => {
         s.flags.got_shen_deng = 1;
-        return { text: '你掐指一算，心知此灯要你一截阳寿。灯焰跳了一下，跃入识海。此后闭关，心魔竟远了些——只是铜镜里，你眉间多了一道浅纹。', fx: { gear: '忘川灯', life: -0.12, flag: 'got_shen_deng' } };
+        return { text: '你掐指一算，心知此灯要你一截阳寿。灯焰跳了一下，跃入识海。此后闭关，心魔竟远了些——只是铜镜里，你眉间多了一道浅纹。', fx: { gear: '忘川灯', life: -8, flag: 'got_shen_deng' } };
       }},
       { label: '只借灯火照路，不取灯', sub: '游历有获', act: s => ({ text: '你借着灯光辨清了湖心石路，捡到一枚鲛珠。青灯依旧悬着，像在等下一个愿意付钱的人。', fx: { item: { '鲛珠': 1 }, xj: 2, flag: 'got_shen_deng' } }) },
       { label: '吹灭它', sub: '未知', act: s => {
@@ -370,11 +370,11 @@ EVENTS.push(
     ]},
   { id: 'shen_pan', title: '子午铜盘', seal: '盘', w: 2.6, once: true, rm: [2, 4],
     cond: s => !s.flags.got_shen_pan && s.realm >= 2,
-    text: s => '天阶下一块青石上，搁着一枚铜盘。指针不指南北，只微微颤着，像在等一个人伸手。盘沿刻着小字：「先付五年，再问前路。」',
+    text: s => `天阶下一块青石上，搁着一枚铜盘。指针不指南北，只微微颤着，像在等一个人伸手。盘沿刻着小字：「先付${cn(Core.scaleLife(s, 5))}年，再问前路。」`,
     choices: s => [
-      { label: '按盘心，付寿取盘', sub: '得子午罗盘 · 折寿五年', act: s => {
+      { label: '按盘心，付寿取盘', toll: { life: -5 }, sub: '得子午罗盘', act: s => {
         s.flags.got_shen_pan = 1;
-        return { text: '你掌心贴上盘心，一股凉意抽走。铜盘跃入袖中，指针忽然稳了——正指你尚未抵达的那一境。', fx: { gear: '子午罗盘', life: -0.1, flag: 'got_shen_pan' } };
+        return { text: '你掌心贴上盘心，一股凉意抽走。铜盘跃入袖中，指针忽然稳了——正指你尚未抵达的那一境。', fx: { gear: '子午罗盘', life: -5, flag: 'got_shen_pan' } };
       }},
       { label: '只借指针定向，不取盘', sub: '游历有获', act: s => ({ text: '你顺着指针走了一炷香，在乱石中捡到一枚古玉。铜盘仍在石上，像根本没被人碰过。', fx: { ls: 55, xj: 2, flag: 'got_shen_pan' } }) },
       { label: '翻转铜盘，看背面铭文', sub: '或悟或伤', act: s => {
@@ -461,9 +461,9 @@ EVENTS.push(
     cond: s => !s.flags.got_shen_yan && s.realm >= 2,
     text: s => '古修书房塌了一角，案上一方深墨石砚，池中似有未干的夜。砚侧小字：「研墨者，先研己。」',
     choices: s => [
-      { label: '以寿元养砚，收作佩物', sub: '得沉渊砚 · 折寿', act: s => {
+      { label: '以寿元养砚，收作佩物', toll: { life: -6 }, sub: '得沉渊砚', act: s => {
         s.flags.got_shen_yan = 1;
-        return { text: '你按着砚池，一截阳寿沉下去。砚光一敛，跃入袖中。此后闭关，心魔竟远了半寸。', fx: { gear: '沉渊砚', life: -0.1, flag: 'got_shen_yan' } };
+        return { text: '你按着砚池，一截阳寿沉下去。砚光一敛，跃入袖中。此后闭关，心魔竟远了半寸。', fx: { gear: '沉渊砚', life: -6, flag: 'got_shen_yan' } };
       }},
       { label: '只借砚池研心，不取砚', sub: '顿悟', act: s => ({ text: '你对着砚池坐了一夜，杂念如墨沉底。起身时砚仍在，你心里亮了一寸。', fx: { xj: 6, gfXp: 3, flag: 'got_shen_yan' } }) },
       { label: '倒掉池中那一汪「夜」', sub: '未知', act: s => {

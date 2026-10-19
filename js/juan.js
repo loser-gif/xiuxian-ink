@@ -354,15 +354,34 @@ const Juan = (() => {
       { id: 'bond_jie', title: '劫中人', seal: '劫', w: 5, once: true, rm: [3, 4], portrait: 'su',
         cond: s => !!(s.karma && s.karma.mate) && !(s.bond && s.bond.lost) && (s.realm | 0) >= 3,
         text: s => `${mateName(s) || '道侣'}站在劫云边上，衣带被风抽直。“我可以陪你进去，”声音很稳，“也可以在外面等。你选。外面等的人，不一定等得到。”`,
-        choices: s => [
-          { label: '让其在外守着', act: s2 => { if (s2.npc && s2.karma.mate && s2.npc[s2.karma.mate]) s2.npc[s2.karma.mate].a = Math.min(100, s2.npc[s2.karma.mate].a + 6); return { text: '你说：“等我。”这三个字比任何法诀都难说。劫后你出来时，人还在，伞还在，只是人都瘦了一圈。', fx: { xj: 4, btBuff: 0.03 } }; } },
-          { label: '携手入劫', sub: '或有失', act: s2 => {
-            if (Math.random() < 0.55) return { text: '你们一起走进那片白。出来时手还牵着，牵得很紧，紧得指节发白。这一次，天没有把人拿走。', fx: { xj: 8, btBuff: 0.04, inj: 1 } };
+        choices: s => {
+          const loseMate = s2 => {
             if (s2.bond) s2.bond.lost = 1;
-            return { text: `${mateName(s2) || '那人'}在最后一道光里松了手。不是放弃，是把生路推给你。此后杯还在，人不再来倒茶。`, fx: { xj: -12, inj: 1 } };
-          } },
-          { label: '自己先走', act: s2 => { if (s2.bond) s2.bond.lost = 1; return { text: '你先踏了进去。回头时，那个人的嘴型像是“去”。你活着出来了。活着的代价，是案上那只杯从此只是杯子。', fx: { xj: -14, xw: 0.05 } }; } },
-        ] },
+            const id = s2.karma && s2.karma.mate;
+            if (typeof Core !== 'undefined' && Core.killNpc) Core.killNpc(s2, id);
+            else if (id && s2.npc && s2.npc[id]) s2.npc[id].dead = 1;
+          };
+          const rows = [
+            { label: '让其在外守着', act: s2 => { if (s2.npc && s2.karma.mate && s2.npc[s2.karma.mate] && !s2.npc[s2.karma.mate].dead) s2.npc[s2.karma.mate].a = Math.min(100, s2.npc[s2.karma.mate].a + 6); return { text: '你说：“等我。”这三个字比任何法诀都难说。劫后你出来时，人还在，伞还在，只是人都瘦了一圈。', fx: { xj: 4, btBuff: 0.03 } }; } },
+          ];
+          const token = typeof Core !== 'undefined' && Core.saveMateItem ? Core.saveMateItem(s) : null;
+          if (token) rows.push({
+            label: `以${token}替其挡劫`, sub: '耗去此物 · 人可留',
+            act: s2 => {
+              if (Core.spendSaveItem) Core.spendSaveItem(s2, token);
+              return { text: `你把${token}按在${mateName(s2) || '那人'}心口。劫光吞下去的是那件东西，不是人。出来时你们都还在，只是那物已成灰。`, fx: { xj: 6, btBuff: 0.03 }, tags: [{ t: `耗${token}`, c: 'down' }, { t: '道侣未失', c: 'gold' }] };
+            },
+          });
+          rows.push(
+            { label: '携手入劫', sub: '或有失', act: s2 => {
+              if (Math.random() < 0.55) return { text: '你们一起走进那片白。出来时手还牵着，牵得很紧，紧得指节发白。这一次，天没有把人拿走。', fx: { xj: 8, btBuff: 0.04, inj: 1 } };
+              loseMate(s2);
+              return { text: `${mateName(s2) || '那人'}在最后一道光里松了手。不是放弃，是把生路推给你。此后杯还在，人不再来倒茶。`, fx: { xj: -12, inj: 1 } };
+            } },
+            { label: '自己先走', act: s2 => { loseMate(s2); return { text: '你先踏了进去。回头时，那个人的嘴型像是“去”。你活着出来了。活着的代价，是案上那只杯从此只是杯子。', fx: { xj: -14, xw: 0.05 } }; } },
+          );
+          return rows;
+        } },
 
       { id: 'bond_fate', title: '徒来', seal: '徒', w: 7, once: false, rm: [1, 4], portrait: 'tu',
         cond: s => !!pendingDisc(s),

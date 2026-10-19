@@ -132,7 +132,7 @@ const Core = (() => {
     if (g.el === '五行') return '五行相生';
     return m >= 1.15 ? '与灵根相合' : m >= 1 ? '与灵根无碍' : m >= 0.8 ? '与灵根相悖' : '灵根难驭';
   }
-  const GF_SELL = [18, 36, 72, 140];
+  const GF_SELL = [42, 88, 170, 300];
   const manualKey = id => '卷:' + id;
   function manualId(k) {
     if (typeof k !== 'string' || k.indexOf('卷:') !== 0) return null;
@@ -363,7 +363,14 @@ const Core = (() => {
   function addXw(s, amount, tags) {
     amount = Math.round(amount);
     if (amount < 0) { s.xw = Math.max(0, s.xw + amount); tags && tags.push({ t: `修为 −${fmtNum(-amount)}`, c: 'down' }); return []; }
-    if (bottleneck(s)) { tags && tags.push({ t: '修为已满', c: '' }); return []; }
+    if (bottleneck(s)) {
+      const frac = amount / Math.max(1, req(s));
+      const add = Math.min(0.03, Math.max(0.008, frac * 0.012));
+      s.btBuff = Math.min(0.14, (s.btBuff || 0) + add);
+      s.xwBank = (s.xwBank || 0) + Math.round(amount * 0.2);
+      tags && tags.push({ t: '化为破境积蓄', c: 'up' });
+      return [];
+    }
     tags && tags.push({ t: `修为 +${fmtNum(amount)}`, c: 'up' });
     s.xw += amount;
     const ups = [];
@@ -503,11 +510,59 @@ const Core = (() => {
     if (res.fx && res.fx.xw > 0 && q) res.fx = { ...res.fx, xw: res.fx.xw * (1 + q) };
     return res;
   }
+  function scaleLife(s, base) { return Math.round(base * (LIFE_SCALE[s.realm] || 1)); }
+  function scaleLs(s, base) { return Math.round(base * ((REALMS[s.realm] && REALMS[s.realm].lsScale) || 1)); }
+  function tollText(s, spec) {
+    if (!s || !spec) return '';
+    const bits = [];
+    if (spec.life) {
+      const v = spec.lifeRaw ? Math.round(spec.life) : scaleLife(s, spec.life);
+      if (v) bits.push(`寿元${v < 0 ? '减' : '增'}${cn(Math.abs(v))}年`);
+    }
+    if (spec.ls) {
+      const v = spec.lsRaw ? Math.round(spec.ls) : scaleLs(s, spec.ls);
+      if (v) bits.push(`灵石${cn(Math.abs(v))}`);
+    }
+    if (spec.xw) bits.push('修为有损');
+    return bits.join(' · ');
+  }
+  const SAVE_MATE_ITEMS = ['替劫符', '护脉丹', '破障丹', '延寿丹', '清心丹', '渡厄符', '兵解玉符', '忘川灯', '碧水尺'];
+  function npcAlive(s, id) {
+    if (!s || !id || !s.npc || !s.npc[id] || !s.npc[id].met || s.npc[id].dead) return false;
+    if (s.bond && s.bond.lost && s.karma && s.karma.mate === id) return false;
+    return true;
+  }
+  function killNpc(s, id) {
+    if (!s || !id) return;
+    if (s.npc && s.npc[id]) s.npc[id].dead = 1;
+    if (s.karma && s.karma.mate === id) {
+      s.bond = s.bond || {};
+      s.bond.lost = 1;
+    }
+  }
+  function saveMateItem(s) {
+    if (!s) return null;
+    const items = s.items || {};
+    for (const k of SAVE_MATE_ITEMS) if (items[k] > 0) return k;
+    const w = s.eq && s.eq.weapon;
+    if (w && SAVE_MATE_ITEMS.includes(w)) return w;
+    return null;
+  }
+  function spendSaveItem(s, k) {
+    if (!s || !k) return false;
+    if (s.items && s.items[k] > 0) {
+      s.items[k]--;
+      if (s.items[k] <= 0) delete s.items[k];
+      return true;
+    }
+    if (s.eq && s.eq.weapon === k) { s.eq.weapon = null; return true; }
+    return false;
+  }
   function applyFx(s, fx, emit) {
     const tags = []; let ups = [];
     if (fx.xw) ups = addXw(s, fx.xw * req(s), tags) || [];
     if (fx.ls) { const v = fx.lsRaw ? fx.ls : Math.round(fx.ls * REALMS[s.realm].lsScale); const before = s.ls; s.ls = Math.max(0, s.ls + v); const d = s.ls - before; if (d) tags.push({ t: `灵石 ${d > 0 ? '+' : '−'}${Math.abs(d)}`, c: d > 0 ? 'up' : 'down' }); }
-    if (fx.life) { const v = Math.round(fx.life * LIFE_SCALE[s.realm]); s.lifeBonus += v; tags.push({ t: `寿元 ${v > 0 ? '+' : '−'}${Math.abs(v)}年`, c: v > 0 ? 'up' : 'down' }); }
+    if (fx.life) { const v = fx.lifeRaw ? Math.round(fx.life) : scaleLife(s, fx.life); s.lifeBonus += v; if (v) tags.push({ t: `寿元 ${v > 0 ? '+' : '−'}${Math.abs(v)}年`, c: v > 0 ? 'up' : 'down' }); }
     if (fx.xj) { const b = s.xj; s.xj = clamp(s.xj + fx.xj, 0, 100); const d = s.xj - b; if (d) tags.push({ t: `心境 ${d > 0 ? '+' : '−'}${Math.abs(d)}`, c: d > 0 ? 'up' : 'down' }); }
     if (fx.wx) { const b = s.wx; s.wx = clamp(s.wx + fx.wx, 1, 10); if (s.wx !== b) tags.push({ t: `悟性 ${fx.wx > 0 ? '+' : '−'}${Math.abs(s.wx - b)}`, c: fx.wx > 0 ? 'up' : 'down' }); }
     if (fx.luck) s.luck = clamp(s.luck + fx.luck, -5, 10);
@@ -702,7 +757,9 @@ const Core = (() => {
         sync(s);
         return { ok, from, text: TEXT.btSuccess[from], needPath: need, pendingAscend: true };
       }
-      s.realm++; s.stage = 0; s.xw = 0; s.fails = 0; s.inj = 0; s.bnLogged = false; s.xj = clamp(s.xj + 5 - btXj, 0, 100);
+      s.realm++; s.stage = 0; s.fails = 0; s.inj = 0; s.bnLogged = false; s.xj = clamp(s.xj + 5 - btXj, 0, 100);
+      const banked = s.xwBank || 0; s.xwBank = 0; s.xw = 0;
+      if (banked > 0) s.xw = Math.min(Math.round(req(s) * 0.08), banked);
       sync(s);
       const text = TEXT.btSuccess[from] + `寿元增至${cn(s.lifespan)}载。` + (btXj ? TEXT.wangqingCost : '');
       sectReward(s, emit);
@@ -952,6 +1009,8 @@ const Core = (() => {
     if (!s.life || typeof s.life !== 'object') s.life = typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 };
     if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
+    if (typeof s.xwBank !== 'number') s.xwBank = 0;
+    if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;
     // 功法层数：旧档缺层数时作第一层，已有层数保留
     s.gfs = s.gfs || {};
     for (const id in s.gfs) {
@@ -1186,10 +1245,10 @@ const Core = (() => {
   function npcHelp(s) {
     const n = s.npc || {}, who = []; let bt = 0;
     if (s.sect && s.sect.master && n.shifu && n.shifu.a >= 50) { bt += 0.05; who.push('shifu'); }
-    if (n.su && n.su.met && n.su.a >= 50) { bt += 0.03; who.push('su'); }
-    if (n.shi && n.shi.met && n.shi.a >= 60) { bt += 0.02; who.push('shi'); }
-    if (n.lu && n.lu.met && n.lu.a >= 70) { bt += 0.02; who.push('lu'); }
-    if (s.karma && s.karma.mate === 'su' && n.su && n.su.met) { bt += 0.04; if (!who.includes('su')) who.push('su'); }
+    if (npcAlive(s, 'su') && n.su.a >= 50) { bt += 0.03; who.push('su'); }
+    if (npcAlive(s, 'shi') && n.shi.a >= 60) { bt += 0.02; who.push('shi'); }
+    if (npcAlive(s, 'lu') && n.lu.a >= 70) { bt += 0.02; who.push('lu'); }
+    if (s.karma && s.karma.mate === 'su' && npcAlive(s, 'su')) { bt += 0.04; if (!who.includes('su')) who.push('su'); }
     return { bt, who };
   }
   function canPromote(s) {
@@ -1227,11 +1286,11 @@ const Core = (() => {
       if (sc.rank >= 2 && Math.random() < 0.25) { s.items['聚气丹'] = (s.items['聚气丹'] || 0) + 1; tags.push({ t: '得聚气丹', c: 'up' }); }
       if (Math.random() < K.stipendPill[sc.rank]) { const pl = REALMS[s.realm].pill; s.items[pl] = (s.items[pl] || 0) + 1; tags.push({ t: `得${pl}`, c: 'up' }); }
       emit && emit({ text: `${o.short || '门中'}按例发下${o.ranks[sc.rank]}的俸禄。`, tags, cls: 'sys' });
-      if (s.npc.su && s.npc.su.met && s.npc.su.a >= 40 && Math.random() < 0.25) {
+      if (npcAlive(s, 'su') && s.npc.su.a >= 40 && Math.random() < 0.25) {
         const k = s.inj > 0 ? '回春丹' : '聚气丹'; s.items[k] = (s.items[k] || 0) + 1;
         emit && emit({ text: `苏晚晴托人捎来一只小瓷瓶，瓶底压着一张字条：“${s.inj > 0 ? '伤好之前，不许逞强。' : '修行莫太急。'}”`, tags: [{ t: `得${k}`, c: 'up' }], cls: 'sys' });
       }
-      if (s.npc.dx_lian && s.npc.dx_lian.met && s.npc.dx_lian.a >= 40 && Math.random() < 0.2) {
+      if (npcAlive(s, 'dx_lian') && s.npc.dx_lian.a >= 40 && Math.random() < 0.2) {
         s.items['回春丹'] = (s.items['回春丹'] || 0) + 1;
         emit && emit({ text: '练清婉让药童送来一枚回春丹，纸条写：「别把命炼进炉里。」', tags: [{ t: '得回春丹', c: 'up' }], cls: 'sys' });
       }
@@ -1251,9 +1310,14 @@ const Core = (() => {
       && (!m.rm || (s.realm >= m.rm[0] && s.realm <= m.rm[1]))
       && (!m.orgs || (oid && m.orgs.includes(oid))));
   }
+  function missionSpan(s, seasons) {
+    const stretch = 1 + Math.min(2, s.realm | 0) * 0.2;
+    return Math.max(1, Math.round((seasons || 1) * 3 * stretch));
+  }
+  function missionEvery(s) { return 12 * (2 + Math.min(2, s.realm | 0)); }
   function ensureMissions(s) {
     const sc = s.sect; if (!sc.org) return [];
-    const every = 12 * REALMS[s.realm].T * K.mYears;
+    const every = missionEvery(s);
     if (sc.mAt < 0 || s.months - sc.mAt >= every || !sc.missions.length || sc.missions.some(x => !missionPool(s).find(m => m.id === x.id))) {
       sc.mAt = s.months;
       const pool = missionPool(s).slice(), n = sc.rank >= 3 ? 4 : 3, out = [];
@@ -1278,7 +1342,7 @@ const Core = (() => {
     if (!m) return null;
     const lsMul = o ? o.lsMul : 1;
     return { m, uid: mi.uid, name: (o && o.id === 'sx' && typeof SX_MISSION_NAME !== 'undefined' && SX_MISSION_NAME[m.id]) ? SX_MISSION_NAME[m.id] : m.name, brief: fnv(m.brief, s),
-      months: m.m * REALMS[s.realm].T, risk: missionRisk(s, m), riskWord: riskWord(missionRisk(s, m)),
+      months: missionSpan(s, m.m), risk: missionRisk(s, m), riskWord: riskWord(missionRisk(s, m)),
       gx: Math.round(m.gx * GX_SCALE[s.realm]), ls: Math.round(m.ls * REALMS[s.realm].lsScale * lsMul) };
   }
   function missionEvent(s, uid) {
@@ -1287,7 +1351,10 @@ const Core = (() => {
     const m = info.m;
     return { id: 'm_' + m.id, title: info.name, seal: m.seal, mission: true, text: () => m.text(s),
       choices: () => m.choices(s).map(c => {
-        const o = { label: c.label, sub: (c.sub ? c.sub + ' · ' : '') + riskWord(missionRisk(s, m, c)), act: s2 => missionAct(s2, uid, m, c) };
+        const sub0 = typeof c.sub === 'function' ? c.sub(s) : (c.sub || '');
+      const toll = c.toll ? tollText(s, typeof c.toll === 'function' ? c.toll(s) : c.toll) : '';
+      const head = [sub0, toll].filter(Boolean).join(' · ');
+      const o = { label: c.label, sub: (head ? head + ' · ' : '') + riskWord(missionRisk(s, m, c)), act: s2 => missionAct(s2, uid, m, c) };
         if ((c.fight || (m.fight && !c.time)) && s.evFoe) o.odds = 1 - missionRisk(s, m, c);
         return o;
       }) };
@@ -1295,17 +1362,19 @@ const Core = (() => {
   function missionAct(s, uid, m, c) {
     s.sect.missions = s.sect.missions.filter(x => x.uid !== uid);
     s.sect.done++; s.acts++;
-    const T = REALMS[s.realm].T, ok = Math.random() >= missionRisk(s, m, c), o = org(s);
-    const fx = { time: (m.m + (c.time || 0)) * T };
+    const ok = Math.random() >= missionRisk(s, m, c), o = org(s);
+    const fee = c.fee ? scaleLs(s, c.fee) : 0;
+    const fx = { time: missionSpan(s, m.m + (c.time || 0)) };
+    if (fee) { fx.ls = -fee; fx.lsRaw = true; }
     let text;
     if (ok) {
       fx.gx = m.gx * (c.gxm || 1); fx.xw = K.mXw;
-      fx.ls = Math.round(m.ls * (c.lsm || 1) * (o ? o.lsMul : 1) * REALMS[s.realm].lsScale); fx.lsRaw = true;
+      fx.ls = Math.round(m.ls * (c.lsm || 1) * (o ? o.lsMul : 1) * REALMS[s.realm].lsScale) - fee; fx.lsRaw = true;
       if (c.item) fx.item = fnv(c.item, s);
       for (const k of ['xj', 'wx', 'gfXp', 'npc']) if (c[k]) fx[k] = c[k];
       if (c.xw) fx.xw += c.xw;
       text = fnv(c.ok, s);
-      if (s.npc.wen && s.npc.wen.met && s.npc.wen.a <= -20 && Math.random() < 0.3) { fx.gx /= 2; text += '只是功劳簿上，这桩差事的一半，不知怎的记在了温庭玉名下。'; }
+      if (npcAlive(s, 'wen') && s.npc.wen.a <= -20 && Math.random() < 0.3) { fx.gx /= 2; text += '只是功劳簿上，这桩差事的一半，不知怎的记在了温庭玉名下。'; }
     } else {
       const f = c.ffx || {};
       fx.gx = m.gx * (f.gx != null ? f.gx : 0.2);
@@ -1360,7 +1429,7 @@ const Core = (() => {
     return '与你相仿';
   }
   function buildDabi(s) {
-    const metIds = ['shi', 'su', 'wen', 'lu'].filter(id => s.npc[id] && s.npc[id].met && s.sect.org === 'qm');
+    const metIds = ['shi', 'su', 'wen', 'lu'].filter(id => npcAlive(s, id) && s.sect.org === 'qm');
     const gen = (q) => ({ name: dabiTag(s) + ' · ' + pick(NAMES_XING) + pick(NAMES_MING), npc: null, style: pick(['gang', 'wen', 'gui']), rel: 0.7, q });
     const fromNpc = (id, q) => {
       const n = NPCS[id]; let qq = q;
@@ -1446,6 +1515,7 @@ const Core = (() => {
   return { K, LIFE_SCALE, clamp, pick, gf, gt, sync, req, unit, isLast, bottleneck, realmStr, timeLabel, fmtNum,
     gfMatch, gfMatchWord, gfLv, gfSpeed, layerMul, learn, practice, switchCost, switchGf, setAux, clearAux,
     manualId, manualOffer, studyManual, sellManual, manualPrice,
+    scaleLife, scaleLs, tollText, npcAlive, killNpc, saveMateItem, spendSaveItem, missionEvery,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,

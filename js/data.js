@@ -138,6 +138,46 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const chance = p => Math.random() < p;
 const anyOf = a => a[Math.floor(Math.random() * a.length)];
 
+function foxGift(s) {
+  const capped = Core.bottleneck(s);
+  const roll = (pool) => {
+    let tot = pool.reduce((a, x) => a + x.w, 0), x = Math.random() * tot;
+    for (const it of pool) if ((x -= it.w) < 0) return it.go();
+    return pool[0].go();
+  };
+  const gift = roll([
+    { w: capped ? 2 : 30, go: () => ({ text: '白狐伸出纤指，在你眉心一点。刹那间，无数玄奥法诀涌入识海，修为如决堤之水。待你回过神来，集市已不见踪影，鬓边却添了几根白发。', fx: { xw: 2.2 } }) },
+    { w: 16, go: () => {
+      const ids = Object.keys(GONGFA).filter(id => GONGFA[id] && GONGFA[id].grade <= Math.min(2, s.realm) && !GONGFA[id].mo && !s.gfs[id]);
+      if (!ids.length) return { text: '白狐笑道：「这本你早就会了。」她在你识海里点了一下，旧日功法忽然通透了几分。鬓边还是白了。', fx: { gfXp: 6 } };
+      const id = ids[Math.floor(Math.random() * ids.length)];
+      return { text: `白狐从袖中抽出一卷薄册，封面只有三个字：《${GONGFA[id].name}》。「拿去。寿元的价，不便宜。」集市散时，你鬓边已有白发。`, fx: { gf: id } };
+    } },
+    { w: 14, go: () => {
+      if (s.fabao && (s.fabao.stage | 0) < 3) {
+        s.fabao.stage = (s.fabao.stage | 0) + 1;
+        return { text: '白狐以指叩你识海中的本命之物。那物轻鸣一声，像被月色擦亮了一层。她收了寿元，留下这一声鸣。', fx: {}, tags: [{ t: '本命精进', c: 'gold' }] };
+      }
+      if (s.fabao) return { text: '本命之物已亮到她也挑不出刺。她改赠你一截温热的残片：「拿去镶上。」寿元仍按约收了。', fx: { item: { '古剑残片': 1 } } };
+      const gear = ['精铁短剑', '青钢刃', '碧水尺'][Math.min(2, s.realm | 0)];
+      return { text: `白狐把一柄${gear}抛过来。「不是什么了不得的东西。可它认得你。」你接住时，鬓边凉了一凉。`, fx: { gear } };
+    } },
+    { w: 14, go: () => {
+      if ((s.wx | 0) >= 10) return { text: '白狐看了看你的眼睛：「这双眼睛已经够亮了。」她改在你灵根上拂了一拂，浊气散了一层。破境时，或可少滞一息。', fx: { btBuff: 0.04 } };
+      return { text: '白狐以尾尖点你眉心。不是法诀，是把一层蒙在悟性上的雾揭掉。你看石头，忽然看出纹路。雾散的代价，是几根白发。', fx: { wx: 1 } };
+    } },
+    { w: 14, go: () => {
+      const pill = REALMS[s.realm].pill;
+      if (capped || (s.items[pill] || 0) >= 2) return { text: '白狐没有给你丹药。她说：「丹你已不缺。我给你的是那临门一脚的势。」话落，集市散了，你鬓边添了白。', fx: { btBuff: 0.05 } };
+      return { text: `白狐托出一只小小的玉瓶。瓶中是一枚${pill}，丹香压过了满街的灯油。「寿元我收了。这枚，你留着过关。」`, fx: { item: { [pill]: 1 } } };
+    } },
+    { w: 6, go: () => ({ text: (s.life && s.life.goal) ? '白狐忽然正经起来：「你求的那件事，路上会有人拦。拦你的不一定是敌人。」她在你掌心画了一道印，像一条尚未走完的路。印热的时候，寿元已经短了一截。' : '白狐说：「有的人修了一辈子，才知道自己要什么。」她留下一句没头没尾的话，像一扇以后才会打开的门。门未开，白发先来了。', fx: { btBuff: 0.03, flag: 'fox_dao' } }) },
+    { w: 8, go: () => ({ text: '白狐没有灌你法诀。她讲了一个很老的故事，讲到一半自己也忘了后半。故事不能把寿元还你，可你把那半截记住了。夜风里，心境竟比进集市时稳。', fx: { xj: 8, luck: 1 } }) },
+  ]);
+  gift.fx = gift.fx || {};
+  gift.fx.life = (gift.fx.life || 0) - 10;
+  return gift;
+}
 const EVENTS = [
   {
     id: 'cave', title: '崖下石门', w: 10,
@@ -154,7 +194,13 @@ const EVENTS = [
     text: s => `山坳里藏着一处散修坊市，青布幌子在雾里招摇。摊主们或蒙面、或垂帘，叫卖声压得极低。你摸了摸袖中，尚有灵石${cn(s.ls)}枚。`,
     choices: s => {
       const R = REALMS[s.realm];
-      const p1 = 12 * R.lsScale, p2 = 18 * R.lsScale, p3 = 45 * R.lsScale;
+      const ask = (k, off) => {
+        const v = typeof ITEM_VAL !== 'undefined' ? ITEM_VAL[k] : null;
+        if (!v) return Math.round(12 * R.lsScale);
+        const tier = v.rel ? s.realm : (v.tier || 0);
+        return Math.max(1, Math.round(v.base * REALMS[Math.min(4, tier)].lsScale * off));
+      };
+      const p1 = ask('聚气丹', 0.85), p2 = ask('回春丹', 0.85), p3 = ask(R.pill, 0.75);
       return [
         { label: `购聚气丹`, sub: `灵石${cn(p1)}`, disabled: s.ls < p1, act: s => ({ text: '摊主是个独眼老妪，接过灵石，从陶罐里倒出一粒丹药，丹香清冽。', fx: { ls: -p1, lsRaw: true, item: { '聚气丹': 1 } } }) },
         { label: `购回春丹`, sub: `灵石${cn(p2)}`, disabled: s.ls < p2, act: s => ({ text: '药铺掌柜慢条斯理地包好丹药，系上一道红绳：“伤筋动骨，莫要逞强。”', fx: { ls: -p2, lsRaw: true, item: { '回春丹': 1 } } }) },
@@ -204,7 +250,7 @@ const EVENTS = [
         lose: { text: '大蟒尾鞭如铁，你被抽落山崖，幸被一株老松挂住，才捡回一条性命。', fx: { inj: 4, life: -4 } },
         crush: '你只一拂袖，那大蟒便如一截枯藤般被甩下绝壁。你摘下朱果，连衣角都没有乱。',
         dominant: '大蟒扑来，你并指一点，它便僵在半空，再不敢动。你从容摘下朱果，放它回了巢穴。' }) },
-      { label: '以灵石为饵，调虎离山', sub: '耗灵石', disabled: s.ls < 15 * REALMS[s.realm].lsScale, act: s => ({ text: '你将灵石抛向远处溪涧，大蟒循着灵气游去。你趁机攀上绝壁，摘得一枚朱果，悄然退走。', fx: { ls: -15 * REALMS[s.realm].lsScale, lsRaw: true, item: { '延寿果': 1 } } }) },
+      { label: '以灵石为饵，调虎离山', toll: { ls: -15 }, disabled: s.ls < Core.scaleLs(s, 15), act: s => ({ text: '你将灵石抛向远处溪涧，大蟒循着灵气游去。你趁机攀上绝壁，摘得一枚朱果，悄然退走。', fx: { ls: -15, item: { '延寿果': 1 } } }) },
       { label: '悄然退去', sub: '', act: s => ({ text: '天材地宝，有缘者得之。你屏住呼吸，退出了蟒的领地。', fx: {} }) },
     ],
   },
@@ -252,11 +298,11 @@ const EVENTS = [
     ],
   },
   {
-    id: 'fox', title: '狐仙夜市', w: 5, cond: s => s.lifespan - s.age > 15,
-    text: () => '子夜，荒郊忽现一座灯火通明的集市。摊主皆戴狐面，笑语盈盈。一只白狐面具后的眼睛望着你：“客官，以十年寿元，换一桩天大的机缘，换不换？”',
+    id: 'fox', title: '狐仙夜市', w: 5, cond: s => s.lifespan - s.age > Core.scaleLife(s, 12),
+    text: s => `子夜，荒郊忽现一座灯火通明的集市。摊主皆戴狐面，笑语盈盈。一只白狐面具后的眼睛望着你：「客官，以${cn(Core.scaleLife(s, 10))}年寿元，换一桩说不清的机缘，换不换？」`,
     choices: s => [
-      { label: '换', sub: '寿元减十年', act: s => ({ text: '白狐伸出纤指，在你眉心一点。刹那间，无数玄奥法诀涌入识海，修为如决堤之水。待你回过神来，集市已不见踪影，鬓边却添了几根白发。', fx: { life: -10, xw: 2.2 } }) },
-      { label: '不换', sub: '', act: s => ({ text: '“可惜，可惜。”狐面人笑着，与满街灯火一同散作萤光。你独自站在荒草之中，夜风很凉。', fx: { xj: 4 } }) },
+      { label: '换', toll: { life: -10 }, act: s => foxGift(s) },
+      { label: '不换', sub: '', act: s => ({ text: '「可惜，可惜。」狐面人笑着，与满街灯火一同散作萤光。你独自站在荒草之中，夜风很凉。', fx: { xj: 4 } }) },
     ],
   },
   {

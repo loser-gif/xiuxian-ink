@@ -2783,10 +2783,19 @@ html[data-theme="night"] .fabao-scroll,
 html[data-theme="night"] .splash-paper,
 html[data-theme="night"] #sw-refresh,
 html[data-theme="night"] .slot-card,
-html[data-theme="night"] .map{
+html[data-theme="night"] .map,
+html[data-theme="night"] .mj,
+html[data-theme="night"] .dan{
   --ink:#1c1814;--ink2:#3a332b;--ink3:#6e6457;--ink4:#8d8274;--zhu:#9d342e;--qing:#3d5560;--paper-hi:#f7f1e3;
   color:var(--ink);
 }
+html[data-theme="night"] .mj .choice,
+html[data-theme="night"] .mj .mj-text,
+html[data-theme="night"] .mj .mj-nt,
+html[data-theme="night"] .dan .dan-name,
+html[data-theme="night"] .dan .dan-info{color:var(--ink)}
+html[data-motion="lite"] .mj .ink-ch,
+html[data-fx="thin"] .mj .ink-ch{opacity:1}
 html[data-theme="night"] .entry.warn .entry-text{color:#8a3028}
 html[data-theme="night"] .ink-cadence .ink-ch{color:#4a433a}
 html[data-theme="night"] #splash{background:#14110e}

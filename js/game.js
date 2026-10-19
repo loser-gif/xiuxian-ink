@@ -1183,13 +1183,17 @@ function portraitHtml(ev) {
 }
 function evTitle(ev) { return ev && typeof ev.title === 'function' ? ev.title(S) : (ev && ev.title) || ''; }
 function choiceSub(c, s) {
-  let sub = typeof c.sub === 'function' ? c.sub(s) : (c.sub || '');
   if (c.odds != null && s && s.evFoe && typeof Core !== 'undefined' && Core.oddsWord) {
     const base = typeof c.odds === 'function' ? c.odds(s) : c.odds;
     const w = Core.oddsWord(s, base);
     if (w) return w;
   }
-  return sub;
+  if (c.toll && s && typeof Core !== 'undefined' && Core.tollText) {
+    const spec = typeof c.toll === 'function' ? c.toll(s) : c.toll;
+    const t = Core.tollText(s, spec);
+    if (t) return t;
+  }
+  return typeof c.sub === 'function' ? c.sub(s) : (c.sub || '');
 }
 function mountFoeSlip(after) {
   if (!after || !after.parentNode) return;
@@ -1692,7 +1696,7 @@ function sectHome() {
 function sectTasks() {
   const w = document.createElement('div'); w.className = 'tasks';
   const ms = Core.ensureMissions(S); save();
-  if (!ms.length) { w.innerHTML = '<div class="empty">执事堂案上暂无新令<br><small>约三年一换，不妨先闭关或出山</small></div>'; return w; }
+  if (!ms.length) { w.innerHTML = '<div class="empty">执事堂案上暂无新令<br><small>榜一季一换，不妨先闭关或出山</small></div>'; return w; }
   ms.forEach(mi => {
     const info = Core.missionInfo(S, mi);
     const c = document.createElement('div'); c.className = 'task r' + Math.min(3, Math.floor(info.risk / 0.12));
@@ -1703,7 +1707,7 @@ function sectTasks() {
     c.querySelector('button').onclick = async () => { await closeSheet(); const ev = Core.missionEvent(S, mi.uid); if (ev) openEvent(ev); };
     w.appendChild(c);
   });
-  const every = 12 * R().T * K.mYears, left = Math.max(1, Math.ceil((S.sect.mAt + every - S.months) / 12));
+  const every = Core.missionEvery(S), left = Math.max(1, Math.ceil((S.sect.mAt + every - S.months) / 12));
   const f = document.createElement('div'); f.className = 'sect-note center'; f.textContent = `执事堂的告示，约${cn(left)}年一换`; w.appendChild(f);
   return w;
 }
@@ -2809,7 +2813,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=51').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=52').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();

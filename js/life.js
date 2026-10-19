@@ -27,6 +27,8 @@ const Life = (() => {
     const o = s.life;
     o.scars = o.scars || []; o.deeds = o.deeds || []; o.seenV = o.seenV || [];
     o.xinmo = o.xinmo || {}; o.annals = o.annals || []; o.people = o.people || [];
+    o.rescues = Array.isArray(o.rescues) ? o.rescues : [];
+    o.rescueQ = Array.isArray(o.rescueQ) ? o.rescueQ : [];
     if (o.heart == null) o.heart = 0;
     return o;
   }
@@ -123,29 +125,91 @@ const Life = (() => {
     const life = L(s);
     return !life.xinmo[s.realm];
   }
-  function xinmoEvent(s) {
+  function xinmoFacts(s) {
     const life = L(s);
     const past = pastOf(s);
-    const who = past.who ? '「' + past.who + '」' : '那个人';
-    const heart = life.heart | 0;
-    const q = heart >= 16
-      ? '你救过的人，可是为了今日这一步？'
-      : heart <= -16
-        ? '你亏过的人，都在门外等着看你破境。'
-        : '这一步踏出去，你还是那时的人吗？';
-    const quote = past.line || past.title || '一件你不肯再提的事';
+    const mate = (typeof mateName === 'function' && mateName(s)) || '';
+    const lost = !!(s.bond && s.bond.lost);
+    let foe = '';
+    if (s.karma && s.karma.foe && typeof NPCS !== 'undefined' && NPCS[s.karma.foe]) foe = NPCS[s.karma.foe].name;
+    const sect = (s.sect && s.sect.org && typeof ORGS !== 'undefined' && ORGS[s.sect.org]) ? ORGS[s.sect.org].name : '';
+    const goal = goalName(s);
+    const scar = (life.scars && life.scars.length && life.scars[life.scars.length - 1].text) || '';
+    const origin = s.origin || '';
+    return { life, past, mate, lost, foe, sect, goal, scar, origin, quote: past.line || past.title || '一件你不肯再提的事' };
+  }
+  function xinmoLines(s) {
+    const f = xinmoFacts(s);
+    const q = f.quote;
+    const realms = [
+      [
+        `识海里先响起的是风，像你离开家那天的风。有个声音用你自己的嗓子问：你答应过要回来的那一句，还算数吗？它把「${q}」摊在你面前。`,
+        f.origin === 'xiaohuan'
+          ? '宫墙的灯又亮了一盏。心魔坐在灯下，问你还是不是那个把灯放低的人。它不要你的命，只要你承认：你听过那一声很小的哭。'
+          : f.origin === 'moyi'
+            ? '血衣的布纹在识海里硬得像刀。心魔问：你留下它，是为了记得，还是为了有一天把它还给谁？'
+            : `山门外的石阶还在。心魔蹲在第一级上，像个等你的人：「炼气这一步，你是为自己走的，还是为了不再回去？」旁边摊着旧事：${q}。`,
+        f.goal ? `心魔把「${f.goal}」三个字写在雾上，又擦掉。「你现在连气都没炼完。这一愿，是真的，还是怕自己没事可做？」` : `心魔学着你的声音，把「${q}」念得很慢。它问：若这一步踏出去，你还认不认门槛外的自己。`,
+      ],
+      [
+        f.mate && !f.lost
+          ? `筑基的关隘里站着${f.mate}。不是真人，是你记得的那个站法。心魔说：「你筑的这座基，有一半是给这个人留的位置。位置若空了，基还在不在？」`
+          : f.lost && f.mate
+            ? `识海里有一只空杯。心魔把杯转过来，杯底写着${f.mate}的名字。「人已经不在了。你还把道基砌在一个空位上。」`
+            : `道基将成未成。心魔在基石上敲了敲：「这一基，是你自己选的，还是被日子推着走的？」它把「${q}」压在石下，让你看见。`,
+        f.foe ? `${f.foe}的声音从关隘另一头传来，不像仇，倒像提醒。「你筑基的时候，可还记着这一剑？」心魔笑：「记着，基就歪一点。不记，你就不是你。」` : `心魔把你这些年的选择铺成一条路。「${q}」。它问：筑基之后，这条路还走不走得回去。`,
+        f.sect ? `${f.sect}的钟在识海里响了一下。心魔问：「钟若是为你响，你承不承得起？钟若不为你响，你这基又算谁的？」` : '心魔不催你死。它只把一只空碗放在关前：「基要筑在实处。你碗里现在是空的。空，也能当基吗？」',
+      ],
+      [
+        f.goal ? `金丹将凝。心魔把「${f.goal}」写进丹纹里，一笔一笔。「这一愿若是假的，丹会裂。你现在还敢说它是真的吗？」` : `丹光里照出一张旧脸。心魔说：「凝丹的人，不该再躲${q}。躲，丹就有裂纹。」`,
+        f.mate && !f.lost
+          ? `${f.mate}的呼吸在识海里慢了半拍，和你不一样。心魔问：「两个人的息，凝得进同一枚丹吗？凝不进，你舍哪一边？」`
+          : f.scar
+            ? `旧伤在丹光里发亮。心魔念你留下的那句：「${f.scar}」它问：带伤凝丹，丹是你的，还是伤的？`
+            : `心魔坐在丹炉边上，像个不请自来的丹师。「${q}」。它说这一笔若写进丹里，你后半辈子都要认。`,
+        f.foe ? `仇人的名字在丹纹上绕了一圈。心魔说：「${f.foe}若死在你前面，这枚丹还凝不凝？若不死，你的丹是不是为他准备的刀？」` : '心魔把一枚空丹托在掌心。「金丹一成，很多路就回不去了。你回不去的那条，叫什么名字？」',
+      ],
+      [
+        f.lost && f.mate
+          ? `元婴出窍的那一瞬，你看见${f.mate}站在很远的地方，不进来。心魔小声说：「婴可以离体。人不能。你还要不要把这个名字带出去？」`
+          : f.mate
+            ? `元婴将成。心魔让你看${f.mate}的背影：「婴若离体，你还回不回得来这具坐在人身边的壳？回不来的话，先说一声。」`
+            : `识海忽然很宽。心魔站在远处，声音却近：「元婴一出，你就不再只是这个身体里的人。${q}——这件事，你带不带出去？」`,
+        f.goal === '守一人' ? '心魔问得很轻：「你说要守一人。元婴能守人，也能把人守丢。你守的是人，还是守这个念头？」' : f.goal ? `心魔把「${f.goal}」放在婴影前面。「出了这关，所求会变重。你还抬得动吗？」` : `心魔不化形。它只用你的声音说：「${q}」。然后问：这句话，配不配被一具元婴记住。`,
+        f.sect ? `${f.sect}的山门在识海里缩小成一粒。心魔问：「你若成了婴，山门还是家，还是你路过的一座山？」` : '心魔指了指你留下的暗伤：「婴最怕的不是雷，是你自己不肯看的那一寸。看，或者带着它出去。你选。」',
+      ],
+      [
+        f.goal === '求长生' ? '化神的门槛上没有人。心魔却在。「长生若是真的，你从前亏过的人，要在哪一年还？还不起，这一步就是逃。」' : f.goal ? `天风里只剩一句：「${f.goal}」。心魔说：「到了这里，所求若还只是一句话，你就还没有准备好让它变成你。」` : `心魔终于用你现在的脸说话。「${q}」。它问：这一步之后，还有没有一件事值得你停留。`,
+        f.lost && f.mate
+          ? `${f.mate}没有出现。心魔偏要你想起这个名字。「飞升的人，常常把名字落在山下。你落不落？」`
+          : f.mate
+            ? `${f.mate}在风里说了一句听不清的话。心魔替你翻译：「若你上去了，谁在下面记得你？」它不等你答。`
+            : f.foe
+              ? `${f.foe}的影子被风吹薄。心魔说：「仇到了这一境，已经轻得可以不报。不报，你还是你吗？」`
+              : '心魔把你这一生的选择收成一页。「页要是合上，人就只剩路。你还想在页边上留一个名字吗？」',
+        f.scar ? `最后一问很短。心魔点着你的暗伤：「${f.scar}」它说，带着这个上去，天会看见。不带，你就少了一块自己。` : '心魔不再问旧事。它只问：「你还怕不怕死？」问完，它就站在那里，等你用自己的声音回答。',
+      ],
+    ];
+    const realm = Math.max(0, Math.min(4, s.realm | 0));
+    const lines = realms[realm].filter(Boolean);
+    const n = (s.months | 0) + (s.age | 0) + realm * 3;
+    return { line: lines[n % lines.length], quote: q, who: f.past.who || '' };
+  }
+  function xinmoEvent(s) {
+    const picked = xinmoLines(s);
+    const quote = picked.quote;
     const realm = s.realm | 0;
     return {
       id: 'xinmo_r' + realm, title: '心魔', seal: '魔', xinmo: true,
-      text: () => `识海翻涌，像有人把旧卷重新摊开。你看见当年的自己：${quote}。那张脸慢慢换成你自己的，声音却仍像${who}。「${q}」它并不催你死。它只要你认，或者不认。`,
+      text: () => picked.line,
       choices: () => [
         { label: '把那件事说完', sub: '道心微定', act: s2 => {
           finishXinmo(s2, 'clear');
           tint(s2, 4);
-          return { text: `你把${quote}又说了一遍，一个字不改。心魔听完，像雾一样散了。关隘还在，可你知道自己是从哪一条路上走来的。`, fx: { xj: 5 }, afterBreak: true };
+          return { text: `你把「${quote}」又说了一遍，一个字不改。心魔听完，像雾一样散了。关隘还在，可你知道自己是从哪一条路上走来的。`, fx: { xj: 5 }, afterBreak: true };
         }},
         { label: '不许它再提', sub: '或留暗伤', act: s2 => {
-          finishXinmo(s2, 'scar', `你不许心魔提起${past.who || '那件事'}。它停了，伤却留在识海内侧，像一根没拔的刺。`);
+          finishXinmo(s2, 'scar', `你不许心魔提起${picked.who || '那件事'}。它停了，伤却留在识海内侧，像一根没拔的刺。`);
           return { text: '你抬手斩断那声音。识海静了，静得发空。破境仍可继续——只是下一次关隘，这根刺还会疼一下。', fx: { xj: -3 }, afterBreak: true };
         }},
         { label: '随口应了它', sub: '心境动摇', act: s2 => {
@@ -386,6 +450,131 @@ const Life = (() => {
       deeds: life.deeds || [],
       years: ys.map(y => ({ y, items: years[String(y)] })),
     };
+  }
+
+  const RESCUES = [
+    { id: 'nvxiu', echo: 1,
+      text: () => '林中有一行血迹，蜿蜒没入草丛。你循迹而去，见一名女修倚树而坐，面如金纸，腰间储物袋鼓鼓囊囊。她勉力睁眼看你，手按剑柄，却已无力拔出。',
+      choices: s => [
+        { label: '渡气施救', sub: '耗损修为', act: s2 => { takeRescue(s2, RESCUES[0]); return Math.random() < 0.75
+          ? { text: '你为她渡入灵力，守了一夜。天明时她已能起身，取出一只锦囊相赠：「救命之恩，他日必报。」她御剑而去，衣袂如云。', fx: { xw: -0.15, xj: 8, luck: 1, ls: 30, item: Math.random() < 0.5 ? { '回春丹': 1 } : { '聚气丹': 1 } } }
+          : { text: '她伤势稍缓，却趁你调息之际悄然离去，连一句谢也无。你苦笑摇头：救人原不为图报。', fx: { xw: -0.15, xj: 10 } }; } },
+        { label: '夺其储物袋', sub: '心境有损', act: s2 => { takeRescue(s2, RESCUES[0]); return { text: '你别过脸去，伸手解下了那只储物袋。她没有挣扎，只是看着你，眼中的光一点点熄灭。很多年后，你仍会梦见那双眼睛。', fx: { ls: 60, item: { '聚气丹': 2 }, xj: -18, luck: -2 } }; } },
+        { label: '默然离去', act: s2 => { takeRescue(s2, RESCUES[0]); return { text: '修行路上，生死各安天命。你转身离去，身后林风簌簌，似有一声叹息。', fx: { xj: -3 } }; } },
+      ] },
+    { id: 'laonong', echo: 1,
+      text: () => '田埂上躺着一个老农，腿被什么东西咬出三道口子，血把泥浸透了。他看见你，没喊仙长，只说：「家里还有一口锅在火上。」',
+      choices: () => [
+        { label: '替他止血，送回村口', act: s2 => { takeRescue(s2, RESCUES[1]); return { text: '你用灵力把血止住，背他到村口。他媳妇出来，塞给你一包自己晒的药草，说不出别的。', fx: { xj: 6, item: { '青叶草': 3, '宁神花': 1 }, time: 1 } }; } },
+        { label: '指给他一条近路', act: s2 => { takeRescue(s2, RESCUES[1]); return { text: '你没有背他，只指了路。他点头，自己爬着走了。你站在田埂上，觉得这点指点，轻得有点过分。', fx: { xj: 1 } }; } },
+        { label: '当作没看见', act: s2 => { takeRescue(s2, RESCUES[1]); return { text: '你从另一条田埂绕开。锅大概还在火上。你没有回去看。', fx: { xj: -4 } }; } },
+      ] },
+    { id: 'tongzi', echo: 1,
+      text: () => '溪边一个童子卡在石缝里，书包还背着，人已经喊不出声，只剩眼睛在转。他看见你，把一只木剑递出来，像那是他全部的行李。',
+      choices: () => [
+        { label: '把他抱出来', act: s2 => { takeRescue(s2, RESCUES[2]); return { text: '石缝磨破了你的袖。童子出来之后，把木剑硬塞给你，说以后要来找你学剑。你没有答应，也没有把剑扔掉。', fx: { xj: 7, luck: 1 } }; } },
+        { label: '叫他村里的人', act: s2 => { takeRescue(s2, RESCUES[2]); return { text: '你在村口喊了人。来的是他姐姐。她谢你，谢得很慌。你把木剑还给孩子，自己走了。', fx: { xj: 3 } }; } },
+        { label: '木剑留下，人不管', sub: '心境有损', act: s2 => { takeRescue(s2, RESCUES[2]); return { text: '你拿了那把木剑。它不值什么。可你知道自己拿的不是剑。', fx: { xj: -8 } }; } },
+      ] },
+    { id: 'sanxiu', echo: 1,
+      text: () => '官道旁倒着一个散修，储物袋空着，人还剩一口气。他抓住你的袖子：「别问我是谁。东边第三座山，缝里有光。我走不到了。」',
+      choices: () => [
+        { label: '先救人，再听方位', act: s2 => { takeRescue(s2, RESCUES[3]); return { text: '你把药渡进去。他缓过来，把方位又说了一遍，说得更清楚。说完他拱手，一瘸一拐地走了，没有留下名字。', fx: { xw: -0.08, luck: 2, xj: 4 } }; } },
+        { label: '只记下方位', act: s2 => { takeRescue(s2, RESCUES[3]); return { text: '你把方位记下，人没救。夜里你睡不着，不是因为那座山，是因为袖子上还留着他的力道。', fx: { luck: 1, xj: -5 } }; } },
+      ] },
+    { id: 'zhuangshang', echo: 0,
+      text: () => '桥洞里有人呻吟，衣裳是好的，伤看起来却太整齐。他见你停下，立刻把一只破碗伸出来，碗底是干的。',
+      choices: () => [
+        { label: '仍把伤当真的治', act: s2 => { takeRescue(s2, RESCUES[4]); return Math.random() < 0.45
+          ? { text: '伤是装的。可你的灵力进去的那一瞬，他脸上的笑停了。他磕了个头，把藏在袖里的一枚灵石推给你，跑了。', fx: { xj: 3, ls: 12 } }
+          : { text: '你蹲下去的时候，他的同伙从桥上跳下来。灵石少了一截，你多了一道口子。桥洞里的呻吟，原来是暗号。', fx: { ls: -Math.max(8, Math.floor(s2.ls * 0.25)), lsRaw: true, inj: 1, xj: -4 } }; } },
+        { label: '拆穿他', act: s2 => { takeRescue(s2, RESCUES[4]); return { text: '你说：「碗是干的。」他愣了一下，笑出声，把同伙叫出来，居然向你行了个礼，然后跑了。', fx: { xj: 2, luck: 1 } }; } },
+        { label: '绕开桥洞', act: s2 => { takeRescue(s2, RESCUES[4]); return { text: '你从桥上走。下面的呻吟停了一停，又响起来，像在等下一个。', fx: {} }; } },
+      ] },
+    { id: 'jianxiu', echo: 1,
+      text: () => '崖下靠着一个剑修，剑断了，人还握着半截。他看见你，第一句不是救命，是：「别让这半截剑落进沟里。」',
+      choices: () => [
+        { label: '救人，也捡起断剑', act: s2 => { takeRescue(s2, RESCUES[5]); return { text: '你把他拖上崖。断剑里还剩一点剑意。他让你留下，说自己用不上了。人走的时候，步子已经能自己迈。', fx: { xj: 5, item: { '古剑残片': 1 }, gfXp: 2 } }; } },
+        { label: '只把人拖上去', act: s2 => { takeRescue(s2, RESCUES[5]); return { text: '剑留在沟里。人活了。他看了你一眼，像把一句谢谢咽了回去，也像把一句责备咽了回去。', fx: { xj: 4 } }; } },
+      ] },
+    { id: 'yaotong', echo: 1,
+      text: () => '疫城外的破庙里，一个药童守着一口冷锅，自己先烧起来了。他嘴里还在背药名，背到一半就乱了。',
+      choices: () => [
+        { label: '替他把药煎上', act: s2 => { takeRescue(s2, RESCUES[6]); return { text: '你把冷锅重新烧开，又分了他半瓶自己的药。天亮时他退了烧，把药名背完整了，说以后煎药，会给你留一碗。', fx: { xj: 6, item: { '回春丹': 1 }, time: 1 } }; } },
+        { label: '留下丹药就走', act: s2 => { takeRescue(s2, RESCUES[6]); if ((s2.items['聚气丹'] || 0) > 0) return { text: '你把一枚聚气丹放在他手边。他抓住了，没抓住你的袖子。你出庙的时候，锅还是冷的。', fx: { item: { '聚气丹': -1 }, xj: 2 } }; return { text: '你袖中没有丹。只把一点灵气温进他脉里，让他至少能把药名背完。', fx: { xj: 2 } }; } },
+      ] },
+    { id: 'qitu', echo: 1,
+      text: s => `山门外跪着一个被逐出来的弟子，额上还有戒痕。他认得你腰间的路数，抬头说：「${(s.sect && s.sect.org) ? '同门' : '道友'}，给我一口水。水以后的事，我自己担。」`,
+      choices: () => [
+        { label: '给他水，也给他一句去处', act: s2 => { takeRescue(s2, RESCUES[7]); return Math.random() < 0.72
+          ? { text: '他喝完水，把戒痕用布遮住，朝你深深一揖。临走留下一块刻着地名的木牌：那里有一处还没被人摸干净的药谷。', fx: { xj: 4, luck: 1, ls: 15 } }
+          : { text: '他喝了你的水，夜里却摸进你的行李。丹药少了一枚。木牌是假的。你追出半里，只看见他消失在雾里。', fx: { xj: -6, item: { '聚气丹': -1 } } }; } },
+        { label: '逐客的规矩，不必破', act: s2 => { takeRescue(s2, RESCUES[7]); return { text: '你没有给水。他跪到你走远。你没有回头，可那句「一口水」在耳朵里停了很久。', fx: { xj: -2 } }; } },
+      ] },
+  ];
+  function takeRescue(s, r) {
+    const life = L(s);
+    if (life.rescues.indexOf(r.id) < 0) life.rescues.push(r.id);
+    if (s.flags) s.flags.rescueNow = '';
+    if (r.echo) life.rescueQ.push({ id: r.id, at: (s.months | 0) + 12 * (6 + (s.realm | 0) * 2) });
+    note(s, { t: '救人', d: r.id, k: 'rescue' });
+  }
+  function pickRescue(s) {
+    const life = L(s);
+    const pool = RESCUES.filter(r => life.rescues.indexOf(r.id) < 0);
+    if (!pool.length) return null;
+    s.flags = s.flags || {};
+    if (s.flags.rescueNow) {
+      const keep = pool.find(r => r.id === s.flags.rescueNow);
+      if (keep) return keep;
+    }
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    s.flags.rescueNow = r.id;
+    return r;
+  }
+  function rescueEcho(s) {
+    const life = L(s);
+    const due = (life.rescueQ || []).find(q => (s.months | 0) >= (q.at | 0) && !q.done);
+    return due || null;
+  }
+  const ECHO_TEXT = {
+    nvxiu: { t: '多年前你在林中救下的女修托人送来一只小瓶，瓶底压着字条：「还你一夜。」', fx: { item: { '回春丹': 1 }, xj: 4 } },
+    laonong: { t: '村口的老农让孙子找到你，送来一筐晒干的药草，和一句话：「锅还在。」', fx: { item: { '青叶草': 4, '赤阳花': 1 }, xj: 3 } },
+    tongzi: { t: '那个溪边的童子长高了半头，在坊市拦住你，把当年的木剑换了一柄真的短剑塞过来，说自己还没学成，剑先还给你路上用。', fx: { gear: '精铁短剑', xj: 5 } },
+    sanxiu: { t: '那个没留名字的散修托人带话：东边那座山的缝，他后来自己也没进去。话送到了，人又走了。你只觉得有人还活着。', fx: { luck: 1, xj: 3 } },
+    jianxiu: { t: '断剑的主人托铁匠捎来一句话：「沟里的那半截，我回去捡了。你的人情，我记在剑上。」', fx: { gfXp: 3, xj: 3 } },
+    yaotong: { t: '疫城的药童如今会煎药了。他托商队给你带来一碗晾凉的药，药力淡，心意不淡。', fx: { item: { '清心丹': 1 }, xj: 4 } },
+    qitu: { t: '那个跪在山门外的人没有再来。有人在坊市提起他，说他在某处安稳地卖水。卖水。你听见这两个字，忽然松了一松。', fx: { xj: 4 } },
+  };
+  if (typeof EVENTS !== 'undefined') {
+    const ev = EVENTS.find(e => e.id === 'wounded');
+    if (ev) {
+      ev.cond = s => RESCUES.some(r => L(s).rescues.indexOf(r.id) < 0);
+      ev.text = s => { const r = pickRescue(s); return r ? r.text(s) : '林中的血迹已经淡了。'; };
+      ev.choices = s => {
+        const r = pickRescue(s);
+        if (!r) return [{ label: '离开', act: () => ({ text: '你没有停留。', fx: {} }) }];
+        return r.choices(s);
+      };
+    }
+    EVENTS.push({
+      id: 'rescue_echo', title: '旧恩', seal: '恩', w: 7,
+      cond: s => !!rescueEcho(s),
+      text: s => {
+        const due = rescueEcho(s);
+        const row = due && ECHO_TEXT[due.id];
+        return row ? row.t : '有人在路上叫住你，说是来还一笔很旧的情。';
+      },
+      choices: s => [{
+        label: '收下',
+        act: s2 => {
+          const due = rescueEcho(s2);
+          if (due) due.done = 1;
+          const row = due && ECHO_TEXT[due.id];
+          return { text: '你把这份回礼收好。有些债，是用很多年来还的，还的时候轻得像一阵风。', fx: row ? row.fx : { xj: 2 } };
+        },
+      }],
+    });
   }
 
   return {
