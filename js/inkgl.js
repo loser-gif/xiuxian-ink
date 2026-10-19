@@ -27,17 +27,29 @@ const InkGL = (() => {
       float t = uTime;
       // 低频域扭曲：墨在湿纸上缓慢蠕动、呼吸
       vec2 q = p + (vec2(fbm3(p * 1.7 + vec2(uSeed, t * .035)), fbm3(p * 1.7 + vec2(uSeed + 5.2, -t * .03))) - .5) * .16;
-      float d, tt = 0., cy = 0.;
+      if (uKind < .5) q.y *= 1.22; // 笔腹在画布中段，晕边不贴上下沿
+      float d, tt = 0., cy = 0., along = 0.;
       if (uKind < .5) {
-        float x0 = -A * .35, x1 = A * .41;
-        tt = clamp((q.x - x0) / (x1 - x0), 0., 1.);
-        cy = .03 * sin(tt * 2.6 + uSeed) - .012 + .05 * tt * tt;          // 笔势略向上挑
-        float th = .2 * (1. - .3 * tt) * (.92 + .16 * fbm3(vec2(tt * 3., uSeed))) * (1. - smoothstep(.7, 1.02, tt)) + .004;
-        float th0 = .2 * (.92 + .16 * fbm3(vec2(0., uSeed)));
-        if (q.x < x0) d = length(vec2((q.x - x0) * 1.25, q.y - cy)) - th0;  // 圆润起笔
-        else d = abs(q.y - cy) - th;
-        d -= .035 * smoothstep(.16, 0., tt);                                 // 起笔按压，略肥
-        d += (fbm(q * vec2(5., 9.) + uSeed) - .5) * .06 + (noise(q * 46. + uSeed) - .5) * .01;  // 毛边
+        // 笔锋留在画布内侧：起笔圆顿，收笔收尖，两端都留空
+        float span = A * .52;
+        float x0 = -span * .5, x1 = span * .5;
+        along = (q.x - x0) / max(x1 - x0, .001);
+        tt = clamp(along, 0., 1.);
+        cy = .016 * sin(tt * 2.6 + uSeed) - .016 + .04 * tt * tt;
+        float press = exp(-pow((tt - .07) / .13, 2.));
+        float taper = smoothstep(.42, 1., tt);
+        float th = .148 * (1. - .9 * taper) * (1. + .55 * press);
+        th *= .9 + .12 * fbm3(vec2(tt * 4.2, uSeed));
+        if (along < 0.) {
+          d = length(vec2((q.x - x0) * 1.45, (q.y - cy) * .72)) - th * 1.12;
+        } else if (along > 1.) {
+          float over = along - 1.;
+          float pinch = smoothstep(0., .07, over);
+          d = length(vec2((q.x - x1) * (1.15 + pinch * 5.), (q.y - cy) * (1. + pinch))) - th * (1. - pinch);
+        } else d = abs(q.y - cy) - th;
+        d -= .05 * press;
+        d += (fbm(q * vec2(5.5, 10.) + uSeed) - .5) * .04 + (noise(q * 42. + uSeed) - .5) * .008;
+        d += smoothstep(1.05, 1.18, along) * .45;
       } else {
         d = length(q) - .3 + (fbm(q * 2.2 + uSeed) - .5) * .2;
       }
@@ -50,26 +62,34 @@ const InkGL = (() => {
       float core = 1. - smoothstep(-.012, .008, d);
       float inner = .93 + .07 * fbm(p * 3.6 + vec2(uSeed, t * .02));
       float rim = exp(-pow((d + .012) / .012, 2.)) * .12 * (.5 + fbm3(p * 8. + uSeed));  // 墨聚于边，深浅不一
-      // 飞白：笔尾出现干笔丝缕
-      float sk = noise(vec2(q.x * 3.2, q.y * 38. + fbm3(q * 4.) * 6.) + uSeed) * (.7 + .5 * noise(vec2(q.x * 9., q.y * 3.) + uSeed));
-      float dry = smoothstep(.3 + .35 * tt, .55 + .35 * tt, sk);
-      core *= mix(1., dry, smoothstep(.55, .95, tt) * (1. - uKind));
+      // 飞白：收笔被纸刮开，裂成几缕长短不一的干丝，笔腹仍是湿墨
+      float tail = smoothstep(.5, .88, tt);
+      float streak = noise(vec2(uSeed * 1.7, (q.y - cy) * 38.));
+      float filament = smoothstep(.38, .62, streak);
+      float spine = smoothstep(.018, 0., abs(q.y - cy) - mix(.028, .003, tt));
+      core *= mix(1., max(filament, spine), tail * (1. - uKind));
       float a = max(core * inner + rim * core, bleed);
+      float lane = noise(vec2(uSeed * 4.2, (q.y - cy) * 34.));
+      float hair = smoothstep(.52, .74, lane);
+      float reach = .86 + .22 * noise(vec2(lane * 9., uSeed));
+      hair *= smoothstep(.58, .74, along) * smoothstep(reach, reach - .14, along);
+      hair *= smoothstep(.011, 0., abs(q.y - cy) - .003);
+      a = max(a, hair * .82 * (1. - uKind));
       // 尾端偶尔甩出一粒小墨点
       float P = 9.;
       float ph = fract(t / P + uSeed * .137);
-      vec2 tip = uKind < .5 ? vec2(A * .35, cy + .02) : vec2(.24 * cos(uSeed * 7.), .24 * sin(uSeed * 7.));
+      vec2 tip = uKind < .5 ? vec2(A * .30, cy + .015) : vec2(.24 * cos(uSeed * 7.), .24 * sin(uSeed * 7.));
       vec2 dir = uKind < .5 ? vec2(.9, .35) : normalize(tip);
       vec2 dp = tip + dir * (.02 + ph * .1);
       float dr = .022 * (1. - ph * .45);
       float drop = (1. - smoothstep(dr * .55, dr, length(p - dp) + (noise(p * 60.) - .5) * .006))
                    * smoothstep(0., .06, ph) * (1. - smoothstep(.55, .95, ph)) * step(.45, fract(uSeed * 3.7 + floor(t / P) * .618));
-      a = max(a, drop * .9);
+      a = max(a, drop * .9 * uKind);
       // 湿光：一道极淡的高光缓缓滑过墨面
       float sx = (fract(t * .045 + uSeed * .3) * 1.8 - .9) * A;
       float sh = exp(-pow((p.x + p.y * .7 - sx) / (.16 * A), 2.)) * core * (.45 + .55 * fbm3(p * 5. + t * .05)) * uSheen;
       vec3 col = mix(uInk, uInk + vec3(.30, .29, .27), sh * .35);
-      a *= uAlpha * smoothstep(0., .07, vUv.x) * smoothstep(1., .93, vUv.x) * smoothstep(0., .1, vUv.y) * smoothstep(1., .9, vUv.y);
+      a *= uAlpha * smoothstep(0., .012, vUv.x) * smoothstep(1., .988, vUv.x) * smoothstep(0., .02, vUv.y) * smoothstep(1., .98, vUv.y);
       gl_FragColor = vec4(col * a, a);
     }`;
 
@@ -346,10 +366,20 @@ const InkGL = (() => {
   }
   function variant(host) {
     const btn = host.closest('button');
+    const night = document.documentElement.dataset.theme === 'night';
     if (host.classList.contains('act-ink')) return { kind: 1, ink: '#1b1814', alpha: 1, sheen: .5 };
-    if (btn && btn.classList.contains('light')) return { kind: 0, ink: '#f3ead6', alpha: .95, sheen: 0 };
-    if (btn && (btn.id === 'btn-continue' || (btn.closest('.create-actions') && !btn.classList.contains('primary')))) return { kind: 0, ink: '#1b1814', alpha: .15, sheen: 0 };
-    return { kind: 0, ink: '#1b1814', alpha: .95, sheen: 1 };
+    // 续卷：完整的淡墨次笔。夜纸上换成暖纸色，深字才压得住。
+    if (btn && btn.id === 'btn-continue') {
+      return night
+        ? { kind: 0, ink: '#f4ecdc', alpha: .98, sheen: .22 }
+        : { kind: 0, ink: '#6a6156', alpha: .94, sheen: .4 };
+    }
+    if (btn && btn.classList.contains('light')) return { kind: 0, ink: '#f3ead6', alpha: night ? .97 : .95, sheen: 0 };
+    if (btn && btn.closest('.create-actions') && !btn.classList.contains('primary')) return { kind: 0, ink: '#1b1814', alpha: .15, sheen: 0 };
+    // 夜纸上主笔用朱墨，和 --brush-img-zhu 一致；昼间仍是浓墨
+    return night
+      ? { kind: 0, ink: '#9c4038', alpha: .94, sheen: .45 }
+      : { kind: 0, ink: '#1b1814', alpha: .95, sheen: 1 };
   }
   function register(host) {
     if (host.__live) return;
@@ -392,7 +422,13 @@ const InkGL = (() => {
     b.rect = r; return true;
   }
   function renderBlot(b, t) {
-    const gl = B.gl, P = B.P, dpr = Math.min(devicePixelRatio || 1, 2) * .7;
+    const gl = B.gl, P = B.P;
+    const title = !!b.host.closest('.title-menu');
+    const dpr = title ? Math.min(devicePixelRatio || 1, 3) : Math.min(devicePixelRatio || 1, 2) * .7;
+    const look = variant(b.host);
+    if (look.ink !== b.ink || look.alpha !== b.alpha || look.kind !== b.kind) {
+      b.kind = look.kind; b.ink = look.ink; b.alpha = look.alpha; b.sheen = look.sheen; b.rgb = hex(look.ink);
+    }
     const w = Math.max(8, Math.round(b.rect.width * dpr)), h = Math.max(8, Math.round(b.rect.height * dpr));
     if (w !== b.w || h !== b.h) { b.cv.width = b.w = w; b.cv.height = b.h = h; }
     if (gl.canvas.width < w || gl.canvas.height < h) { gl.canvas.width = Math.max(gl.canvas.width, w); gl.canvas.height = Math.max(gl.canvas.height, h); }

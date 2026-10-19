@@ -206,8 +206,11 @@ body.intro-done.go .title-menu{--ink-d:2.05s}
 .brush-btn.light{color:var(--ink)}
 .brush-btn.light .bb-ink{background-image:var(--brush-img-paper)}
 .brush-btn:disabled{opacity:.35}
-/* 卷首笔触：从落笔处沿笔势洇开。遮罩在结束时铺满笔触（含溢出），静止时与原来一致。 */
-.title-menu .bb-ink{--ink-a:1;transition:transform .9s var(--ease-silk)}
+/* 卷首笔触：画布收在笔触盒内，起笔收笔不被遮罩或盒子切掉。洇开结束后遮罩铺满整盒。 */
+.title-menu .brush-btn{overflow:visible}
+.title-menu .bb-ink{--ink-a:1;transition:transform .9s var(--ease-silk);inset:-22px -40px;overflow:visible}
+.title-menu .title-subbtn .bb-ink{inset:-14px -18px}
+.title-menu .bb-ink .live-ink{left:0;right:0;top:0;bottom:0;width:100%;height:100%}
 .title-menu .bb-text{--ink-a:1}
 .title-menu small{--ink-a:.7}
 body.go .title-menu .bb-ink{
