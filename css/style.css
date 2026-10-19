@@ -2715,15 +2715,6 @@ body[data-realm="2"] #realm-scape .ra-2,
 body[data-realm="3"] #realm-scape .ra-3,
 body[data-realm="4"] #realm-scape .ra-4,
 body[data-realm="5"] #realm-scape .ra-4{display:block}
-body[data-screen="title"] #scenery > #realm-scape{
-  left:-1%;top:18%;width:min(88%,400px);height:42%;opacity:.96;
-  -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 58%,transparent 94%),linear-gradient(180deg,transparent 0%,#000 16%,#000 78%,transparent 100%);
-  -webkit-mask-composite:source-in;
-  mask-image:linear-gradient(90deg,#000 0%,#000 58%,transparent 94%),linear-gradient(180deg,transparent 0%,#000 16%,#000 78%,transparent 100%);
-  mask-composite:intersect}
-body[data-screen="title"] #scenery > #realm-scape .ra{object-fit:contain;object-position:left center}
-html[data-theme="night"] body[data-screen="title"] #scenery > #realm-scape{
-  filter:invert(1) sepia(.28) saturate(.35) brightness(1.12) contrast(1.05)}
 body.realm-shift #realm-scape{animation:realmFade .9s ease}
 @keyframes realmFade{0%{opacity:.2}100%{opacity:.94}}
 #scr-main .scroll-paper > #realm-scape{position:absolute;left:0;right:0;top:0;width:100%;height:156px;z-index:2;opacity:.96;filter:none;
@@ -2741,24 +2732,21 @@ body[data-season="3"] .season-wash{background:linear-gradient(180deg,rgba(150,17
 #pale-moon{display:none;position:fixed;right:18%;top:11%;width:36px;height:36px;border-radius:50%;pointer-events:none;z-index:1;
   background:radial-gradient(circle at 38% 36%,rgba(255,252,244,.96),rgba(214,210,198,.55) 46%,rgba(214,210,198,0) 70%);
   box-shadow:0 0 16px rgba(236,230,214,.28)}
-html[data-theme="night"] body[data-screen="title"] #pale-moon{display:block}
 body[data-screen="main"] #pale-moon{display:none!important}
+body[data-screen="title"] #pale-moon{display:none!important}
 
-/* 卷首立轴：一整幅水墨，盖住旧的锥山、松、湖与浮贴境界 */
-#title-land{position:absolute;inset:0;z-index:4;opacity:0;pointer-events:none;overflow:hidden}
-body[data-screen="title"] #title-land{opacity:1}
-#title-land .tl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:none}
-body[data-screen="title"] #title-land .d0{display:block}
-html[data-theme="night"] body[data-screen="title"] #title-land .d0{display:none}
-html[data-theme="night"] body[data-screen="title"] #title-land .n0{display:block}
-body[data-screen="title"] #scenery > .cam,
-body[data-screen="title"] #scenery > .cam *,
-body[data-screen="title"] #tod,
-body[data-screen="title"] #tod i,
+/* 卷首用原来的分层水墨（远山、红日、孤松、湖舟）。境界浮贴与四季罩收起，不另贴一幅画。 */
 body[data-screen="title"] #scenery > #realm-scape,
 body[data-screen="title"] #season-veil{
   opacity:0!important;visibility:hidden!important;animation:none!important}
-body[data-screen="title"] #pale-moon{display:none!important}
+/* 共用一层极淡纸纹，只盖在画上，让峰、松、水是同一张纸 */
+body[data-screen="title"] #scenery::after{
+  content:"";position:absolute;inset:0;z-index:6;pointer-events:none;
+  background-image:var(--fiber-img),var(--grain-img);
+  background-size:280px 280px,180px 180px;
+  opacity:.12;mix-blend-mode:multiply}
+html[data-theme="night"] body[data-screen="title"] #scenery::after{
+  opacity:.2;mix-blend-mode:soft-light}
 #season-veil{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:0;transition:background .8s ease,box-shadow .8s ease}
 body[data-screen="title"] #season-veil,body[data-screen="main"] #season-veil{opacity:1}
 body[data-season="0"] #season-veil{background:linear-gradient(180deg,rgba(214,150,146,.06),transparent 32%)}

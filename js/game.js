@@ -44,19 +44,23 @@ const MTN_NIGHT = [
 ];
 function drawMountains(force) {
   const w = window.innerWidth;
+  const screen = document.body.dataset.screen || 'title';
+  const title = screen === 'title';
   const realm = +(document.body.dataset.realm || 0);
-  if (!force && Math.abs(w - lastW) < 2 && realm === lastRealmDraw) return;
-  lastW = w; lastRealmDraw = realm;
   const night = document.documentElement.dataset.theme === 'night';
-  const sh = night ? [0, 0, 0] : (REALM_SHIFT[realm] || [0, 0, 0]);
+  // 卷首锁在 v35 的峰形：不随境界换色、不加竹。游玩背景仍按境界变。
+  const sig = (title ? 1000 : 0) + realm + (night ? 100 : 0);
+  if (!force && Math.abs(w - lastW) < 2 && sig === lastRealmDraw) return;
+  lastW = w; lastRealmDraw = sig;
+  const sh = (night || title) ? [0, 0, 0] : (REALM_SHIFT[realm] || [0, 0, 0]);
   $$('.mtn').forEach((cv, i) => {
     const base = night ? Object.assign({}, MTN[i], MTN_NIGHT[i]) : MTN[i];
     const rgb = (base.rgb || [40, 40, 40]).map((v, k) => Math.max(0, Math.min(255, v + (sh[k] || 0) * (i < 2 ? 0.65 : 1))));
     let shape = {};
-    if (!night && realm === 1 && i === 3) shape = { peaks: 1, amp: base.amp * 1.35, trees: 0, sharp: 2.8 };
-    else if (!night && realm === 2 && i === 2) shape = { peaks: 3, amp: base.amp * 1.15, sharp: 3.1 };
-    else if (!night && realm === 4 && i <= 1) shape = { peaks: 2, amp: base.amp * 0.55, trees: 0 };
-    const bamboo = !night && realm === 0 && i >= 2 ? { trees: (base.trees || 0) + 3, treeSize: 1.15 } : {};
+    if (!title && !night && realm === 1 && i === 3) shape = { peaks: 1, amp: base.amp * 1.35, trees: 0, sharp: 2.8 };
+    else if (!title && !night && realm === 2 && i === 2) shape = { peaks: 3, amp: base.amp * 1.15, sharp: 3.1 };
+    else if (!title && !night && realm === 4 && i <= 1) shape = { peaks: 2, amp: base.amp * 0.55, trees: 0 };
+    const bamboo = !title && !night && realm === 0 && i >= 2 ? { trees: (base.trees || 0) + 3, treeSize: 1.15 } : {};
     Ink.mountainLayer(cv, Object.assign({}, base, shape, bamboo, { rgb }));
   });
   if (wallpaperOn) Wallpaper.rebuild();
@@ -281,10 +285,12 @@ function placeRealmScape() {
   }
 }
 function setScreen(id) {
+  const prev = curScreen;
   if (curScreen === 'title' && id !== 'title') document.body.classList.add('intro-done');
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
   placeRealmScape();
+  if (prev !== id && (prev === 'title' || id === 'title')) drawMountains(true);
   if (typeof MoAudio !== 'undefined') {
     const mode = id === 'title' ? 'title' : (id === 'main' || id === 'create' ? 'main' : 'off');
     MoAudio.startAmbient(mode);
@@ -2551,7 +2557,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=41').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=42').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
