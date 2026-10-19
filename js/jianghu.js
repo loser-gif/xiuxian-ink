@@ -47,6 +47,7 @@ const Jianghu = (() => {
       s.auc.told = 1; emit && emit({ text: `云岳坊听雨楼挂出了灯笼：拍卖会将开。（约${cnDur(K.aucWin * T(s))}内，往云岳坊可赴会）`, cls: 'event' });
     }
     if (s.auc && s.months > s.auc.next + K.aucWin * T(s)) s.auc = { next: s.months + 12 * rint(K.aucEvery[0], K.aucEvery[1]) * Math.max(1, T(s) / 2) };
+    shopTick(s, emit);
   }
 
   /* ---------- 行旅 ---------- */
@@ -143,6 +144,11 @@ const Jianghu = (() => {
     while (lots.length < 3) {
       const c = pool.filter(p => p.w > 0 && !lots.find(l => l.k === p.k)); let tot = c.reduce((a, b) => a + b.w, 0), x = Math.random() * tot;
       for (const p of c) if ((x -= p.w) < 0) { lots.push({ ...p }); break; }
+      if (!c.length) break;
+    }
+    if (s.auc && s.auc.hold && s.auc.hold.k) {
+      lots.push(Object.assign({ consign: 1 }, s.auc.hold));
+      s.auc.hold = null;
     }
     const ids = ['zhao', 'liu', 'qian', 'hei'].sort(() => Math.random() - 0.5).slice(0, 3);
     if (s.npc && s.npc.wen && s.npc.wen.met && s.sect.org === 'qm') ids[2] = 'wen';
@@ -184,6 +190,122 @@ const Jianghu = (() => {
     if (a.beat.includes('hei')) s.flags.heiGrudge = 1;
     if (a.beat.includes('wen')) { Core.npcAdd(s, 'wen', -4, tags); if (typeof karmaPlant === 'function') karmaPlant(s, 'wen_foe', 26); }
     return { won: true, tags };
+  }
+  function lotWorth(s, k) {
+    if (typeof Core !== 'undefined' && Core.manualId && Core.manualId(k)) return Core.manualPrice(s, Core.manualId(k));
+    if (ITEM_VAL[k]) return Math.max(sellPrice(s, k) * 2, baseVal(s, k));
+    return Math.max(8, Math.round(36 * REALMS[s.realm].lsScale));
+  }
+  function consignList(s) {
+    const rows = [];
+    Object.keys(s.items || {}).forEach(k => {
+      if (!(s.items[k] > 0)) return;
+      const manual = typeof Core !== 'undefined' && Core.manualId && Core.manualId(k);
+      let name = k;
+      if (manual && typeof GONGFA !== 'undefined' && GONGFA[manual]) name = '《' + GONGFA[manual].name + '》';
+      rows.push({ k, name, n: s.items[k] });
+    });
+    return rows.slice(0, 10);
+  }
+  function consign(s, k) {
+    if (!(s.items && s.items[k] > 0)) return { err: '行囊中无此物' };
+    if (!(s.auc && s.months >= s.auc.next && s.months <= s.auc.next + K.aucWin * T(s))) return { err: '拍卖未开' };
+    const manual = typeof Core !== 'undefined' && Core.manualId && Core.manualId(k);
+    let name = k;
+    if (manual && typeof GONGFA !== 'undefined' && GONGFA[manual]) name = '《' + GONGFA[manual].name + '》';
+    const v = Math.max(2, Math.round(lotWorth(s, k) * (1.15 + Math.random() * 0.7)));
+    s.items[k]--; if (!s.items[k]) delete s.items[k];
+    s.auc.hold = { k, name, v, consign: 1 };
+    return { name, v };
+  }
+  function restoreHold(s, l) {
+    if (!l || !l.k) return;
+    s.items[l.k] = (s.items[l.k] || 0) + 1;
+  }
+  function aucPlayConsign(s, a) {
+    const l = a.lots[a.i];
+    const bids = (a.ids || []).map(id => ({ id, n: a.max[id] | 0 })).filter(x => x.n >= (a.price | 0)).sort((p, q) => q.n - p.n);
+    if (!bids.length) {
+      restoreHold(s, l);
+      return { consign: 1, returned: 1, tags: [], line: '席上无人举牌。此物仍归你。', lines: [{ t: '无人应价，寄拍之物原样退回。' }] };
+    }
+    const top = bids[0].n, second = bids[1] ? bids[1].n : Math.round(top * (0.72 + Math.random() * 0.16));
+    const price = Math.max(a.price | 0, Math.round((top + second) / 2));
+    const pay = Math.max(1, Math.round(price * 0.82));
+    s.ls += pay;
+    const who = bids[0].id;
+    return {
+      consign: 1, sold: 1, pay, tags: [{ t: `灵石 +${pay}`, c: 'up' }],
+      line: `${(typeof BIDDERS !== 'undefined' && BIDDERS[who]) ? BIDDERS[who].name : '有人'}以${pay}灵石（已抽成）拍下你的${l.name || l.k}。`,
+      lines: [{ who, t: '这一件，我要了。' }, { t: `落槌。抽成之后，你入账${pay}灵石。` }],
+    };
+  }
+  function shopOpen(s) {
+    const sh = s.shop;
+    return !!(sh && (sh.own || (sh.rentUntil | 0) >= (s.months | 0)));
+  }
+  function shopCost(s, mode) {
+    const L = REALMS[s.realm].lsScale;
+    return mode === 'own' ? Math.round(90 * L) : Math.round(16 * L);
+  }
+  function shopBuy(s, mode) {
+    if (mode === 'own' && s.shop && s.shop.own) return { err: '铺面已是你的' };
+    const cost = shopCost(s, mode);
+    if ((s.ls | 0) < cost) return { err: '灵石不足' };
+    s.shop = s.shop || { stock: {} };
+    s.shop.stock = s.shop.stock || {};
+    s.ls -= cost;
+    if (mode === 'own') { s.shop.own = 1; s.shop.rentUntil = 0; }
+    else s.shop.rentUntil = (s.months | 0) + 12;
+    s.shop.next = (s.months | 0) + 3;
+    const text = mode === 'own'
+      ? `你买下一间临街的铺面，契纸上只写你的名字。从此架上的货，会在你闭关的日子里自己慢慢走。`
+      : `你租下一间铺面，租约一年。一年里，货可以上架；一年后，若不再续，铺子就还给别人。`;
+    return { text, tags: [{ t: `灵石 −${cost}`, c: 'down' }], cost };
+  }
+  function shopPut(s, k) {
+    if (!shopOpen(s)) return { err: '还没有铺面' };
+    if (!(s.items && s.items[k] > 0)) return { err: '行囊中无此物' };
+    s.items[k]--; if (!s.items[k]) delete s.items[k];
+    s.shop.stock[k] = (s.shop.stock[k] || 0) + 1;
+    return { text: `你把${k.indexOf('卷:') === 0 ? '一卷功法' : k}搁上架子。这一季若有人来，它会自己换成灵石。` };
+  }
+  function shopTake(s, k) {
+    if (!(s.shop && s.shop.stock && s.shop.stock[k] > 0)) return { err: '架上没有' };
+    s.shop.stock[k]--; if (!s.shop.stock[k]) delete s.shop.stock[k];
+    s.items[k] = (s.items[k] || 0) + 1;
+    return { text: '你把东西从架上取回来，重新放进行囊。' };
+  }
+  function shopTick(s, emit) {
+    const sh = s.shop; if (!sh || !shopOpen(s)) return;
+    if ((s.months | 0) < (sh.next | 0)) return;
+    sh.next = (s.months | 0) + 3;
+    const keys = Object.keys(sh.stock || {}).filter(k => sh.stock[k] > 0);
+    if (!keys.length) return;
+    const k = keys[Math.floor(Math.random() * keys.length)];
+    const unit = Math.max(1, lotWorth(s, k));
+    let gain = Math.max(1, Math.round(unit * (0.22 + Math.random() * 0.28)));
+    const roll = Math.random();
+    let text = '';
+    if (roll < 0.1) {
+      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
+      gain = 0;
+      text = '夜里铺门被撬开一缝。天亮时，架上少了一件东西，柜上没有多一文。';
+    } else if (roll < 0.2) {
+      gain = Math.max(1, Math.round(gain * 0.45));
+      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
+      text = '对门新开了一家，把客人都引走了半日。货还是出去了，价却被压得很低。';
+    } else if (roll < 0.34) {
+      gain = Math.round(gain * 1.55);
+      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
+      text = '老主顾又来了，看也没多看，放下灵石就走。';
+    } else {
+      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
+      text = '这一季铺子很安静。货出去一件，灵石自己进了柜。';
+    }
+    if (gain) { s.ls += gain; text += `入账灵石${gain}。`; }
+    sh.note = text;
+    emit && emit({ title: '铺子', text, cls: gain ? 'sys' : 'event' });
   }
   function aucPass(s, a) {
     if (a.leader === 'you') {
@@ -335,7 +457,8 @@ const Jianghu = (() => {
 
   return { K, init, tick, canGo, dist, travelMonths, travel, gather, pickAt,
     baseVal, mktRefresh, price, sellPrice, buy, sell,
-    aucOpen, aucNew, aucLot, aucRaise, aucPass, lotName,
+    aucOpen, aucNew, aucLot, aucRaise, aucPass, aucPlayConsign, lotName, consignList, consign,
+    shopOpen, shopCost, shopBuy, shopPut, shopTake,
     libRecipes, buyRecipe, learnRecipe, hasHerbs, danChance, danMonths, craft, danNeed,
     fxFrag, mjOpen, mjHere, mjEnter, mjNode, mjBase, mjResolve, mjLeave, mjAll, fx, useItem };
 })();

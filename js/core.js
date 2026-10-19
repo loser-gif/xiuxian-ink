@@ -394,6 +394,7 @@ const Core = (() => {
     if (!s.dead && typeof Jianghu !== 'undefined') Jianghu.tick(s, emit);
     if (!s.dead && typeof karmaTick === 'function') karmaTick(s, emit);
     if (!s.dead && typeof Juan !== 'undefined' && Juan.tick) Juan.tick(s, emit);
+    if (!s.dead && typeof Folio !== 'undefined' && Folio.tick) Folio.tick(s, emit);
   }
   function gainMul(s) {
     let m = 1;
@@ -1010,6 +1011,7 @@ const Core = (() => {
     if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
     if (typeof s.xwBank !== 'number') s.xwBank = 0;
+    if (typeof Folio !== 'undefined' && Folio.ensure) Folio.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;
     // 功法层数：旧档缺层数时作第一层，已有层数保留
     s.gfs = s.gfs || {};

@@ -3049,3 +3049,50 @@ html[data-theme="night"] .end{
 .fb-cer-panel{
   background-color:#f6f1e4 !important;
 }
+
+/* v53：开卷此身、铺子，以及宽屏把纸页收在可读的宽度里 */
+.who-pick{display:flex;flex-direction:column;gap:8px;margin:14px 0 4px}
+.who-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.who-line>span{flex:none;width:3em;font-family:var(--f-head);letter-spacing:.2em;color:var(--ink3);font-size:14px}
+.who-pick .look-opt{min-width:52px}
+.bag-shop{display:block;width:100%;margin:0 0 10px;padding:8px 2px;border:0;border-bottom:1px solid rgba(27,24,20,.12);
+  background:transparent;text-align:left;font-family:var(--f-head);letter-spacing:.18em;color:var(--ink2);cursor:pointer}
+.shop-sheet .look-lead,.shop-note{font-size:14px;line-height:1.8;color:var(--ink2)}
+.shop-note{margin:6px 0 10px}
+.shop-col{margin-top:12px}
+.shop-col>b{display:block;font-weight:400;font-family:var(--f-head);letter-spacing:.28em;color:var(--ink3);margin-bottom:6px}
+.shop-row{display:flex;justify-content:space-between;align-items:baseline;width:100%;gap:12px;padding:8px 0;
+  border:0;border-bottom:1px solid rgba(27,24,20,.1);background:transparent;color:var(--ink);font-size:15px;cursor:pointer;text-align:left}
+.shop-row small{color:var(--ink3);letter-spacing:.12em;flex:none}
+.auc-banner .shop-col{margin:8px 0 14px;text-align:left}
+@media (hover:hover) and (pointer:fine){
+  .act:hover{transform:translateY(-2px)}
+  .choice:hover{filter:brightness(.97)}
+  .side-card:hover{box-shadow:0 12px 28px rgba(60,40,20,.16)}
+  .menu-item:hover,.shop-row:hover,.bag-shop:hover{color:var(--zhu)}
+  .look-opt:hover,.who-pick .look-opt:hover{filter:brightness(.96)}
+  .brush-btn:hover{filter:brightness(1.03)}
+}
+@media (min-width:1280px) and (min-height:700px){
+  .hscroll{width:min(100%,680px)}
+  .end-paper{width:min(560px,46vw)}
+  .sheet-panel{width:min(720px,calc(100vw - 96px)) !important}
+  .mj{align-items:center}
+  .mj-body,.mj-head,.mj-chain,.mj-bars,.mj-loot{width:min(760px,calc(100% - 48px))}
+  .map-scroll-wrap{max-width:1200px;margin-left:auto;margin-right:auto}
+  .dan-stage{width:min(58vh,560px);height:min(58vh,560px)}
+  #scr-create{max-width:640px;margin-left:auto;margin-right:auto}
+}
+@media (min-width:1440px) and (min-height:800px){
+  #scr-main{grid-template-columns:minmax(240px,300px) minmax(0,760px) minmax(240px,300px)}
+  .hscroll{width:min(100%,720px)}
+  .end-paper{width:min(600px,42vw)}
+  .entry-text{font-size:17.5px}
+}
+@media (min-width:1800px) and (min-height:900px){
+  #scr-main{grid-template-columns:minmax(280px,340px) minmax(0,820px) minmax(280px,340px);column-gap:48px}
+  .hscroll{width:min(100%,780px)}
+  .end-paper{width:min(640px,36vw)}
+  .log{padding:10px 48px 36px}
+  .realm-name{font-size:64px}
+}

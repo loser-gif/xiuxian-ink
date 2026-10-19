@@ -265,9 +265,21 @@ function makeJHUI(G) {
   }
   function aucPage() {
     const w = document.createElement('div'); w.className = 'auc-banner';
+    const held = G.S.auc && G.S.auc.hold;
+    const rows = (J.consignList ? J.consignList(G.S) : []).map(r => `<button type="button" class="shop-row" data-k="${String(r.k).replace(/"/g, '')}">寄拍 ${r.name}<small>落槌随席</small></button>`).join('');
     w.innerHTML = `<div class="ab-lamps"><i></i><i></i><i></i></div><div class="ab-ttl">听雨楼 · 今夜拍卖</div>
-      <p>楼上挂出三盏红灯，今夜有三件宝物待价而沽。各路修士陆续登楼，有人笑语寒暄，有人只把斗笠压得更低。</p>
+      <p>楼上挂出红灯。席上的宝物待价而沽。你若有余货，也可寄一件上去，价由席上的人争，楼里抽一成二。</p>
+      ${held ? `<p class="shop-note">已寄：${held.name}。登楼后随席落槌。</p>` : `<div class="shop-col"><b>寄拍</b>${rows || '<p class="sd-empty">囊中暂无可寄之物</p>'}</div>`}
       <button class="brush-btn small ab-go"><span class="bb-ink"></span><span class="bb-text">登楼</span></button>`;
+    w.querySelectorAll('[data-k]').forEach(b => {
+      b.onclick = () => {
+        const r = J.consign(G.S, b.dataset.k);
+        if (!r || r.err) return toast(r && r.err || '不能寄');
+        pushLog({ title: '寄拍', text: `你把${r.name}交给听雨楼。估价随席，落槌之前谁也不说死。`, cls: 'sys' });
+        save(); render();
+        const n = aucPage(); w.replaceWith(n);
+      };
+    });
     w.querySelector('.ab-go').onclick = async () => { await closeSheet(); startAuction(); };
     return w;
   }
@@ -288,18 +300,22 @@ function makeJHUI(G) {
       <div class="auc-stamp" id="auc-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="auc-stamp-t">得</text></g></svg></div>`;
     aucEl.hidden = false; await sleep(20); aucEl.classList.add('open');
     if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('auction');
-    const allTags = [], got = [];
+    const allTags = [], got = [], sold = [];
     addLine({ t: pick(AUC_OPEN) }, true); await sleep(1200);
     let l;
     while ((l = J.aucLot(G.S, a))) {
       const won = await runLot(a, l);
-      if (won) { allTags.push(...won.tags); got.push(J.lotName(l)); }
+      if (won && won.consign) { allTags.push(...(won.tags || [])); if (won.sold) sold.push(l.name || J.lotName(l)); }
+      else if (won) { allTags.push(...won.tags); got.push(J.lotName(l)); }
       await sleep(300);
     }
     aucEl.classList.remove('open'); await sleep(500); aucEl.hidden = true; aucEl.innerHTML = '';
     if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('main');
     G.busy = false;
-    pushLog({ title: '听雨楼拍卖', text: got.length ? `三件宝物落槌，你拍得${got.join('、')}。下楼时，夜风里还飘着檀香。` : '三件宝物各有所归，你两手空空地下了楼。有些东西，原本就不是灵石能争来的。', tags: allTags, cls: got.length ? 'gold' : 'event', div: true });
+    const bits = [];
+    if (got.length) bits.push(`你拍得${got.join('、')}`);
+    if (sold.length) bits.push(`你寄出的${sold.join('、')}也落了槌`);
+    pushLog({ title: '听雨楼拍卖', text: bits.length ? `${bits.join('。')}。下楼时，夜风里还飘着檀香。` : '今夜各有所归，你两手空空地下了楼。有些东西，原本就不是灵石能争来的。', tags: allTags, cls: (got.length || sold.length) ? 'gold' : 'event', div: true });
     render(); save(); checkEnd();
     if (G.S.flags.heiGrudge === 1 && !G.S.dead) setTimeout(() => openEvent(EVENTS.find(e => e.id === 'hei_ambush')), 900);
   }
@@ -321,6 +337,13 @@ function makeJHUI(G) {
       const upd = () => { $('#auc-price').textContent = fmtNum(a.price); $('#auc-lead').textContent = a.leader ? (a.leader === 'you' ? '你领先' : `${BIDDERS[a.leader].name}领先`) : '尚无人应价'; $('#auc-ls').textContent = fmtNum(G.S.ls); };
       upd(); a.lines.forEach(x => addLine(x));
       const btns = $('#auc-btns');
+      if (l.consign && J.aucPlayConsign) {
+        btns.innerHTML = '';
+        const r = J.aucPlayConsign(G.S, a);
+        (r.lines || []).forEach(x => addLine(x));
+        upd();
+        return finish(r.sold ? r : null, { t: r.line || '落槌。' });
+      }
       const finish = async (won, line) => {
         btns.innerHTML = '';
         if (line) addLine(line);

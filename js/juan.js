@@ -330,7 +330,7 @@ const Juan = (() => {
         ] },
 
       { id: 'bond_meet', title: '疏影', seal: '影', w: 6, once: true, rm: [1, 3], portrait: 'xie',
-        cond: s => !(s.karma && s.karma.mate) && (s.realm | 0) >= 1 && !(s.bond && s.bond.lost),
+        cond: s => !(s.karma && s.karma.mate) && (s.realm | 0) >= 1 && !(s.bond && s.bond.lost) && (typeof Folio === 'undefined' || Folio.wantMate(s, 'f')),
         text: () => '桃花谢得晚的那年，溪边有个撑伞的人。伞是纸的，人是谢疏影。她看你一眼：“你走路的样子，像要去一个很远、也不一定存在的地方。”',
         choices: s => [
           { label: '问她要不要同行一程', act: s2 => {

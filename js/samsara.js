@@ -28,6 +28,7 @@ const Samsara = (() => {
       m.daily = m.daily || { day: '', claimed: false };
       m.best = m.best || { age: 0, realm: 0, ascend: 0 };
       m.relics = Array.isArray(m.relics) ? m.relics : [];
+      m.echoes = Array.isArray(m.echoes) ? m.echoes : [];
       m.lives = m.lives | 0;
       return m;
     } catch (e) { return emptyMeta(); }
@@ -270,6 +271,20 @@ const Samsara = (() => {
     if ((s.age | 0) > (m.best.age | 0)) m.best.age = s.age | 0;
     if ((s.realm | 0) > (m.best.realm | 0)) m.best.realm = s.realm | 0;
     if (ending === 'ascend') m.best.ascend = (m.best.ascend | 0) + 1;
+    if (!(s.flags && s.flags.trial)) {
+      m.echoes = Array.isArray(m.echoes) ? m.echoes : [];
+      const echo = {
+        key: (s.name || '') + '|' + (ending || '') + '|' + (s.age | 0),
+        name: s.name || '无名', ending: ending || 'zuohua', realm: s.realm | 0, age: s.age | 0,
+        mate: (s.karma && s.karma.mate && typeof NPCS !== 'undefined' && NPCS[s.karma.mate]) ? NPCS[s.karma.mate].name : '',
+        foe: (s.karma && s.karma.foe && typeof NPCS !== 'undefined' && NPCS[s.karma.foe]) ? NPCS[s.karma.foe].name : '',
+        sect: (s.sect && s.sect.org && typeof ORGS !== 'undefined' && ORGS[s.sect.org]) ? ORGS[s.sect.org].name : '',
+        fabao: (s.fabao && s.fabao.name) || (s.eq && s.eq.weapon) || '',
+        goal: (s.life && s.life.goal) || '',
+      };
+      if (!m.echoes.some(x => x && x.key === echo.key)) m.echoes.unshift(echo);
+      if (m.echoes.length > 16) m.echoes.length = 16;
+    }
     saveMeta(m);
     const leg = buildLegacy(s, ending);
     writeLegacy(leg);

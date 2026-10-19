@@ -185,6 +185,10 @@ function splitSentences(text) {
   return sentences.length ? sentences : [''];
 }
 function bareLen(s) { return s.replace(/[\s，。、；：？！“”‘’（《》「」…—·]/g, '').length; }
+function voice(t) {
+  if (!t || !S || typeof Folio === 'undefined' || !Folio.dress) return t;
+  return Folio.dress(S, t);
+}
 function inkWrite(el, text, opt = {}) {
   const now = performance.now();
   const backlog = Math.max(0, inkBusyUntil - now);
@@ -601,6 +605,17 @@ function initCreate() {
     newGame(name, roll, choice, origin);
   };
   $('#inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+  window.__who = window.__who || { sex: 'm', mate: 'any' };
+  const pick = document.getElementById('who-pick');
+  if (pick && !pick.dataset.bound) {
+    pick.dataset.bound = '1';
+    pick.addEventListener('click', e => {
+      const b = e.target.closest('[data-k]'); if (!b) return;
+      const k = b.dataset.k, v = b.dataset.v;
+      window.__who[k] = v;
+      pick.querySelectorAll(`[data-k="${k}"]`).forEach(x => x.classList.toggle('on', x === b));
+    });
+  }
 }
 
 function newGame(name, r, choice, originId) {
@@ -613,6 +628,11 @@ function newGame(name, r, choice, originId) {
   window.__trialStart = false;
   const rr = Object.assign({}, r, { org: orgId, free, trial, origin: originId || 'qingshi' });
   S = Core.newState(name, rr, legacy);
+  if (typeof Folio !== 'undefined') {
+    const w = window.__who || {};
+    Folio.setWho(S, w.sex || 'm', w.mate || 'any');
+    Folio.boot(S);
+  }
   if (typeof Slots !== 'undefined') {
     const slot = window.__slotTarget != null ? window.__slotTarget : (Slots.firstEmpty() >= 0 ? Slots.firstEmpty() : Slots.newestIndex());
     window.__slotTarget = null;
@@ -778,6 +798,7 @@ function enterMain(fromSave) {
     else { const l = $('#log'); if (l) l.scrollTop = 0; }
     if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
     if (fromSave) setTimeout(() => ensurePendingPath(), 900);
+    if (fromSave && typeof Folio !== 'undefined' && Folio.needSex(S)) setTimeout(() => openSexSheet(), 1200);
     if (S.flags && S.flags.guide) setTimeout(() => maybeGuide(), fromSave ? 600 : 1100);
   });
   render();
@@ -820,7 +841,8 @@ function renderEntry(e, animate) {
   const p = document.createElement('div'); p.className = 'entry-text'; el.appendChild(p);
   log.appendChild(el);
   let delay = 0;
-  if (animate) { delay = inkWrite(p, e.text); t.classList.add('bleed-in'); } else p.textContent = e.text;
+  const shown = voice(e.text);
+  if (animate) { delay = inkWrite(p, shown); t.classList.add('bleed-in'); } else p.textContent = shown;
   if (e.tags && e.tags.length) {
     const tg = document.createElement('div'); tg.className = 'entry-tags';
     tg.innerHTML = e.tags.map(x => `<span class="${x.c || ''}">${x.t}</span>`).join('');
@@ -875,7 +897,8 @@ function render() {
   if (trialSeal) trialSeal.hidden = !(S.flags && S.flags.trial);
   setText('#h-name', S.name);
   const cr = typeof courtRankName === 'function' ? courtRankName(S) : '';
-  setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
+  const sexMark = (typeof Folio !== 'undefined' && S.who && S.who.sex) ? ({ f: '女', n: '不言', m: '男' }[Folio.sex(S)] || '') : '';
+  setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''}${sexMark ? ' · ' + sexMark : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
   renderPathSeals();
   const so = Core.org(S); $('#sect-seal-t').textContent = so ? so.seal : '游';
   $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok)); fitLine($('#h-sub'), 11.5, 9);
@@ -1014,6 +1037,7 @@ function renderSide() {
   const loc = typeof LOCS !== 'undefined' && LOCS.find(l => l.id === S.loc);
   const notes = [];
   if (S.court && S.court.rank >= 0) notes.push(`朝 · ${courtRankName(S)}　兵${cn(S.court.bing)} 民${cn(S.court.min)} 道${cn(S.court.dao)}`);
+  if (typeof Folio !== 'undefined' && Folio.keqOn(S)) notes.push(`凡间 · ${Folio.keqTitle(S)}`);
   if (S.dan) notes.push(`丹道 ${cn(S.dan.lv)}重`);
   if (typeof JHUI !== 'undefined' && JHUI.aucWindow()) notes.push('<span class="zhu">听雨楼拍卖将开</span>');
   if (typeof Jianghu !== 'undefined' && S.mj) { const open = Jianghu.mjAll ? Object.keys(S.mj).filter(id => Jianghu.mjOpen(S, id)) : []; if (open.length) notes.push(`<span class="zhu">秘境现世 · ${open.map(id => esc(MIJING[id].name)).join('、')}</span>`); }
@@ -1225,7 +1249,7 @@ function openEvent(ev) {
   FX.vtext($('#ev-title'), title);
   $('#ev-seal').textContent = ev.seal || pick(['缘', '遇', '奇', '机']);
   if (S) { S.evFoe = null; S.evFoeMeta = null; }
-  const text = ev.text(S);
+  const text = voice(ev.text(S));
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
   mountFoeSlip($('#ev-text'));
@@ -1287,7 +1311,7 @@ function choose(ev, c, btn, evText, titleText) {
   if (res.fx && res.fx.gf) FX.goldMotes && setTimeout(() => { const t = $('#ev-result').getBoundingClientRect(); FX.goldMotes(t.left + t.width / 2, t.top + 20); }, 900);
   const out = $('#ev-result');
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
-  const d = inkWrite(p, res.text, { immediate: true, step: 20, cadence: true });
+  const d = inkWrite(p, voice(res.text), { immediate: true, step: 20, cadence: true });
   const tg = document.createElement('div'); tg.className = 'entry-tags'; tg.style.opacity = 0;
   tg.innerHTML = tags.map(x => `<span class="${x.c || ''}">${esc(x.t)}</span>`).join('') || '<span>无事发生</span>';
   out.appendChild(tg);
@@ -1750,7 +1774,7 @@ function sectNpc() {
         <div class="npc-title">${n.title}</div><div class="npc-trait">${n.trait}</div>
         <div class="npc-aff"><i style="left:${Math.min(50, pct)}%;width:${Math.abs(pct - 50)}%" class="${st.a < 0 ? 'neg' : ''}"></i><b></b></div>
         <p class="npc-line"></p></div>`;
-      c.querySelector('.npc-line').textContent = Core.npcLine(S, id);
+      c.querySelector('.npc-line').textContent = voice(Core.npcLine(S, id));
     }
     w.appendChild(c);
   });
@@ -1930,7 +1954,10 @@ function openBag(tab = 'bag') {
   // 行囊：只装消耗品与佩器；功法／法宝／定型／丹炉改走「修」印 openCult
   if (tab && tab !== 'bag') return openCult(tab);
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
-  wrap.innerHTML = '<div class="bag-lead">丹药 · 佩器 · 杂物<span>服用后不关卷</span></div><div class="tab-body bag-body"></div>';
+  const shopBit = (S.shop && (S.shop.own || (S.shop.rentUntil | 0) >= (S.months | 0))) ? '铺子开着' : '尚未开铺';
+  wrap.innerHTML = `<div class="bag-lead">丹药 · 佩器 · 杂物<span>服用后不关卷</span></div><button type="button" class="bag-shop">${shopBit} · 去铺子</button><div class="tab-body bag-body"></div>`;
+  const shopBtn = wrap.querySelector('.bag-shop');
+  if (shopBtn) shopBtn.onclick = async () => { await closeSheet(); openShop(); };
   const body = wrap.querySelector('.tab-body');
   const show = () => {
     $('#sheet-title').textContent = '行囊';
@@ -2191,6 +2218,8 @@ function openMenu() {
   const ds = (typeof Samsara !== 'undefined') ? Samsara.dailyStatus() : { claimed: true };
   const trialNote = (S.flags && S.flags.trial) ? '<br><span class="menu-trial">试炼境 · 不入轮回簿</span>' : '';
   w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
+    <button class="menu-item" data-m="shop">铺子<small>开铺 · 上货 · 一季一结</small></button>
+    <button class="menu-item" data-m="sex">此身<small>称呼 · 道侣心意</small></button>
     <button class="menu-item" data-m="annals">平生<small>逐年 · 所遇 · 所求</small></button>
     <button class="menu-item" data-m="look">纸墨<small>昼夜 · 字号 · 动效</small></button>
     <button class="menu-item" data-m="resume">继续修行</button>
@@ -2206,6 +2235,8 @@ function openMenu() {
     const m = btn.dataset.m;
     if (m === 'slots') { await closeSheet(); openSlots(); return; }
     if (m === 'annals') { await closeSheet(); openAnnals(); return; }
+    if (m === 'shop') { await closeSheet(); openShop(); return; }
+    if (m === 'sex') { await closeSheet(); openSexSheet(); return; }
     if (m === 'look') { await closeSheet(); openLook(); return; }
     if (m === 'path') { await closeSheet(); openCult('path'); return; }
     if (m === 'atlas') { await closeSheet(); openAtlasSheet(); return; }
@@ -2608,6 +2639,77 @@ function openLook() {
   });
   openSheet('纸墨', w);
 }
+function openSexSheet() {
+  if (!S || typeof Folio === 'undefined') return;
+  const w = document.createElement('div');
+  w.className = 'look-sheet';
+  const curS = (S.who && S.who.sex) || 'm';
+  const curM = (S.who && S.who.mate) || 'any';
+  const row = (k, label, cur, opts) => `<div class="look-row" data-k="${k}"><b>${label}</b><div class="look-opts">${opts.map(([id, name]) => `<button type="button" class="look-opt${cur === id ? ' on' : ''}" data-v="${id}">${name}</button>`).join('')}</div></div>`;
+  w.innerHTML = `<p class="look-lead">此身如何被称呼，道侣心意偏向哪一边。旧卷若从未写过，沿用原来的「师兄」便是。改过之后，纸上的称呼跟着改。</p>
+    ${row('sex', '此身', curS, [['m', '男'], ['f', '女'], ['n', '不言']])}
+    ${row('mate', '道侣', curM, [['f', '女'], ['m', '男'], ['any', '随缘']])}
+    <button type="button" class="menu-item" data-a="ok">落定</button>`;
+  const picked = { sex: curS, mate: curM };
+  w.addEventListener('click', e => {
+    const b = e.target.closest('.look-opt'); if (!b) return;
+    const rowEl = b.closest('.look-row');
+    picked[rowEl.dataset.k] = b.dataset.v;
+    rowEl.querySelectorAll('.look-opt').forEach(x => x.classList.toggle('on', x === b));
+  });
+  w.querySelector('[data-a=ok]').onclick = async () => {
+    Folio.setWho(S, picked.sex, picked.mate);
+    await closeSheet();
+    save(); render();
+    toast(picked.sex === 'f' ? '此后称师姐' : picked.sex === 'n' ? '此后称同门' : '此后仍称师兄');
+  };
+  openSheet('此身', w);
+}
+function stockName(k) {
+  const id = Core.manualId && Core.manualId(k);
+  if (id && GONGFA[id]) return '《' + GONGFA[id].name + '》';
+  return k;
+}
+function openShop() {
+  if (!S || typeof Jianghu === 'undefined' || !Jianghu.shopBuy) { toast('铺子未启'); return; }
+  const w = document.createElement('div');
+  w.className = 'shop-sheet';
+  const paint = () => {
+    const open = Jianghu.shopOpen(S);
+    const own = S.shop && S.shop.own;
+    const rent = S.shop && (S.shop.rentUntil | 0) >= (S.months | 0);
+    const costOwn = Jianghu.shopCost(S, 'own');
+    const costRent = Jianghu.shopCost(S, 'rent');
+    const stock = (S.shop && S.shop.stock) || {};
+    const stockKeys = Object.keys(stock).filter(k => stock[k] > 0);
+    const bagKeys = Object.keys(S.items || {}).filter(k => S.items[k] > 0);
+    const head = own ? '铺面是你的' : rent ? '租约未满' : '还没有铺面';
+    const note = (S.shop && S.shop.note) ? `<p class="shop-note">${esc(S.shop.note)}</p>` : '';
+    w.innerHTML = `<p class="look-lead">${head}。货在架上，你去闭关，它按季自己换成灵石。偷盗、挤兑、老主顾，都是铺子自己的事。</p>${note}
+      <div class="shop-acts">
+        ${own ? '' : `<button type="button" class="menu-item" data-a="own">买下铺面<small>灵石 ${fmtNum(costOwn)}</small></button>`}
+        <button type="button" class="menu-item" data-a="rent">${rent && !own ? '再租一年' : '租一年'}<small>灵石 ${fmtNum(costRent)}</small></button>
+      </div>
+      <div class="shop-col"><b>架上</b>${stockKeys.length ? stockKeys.map(k => `<button type="button" class="shop-row" data-a="take" data-k="${esc(k)}">${esc(stockName(k))} ×${stock[k]}<small>取回</small></button>`).join('') : '<p class="sd-empty">空架</p>'}</div>
+      <div class="shop-col"><b>可上架</b>${open && bagKeys.length ? bagKeys.slice(0, 12).map(k => `<button type="button" class="shop-row" data-a="put" data-k="${esc(k)}">${esc(stockName(k))} ×${S.items[k]}<small>搁上</small></button>`).join('') : ('<p class="sd-empty">' + (open ? '囊中无货' : '先有铺面，才能上货') + '</p>')}</div>`;
+    w.querySelectorAll('[data-a]').forEach(b => {
+      b.onclick = () => {
+        const a = b.dataset.a;
+        let r = null;
+        if (a === 'own') r = Jianghu.shopBuy(S, 'own');
+        else if (a === 'rent') r = Jianghu.shopBuy(S, 'rent');
+        else if (a === 'put') r = Jianghu.shopPut(S, b.dataset.k);
+        else if (a === 'take') r = Jianghu.shopTake(S, b.dataset.k);
+        if (!r) return;
+        if (r.err) return toast(r.err);
+        if (r.text) pushLog({ title: '铺子', text: r.text, tags: r.tags, cls: 'sys' });
+        render(); save(); paint();
+      };
+    });
+  };
+  paint();
+  openSheet('铺子', w);
+}
 function openGoalPicker() {
   if (!S || typeof Life === 'undefined') return Promise.resolve(null);
   const pc = $('#goal-cer'); if (!pc) return Promise.resolve(null);
@@ -2813,7 +2915,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=52').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=53').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -2870,5 +2972,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, openGoalPicker, openAnnals, openLook, applyLook };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openShop, openSexSheet, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, openGoalPicker, openAnnals, openLook, applyLook };
 })();

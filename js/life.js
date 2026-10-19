@@ -4,15 +4,28 @@
 const Life = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+  const GOAL_ALIAS = { xiaoyao: 'niantou' };
   const GOALS = [
-    { id: 'changsheng', name: '求长生', seal: '生', hint: '白日飞升，方不算辜负这身骨头', judge: s => s.ending === 'ascend' || !!s.ascended },
-    { id: 'xuechou', name: '报血仇', seal: '仇', hint: '有一笔账，要在这辈子结清', judge: s => !!(s.life && s.life.vendetta) || s.ending === 'zhenmo' },
-    { id: 'diwei', name: '登帝位', seal: '帝', hint: '问鼎人皇，仙凡都要低头', judge: s => s.ending === 'renhuang' },
-    { id: 'wendao', name: '问大道', seal: '问', hint: '把那一问问到底，成败其次', judge: s => !!(s.path && s.path.wendao) || s.ending === 'ascend' },
-    { id: 'shouyi', name: '守一人', seal: '守', hint: '有人记得你的名字，你也记得', judge: s => !!(s.karma && s.karma.mate) && !(s.bond && s.bond.lost) },
-    { id: 'xiaoyao', name: '逍遥归隐', seal: '隐', hint: '放下长生，一叶扁舟便是归处', judge: s => s.ending === 'guiyin' || s.ending === 'huashen' },
-    { id: 'zhangmen', name: '掌一门', seal: '掌', hint: '山门的钟，要为你响一次', judge: s => !!(s.sect && (s.sect.rank | 0) >= 6) },
-    { id: 'qingshi', name: '留名青史', seal: '史', hint: '史笔写下你时，不敢漏字', judge: s => s.ending === 'quancheng' || s.ending === 'renhuang' || s.ending === 'ascend' || s.ending === 'chuanshuo' },
+    { id: 'changsheng', name: '求长生', seal: '生', hint: '白日飞升，此愿即遂', judge: s => s.ending === 'ascend' || !!s.ascended,
+      coda: ok => ok ? '此生所求「求长生」。云开的那一刻，这一愿在天上合上了。' : '此生所求「求长生」。寿尽时，长生仍在云外。' },
+    { id: 'wendao', name: '问大道', seal: '问', hint: '飞升，或化神且道基已定', judge: s => s.ending === 'ascend' || !!(s.path && s.path.wendao) || ((s.realm | 0) >= 4 && !!(s.path && s.path.daoji)),
+      coda: ok => ok ? '此生所求「问大道」。这一问，你问到了自己能问的尽头。' : '此生所求「问大道」。卷终了，问还悬在路上。' },
+    { id: 'niantou', name: '念头通达', seal: '通', hint: '心定，并归隐、化山神，或年过古稀而心仍平。逍遥归隐收在这一念里', judge: s => {
+      const calm = s.life && Math.abs(s.life.heart | 0) <= 24;
+      if (s.ending === 'guiyin' || s.ending === 'huashen') return true;
+      if (s.life && s.life.tongda) return true;
+      return !!(calm && (s.age | 0) >= 70 && s.ending !== 'rumo' && s.ending !== 'yunluo');
+    }, coda: ok => ok ? '此生所求「念头通达」。到最后，心里那一点不再打架。逍遥与归隐，都收在这一念里。' : '此生所求「念头通达」。人先走了，念头还在路上。' },
+    { id: 'xuechou', name: '报血仇', seal: '仇', hint: '结清宿仇，或坐上镇魔的裂口', judge: s => !!(s.life && s.life.vendetta) || s.ending === 'zhenmo',
+      coda: ok => ok ? '此生所求「报血仇」。账在这一卷里结了。结完，风里不再有那个名字。' : '此生所求「报血仇」。账还在。人已经不在了。' },
+    { id: 'shouyi', name: '守一人', seal: '守', hint: '卷终时，道侣仍在，且未在劫中失去', judge: s => !!(s.karma && s.karma.mate) && !(s.bond && s.bond.lost) && (typeof Core === 'undefined' || Core.npcAlive(s, s.karma.mate)),
+      coda: ok => ok ? '此生所求「守一人」。卷终时，那个人还在。杯子还是两只。' : '此生所求「守一人」。你记得名字。名字那边，人已经不在杯边。' },
+    { id: 'diwei', name: '登帝位', seal: '帝', hint: '以人皇之身登基', judge: s => s.ending === 'renhuang',
+      coda: ok => ok ? '此生所求「登帝位」。钟哑的那一日，你坐上了那个位子。' : '此生所求「登帝位」。位子还在人间。你没有坐上去。' },
+    { id: 'zhangmen', name: '掌一门', seal: '掌', hint: '宗门位份到掌门', judge: s => !!(s.sect && (s.sect.rank | 0) >= 6),
+      coda: ok => ok ? '此生所求「掌一门」。山门的钟，这一次是为你响的。' : '此生所求「掌一门」。钟还在山上。响的时候，不是你的名字。' },
+    { id: 'qingshi', name: '留名青史', seal: '史', hint: '以飞升、人皇、摄政或传说收卷', judge: s => s.ending === 'quancheng' || s.ending === 'renhuang' || s.ending === 'ascend' || s.ending === 'chuanshuo',
+      coda: ok => ok ? '此生所求「留名青史」。史笔写到你时，没有把字漏掉。' : '此生所求「留名青史」。纸上有你的日子，可史册还没轮到这一笔。' },
   ];
 
   function empty() {
@@ -30,9 +43,10 @@ const Life = (() => {
     o.rescues = Array.isArray(o.rescues) ? o.rescues : [];
     o.rescueQ = Array.isArray(o.rescueQ) ? o.rescueQ : [];
     if (o.heart == null) o.heart = 0;
+    if (o.goal === 'xiaoyao') o.goal = 'niantou';
     return o;
   }
-  function goalBy(id) { return GOALS.find(g => g.id === id) || null; }
+  function goalBy(id) { return GOALS.find(g => g.id === (GOAL_ALIAS[id] || id)) || null; }
   function goalName(s) { const g = s && s.life && goalBy(s.life.goal); return g ? g.name : ''; }
 
   function heartWord(n) {
@@ -330,9 +344,11 @@ const Life = (() => {
     return g;
   }
   function achieved(s, kind) {
-    if (!s || !s.life || !s.life.goal) return null;
-    const g = goalBy(s.life.goal); if (!g) return null;
-    const snap = Object.assign({}, s, { ending: kind || s.ending });
+    if (!s) return null;
+    const life = L(s);
+    if (!life.goal) return null;
+    const g = goalBy(life.goal); if (!g) return null;
+    const snap = Object.assign({}, s, { ending: kind || s.ending, life });
     let ok = false;
     try { ok = !!g.judge(snap); } catch (e) { ok = false; }
     return { goal: g, ok };
@@ -340,6 +356,9 @@ const Life = (() => {
   function judgeLine(s, kind) {
     const a = achieved(s, kind);
     if (!a) return '';
+    if (typeof a.goal.coda === 'function') {
+      try { return a.goal.coda(a.ok, s, kind) || ''; } catch (e) {}
+    }
     return `此生所求「${a.goal.name}」。卷终之时，此事${a.ok ? '已遂' : '未竟'}。`;
   }
 
