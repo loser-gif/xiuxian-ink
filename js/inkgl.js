@@ -359,7 +359,24 @@ const InkGL = (() => {
     B.list.push(host.__live);
   }
   // 隐藏屏幕上的墨团：把画布缩成 1×1，释放后备存储；重新可见时 renderBlot 会按尺寸重建
-  function release() { for (const b of B.list) if (b.w > 1 && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; } }
+  function release() {
+    for (const b of B.list) {
+      if (b.host.closest('.title-menu')) continue; // 卷首笔触预先画好，回来时不再重铺
+      if (b.w > 1 && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; }
+    }
+  }
+  let titleClock = 0;
+  function titleQuiet() {
+    if (document.body.dataset.screen !== 'title') { titleClock = 0; return false; }
+    if (!document.body.classList.contains('go') || document.body.classList.contains('hold')) return true;
+    if (!titleClock) titleClock = performance.now();
+    const wait = document.body.classList.contains('intro-done') ? 4300 : 6400;
+    return performance.now() - titleClock < wait;
+  }
+  function needsTitlePrewarm() {
+    if (document.body.dataset.screen !== 'title') return false;
+    return B.list.some(b => !b.drawn && b.host.offsetParent && b.host.closest('.title-menu'));
+  }
   function scan() {
     if (!B.ok) return;
     document.querySelectorAll('.bb-ink:not(.live), .act-ink:not(.live)').forEach(register);
@@ -389,6 +406,7 @@ const InkGL = (() => {
     b.c.clearRect(0, 0, w, h);
     b.c.drawImage(gl.canvas, 0, gl.canvas.height - h, w, h, 0, 0, w, h);
     b.drawn = true;
+    b.host.classList.add('inked');
   }
   let livelyAt = 0, livelyOk = true;
   function lively() {
@@ -409,14 +427,15 @@ const InkGL = (() => {
     if (document.hidden) return;
     const root = document.documentElement;
     if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return;
-    if (!lively()) { B.raf = requestAnimationFrame(tick); return; }
+    const prewarm = needsTitlePrewarm();
+    if (!prewarm && (titleQuiet() || !lively())) { B.raf = requestAnimationFrame(tick); return; }
     release();
     const vis = B.list.filter(visible);
-    if (!vis.length) return;                      // 无可见墨团：停下，等下一次 scan
+    if (!vis.length) { B.raf = requestAnimationFrame(tick); return; }
     B.raf = requestAnimationFrame(tick);
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
     const stride = matchMedia('(pointer: coarse)').matches ? 6 : 3;
-    if (!surging && (++B.frame % stride)) return;      // 平时约 20fps（粗指针约 10fps），按压时全速
+    if (!prewarm && !surging && (++B.frame % stride)) return;
     const t = (now - B.t0) / 1000;
     for (const b of vis) {
       b.surge += (b.surgeT - b.surge) * (b.surgeT > b.surge ? .22 : .07);
