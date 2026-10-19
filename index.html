@@ -32,15 +32,127 @@
 </script>
 <meta name="format-detection" content="telephone=no">
 <title>纸上仙途 · 水墨修仙</title>
-<link rel="manifest" href="manifest.webmanifest?v=47">
-<link rel="icon" href="icon.svg?v=47" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=47">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=47" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=47" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=47">
-<link rel="stylesheet" href="css/style.css?v=47">
+<style id="crit">
+html,body{margin:0;background:#efe6d3;color:#1c1814}
+html[data-theme="night"],html[data-theme="night"] body{background:#14110e;color:#f0e6d6}
+[hidden]{display:none!important}
+#scenery{position:fixed;left:0;top:0;right:0;bottom:0;overflow:hidden;pointer-events:none}
+.cranes{position:absolute;left:0;top:0;right:0;bottom:0}
+.crane{position:absolute;left:18px;top:168px;width:58px;height:29px}
+.crane.c2{left:90px;top:176px;width:44px;height:22px}
+.crane svg,.boat svg{width:100%;height:100%;display:block}
+.boat{position:absolute;width:50px;height:29px}
+.seal,.seal-title{width:46px;height:46px}
+.seal svg{width:46px;height:46px;display:block}
+.menu-seal{width:44px;height:44px}
+.menu-seal svg{width:44px;height:44px;display:block}
+#splash{display:none}
+#app{position:relative;z-index:2}
+#boot-fail{position:fixed;left:16px;right:16px;top:18px;z-index:100;box-sizing:border-box;background:#f7f1e4;color:#1c1814;border:1px solid #8a2a22;padding:16px 18px 14px;box-shadow:0 8px 28px rgba(40,24,12,.18);font-family:serif}
+#boot-fail b{display:block;font-size:22px;letter-spacing:.2em;font-weight:400;margin:0 0 6px}
+#boot-fail p{margin:0 0 12px;font-size:14px;line-height:1.7}
+#boot-retry{font:inherit;font-size:16px;letter-spacing:.18em;background:#8e2420;color:#f6f0e2;border:0;padding:8px 18px;min-height:44px}
+html[data-theme="night"] #boot-fail{background:#1c1814;color:#f4ecdc;border-color:#c46a62}
+html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
+</style>
+<script>
+(function () {
+  var EXPECT = 'moxian-v48';
+  var pending = '';
+  function showFail(kind) {
+    var box = document.getElementById('boot-fail');
+    if (!box) { pending = kind || pending || 'js'; return; }
+    if (box.getAttribute('data-on') === '1') return;
+    box.setAttribute('data-on', '1');
+    box.hidden = false;
+    var p = document.getElementById('boot-fail-msg');
+    if (p) p.textContent = kind === 'css'
+      ? '样式没有落到纸上。点下面清掉本机缓存，再开一次。'
+      : '脚本没有跑完。点下面清掉本机缓存，再开一次。';
+  }
+  function checkCss() {
+    var app = document.getElementById('app');
+    if (!app || !window.getComputedStyle) return;
+    if (window.getComputedStyle(app).position !== 'fixed') showFail('css');
+  }
+  window.addEventListener('error', function (ev) {
+    var t = ev.target || ev.srcElement;
+    if (t && t.tagName === 'LINK') {
+      var href = t.getAttribute('href') || '';
+      if (href.indexOf('style.css') !== -1) showFail('css');
+      return;
+    }
+    if (t && t.tagName === 'SCRIPT' && t.getAttribute && t.getAttribute('src')) { showFail('js'); return; }
+    if (ev && ev.message && !window.__moxian) showFail('js');
+  }, true);
+  function retry() {
+    var finish = function () { location.replace(location.pathname + '?retry=' + Date.now()); };
+    var jobs = [];
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); }));
+        }));
+      }
+      if (window.caches && window.caches.keys) {
+        jobs.push(window.caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return window.caches.delete(k); }));
+        }));
+      }
+    } catch (e) {}
+    if (!jobs.length) { finish(); return; }
+    Promise.all(jobs).then(finish, finish);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    if (pending) showFail(pending);
+    else if (!window.__moxian) showFail('js');
+    var btn = document.getElementById('boot-retry');
+    if (btn) btn.addEventListener('click', retry);
+  });
+  window.addEventListener('load', checkCss);
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  var had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('./sw.js?v=48').then(function (reg) {
+    try { if (reg.active) reg.active.postMessage({ type: 'HELLO', cache: EXPECT }); } catch (e) {}
+    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    reg.addEventListener('updatefound', function () {
+      var nw = reg.installing;
+      if (!nw) return;
+      nw.addEventListener('statechange', function () {
+        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+          try { nw.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
+          var bar = document.getElementById('sw-refresh');
+          if (bar) bar.hidden = false;
+        }
+      });
+    });
+  }).catch(function () {});
+  var reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!had || reloading) return;
+    try {
+      if (sessionStorage.getItem('mx-heal') === EXPECT) return;
+      sessionStorage.setItem('mx-heal', EXPECT);
+    } catch (e) {}
+    reloading = true;
+    location.reload();
+  });
+})();
+</script>
+<link rel="manifest" href="manifest.webmanifest?v=48">
+<link rel="icon" href="icon.svg?v=48" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=48">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=48" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=48" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=48">
+<link rel="stylesheet" href="css/style.css?v=48">
 </head>
 <body>
+<div id="boot-fail" hidden>
+  <b>墨未落成</b>
+  <p id="boot-fail-msg">样式或脚本没有载入。点下面清掉本机缓存，再开一次。</p>
+  <button type="button" id="boot-retry">点此重试</button>
+</div>
 <!-- SVG 滤镜：印章斑驳、笔触毛边 -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -65,7 +177,7 @@
 <div id="scenery" aria-hidden="true">
  <div class="cam">
   <div class="sun"><i class="sun-halo"></i><i class="sun-dusk"></i></div>
-  <div class="cranes"><div class="crane c1"><svg viewBox="0 0 120 60"><g class="cr-body"><path d="M44 31 Q60 25 76 29 Q66 36 48 35 Z" fill="#f6f0e2" stroke="#2a2621" stroke-width="1.2"/><path d="M74 29 Q90 26 103 22" fill="none" stroke="#2a2621" stroke-width="2.1" stroke-linecap="round"/><circle cx="104.5" cy="21.6" r="2.4" fill="#2a2621"/><circle cx="104" cy="20" r="1.3" fill="#b3302a"/><path d="M106.5 21.8 L116 23" stroke="#5a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M46 33 L16 37 M46 34 L17 39.5" stroke="#2a2621" stroke-width="1.1" stroke-linecap="round"/><path d="M42 31 Q36 33 40 36 Q44 35 46 33Z" fill="#2a2621"/></g><g class="cr-wing"><path d="M54 29 Q48 12 34 1 Q46 4 58 10 Q66 4 80 2 Q70 14 66 28 Z" fill="#f3ecdd" stroke="#2a2621" stroke-width="1.1" stroke-linejoin="round"/><path d="M34 1 Q46 4 52 9 L50 12 Q42 6 34 1Z M80 2 Q72 6 68 10 L69 13 Q74 7 80 2Z" fill="#2a2621"/></g></svg></div><div class="crane c2"><svg viewBox="0 0 120 60"><g class="cr-body"><path d="M44 31 Q60 25 76 29 Q66 36 48 35 Z" fill="#f6f0e2" stroke="#2a2621" stroke-width="1.2"/><path d="M74 29 Q90 26 103 22" fill="none" stroke="#2a2621" stroke-width="2.1" stroke-linecap="round"/><circle cx="104.5" cy="21.6" r="2.4" fill="#2a2621"/><circle cx="104" cy="20" r="1.3" fill="#b3302a"/><path d="M106.5 21.8 L116 23" stroke="#5a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M46 33 L16 37 M46 34 L17 39.5" stroke="#2a2621" stroke-width="1.1" stroke-linecap="round"/><path d="M42 31 Q36 33 40 36 Q44 35 46 33Z" fill="#2a2621"/></g><g class="cr-wing"><path d="M54 29 Q48 12 34 1 Q46 4 58 10 Q66 4 80 2 Q70 14 66 28 Z" fill="#f3ecdd" stroke="#2a2621" stroke-width="1.1" stroke-linejoin="round"/><path d="M34 1 Q46 4 52 9 L50 12 Q42 6 34 1Z M80 2 Q72 6 68 10 L69 13 Q74 7 80 2Z" fill="#2a2621"/></g></svg></div></div>
+  <div class="cranes"><div class="crane c1"><svg viewBox="0 0 120 60" width="58" height="29"><g class="cr-body"><path d="M44 31 Q60 25 76 29 Q66 36 48 35 Z" fill="#f6f0e2" stroke="#2a2621" stroke-width="1.2"/><path d="M74 29 Q90 26 103 22" fill="none" stroke="#2a2621" stroke-width="2.1" stroke-linecap="round"/><circle cx="104.5" cy="21.6" r="2.4" fill="#2a2621"/><circle cx="104" cy="20" r="1.3" fill="#b3302a"/><path d="M106.5 21.8 L116 23" stroke="#5a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M46 33 L16 37 M46 34 L17 39.5" stroke="#2a2621" stroke-width="1.1" stroke-linecap="round"/><path d="M42 31 Q36 33 40 36 Q44 35 46 33Z" fill="#2a2621"/></g><g class="cr-wing"><path d="M54 29 Q48 12 34 1 Q46 4 58 10 Q66 4 80 2 Q70 14 66 28 Z" fill="#f3ecdd" stroke="#2a2621" stroke-width="1.1" stroke-linejoin="round"/><path d="M34 1 Q46 4 52 9 L50 12 Q42 6 34 1Z M80 2 Q72 6 68 10 L69 13 Q74 7 80 2Z" fill="#2a2621"/></g></svg></div><div class="crane c2"><svg viewBox="0 0 120 60" width="58" height="29"><g class="cr-body"><path d="M44 31 Q60 25 76 29 Q66 36 48 35 Z" fill="#f6f0e2" stroke="#2a2621" stroke-width="1.2"/><path d="M74 29 Q90 26 103 22" fill="none" stroke="#2a2621" stroke-width="2.1" stroke-linecap="round"/><circle cx="104.5" cy="21.6" r="2.4" fill="#2a2621"/><circle cx="104" cy="20" r="1.3" fill="#b3302a"/><path d="M106.5 21.8 L116 23" stroke="#5a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M46 33 L16 37 M46 34 L17 39.5" stroke="#2a2621" stroke-width="1.1" stroke-linecap="round"/><path d="M42 31 Q36 33 40 36 Q44 35 46 33Z" fill="#2a2621"/></g><g class="cr-wing"><path d="M54 29 Q48 12 34 1 Q46 4 58 10 Q66 4 80 2 Q70 14 66 28 Z" fill="#f3ecdd" stroke="#2a2621" stroke-width="1.1" stroke-linejoin="round"/><path d="M34 1 Q46 4 52 9 L50 12 Q42 6 34 1Z M80 2 Q72 6 68 10 L69 13 Q74 7 80 2Z" fill="#2a2621"/></g></svg></div></div>
   <canvas class="mtn m1"></canvas>
   <div class="mist mist1"></div>
   <canvas class="mtn m2"></canvas>
@@ -74,18 +186,18 @@
   <canvas class="mtn m3"></canvas>
   <canvas class="atmo atmo-near"></canvas>
   <div class="lake"><canvas class="lake-refl"></canvas><div class="lake-shimmer"></div>
-    <div class="boat-track"><div class="boat"><svg viewBox="0 0 120 70"><g class="bt-up"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b" opacity=".85"/><path d="M88 37 L90 25" stroke="#1f1c18" stroke-width="2.2" stroke-linecap="round"/><path d="M82 25 Q90 18 98 25 Z" fill="#1f1c18"/><path d="M95 33 L58 6" stroke="#2a2621" stroke-width="1" stroke-linecap="round"/></g><g class="bt-refl" transform="translate(0 94) scale(1 -1)" opacity=".16"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b"/><path d="M82 25 Q90 18 98 25 Z M88 37 L90 25" fill="#1f1c18" stroke="#1f1c18" stroke-width="2"/></g></svg><i class="wake w1"></i><i class="wake w2"></i></div></div></div>
+    <div class="boat-track"><div class="boat"><svg viewBox="0 0 120 70" width="50" height="29"><g class="bt-up"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b" opacity=".85"/><path d="M88 37 L90 25" stroke="#1f1c18" stroke-width="2.2" stroke-linecap="round"/><path d="M82 25 Q90 18 98 25 Z" fill="#1f1c18"/><path d="M95 33 L58 6" stroke="#2a2621" stroke-width="1" stroke-linecap="round"/></g><g class="bt-refl" transform="translate(0 94) scale(1 -1)" opacity=".16"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b"/><path d="M82 25 Q90 18 98 25 Z M88 37 L90 25" fill="#1f1c18" stroke="#1f1c18" stroke-width="2"/></g></svg><i class="wake w1"></i><i class="wake w2"></i></div></div></div>
   <div class="mist mist3"></div>
   <canvas class="mtn m4"></canvas>
   <canvas class="pine"></canvas>
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
  <div id="realm-scape" aria-hidden="true">
-  <img class="ra ra-0" src="img/realm-0.avif?v=47" alt="" decoding="async" width="720" height="404">
-  <img class="ra ra-1" src="img/realm-1.avif?v=47" alt="" decoding="async" width="720" height="336">
-  <img class="ra ra-2" src="img/realm-2.avif?v=47" alt="" decoding="async" width="720" height="405">
-  <img class="ra ra-3" src="img/realm-3.avif?v=47" alt="" decoding="async" width="720" height="401">
-  <img class="ra ra-4" src="img/realm-4.avif?v=47" alt="" decoding="async" width="720" height="405">
+  <picture><source srcset="img/realm-0.avif?v=48" type="image/avif"><source srcset="img/realm-0.webp?v=48" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=48" alt="" decoding="async" width="720" height="404"></picture>
+  <picture><source srcset="img/realm-1.avif?v=48" type="image/avif"><source srcset="img/realm-1.webp?v=48" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=48" alt="" decoding="async" width="720" height="336"></picture>
+  <picture><source srcset="img/realm-2.avif?v=48" type="image/avif"><source srcset="img/realm-2.webp?v=48" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=48" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-3.avif?v=48" type="image/avif"><source srcset="img/realm-3.webp?v=48" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=48" alt="" decoding="async" width="720" height="401"></picture>
+  <picture><source srcset="img/realm-4.avif?v=48" type="image/avif"><source srcset="img/realm-4.webp?v=48" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=48" alt="" decoding="async" width="720" height="405"></picture>
  </div>
  <div id="season-veil" aria-hidden="true"></div>
 </div>
@@ -456,35 +568,35 @@
   </div>
 </div>
 
-<script src="js/data.js?v=47"></script>
-<script src="js/gongfa.js?v=47"></script>
-<script src="js/gear.js?v=47"></script>
-<script src="js/story.js?v=47"></script>
-<script src="js/sect.js?v=47"></script>
-<script src="js/baijia.js?v=47"></script>
-<script src="js/world.js?v=47"></script>
-<script src="js/tianxia.js?v=47"></script>
-<script src="js/karma.js?v=47"></script>
-<script src="js/life.js?v=47"></script>
-<script src="js/juan.js?v=47"></script>
-<script src="js/path.js?v=47"></script>
-<script src="js/core.js?v=47"></script>
-<script src="js/codec.js?v=47"></script>
-<script src="js/slots.js?v=47"></script>
-<script src="js/samsara.js?v=47"></script>
-<script src="js/jianghu.js?v=47"></script>
-<script src="js/ink.js?v=47"></script>
-<script src="js/ding.js?v=47"></script>
-<script src="js/map.js?v=47"></script>
-<script src="js/audio.js?v=47"></script>
-<script src="js/fx.js?v=47"></script>
-<script src="js/btfx.js?v=47"></script>
-<script src="js/fabaoart.js?v=47"></script>
-<script src="js/wallpaper.js?v=47"></script>
-<script src="js/inkgl.js?v=47"></script>
-<script src="js/jhui.js?v=47"></script>
-<script src="js/scrollart.js?v=47"></script>
-<script src="js/portraits.js?v=47"></script>
-<script src="js/game.js?v=47"></script>
+<script src="js/data.js?v=48"></script>
+<script src="js/gongfa.js?v=48"></script>
+<script src="js/gear.js?v=48"></script>
+<script src="js/story.js?v=48"></script>
+<script src="js/sect.js?v=48"></script>
+<script src="js/baijia.js?v=48"></script>
+<script src="js/world.js?v=48"></script>
+<script src="js/tianxia.js?v=48"></script>
+<script src="js/karma.js?v=48"></script>
+<script src="js/life.js?v=48"></script>
+<script src="js/juan.js?v=48"></script>
+<script src="js/path.js?v=48"></script>
+<script src="js/core.js?v=48"></script>
+<script src="js/codec.js?v=48"></script>
+<script src="js/slots.js?v=48"></script>
+<script src="js/samsara.js?v=48"></script>
+<script src="js/jianghu.js?v=48"></script>
+<script src="js/ink.js?v=48"></script>
+<script src="js/ding.js?v=48"></script>
+<script src="js/map.js?v=48"></script>
+<script src="js/audio.js?v=48"></script>
+<script src="js/fx.js?v=48"></script>
+<script src="js/btfx.js?v=48"></script>
+<script src="js/fabaoart.js?v=48"></script>
+<script src="js/wallpaper.js?v=48"></script>
+<script src="js/inkgl.js?v=48"></script>
+<script src="js/jhui.js?v=48"></script>
+<script src="js/scrollart.js?v=48"></script>
+<script src="js/portraits.js?v=48"></script>
+<script src="js/game.js?v=48"></script>
 </body>
 </html>

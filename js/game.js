@@ -897,10 +897,13 @@ function renderSeals() {
   if (!col || !S) return;
   if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(S);
   const list = S.colophon || [];
+  const paper = document.querySelector('#scr-main .scroll-paper');
+  const setNote = on => { if (paper) paper.classList.toggle('has-note', !!on); };
   if (!list.length) {
     col.hidden = true; col.innerHTML = '';
     if (note) { note.hidden = true; note.textContent = ''; }
     delete document.body.dataset.seals;
+    setNote(false);
     return;
   }
   document.body.dataset.seals = '1';
@@ -912,10 +915,12 @@ function renderSeals() {
   col.hidden = false;
   col.innerHTML = show.map((c, i) => `<i class="m-seal${changed && i === show.length - 1 ? ' land' : ''}">${esc(c.seal || '印')}</i>`).join('');
   if (note) {
-    note.hidden = false;
-    note.textContent = last.line || '';
-    note.classList.toggle('land', changed);
-  }
+    const line = last.line || '';
+    note.hidden = !line;
+    note.textContent = line;
+    note.classList.toggle('land', changed && !!line);
+    setNote(!!line);
+  } else setNote(false);
 }
 // 宽屏右栏：功法 / 宗门 / 行囊 / 行迹 一览（窄屏隐藏时不渲染）
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -2631,7 +2636,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=47').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=48').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -2641,12 +2646,6 @@ function mountSW() {
       nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) ask(); });
     });
   }).catch(() => {});
-  let reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!had || reloading) return;
-    reloading = true;
-    location.reload();
-  });
   const btn = document.getElementById('sw-refresh-btn');
   if (btn) btn.onclick = () => {
     navigator.serviceWorker.getRegistration().then(reg => {
