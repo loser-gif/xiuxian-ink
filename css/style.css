@@ -743,7 +743,8 @@ body.hold.go .title-menu .bb-text,
 body.hold.go .title-menu small,
 body.hold.go .seal-title,
 body.hold.go .seal-title::before,
-body.hold.go .seal-halo{animation-play-state:paused}
+body.hold.go .seal-halo,
+body.hold.go #btn-notice{animation-play-state:paused}
 body.go #intro .drop{animation:drop .84s linear both}
 body.go #intro .bloom{animation:bloom 1.15s linear .46s both}
 @keyframes drop{0%{opacity:0;transform:translate3d(0,-36vh,0) scale(.55,.72)}14%{opacity:.92;transform:translate3d(0,-26vh,0) scale(.62,.8)}58%{opacity:1;transform:translate3d(0,-6vh,0) scale(.8,.98)}78%{opacity:1;transform:translate3d(0,0,0) scale(.9,1.16)}100%{opacity:0;transform:translate3d(0,1px,0) scale(1.42,.58)}}
@@ -814,7 +815,7 @@ body.go.intro-done #intro{display:none}
 
 @media (prefers-reduced-motion:reduce){
   #weather,#fx,#path-fx,#intro,.cranes{display:none}
-  body.go .tch b,body.go .title-sub,body.go .title-poem,body.go .title-menu,body.go .seal-title,body.go[data-screen=title] #scenery{animation-duration:.01s!important;animation-delay:0s!important}
+  body.go .tch b,body.go .title-sub,body.go .title-poem,body.go .title-menu,body.go .seal-title,body.go #btn-notice,body.go[data-screen=title] #scenery{animation-duration:.01s!important;animation-delay:0s!important}
   .realm-name,.ember,.ember-glow,.smoke path,.bt-rays,.break-seal::before{animation:none!important}
   #cave.on .cave-dark,#cave.on .lantern{animation:none}
 }
@@ -3095,4 +3096,69 @@ html[data-theme="night"] .end{
   .end-paper{width:min(640px,36vw)}
   .log{padding:10px 48px 36px}
   .realm-name{font-size:64px}
+}
+
+/* v54 公告：左缘一方小印，不进底栏那四枚。有未读时印角点一颗朱砂。 */
+#btn-notice.notice-seal{
+  position:absolute;z-index:4;
+  left:max(14px, calc(var(--sal) + 10px));
+  top:calc(var(--sat) + 28vh);
+  width:44px;height:44px;padding:0;border:0;background:transparent;cursor:pointer;
+  color:#f3ead6;-webkit-tap-highlight-color:transparent;
+  opacity:0;transform:rotate(-8deg);
+}
+body.go #btn-notice.notice-seal{animation:noticeIn 1.1s 2.4s var(--ease-ink) both}
+@keyframes noticeIn{
+  from{opacity:0;transform:translate3d(0,8px,0) rotate(-8deg)}
+  to{opacity:1;transform:rotate(-8deg)}
+}
+#btn-notice.notice-seal svg{display:block;width:100%;height:100%;overflow:visible}
+#btn-notice.notice-seal:active{transform:rotate(-8deg) scale(.94)}
+.notice-dot{
+  position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;
+  background:#c4372f;box-shadow:0 0 0 2px #f4efe2;pointer-events:none;
+}
+#btn-notice:not(.has-news) .notice-dot{display:none}
+.notice-list{padding:2px 0 8px}
+.notice-card{padding:12px 2px 13px;border-bottom:1px solid rgba(27,24,20,.1)}
+.notice-card header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 12px;margin-bottom:4px}
+.notice-card b{font-family:var(--f-head);font-weight:400;font-size:20px;letter-spacing:.08em;color:var(--ink)}
+.notice-card time{flex:none;font-size:12px;letter-spacing:.06em;color:var(--ink3)}
+.notice-card ul{margin:0;padding:0;list-style:none}
+.notice-card li{position:relative;padding:2px 0 2px 1em;font-size:14.5px;line-height:1.75;color:var(--ink2)}
+.notice-card li::before{
+  content:"";position:absolute;left:0;top:.72em;width:5px;height:5px;border-radius:50%;
+  background:var(--zhu);opacity:.85;
+}
+@media (max-height:700px){
+  #btn-notice.notice-seal{top:calc(var(--sat) + 22vh);width:38px;height:38px}
+}
+@media (max-width:360px){
+  #btn-notice.notice-seal{left:max(8px, var(--sal));width:36px;height:36px}
+}
+@media (orientation:landscape) and (max-height:540px){
+  #btn-notice.notice-seal{
+    top:calc(var(--sat) + 72px);
+    left:max(10px, calc(var(--sal) + 8px));
+    width:32px;height:32px;
+  }
+}
+/* 宽屏卷首被收成中间一条。印改钉在视口左缘的空山上，不挤进题诗和红日。 */
+@media (min-width:700px){
+  #btn-notice.notice-seal{
+    position:fixed;
+    left:max(22px, var(--sal));
+    top:max(16vh, 108px);
+    width:46px;height:46px;
+  }
+}
+@media (min-width:1000px) and (min-aspect-ratio:5/4){
+  #btn-notice.notice-seal{
+    left:max(36px, calc(var(--sal) + 12px));
+    top:20vh;
+    width:48px;height:48px;
+  }
+}
+@media (hover:hover) and (pointer:fine){
+  #btn-notice.notice-seal:hover{filter:brightness(1.06)}
 }

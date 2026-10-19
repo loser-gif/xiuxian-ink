@@ -375,6 +375,61 @@ function toast(msg) {
 }
 
 /* ================= 卷首 ================= */
+/* 公告。已读版本只写 moxian.notice，不动存档。 */
+const NOTICE_KEY = 'moxian.notice';
+function noticeLatest() {
+  if (typeof NOTICES === 'undefined' || !NOTICES.length) return '';
+  return String(NOTICES[0].v);
+}
+function noticeUnread() {
+  const v = noticeLatest();
+  if (!v) return false;
+  let seen = '';
+  try { seen = localStorage.getItem(NOTICE_KEY) || ''; } catch (e) {}
+  return seen !== v;
+}
+function paintNoticeDot() {
+  const btn = $('#btn-notice');
+  if (!btn) return;
+  if (!noticeLatest()) { btn.hidden = true; return; }
+  btn.hidden = false;
+  btn.classList.toggle('has-news', noticeUnread());
+}
+function noticeDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!m || typeof cn !== 'function') return iso || '';
+  return cn(+m[1]) + '年' + cn(+m[2]) + '月' + cn(+m[3]) + '日';
+}
+function openNotice() {
+  if (!noticeLatest()) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'notice-list';
+  NOTICES.forEach(n => {
+    const card = document.createElement('article');
+    card.className = 'notice-card';
+    const head = document.createElement('header');
+    const ver = document.createElement('b');
+    ver.textContent = n.to ? ('v' + n.v + ' · 至 v' + n.to) : ('v' + n.v);
+    const time = document.createElement('time');
+    time.dateTime = n.date || '';
+    time.textContent = noticeDate(n.date);
+    const ul = document.createElement('ul');
+    (n.items || []).forEach(t => {
+      const li = document.createElement('li');
+      li.textContent = t;
+      ul.appendChild(li);
+    });
+    head.appendChild(ver);
+    head.appendChild(time);
+    card.appendChild(head);
+    card.appendChild(ul);
+    wrap.appendChild(card);
+  });
+  try { localStorage.setItem(NOTICE_KEY, noticeLatest()); } catch (e) {}
+  paintNoticeDot();
+  openSheet('公告', wrap);
+}
+
 function initTitle() {
   const s = aliveSave();
   if (s && !s.dead && !s.ascended) {
@@ -452,6 +507,11 @@ function initTitle() {
   const btnSlots = $('#btn-slots');
   if (btnSlots) btnSlots.onclick = () => { FX.requestTilt(); openSlots(); };
   $('#btn-continue').onclick = () => { FX.requestTilt(); S = aliveSave(); if (!S) return; playTick = Date.now(); enterMain(true); };
+  const btnNotice = $('#btn-notice');
+  if (btnNotice) {
+    paintNoticeDot();
+    btnNotice.onclick = () => { FX.requestTilt(); openNotice(); };
+  }
 }
 
 async function pickSlotForNew(trial) {
@@ -2915,7 +2975,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=53').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=54').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
