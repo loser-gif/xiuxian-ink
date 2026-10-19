@@ -42,7 +42,18 @@ const MTN_NIGHT = [
   { rgb: [222, 212, 198], alpha: 0.68 },
   { rgb: [236, 228, 216], alpha: 0.76, bottomFade: true },
 ];
-function drawMountains(force) {
+let mtnGen = 0;
+function paintMountain(cv, i, night, title, realm, sh) {
+  const base = night ? Object.assign({}, MTN[i], MTN_NIGHT[i]) : MTN[i];
+  const rgb = (base.rgb || [40, 40, 40]).map((v, k) => Math.max(0, Math.min(255, v + (sh[k] || 0) * (i < 2 ? 0.65 : 1))));
+  let shape = {};
+  if (!title && !night && realm === 1 && i === 3) shape = { peaks: 1, amp: base.amp * 1.35, trees: 0, sharp: 2.8 };
+  else if (!title && !night && realm === 2 && i === 2) shape = { peaks: 3, amp: base.amp * 1.15, sharp: 3.1 };
+  else if (!title && !night && realm === 4 && i <= 1) shape = { peaks: 2, amp: base.amp * 0.55, trees: 0 };
+  const bamboo = !title && !night && realm === 0 && i >= 2 ? { trees: (base.trees || 0) + 3, treeSize: 1.15 } : {};
+  Ink.mountainLayer(cv, Object.assign({}, base, shape, bamboo, { rgb }));
+}
+function drawMountains(force, opt) {
   const w = window.innerWidth;
   const screen = document.body.dataset.screen || 'title';
   const title = screen === 'title';
@@ -53,17 +64,22 @@ function drawMountains(force) {
   if (!force && Math.abs(w - lastW) < 2 && sig === lastRealmDraw) return;
   lastW = w; lastRealmDraw = sig;
   const sh = (night || title) ? [0, 0, 0] : (REALM_SHIFT[realm] || [0, 0, 0]);
-  $$('.mtn').forEach((cv, i) => {
-    const base = night ? Object.assign({}, MTN[i], MTN_NIGHT[i]) : MTN[i];
-    const rgb = (base.rgb || [40, 40, 40]).map((v, k) => Math.max(0, Math.min(255, v + (sh[k] || 0) * (i < 2 ? 0.65 : 1))));
-    let shape = {};
-    if (!title && !night && realm === 1 && i === 3) shape = { peaks: 1, amp: base.amp * 1.35, trees: 0, sharp: 2.8 };
-    else if (!title && !night && realm === 2 && i === 2) shape = { peaks: 3, amp: base.amp * 1.15, sharp: 3.1 };
-    else if (!title && !night && realm === 4 && i <= 1) shape = { peaks: 2, amp: base.amp * 0.55, trees: 0 };
-    const bamboo = !title && !night && realm === 0 && i >= 2 ? { trees: (base.trees || 0) + 3, treeSize: 1.15 } : {};
-    Ink.mountainLayer(cv, Object.assign({}, base, shape, bamboo, { rgb }));
-  });
-  if (wallpaperOn) Wallpaper.rebuild();
+  const els = $$('.mtn');
+  const finish = () => { if (wallpaperOn && typeof Wallpaper !== 'undefined') Wallpaper.rebuild(); };
+  if (opt && opt.yield && els.length) {
+    const gen = ++mtnGen;
+    const step = i => {
+      if (gen !== mtnGen) return;
+      if (i >= els.length) { requestAnimationFrame(finish); return; }
+      paintMountain(els[i], i, night, title, realm, sh);
+      requestAnimationFrame(() => step(i + 1));
+    };
+    requestAnimationFrame(() => step(0));
+    return;
+  }
+  mtnGen++;
+  els.forEach((cv, i) => paintMountain(cv, i, night, title, realm, sh));
+  finish();
 }
 let wallpaperOn = false;
 async function initVisuals() {
@@ -94,6 +110,7 @@ async function initVisuals() {
   root.style.setProperty('--blot', `url(${b1})`); root.style.setProperty('--blot2', `url(${b2})`);
   root.style.setProperty('--blot3', `url(${b3})`); root.style.setProperty('--blot4', `url(${b4})`);
   root.style.setProperty('--blot-stone', `url(${stone})`); root.style.setProperty('--blot-big', `url(${big})`);
+  try { const warm = new Image(); warm.src = big; if (warm.decode) warm.decode().catch(() => {}); } catch (e) {}
   try { Wallpaper.init(); wallpaperOn = true; } catch (e) { console.warn(e); }
   root.style.setProperty('--grain-img', `url(${grainTile()})`);
   root.style.setProperty('--fiber-img', `url(${fiberTile()})`);
@@ -290,7 +307,7 @@ function setScreen(id) {
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
   placeRealmScape();
-  if (prev !== id && (prev === 'title' || id === 'title')) drawMountains(true);
+  if (prev !== id && (prev === 'title' || id === 'title')) drawMountains(true, { yield: !snappy() });
   if (typeof MoAudio !== 'undefined') {
     const mode = id === 'title' ? 'title' : (id === 'main' || id === 'create' ? 'main' : 'off');
     MoAudio.startAmbient(mode);
@@ -777,7 +794,7 @@ function render() {
     clearTimeout(render._rs);
     render._rs = setTimeout(() => document.body.classList.remove('realm-shift'), 980);
   }
-  if (shownRealm !== nextRealm) { shownRealm = nextRealm; document.body.dataset.realm = nextRealm; drawMountains(true); }
+  if (shownRealm !== nextRealm) { shownRealm = nextRealm; document.body.dataset.realm = nextRealm; drawMountains(true, { yield: document.body.dataset.screen === 'main' && !snappy() }); }
   else document.body.dataset.realm = nextRealm;
   document.body.dataset.season = season;
   // 时辰感：按月份内进度微移（晨／午／暮），只影响纸色，不改玩法
@@ -844,10 +861,18 @@ function renderSeals() {
     return;
   }
   document.body.dataset.seals = '1';
+  const last = list[list.length - 1];
+  const sig = list.length + '|' + (last.seal || '') + '|' + (last.line || '');
+  const changed = !!(renderSeals._sig && renderSeals._sig !== sig);
+  renderSeals._sig = sig;
   const show = list.slice(-6);
   col.hidden = false;
-  col.innerHTML = show.map(c => `<i class="m-seal">${esc(c.seal || '印')}</i>`).join('');
-  if (note) { note.hidden = false; note.textContent = list[list.length - 1].line || ''; }
+  col.innerHTML = show.map((c, i) => `<i class="m-seal${changed && i === show.length - 1 ? ' land' : ''}">${esc(c.seal || '印')}</i>`).join('');
+  if (note) {
+    note.hidden = false;
+    note.textContent = last.line || '';
+    note.classList.toggle('land', changed);
+  }
 }
 // 宽屏右栏：功法 / 宗门 / 行囊 / 行迹 一览（窄屏隐藏时不渲染）
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -2317,10 +2342,12 @@ function readLook() {
 }
 function applyLook(partial) {
   const prev = readLook();
+  const prevTheme = document.documentElement.dataset.theme || '';
   const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, prev, partial || {});
   try { localStorage.setItem(LOOK_KEY, JSON.stringify({ theme: p.theme, font: p.font, motion: p.motion })); } catch (e) {}
   const dark = p.theme === 'night' || (p.theme !== 'day' && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.theme = dark ? 'night' : 'day';
+  const nextTheme = dark ? 'night' : 'day';
+  document.documentElement.dataset.theme = nextTheme;
   document.documentElement.dataset.font = (p.font === 'lg' || p.font === 'sm') ? p.font : 'md';
   document.documentElement.dataset.motion = p.motion === 'lite' ? 'lite' : 'full';
   const wantThin = p.motion === 'lite' || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2334,7 +2361,8 @@ function applyLook(partial) {
   root.style.setProperty('--brush-img-zhu', brushBtnImg(27, dark ? '#9c4038' : '#b3302a', dark ? 0.94 : 0.92));
   if (typeof FX !== 'undefined' && FX.syncMotion) FX.syncMotion();
   if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
-  drawMountains(true);
+  // 开卷前山与壁纸已经画过。主题没变就不要在墨滴落地的同一帧整页重绘。
+  if (prevTheme !== nextTheme) drawMountains(true, { yield: prevTheme !== '' });
 }
 function openLook() {
   const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, readLook());
@@ -2551,13 +2579,16 @@ function splashWait() {
     return sleep(160).then(() => el.classList.add('gone'));
   }
   requestAnimationFrame(() => el.classList.add('play'));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.body.classList.add('go', 'hold');
+  }));
   return sleep(1280).then(() => { el.classList.add('gone'); return sleep(380); });
 }
 function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=42').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=43').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -2584,17 +2615,31 @@ function mountSW() {
 }
 mountSW();
 
+function retireIntro() {
+  const intro = document.getElementById('intro');
+  const sp = document.getElementById('splash');
+  if (intro) intro.hidden = true;
+  if (sp) sp.hidden = true;
+  const warm = () => {
+    document.querySelectorAll('#realm-scape img').forEach(img => { if (img.decode) img.decode().catch(() => {}); });
+  };
+  if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 1200 });
+  else setTimeout(warm, 400);
+}
 // 视觉素材与字体都就绪后再开卷，避免字体替换造成的半截状态
 Promise.all([
   initVisuals(),
   Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
 ]).catch(() => {}).then(() => splashWait()).then(() => {
   applyLook();
-  const sp = document.getElementById('splash');
-  requestAnimationFrame(() => document.body.classList.add('go'));
-  // 首访不在中途打 intro-done，否则题字动画会从头再来，屏上只剩一个「纸」
-  setTimeout(() => { const intro = document.getElementById('intro'); if (intro) intro.hidden = true; }, 1200);
-  if (sp) setTimeout(() => { sp.hidden = true; }, 700);
+  // 动画层已在卷首遮罩下建好（go+hold）。这里只放开播放。
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (!document.body.classList.contains('go')) document.body.classList.add('go');
+    document.body.classList.remove('hold');
+    if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
+  }));
+  // 首访不在中途打 intro-done，也不要在墨滴落地时 display:none（会逼 InkGL 重扫、掐断晕开）。
+  setTimeout(retireIntro, 4200);
 });
 
 /* 日志滚动时短暂显示墨条 */

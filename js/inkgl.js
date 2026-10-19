@@ -390,15 +390,33 @@ const InkGL = (() => {
     b.c.drawImage(gl.canvas, 0, gl.canvas.height - h, w, h, 0, 0, w, h);
     b.drawn = true;
   }
+  let livelyAt = 0, livelyOk = true;
+  function lively() {
+    const root = document.documentElement;
+    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return false;
+    const now = performance.now();
+    if (now - livelyAt < 200) return livelyOk;
+    livelyAt = now;
+    const menu = document.querySelector('.title-menu');
+    if (menu && document.body.dataset.screen === 'title') {
+      const op = parseFloat(getComputedStyle(menu).opacity);
+      livelyOk = !(op < 0.35);
+    } else livelyOk = true;
+    return livelyOk;
+  }
   function tick(now) {
     B.raf = 0;
     if (document.hidden) return;
+    const root = document.documentElement;
+    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return;
+    if (!lively()) { B.raf = requestAnimationFrame(tick); return; }
     release();
     const vis = B.list.filter(visible);
     if (!vis.length) return;                      // 无可见墨团：停下，等下一次 scan
     B.raf = requestAnimationFrame(tick);
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
-    if (!surging && (++B.frame % 3)) return;      // 平时 20fps（墨很慢，足够顺滑），按压时 60fps
+    const stride = matchMedia('(pointer: coarse)').matches ? 6 : 3;
+    if (!surging && (++B.frame % stride)) return;      // 平时约 20fps（粗指针约 10fps），按压时全速
     const t = (now - B.t0) / 1000;
     for (const b of vis) {
       b.surge += (b.surgeT - b.surge) * (b.surgeT > b.surge ? .22 : .07);
@@ -557,8 +575,13 @@ const InkGL = (() => {
   function init() {
     if (initBlots()) {
       scan();
-      new MutationObserver(() => { clearTimeout(init.t); init.t = setTimeout(scan, 60); })
-        .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'data-screen'] });
+      new MutationObserver(() => {
+        if (init.queued) return;
+        init.queued = true;
+        const run = () => { init.queued = false; scan(); };
+        if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 700 });
+        else init.t = setTimeout(run, 180);
+      }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'data-screen'] });
       document.addEventListener('visibilitychange', start);
       addEventListener('resize', start);
       const on = e => { const b = e.target.closest && e.target.closest('.brush-btn,.act'); if (b && !b.disabled) { press(b, true); B.pressed = b; } };

@@ -298,8 +298,11 @@ const FabaoArt = (() => {
     else {
       const t0 = performance.now();
       const dur = 1680;
+      let last = 0;
       const tick = (now) => {
         const k = Math.min(1, (now - t0) / dur);
+        if (k < 1 && now - last < 32) { requestAnimationFrame(tick); return; }
+        last = now;
         const eased = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
         render(cv, shown, { progress: eased });
         if (k < 1 && host.isConnected) requestAnimationFrame(tick);

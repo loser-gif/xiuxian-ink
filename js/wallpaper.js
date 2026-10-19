@@ -195,7 +195,12 @@ const Wallpaper = (() => {
   }
   function start() {
     if (reduced() || document.documentElement.dataset.motion === 'lite') return;
+    if (!document.body.classList.contains('go') || document.body.classList.contains('hold')) return;
+    if (document.body.dataset.screen !== 'title') return;
     if (!A.raf && A.layers.length) { A.last = 0; A.raf = requestAnimationFrame(tick); }
+  }
+  function kick(ms) {
+    setTimeout(start, ms || 0);
   }
   function refill(L) {
     const W = innerWidth, H = innerHeight;
@@ -222,12 +227,13 @@ const Wallpaper = (() => {
     drawPine($('.pine'));
     drawLake();
     if (!document.documentElement.style.getPropertyValue('--glint-img')) document.documentElement.style.setProperty('--glint-img', `url(${glints()})`);
-    start();
   }
   function init() {
     build();
     document.addEventListener('visibilitychange', start);
-    new MutationObserver(start).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
+    new MutationObserver(() => {
+      if (document.body.dataset.screen === 'title') start();
+    }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
   }
-  return { init, rebuild: build, syncMotion };
+  return { init, rebuild: build, syncMotion, kick };
 })();

@@ -193,11 +193,20 @@ const FX = (() => {
     if ((W.gold || []).length === n) return;
     W.gold = Array.from({ length: n }, () => ({ x: rnd(0, W.w), y: rnd(0, W.h), vy: rnd(5, 12), s: rnd(2, 3.6), spin: rnd(.6, 1.4), ph: rnd(0, 6.28) }));
   }
+  let goSeen = 0;
+  function introBusy() {
+    if (document.body.dataset.screen !== 'title') return false;
+    if (!document.body.classList.contains('go') || document.body.classList.contains('hold')) return true;
+    if (!goSeen) goSeen = performance.now();
+    return performance.now() - goSeen < 900;
+  }
   function wTick(t) {
     if (thinNow()) { haltWeather(); return; }
     if (document.hidden) { W.raf = 0; return; }
+    W.raf = requestAnimationFrame(wTick);
+    if (introBusy()) return;
     W.frame = (W.frame || 0) + 1;
-    if (thinNow() && (W.frame & 1)) { W.raf = requestAnimationFrame(wTick); return; }
+    if (thinNow() && (W.frame & 1)) return;
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 8 + Math.sin(time * 0.071) * 5;
@@ -230,7 +239,6 @@ const FX = (() => {
       c.beginPath(); c.moveTo(-1, -.6); c.lineTo(.9, -.9); c.lineTo(.7, .8); c.lineTo(-.8, .7); c.closePath(); c.fill();
     }
     if (W.gold && W.gold.length) { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
-    W.raf = requestAnimationFrame(wTick);
   }
 
   /* 低帧率连续两段即把动效收薄；「全」可在纸墨里再打开 */
