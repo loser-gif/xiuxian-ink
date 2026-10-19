@@ -3008,3 +3008,35 @@ html[data-motion="lite"] .bt.pomo,html[data-fx="thin"] .bt.pomo{animation:none!i
 html[data-motion="lite"] .m-seal.land,html[data-fx="thin"] .m-seal.land,
 html[data-motion="lite"] .margin-note.land,html[data-fx="thin"] .margin-note.land,
 html[data-motion="lite"] .choice.picked::after,html[data-fx="thin"] .choice.picked::after{animation:none!important}
+
+/* v51：遮罩压实。半透明渐变仍铺在实色上，底下的字不再透进卡片。
+   不用 backdrop-filter：简动效与旧引擎本来就拿掉整屏模糊，实色不另付这一笔。 */
+.bt-shade,
+.rite-shade,
+.duel-shade,
+.auc-shade,
+.path-cer-shade,
+.fb-cer-shade,
+.ask-shade,
+.scroll-shade,
+.modal-shade,
+.sheet-shade,
+.end{
+  background-color:#0c0a08 !important;
+}
+html[data-theme="night"] .modal-shade,
+html[data-theme="night"] .sheet-shade,
+html[data-theme="night"] .end{
+  background-color:#070605 !important;
+}
+.path-cer-panel{background-color:#161310 !important}
+.hpaper,
+.sheet-panel,
+.end-paper,
+.map,
+.mj,
+.dan-shade,
+.ask-card,
+.fb-cer-panel{
+  background-color:#f6f1e4 !important;
+}
