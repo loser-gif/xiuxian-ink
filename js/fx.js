@@ -107,20 +107,58 @@ const FX = (() => {
     if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.34;
     return m;
   }
-  const partN = s => Math.max(8, Math.round([40, 24, 32, 46][s] * Math.min(2.2, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
+  const partN = s => Math.max(4, Math.round([11, 7, 9, 12][s] * Math.min(1.5, Math.max(1, Math.sqrt((W.w || innerWidth) * (W.h || innerHeight) / (390 * 844)))) * partMul()));
   function fitParts() {
     const n = partN(W.season);
     while (W.parts.length < n) { const p = {}; spawn(p, true); W.parts.push(p); }
     if (W.parts.length > n) W.parts.length = n;
   }
+  function scapeBox() {
+    const el = document.getElementById('realm-scape');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 24 || r.height < 24) return null;
+    if (parseFloat(getComputedStyle(el).opacity) < 0.15) return null;
+    return r;
+  }
+  function blockBoxes() {
+    if ((W.frame & 7) && W.block) return W.block;
+    const list = [];
+    document.querySelectorAll('#scr-main .log, #scr-main .hud, .title-block, .title-menu, .title-poem, #scr-main .actions, #audio-dock').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return;
+      if (el.classList.contains('log')) {
+        const pad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+        const top = r.top + Math.max(0, pad - 8);
+        if (r.bottom > top) list.push({ left: r.left, top, right: r.right, bottom: r.bottom, width: r.width, height: r.bottom - top });
+        return;
+      }
+      list.push(r);
+    });
+    W.block = list;
+    return list;
+  }
+  function overText(x, y, sz) {
+    for (const r of W.block || []) {
+      if (x + sz > r.left - 3 && x - sz < r.right + 3 && y + sz > r.top - 3 && y - sz < r.bottom + 3) return true;
+    }
+    return false;
+  }
   function spawn(p, init) {
     const s = W.season;
-    p.x = rnd(-20, W.w + 20); p.y = init ? rnd(-W.h * .1, W.h) : rnd(-40, -10);
-    p.z = rnd(.45, 1); p.rot = rnd(0, 6.28); p.spin = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.flip = rnd(1.2, 3);
-    if (s === 1) { p.vy = rnd(10, 22) * p.z; p.vx = rnd(-10, 8); p.size = rnd(11, 18) * p.z; }
-    else if (s === 3) { p.vy = rnd(18, 42) * p.z; p.vx = rnd(-8, 8); p.size = rnd(6, 12) * p.z; }
-    else if (s === 2) { p.vy = rnd(34, 60) * p.z; p.vx = rnd(10, 26); p.size = rnd(11, 18) * p.z; }
-    else { p.vy = rnd(14, 28) * p.z; p.vx = rnd(6, 18); p.size = rnd(12, 20) * p.z; }
+    const z = scapeBox();
+    if (z) {
+      p.x = rnd(z.left + 6, Math.max(z.left + 8, z.right - 6));
+      p.y = init ? rnd(z.top + 4, Math.max(z.top + 8, z.bottom - 4)) : rnd(z.top - 16, z.top + 4);
+    } else {
+      p.x = rnd(8, Math.max(16, W.w * 0.42));
+      p.y = init ? rnd(8, W.h * 0.28) : rnd(-24, -6);
+    }
+    p.z = rnd(.55, 1); p.rot = rnd(0, 6.28); p.spin = rnd(-1.2, 1.2); p.ph = rnd(0, 6.28); p.flip = rnd(1.2, 3);
+    if (s === 1) { p.vy = rnd(8, 16) * p.z; p.vx = rnd(-8, 6); p.size = rnd(5.2, 7.4) * p.z; }
+    else if (s === 3) { p.vy = rnd(12, 26) * p.z; p.vx = rnd(-5, 5); p.size = rnd(3.4, 5.2) * p.z; }
+    else if (s === 2) { p.vy = rnd(18, 32) * p.z; p.vx = rnd(6, 14); p.size = rnd(5, 7.2) * p.z; }
+    else { p.vy = rnd(10, 18) * p.z; p.vx = rnd(4, 10); p.size = rnd(5.4, 7.6) * p.z; }
   }
   function haltWeather() {
     if (W.raf) cancelAnimationFrame(W.raf);
@@ -152,22 +190,30 @@ const FX = (() => {
     if (thinNow() && (W.frame & 1)) { W.raf = requestAnimationFrame(wTick); return; }
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
-    const wind = Math.sin(time * 0.23) * 14 + Math.sin(time * 0.071) * 10;
+    const wind = Math.sin(time * 0.23) * 8 + Math.sin(time * 0.071) * 5;
+    const zone = scapeBox();
+    blockBoxes();
     for (const p of W.parts) {
       p.y += p.vy * dt; p.x += (p.vx + wind * p.z) * dt;
-      p.x += Math.sin(time * (s === 1 ? 0.7 : 1.1) + p.ph) * (s === 1 ? 8 : 12) * dt * p.z; p.rot += p.spin * dt * (s === 1 ? 0.45 : 1);
-      const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : s === 1 ? 'lotus' : 'petal'), sz = p.size;
-      const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
-      c.globalAlpha = (s === 3 ? 0.92 : s === 1 ? 0.7 : 0.82) * (0.55 + p.z * 0.45);
-      c.setTransform(D * Math.cos(p.rot), D * Math.sin(p.rot), -D * Math.sin(p.rot) * fl, D * Math.cos(p.rot) * fl, p.x * D, p.y * D);
-      c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
-      if (p.y > W.h + 30 || p.x < -60 || p.x > W.w + 60) spawn(p, false);
+      p.x += Math.sin(time * (s === 1 ? 0.7 : 1.1) + p.ph) * (s === 1 ? 6 : 8) * dt * p.z; p.rot += p.spin * dt * (s === 1 ? 0.45 : 1);
+      const box = zone;
+      const inside = box && p.x > box.left && p.x < box.right && p.y > box.top && p.y < box.bottom;
+      if (inside && !overText(p.x, p.y, p.size + 2)) {
+        const img = sprite(s === 3 ? 'snow' : s === 2 ? 'leaf' : s === 1 ? 'lotus' : 'petal'), sz = p.size;
+        const fl = s === 3 ? 1 : Math.cos(time * p.flip + p.ph);
+        c.globalAlpha = (s === 3 ? 0.82 : 0.7) * (0.75 + p.z * 0.25);
+        c.setTransform(D * Math.cos(p.rot), D * Math.sin(p.rot), -D * Math.sin(p.rot) * fl, D * Math.cos(p.rot) * fl, p.x * D, p.y * D);
+        c.drawImage(img, -sz, -sz, sz * 2, sz * 2);
+      }
+      const floor = box ? box.bottom + 6 : W.h + 20;
+      if (p.y > floor || p.x < -30 || p.x > W.w + 30) spawn(p, false);
     }
     c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1;
     // 高境界：几片金箔缓缓浮沉，翻转到正面时一闪
     for (const g of W.gold || []) {
       g.y -= g.vy * dt; g.x += (Math.sin(time * .3 + g.ph) * 6 + wind * .3) * dt;
       if (g.y < -20) { g.y = W.h + 20; g.x = rnd(0, W.w); }
+      if (overText(g.x, g.y, 8)) continue;
       const f = Math.cos(time * g.spin + g.ph), gl = Math.pow(Math.max(0, f), 8);
       c.setTransform(D, 0, 0, D, g.x * D, g.y * D); c.rotate(time * .2 + g.ph); c.scale(g.s, g.s * (.2 + .8 * Math.abs(f)));
       c.globalAlpha = .28 + .5 * gl; c.fillStyle = gl > .3 ? '#f6e3a8' : '#c49a4a';
