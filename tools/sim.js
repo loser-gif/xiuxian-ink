@@ -118,6 +118,12 @@ function play(rootId, strat, opt = {}) {
   if (process.env.TS) for (const k in n) tsAdd('n.' + k, n[k] * 60);
   return { s, sec, n, realmAt };
 }
+function takeManual(s, o) {
+  if (!o || !o.manual) return;
+  const id = o.manual, offer = Core.manualOffer(s, id);
+  if (offer && !offer.cap && (id === s.gf || (s.aux || []).includes(id) || Core.gfMatch(s, id) >= 1)) Core.studyManual(s, id);
+  else Core.sellManual(s, id);
+}
 function doYouli(s) {
   let ev;
   if (JH) {
@@ -134,7 +140,7 @@ function doYouli(s) {
   const cs = ev.choices(s).filter(c => !c.disabled && !(c.sub || '').includes('此卷终'));
   const c = cs[Math.floor(Math.random() * cs.length)];
   const res = Core.resolveChoice(s, c); fightCheck(s, ev.id + '·' + c.label, res);
-  const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop);
+  const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); takeManual(s, o);
 }
 // 不变式：境界高于敌手（大境界）而受伤折寿，即为违例
 const VIOL = {}; let FIGHTS = 0;
@@ -147,7 +153,7 @@ function doMission(s, uid) {
   const ev = Core.missionEvent(s, uid); ev.text(s); const cs = ev.choices(s);
   const c = cs[Math.floor(Math.random() * cs.length)];
   const res = Core.resolveChoice(s, c); fightCheck(s, ev.id + '·' + c.label, res);
-  const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop);
+  const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); takeManual(s, o);
 }
 // ---------- 江湖：坊市、拍卖、炼丹、秘境 ----------
 const TS = {}; const tsAdd = (k, v) => { TS[k] = (TS[k] || 0) + v; return v; };
@@ -207,7 +213,7 @@ function auction(s) {
     for (let k = 0; k < 12; k++) { if (Math.round(a.price * 1.1) > cap) break; const r = Jianghu.aucRaise(s, a, 0.1); if (r.won) { won = true; if (l.frag) STAT.frag++; break; } if (r.err) break; }
     if (!won && a.leader === 'you') { const r = Jianghu.aucPass(s, a); if (r.won) { won = true; if (l.frag) STAT.frag++; } }
   }
-  if (s.flags.heiGrudge === 1) { const ev = G.EVENTS.find(e => e.id === 'hei_ambush'); ev.text(s); const c = ev.choices(s)[Math.random() < 0.6 ? 0 : 1]; const res = Core.resolveChoice(s, c); fightCheck(s, 'hei_ambush', res); const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); }
+  if (s.flags.heiGrudge === 1) { const ev = G.EVENTS.find(e => e.id === 'hei_ambush'); ev.text(s); const c = ev.choices(s)[Math.random() < 0.6 ? 0 : 1]; const res = Core.resolveChoice(s, c); fightCheck(s, 'hei_ambush', res); const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); takeManual(s, o); }
   return sec;
 }
 function dive(s, id) {

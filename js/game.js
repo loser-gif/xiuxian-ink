@@ -1174,6 +1174,44 @@ function openEvent(ev) {
     box.appendChild(b);
   });
 }
+function appendManualOffer(out, id, extra) {
+  const o = Core.manualOffer(S, id);
+  if (!o) return;
+  const slip = document.createElement('div'); slip.className = 'manual-slip';
+  const nextLine = o.cap
+    ? '此经已至大成，再读也只是温故。可售予坊市。'
+    : `参悟则至第${cn(o.next)}层，行功 ×${o.nextSpd.toFixed(2)}。`;
+  slip.innerHTML = `<div class="manual-kicker">重复功法 · ${esc(o.role)}</div>
+    <div class="manual-name">《${esc(o.name)}》</div>
+    <div class="manual-now">${esc(o.grade)}品 · 现为第${cn(o.lv)}层 · 行功 ×${o.spd.toFixed(2)}</div>
+    <div class="manual-next"></div>
+    <div class="manual-fade">${o.cap ? '大成之后，只余一桩去处。' : '愈往后，一层比一层淡。不参悟也可收进行囊，日后再定。'}</div>`;
+  slip.querySelector('.manual-next').textContent = nextLine;
+  out.appendChild(slip);
+  const box = document.createElement('div'); box.className = 'ev-choices manual-choices';
+  const done = (btn, r) => {
+    if (r.err) return toast(r.err);
+    if (box.classList.contains('chosen')) return;
+    box.classList.add('chosen'); btn.classList.add('picked');
+    extra.text = r.text;
+    const p = document.createElement('p'); p.className = 'r-text'; p.textContent = r.text;
+    const tg = document.createElement('div'); tg.className = 'entry-tags bleed-in';
+    tg.innerHTML = (r.tags || []).map(x => `<span class="${x.c || ''}">${esc(x.t)}</span>`).join('');
+    out.insertBefore(p, box); out.insertBefore(tg, box);
+    render(); save();
+    const m = $('.ev-main'); if (m) m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' });
+  };
+  const mk = (label, sub, dis, fn) => {
+    const b = document.createElement('button'); b.className = 'choice'; b.disabled = !!dis;
+    b.innerHTML = '<span></span><small></small>';
+    b.firstChild.textContent = label; b.lastChild.textContent = sub;
+    b.onclick = () => { if (box.classList.contains('chosen')) return; fn(b); };
+    box.appendChild(b);
+  };
+  mk('参悟精进', o.cap ? '已至大成' : `升至第${cn(o.next)}层`, o.cap, b => done(b, Core.studyManual(S, id)));
+  mk('售予坊市', `灵石${cn(o.price)}`, false, b => done(b, Core.sellManual(S, id)));
+  out.appendChild(box);
+}
 function choose(ev, c, btn, evText, titleText) {
   const box = $('#ev-choices'); if (box.classList.contains('chosen')) return;
   btn.classList.add('picked'); box.classList.add('chosen');
@@ -1185,8 +1223,10 @@ function choose(ev, c, btn, evText, titleText) {
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
   const d = inkWrite(p, res.text, { immediate: true, step: 20, cadence: true });
   const tg = document.createElement('div'); tg.className = 'entry-tags'; tg.style.opacity = 0;
-  tg.innerHTML = tags.map(x => `<span class="${x.c || ''}">${x.t}</span>`).join('') || '<span>无事发生</span>';
+  tg.innerHTML = tags.map(x => `<span class="${x.c || ''}">${esc(x.t)}</span>`).join('') || '<span>无事发生</span>';
   out.appendChild(tg);
+  const extra = { text: '' };
+  if (fxR.manual) appendManualOffer(out, fxR.manual, extra);
   const close = document.createElement('button'); close.className = 'brush-btn small'; close.style.opacity = 0;
   close.innerHTML = '<span class="bb-ink"></span><span class="bb-text">收卷</span>';
   out.appendChild(close);
@@ -1201,7 +1241,7 @@ function choose(ev, c, btn, evText, titleText) {
       if (c.skipAll) { GUIDES.forEach(g => { S.flags[g.id] = 1; }); finishGuide(); }
       else if (GUIDES.every(g => S.flags[g.id])) finishGuide();
     }
-    pushLog({ title: titleText || evTitle(ev), text: `${c.label.replace(/[“”]/g, '')}——${res.text}`, tags, cls: ev.xinmo ? 'warn' : 'event', div: true, guide: !!ev.guide });
+    pushLog({ title: titleText || evTitle(ev), text: `${c.label.replace(/[“”]/g, '')}——${res.text}${extra.text ? ' ' + extra.text : ''}`, tags, cls: ev.xinmo ? 'warn' : 'event', div: true, guide: !!ev.guide });
     B.flush(); Core.afterGain(S, ups, pushLog);
     render(); save(); checkEnd();
     if (!ev.guide) maybeGuide();
@@ -1878,6 +1918,30 @@ function bagPage() {
   }
   keys.forEach(k => {
     const it = document.createElement('div'); it.className = 'item';
+    const mid = Core.manualId ? Core.manualId(k) : null;
+    if (mid) {
+      const off = Core.manualOffer(S, mid);
+      if (!off) return;
+      it.innerHTML = `<div class="item-info"><div class="item-name"></div><div class="item-desc"></div></div><div class="item-acts"></div>`;
+      const acts = it.querySelector('.item-acts');
+      it.querySelector('.item-name').innerHTML = `《${esc(off.name)}》<em>×${S.items[k]}</em><em class="gear-k">${esc(off.grade)}品</em>`;
+      it.querySelector('.item-desc').textContent = off.cap
+        ? `《${off.name}》已至大成。可售予坊市，换灵石${cn(off.price)}。`
+        : `胸中已有此法，${off.role}第${cn(off.lv)}层。参悟可升至第${cn(off.next)}层，行功自 ×${off.spd.toFixed(2)} 至 ×${off.nextSpd.toFixed(2)}。售予坊市可得灵石${cn(off.price)}。`;
+      const bStudy = document.createElement('button'); bStudy.className = 'item-use'; bStudy.textContent = '参悟精进'; bStudy.disabled = !!off.cap;
+      bStudy.onclick = () => {
+        const r = Core.studyManual(S, mid); if (r.err) return toast(r.err);
+        pushLog({ text: r.text, tags: r.tags, cls: 'gold' }); render(); save(); refreshOpenPanel();
+      };
+      const bSell = document.createElement('button'); bSell.className = 'item-use light'; bSell.textContent = '售予坊市';
+      bSell.onclick = () => {
+        const r = Core.sellManual(S, mid); if (r.err) return toast(r.err);
+        pushLog({ text: r.text, tags: r.tags, cls: 'sys' }); render(); save(); refreshOpenPanel();
+      };
+      acts.appendChild(bStudy); acts.appendChild(bSell);
+      wrap.appendChild(it);
+      return;
+    }
     const isG = typeof GEAR !== 'undefined' && GEAR[k];
     const canUse = !!(PILLS[k] && PILLS[k].use) || (k === '延寿丹' || k === '破障丹');
     it.innerHTML = `<div class="item-info"><div class="item-name"></div><div class="item-desc"></div></div><div class="item-acts"></div>`;
@@ -1953,6 +2017,7 @@ function gfPage() {
         <div class="gf-meta"><span class="gf-seal">${GF_GRADE[g0.grade]}</span><span class="gf-el">${gfElWord(S.gf)}</span><span class="gf-role">主修</span></div>
         <div class="gf-layers">${layerDots(e.lv)}<em>${e.lv >= GF_LAYERS ? '大成' : '第' + cn(e.lv) + '层'}</em></div>
         <div class="gf-speed">行功之速 <b>×${Core.gfSpeed(S).toFixed(2)}</b></div>
+        ${e.lv > 1 ? `<div class="gf-deep">第${cn(e.lv)}层。层数愈高，每一层加进行功的分量愈淡。</div>` : ''}
         <div class="gf-trait">${g0.trait}</div>
         <p class="gf-desc"></p>
         <div class="gf-src">得自 · ${g0.src}</div>

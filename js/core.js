@@ -92,10 +92,17 @@ const Core = (() => {
     return s.lgEls.includes(g.el) ? (K.match[s.lg.id] || 1.1) : K.mismatch;
   }
   function gfLv(s, id = s.gf) { return id && s.gfs[id] ? s.gfs[id].lv : 0; }
+  // 第一层之后，每一层的行功加成按 0.72 递减，第九层封顶
+  function layerMul(lv) {
+    const n = Math.max(0, (lv | 0) - 1);
+    let m = 1, step = K.layerBonus;
+    for (let i = 0; i < n; i++) { m += step; step *= 0.72; }
+    return m;
+  }
   function gfSpeed(s, id = s.gf) {
     if (!id) return K.noGf * gearSpd(s) * courtSpd(s);
     const g = GONGFA[id];
-    let spd = GF_GRADE_MUL[g.grade] * gfMatch(s, id) * (1 + K.layerBonus * (gfLv(s, id) - 1)) * (g.t.spd || 1);
+    let spd = GF_GRADE_MUL[g.grade] * gfMatch(s, id) * layerMul(gfLv(s, id)) * (g.t.spd || 1);
     if (id === s.gf) spd *= gearSpd(s) * fabaoSpd(s) * auxSpd(s);
     return spd * courtSpd(s);
   }
@@ -125,9 +132,64 @@ const Core = (() => {
     if (g.el === '五行') return '五行相生';
     return m >= 1.15 ? '与灵根相合' : m >= 1 ? '与灵根无碍' : m >= 0.8 ? '与灵根相悖' : '灵根难驭';
   }
+  const GF_SELL = [18, 36, 72, 140];
+  const manualKey = id => '卷:' + id;
+  function manualId(k) {
+    if (typeof k !== 'string' || k.indexOf('卷:') !== 0) return null;
+    const id = k.slice(2);
+    return GONGFA[id] ? id : null;
+  }
+  function gfRole(s, id) {
+    if (s.gf === id) return '主修';
+    if ((s.aux || []).includes(id)) return '辅修';
+    return '所藏';
+  }
+  function manualPrice(s, id) {
+    const g = GONGFA[id]; if (!g) return 0;
+    return Math.max(1, Math.round((GF_SELL[g.grade] || GF_SELL[0]) * REALMS[s.realm].lsScale));
+  }
+  function giveManual(s, id, tags) {
+    const k = manualKey(id);
+    s.items[k] = (s.items[k] || 0) + 1;
+    tags && tags.push({ t: `《${GONGFA[id].name}》重复 · 入行囊`, c: 'gold' });
+  }
+  function manualOffer(s, id) {
+    const g = GONGFA[id]; if (!g || !s.gfs[id]) return null;
+    const e = s.gfs[id];
+    const cap = e.lv >= GF_LAYERS;
+    const spd = gfSpeed(s, id);
+    let next = null, nextSpd = null;
+    if (!cap) { e.lv += 1; next = e.lv; nextSpd = gfSpeed(s, id); e.lv -= 1; }
+    return { id, name: g.name, grade: GF_GRADE[g.grade], role: gfRole(s, id), lv: e.lv, cap, spd, next, nextSpd, price: manualPrice(s, id), fade: e.lv >= 2 };
+  }
+  function studyManual(s, id) {
+    const k = manualKey(id);
+    if (!GONGFA[id] || !(s.items[k] > 0)) return { err: '行囊中无此卷' };
+    const e = s.gfs[id];
+    if (!e) return { err: '尚未入门，无从参悟' };
+    if (e.lv >= GF_LAYERS) return { err: '此经已至大成' };
+    const before = e.lv;
+    e.lv += 1;
+    s.items[k]--; if (!s.items[k]) delete s.items[k];
+    const spd = gfSpeed(s, id);
+    return {
+      text: `你把《${GONGFA[id].name}》又摊开。${gfRole(s, id)}这一路，从第${cn(before)}层走到第${cn(e.lv)}层。${before >= 2 ? '愈往深处，气机只浓得一丝，比起初层淡了许多。' : '口诀里原先含糊的地方，这一遍忽然清楚了。'}`,
+      tags: [{ t: `《${GONGFA[id].name}》第${cn(e.lv)}层`, c: 'up' }, { t: `行功 ×${spd.toFixed(2)}`, c: 'up' }],
+      lv: e.lv, spd,
+    };
+  }
+  function sellManual(s, id) {
+    const k = manualKey(id);
+    if (!GONGFA[id] || !(s.items[k] > 0)) return { err: '行囊中无此卷' };
+    const p = manualPrice(s, id);
+    s.items[k]--; if (!s.items[k]) delete s.items[k];
+    s.ls += p;
+    const g = GONGFA[id];
+    return { text: `坊市掌柜翻了翻《${g.name}》，${GF_GRADE[g.grade]}品的路数他认得，称出灵石${cn(p)}，当场递到你手里。`, tags: [{ t: `灵石 +${p}`, c: 'up' }], ls: p };
+  }
   function learn(s, id, tags, emit) {
     if (!GONGFA[id]) return false;
-    if (s.gfs[id]) { tags && tags.push({ t: `《${GONGFA[id].name}》已在胸中`, c: '' }); return false; }
+    if (s.gfs[id]) { giveManual(s, id, tags); return 'dup'; }
     let lv0 = 1;
     if (s.flags && s.flags.auxPage === id) {
       lv0 = 2; delete s.flags.auxPage;
@@ -459,7 +521,8 @@ const Core = (() => {
     if (fx.gx && s.sect.org) addGx(s, fx.gx, tags);
     if (fx.npc) for (const [id, d] of Object.entries(fx.npc)) npcAdd(s, id, d, tags);
     if (fx.buff) { s.buff = { ...fx.buff }; tags.push({ t: '灵脉加持', c: 'up' }); }
-    if (fx.gf) learn(s, fx.gf, tags, emit);
+    let manual = null;
+    if (fx.gf) { const got = learn(s, fx.gf, tags, emit); if (got === 'dup') manual = fx.gf; }
     if (fx.gfXp && s.gf) { practice(s, fx.gfXp, null, emit); tags.push({ t: `《${GONGFA[s.gf].name}》精进`, c: 'up' }); }
     if (fx.flag) s.flags[fx.flag] = 1;
     if (fx.heart && typeof Life !== 'undefined' && Life.tint) Life.tint(s, fx.heart);
@@ -477,7 +540,7 @@ const Core = (() => {
     if (fx.time) passTime(s, fx.time, emit);
     if (fx.end && !s.dead) { s.dead = true; s.ending = fx.end; }
     checkXj(s, emit);
-    return { tags, ups };
+    return { tags, ups, manual };
   }
 
   /* ---------- 定型 ---------- */
@@ -730,6 +793,7 @@ const Core = (() => {
     return { text, tags, ups };
   }
   function useItem(s, k, n) {
+    if (manualId(k)) return { err: '此卷不入腹，可参悟或售出' };
     if (!(s.items[k] > 0)) return { err: '无此物' };
     n = Math.max(1, (n | 0) || 1);
     const cap = useBatchCap(s, k);
@@ -888,6 +952,15 @@ const Core = (() => {
     if (!s.life || typeof s.life !== 'object') s.life = typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 };
     if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
+    // 功法层数：旧档缺层数时作第一层，已有层数保留
+    s.gfs = s.gfs || {};
+    for (const id in s.gfs) {
+      const e = s.gfs[id];
+      if (!e || typeof e !== 'object') { s.gfs[id] = { lv: 1, xp: 0 }; continue; }
+      if (typeof e.lv !== 'number' || !(e.lv >= 1)) e.lv = 1;
+      else e.lv = Math.min(typeof GF_LAYERS !== 'undefined' ? GF_LAYERS : 9, Math.round(e.lv));
+      if (typeof e.xp !== 'number' || !(e.xp >= 0)) e.xp = 0;
+    }
     // 缺月数的残档按已记下的岁数补回；有月数的旧档一律不动
     if (typeof s.months !== 'number' || !isFinite(s.months) || s.months < 0) {
       const y = (typeof s.age === 'number' && isFinite(s.age) && s.age >= 0) ? Math.floor(s.age) : 16;
@@ -1371,7 +1444,8 @@ const Core = (() => {
   }
 
   return { K, LIFE_SCALE, clamp, pick, gf, gt, sync, req, unit, isLast, bottleneck, realmStr, timeLabel, fmtNum,
-    gfMatch, gfMatchWord, gfLv, gfSpeed, learn, practice, switchCost, switchGf, setAux, clearAux,
+    gfMatch, gfMatchWord, gfLv, gfSpeed, layerMul, learn, practice, switchCost, switchGf, setAux, clearAux,
+    manualId, manualOffer, studyManual, sellManual, manualPrice,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
