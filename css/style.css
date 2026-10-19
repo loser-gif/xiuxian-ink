@@ -2748,32 +2748,9 @@ body[data-screen="main"] #pale-moon{display:none!important}
 #title-land{position:absolute;inset:0;z-index:4;opacity:0;pointer-events:none;overflow:hidden}
 body[data-screen="title"] #title-land{opacity:1}
 #title-land .tl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:none}
-body[data-realm="0"] #title-land .d0,
-body:not([data-realm]) #title-land .d0{display:block}
-body[data-realm="1"] #title-land .d1{display:block}
-body[data-realm="2"] #title-land .d2{display:block}
-body[data-realm="3"] #title-land .d3{display:block}
-body[data-realm="4"] #title-land .d4,
-body[data-realm="5"] #title-land .d4{display:block}
-html[data-theme="night"] body[data-realm="0"] #title-land .d0,
-html[data-theme="night"] body:not([data-realm]) #title-land .d0,
-html[data-theme="night"] body[data-realm="1"] #title-land .d1,
-html[data-theme="night"] body[data-realm="2"] #title-land .d2,
-html[data-theme="night"] body[data-realm="3"] #title-land .d3,
-html[data-theme="night"] body[data-realm="4"] #title-land .d4,
-html[data-theme="night"] body[data-realm="5"] #title-land .d4{display:none}
-html[data-theme="night"] body[data-realm="0"] #title-land .n0,
-html[data-theme="night"] body:not([data-realm]) #title-land .n0{display:block}
-html[data-theme="night"] body[data-realm="1"] #title-land .n1{display:block}
-html[data-theme="night"] body[data-realm="2"] #title-land .n2{display:block}
-html[data-theme="night"] body[data-realm="3"] #title-land .n3{display:block}
-html[data-theme="night"] body[data-realm="4"] #title-land .n4,
-html[data-theme="night"] body[data-realm="5"] #title-land .n4{display:block}
-#title-land::before,#title-land::after{content:"";position:absolute;left:0;right:0;z-index:1;pointer-events:none}
-#title-land::before{top:0;height:22%;background:linear-gradient(180deg,rgba(239,230,211,.34),rgba(239,230,211,0))}
-#title-land::after{bottom:0;height:32%;background:linear-gradient(180deg,rgba(239,230,211,0) 0%,rgba(239,230,211,.42) 46%,rgba(239,230,211,.82) 100%)}
-html[data-theme="night"] #title-land::before{background:none}
-html[data-theme="night"] #title-land::after{background:linear-gradient(180deg,rgba(8,6,5,0) 0%,rgba(8,6,5,.4) 42%,rgba(8,6,5,.78) 100%)}
+body[data-screen="title"] #title-land .d0{display:block}
+html[data-theme="night"] body[data-screen="title"] #title-land .d0{display:none}
+html[data-theme="night"] body[data-screen="title"] #title-land .n0{display:block}
 body[data-screen="title"] #scenery > .cam,
 body[data-screen="title"] #scenery > .cam *,
 body[data-screen="title"] #tod,
