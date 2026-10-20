@@ -2778,7 +2778,7 @@ function openAtlasSheet(startTab) {
 /* ================= 终卷 ================= */
 const END_ART = {
   ascend: `<svg viewBox="0 0 320 120"><g class="ea-rays">${Array.from({ length: 13 }, (_, i) => { const a = (-90 + (i - 6) * 13) * Math.PI / 180; return `<path d="M160 118 L${(160 + Math.cos(a) * 190).toFixed(1)} ${(118 + Math.sin(a) * 190).toFixed(1)}" />`; }).join('')}</g><circle class="ea-sun" cx="160" cy="118" r="34"/></svg>`,
-  zuohua: `<svg viewBox="0 0 320 120"><path d="M236 16 V108 M236 16 H300 V108" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M308 36 C286 42 264 40 240 54" fill="none" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M22 90 H214" stroke="currentColor" stroke-width="1.5"/><path d="M34 90 V110 H202 V90" fill="none" stroke="currentColor" stroke-width="1.15"/><g fill="none" stroke="currentColor"><circle cx="108" cy="30.5" r="3.5" stroke-width="1.05"/><circle cx="108" cy="41" r="8.4" stroke-width="1.25"/><path d="M108 49.4 V61" stroke-width="1.1"/><path d="M80 66 Q108 54 136 66" stroke-width="1.35"/><path d="M80 66 C74 76 70 84 68 90" stroke-width="1.2"/><path d="M136 66 C142 76 146 84 148 90" stroke-width="1.2"/><path d="M68 90 C58 76 42 78 38 90" stroke-width="1.25"/><path d="M148 90 C158 76 174 78 178 90" stroke-width="1.25"/><path d="M78 90 C92 80 124 80 138 90" stroke-width="1.05"/></g><path d="M190 90 V82 H204 V90" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M188 90 H206" stroke="currentColor" stroke-width="1.15"/><path d="M197 82 V68" stroke="currentColor" stroke-width="1.05"/><circle class="ea-ember" cx="197" cy="66.4" r="1.6" fill="currentColor"/><path class="ea-smoke" d="M197 64 C190 52 204 46 197 34 C190 24 202 16 194 6"/></svg>`,
+  zuohua: `<svg viewBox="0 0 320 120"><path d="M236 16 V108 M236 16 H300 V108" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M308 36 C286 42 264 40 240 54" fill="none" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M22 90 H214" stroke="currentColor" stroke-width="1.5"/><path d="M34 90 V110 H202 V90" fill="none" stroke="currentColor" stroke-width="1.15"/><g fill="none" stroke="currentColor"><circle cx="108" cy="25" r="3.2" stroke-width="1.05"/><path d="M108 28 V31" stroke-width="1"/><circle cx="108" cy="35" r="6.4" stroke-width="1.25"/><path d="M108 41.4 V48" stroke-width="1.05"/><path d="M99 50 L117 50" stroke-width="1.15"/><path d="M99 50 L74 90" stroke-width="1.2"/><path d="M117 50 L142 90" stroke-width="1.2"/><path d="M108 50 V84" stroke-width=".6" opacity=".4"/><path d="M74 90 C66 80 54 82 50 90" stroke-width="1.15"/><path d="M142 90 C150 80 162 82 166 90" stroke-width="1.15"/></g><path d="M186 90 V82 H200 V90" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M184 90 H202" stroke="currentColor" stroke-width="1.15"/><path d="M193 82 V68" stroke="currentColor" stroke-width="1.05"/><circle class="ea-ember" cx="193" cy="66.4" r="1.6" fill="currentColor"/><path class="ea-smoke" d="M193 64 C186 52 200 46 193 34 C186 24 198 16 190 6"/></svg>`,
   rumo: `<svg viewBox="0 0 320 120"><g class="ea-drips">${[[92, 26, 2.2, 6], [121, 64, 4.5, 2], [150, 18, 1.6, 10], [174, 48, 3.2, 0], [207, 82, 5.5, 4], [236, 34, 2.6, 12]].map(([x, h, w, y0], i) => `<path d="M${x - w} ${y0} C${x - w * .6} ${y0 + h * .55} ${x - w * .9} ${y0 + h} ${x} ${y0 + h + w * 1.6} C${x + w * .9} ${y0 + h} ${x + w * .6} ${y0 + h * .55} ${x + w} ${y0}Z" style="animation-delay:${(.4 + i * .19).toFixed(2)}s"/>`).join('')}</g></svg>`,
   guiyin: `<svg viewBox="0 0 320 120"><circle class="ea-moon" cx="244" cy="30" r="16"/><g class="ea-boat"><path d="M96 80 Q160 98 226 77 L214 88 Q160 104 108 90Z"/><path class="ea-pole" d="M146 84 L198 26"/></g><g class="ea-boat ea-refl"><path d="M96 98 Q160 84 226 100 L214 93 Q160 80 108 92Z"/></g><g class="ea-waves"><path d="M30 96 Q60 92 90 96 T150 96 T210 96 T290 96"/><path d="M70 108 Q100 104 130 108 T190 108 T250 108"/></g></svg>`,
   bingjie: `<svg viewBox="0 0 320 120"><g class="ea-sword"><path class="ea-blade1" d="M104 92 L168 52 Q172 51 173 55 L110 97Z"/><path class="ea-blade2" d="M180 46 L236 12 Q240 12 239 16 L186 52Z"/><path class="ea-guard" d="M92 82 Q98 80 116 104 Q112 108 108 104 Q100 92 90 86Z"/><path class="ea-hilt" d="M100 100 L80 116"/></g><g class="ea-motes">${Array.from({ length: 16 }, (_, i) => `<circle cx="${176 + (i * 37) % 64 - 20}" cy="${50 - (i * 23) % 42}" r="${1 + (i % 3) * .8}" style="animation-delay:${(i * .19).toFixed(2)}s"/>`).join('')}</g></svg>`,
@@ -2861,21 +2861,31 @@ function showEnd(kind) {
   }
   const longEl = $('#end-epitaph-long');
   if (longEl) {
-    let bio = (typeof Samsara !== 'undefined' && Samsara.epitaphLong) ? Samsara.epitaphLong(S, kind, '') : ((rec && rec.epitaph) || '');
-    bio = String(bio || '').replace(/^\s+|\s+$/g, '');
+    const lgName = (S.lg && S.lg.id === 'wei' ? '' : (S.lgEls || []).join('')) + ((S.lg && S.lg.name) || '');
+    const lines = [];
+    lines.push(`名讳 ${S.name || '无名'}　灵根 ${lgName}`);
+    lines.push(`境界 ${rs}　春秋 ${age} 载`);
+    const pth = (Core.pathSummary(S) || []).map(x => x.name).join('·');
+    if (pth) lines.push(`定型 ${pth}`);
+    if (S.gf && GONGFA[S.gf]) lines.push(`主修 《${GONGFA[S.gf].name}》`);
+    if (S.fabao) lines.push(`本命 ${S.fabao.name}·${FABAO_STAGE[S.fabao.stage | 0]}`);
+    const org = S.sect && S.sect.org && typeof ORGS !== 'undefined' && ORGS[S.sect.org] ? ORGS[S.sect.org].name : '';
+    const rank = org && ORGS[S.sect.org].ranks ? (ORGS[S.sect.org].ranks[S.sect.rank | 0] || '') : '';
+    if (org) lines.push(`门墙 ${org}${rank ? ' · ' + rank : ''}`);
+    if (S.court && (S.court.rank | 0) >= 0 && typeof courtRankName === 'function') {
+      const court = courtRankName(S);
+      if (court) lines.push(`皇命 ${court}`);
+    }
+    if (S.events) lines.push(`奇遇 ${cn(S.events)} 桩`);
+    lines.push(`悟性 ${cn(S.wx)}　心境 ${xinjingWord(S.xj)}`);
+    const archived = (typeof Samsara !== 'undefined' && Samsara.epitaphLong) ? Samsara.epitaphLong(S, kind, '') : '';
+    const seal = String(archived || '').trim().split('\n').filter(Boolean).pop() || '青石一方，记此一念。';
     const shown = epitaph + judgeBits.join('');
-    bio = bio.split('\n').filter(line => {
-      const t = line.trim();
-      return !t || shown.indexOf(t) < 0;
-    }).join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+    const body = lines.filter(t => t && shown.indexOf(t) < 0);
+    const bio = body.concat(['', seal]).join('\n');
     longEl.textContent = bio;
-    longEl.hidden = !bio;
+    longEl.hidden = !bio.trim();
   }
-  const lab = { ascend: '境界 <b>飞升</b>', guiyin: `境界 <b>${rs}</b>　归隐 <b>${age}岁</b>`, renhuang: `境界 <b>${rs}</b>　人皇 <b>${age}岁</b>`, quancheng: `境界 <b>${rs}</b>　摄政 <b>${age}岁</b>`, huashen: `境界 <b>${rs}</b>　山神 <b>${age}岁</b>`, zhenmo: `境界 <b>${rs}</b>　镇魔 <b>${age}岁</b>`, chuanshuo: `境界 <b>${rs}</b>　传说 <b>${age}岁</b>` }[kind] || `境界 <b>${rs}</b>　享年 <b>${age}</b>`;
-  const gfl = S.gf ? `<br>主修 <b>《${GONGFA[S.gf].name}》</b>` : '';
-  const pth = (Core.pathSummary(S) || []).map(x => x.name).join(' · ');
-  const pfl = pth ? `<br>定型 <b>${pth}</b>` : '';
-  const fbl = S.fabao ? `<br>本命 <b>${S.fabao.name}</b>·${FABAO_STAGE[S.fabao.stage|0]}` : '';
   const legObj = rec && rec.legacy;
   const carry = [];
   if (legObj) {
@@ -2887,9 +2897,9 @@ function showEnd(kind) {
     if (legObj.courtMark) carry.push('皇命印记');
     if (legObj.cave) carry.push('旧洞残钥');
   }
-  const leg = carry.length ? `<br><span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
-    : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '<br><span class="end-legacy">奈何桥上，只许带一样</span>');
-  $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
+  const leg = carry.length ? `<span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
+    : (isTrial ? '<span class="end-legacy">试炼局 · 不入轮回簿</span>' : '<span class="end-legacy">奈何桥上，只许带一样</span>');
+  $('#end-stats').innerHTML = leg;
   save();
   $('#btn-reborn').onclick = async () => {
     const proceed = () => {
