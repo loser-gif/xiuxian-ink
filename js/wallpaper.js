@@ -144,8 +144,8 @@ const Wallpaper = (() => {
     return cv.toDataURL();
   }
 
-  /* ---------- 流雾与云影：1/4 分辨率画布，30fps ---------- */
-  function mistK() { return coarse() ? 0.25 : 0.5; }
+  /* ---------- 流雾与云影：固定 1/4 分辨率，放大后才柔，不能按像素比画实 ---------- */
+  function mistK() { return 0.25; }
   const A = { layers: [], raf: 0, last: 0, t0: 0, frame: 0 };
   let fogImg = null, shadowImg = null;
   function sprite(rgb, a0) {
