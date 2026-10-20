@@ -218,8 +218,28 @@ const Ink = (() => {
     return toURL(cv);
   }
 
-  /* ---------- 墨团（按钮底、突破泼墨） ---------- */
+  /* ---------- 墨团（按钮底）。soft：只给终卷、拍卖做淡晕，没有溅点和飞白 ---------- */
+  function softBlot(size, seed, opt) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = size;
+    const c = cv.getContext('2d'); const R = mulberry(seed);
+    const col = opt.rgb || [32, 26, 22];
+    const cx = size * 0.5, cy = size * 0.5;
+    for (let i = 0; i < 11; i++) {
+      const a = R() * 6.283, d = size * R() * 0.1;
+      const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.82;
+      const r = size * (0.26 + R() * 0.22);
+      const g = c.createRadialGradient(x, y, r * 0.04, x, y, r);
+      const deep = i < 3 ? 0.48 : i < 7 ? 0.24 : 0.1;
+      g.addColorStop(0, 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + deep + ')');
+      g.addColorStop(0.45, 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + (deep * 0.4) + ')');
+      g.addColorStop(0.78, 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + (deep * 0.08) + ')');
+      g.addColorStop(1, 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',0)');
+      c.fillStyle = g; c.fillRect(0, 0, size, size);
+    }
+    return toURL(cv);
+  }
   function inkBlot(size, seed, opt = {}) {
+    if (opt.soft) return softBlot(size, seed, opt);
     const cv = document.createElement('canvas'); cv.width = cv.height = size;
     const c = cv.getContext('2d'); const R = mulberry(seed); const cx = size / 2, cy = size / 2;
     const col = opt.rgb || [24, 22, 20];

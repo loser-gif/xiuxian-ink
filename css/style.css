@@ -526,9 +526,11 @@ html[data-motion="lite"] .bar-life.thin .stick,html[data-fx="thin"] .bar-life.th
   padding:calc(var(--sat) + 16px) 22px calc(var(--sab) + 24px);gap:0}
 .bt-shade{position:absolute;top:-2px;right:-2px;bottom:-2px;left:-2px;inset:-2px;background:radial-gradient(ellipse 85% 60% at 50% 45%,rgba(18,16,14,.72),rgba(12,10,9,.97) 70%,rgb(10,8,7) 100%);opacity:0;transition:opacity 1.1s .15s}
 .bt.go .bt-shade{opacity:1}
-.bt-ink{position:absolute;left:50%;top:46%;width:125vmax;height:125vmax;margin:-62.5vmax 0 0 -62.5vmax;background:var(--blot-big) center/contain no-repeat;transform:scale(0);opacity:0}
-.bt.go .bt-ink{animation:inkSpread 1.8s var(--ease-ink) forwards}
-@keyframes inkSpread{0%{transform:scale(.02) rotate(0);opacity:.2}12%{opacity:1}100%{transform:scale(1) rotate(25deg);opacity:1}}
+.bt-ink{display:none}
+.bt.sweep.reveal .bt-half{animation:bigInk .7s var(--ease-ink) forwards}
+.bt.sweep .bt-big{clip-path:inset(0 100% 0 0)}
+.bt.sweep.reveal .bt-big{animation:brushWipe .7s linear forwards}
+@keyframes brushWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 .bt-stage{position:absolute;top:0;right:0;bottom:0;left:0;inset:0;pointer-events:none;z-index:1}
 .bt-ring{position:absolute;left:50%;top:42%;width:58vmin;height:58vmin;margin:-29vmin 0 0 -29vmin;border-radius:50%;border:1px solid rgba(239,230,211,.0);opacity:0}
 .bt-ring-2{width:78vmin;height:78vmin;margin:-39vmin 0 0 -39vmin;border-style:dashed}
@@ -755,7 +757,7 @@ body[data-realm="4"] .realm-name,body[data-realm="5"] .realm-name{animation:aura
 /* 开卷：一滴墨落下，洇成山水 */
 #intro{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:3;pointer-events:none}
 #intro .drop{position:absolute;left:var(--bx,50%);top:var(--by,44%);margin-top:-8px;width:12px;height:16px;margin-left:-6px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#1b1814;opacity:0;will-change:transform,opacity}
-#intro .bloom{position:absolute;left:var(--bx,50%);top:var(--by,44%);width:86vmin;height:86vmin;margin:-43vmin 0 0 -43vmin;background:var(--blot-big) center/contain no-repeat;opacity:0;transform:scale(0);will-change:transform,opacity}
+#intro .bloom{display:none}
 /* 开卷钮在卷首遮罩下先建好动画层，再放开，避免墨滴第一帧被样式计算吃掉 */
 body.hold.go #intro .drop,
 body.hold.go #intro .bloom,
@@ -819,10 +821,8 @@ body.go.intro-done #intro{display:none}
 /* 墨染转场 */
 #wash{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:40;pointer-events:none;visibility:hidden}
 #wash.on{visibility:visible;pointer-events:auto}
-#wash .wash-ink,#wash .wash-paper{position:absolute;left:var(--wx,50%);top:var(--wy,50%);width:100vmax;height:100vmax;margin:-50vmax 0 0 -50vmax;transform:scale(0);will-change:transform,opacity}
-#wash .wash-ink{background:var(--blot-big) center/contain no-repeat;opacity:.85}
-#wash .wash-paper{background-color:var(--paper);background-image:var(--paper-img);background-size:256px;
-  -webkit-mask:var(--blot-big) center/contain no-repeat;mask:var(--blot-big) center/contain no-repeat}
+#wash .wash-ink,#wash .wash-paper{display:none}
+.ink-pass{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:block;z-index:1}
 #wash .wash-full{position:absolute;top:0;right:0;bottom:0;left:0;inset:0;background-color:var(--paper);background-image:var(--paper-img);background-size:256px;opacity:0}
 
 /* 破境：光芒与金屑 */
@@ -1225,7 +1225,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
   padding:calc(var(--sat) + 16px) 22px calc(var(--sab) + 18px)}
 .duel-shade{position:absolute;top:-2px;right:-2px;bottom:-2px;left:-2px;inset:-2px;background:radial-gradient(ellipse 90% 60% at 50% 46%,rgba(30,27,23,.988),rgba(12,10,9,1) 72%);opacity:0;transition:opacity .9s}
 .duel.go .duel-shade{opacity:1}
-.duel-ink{position:absolute;left:50%;top:46%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;background:var(--blot-big) center/contain no-repeat;opacity:0;transform:scale(.1)}
+.duel-ink{position:absolute;left:50%;top:46%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;background:radial-gradient(closest-side,rgba(18,14,12,.55),rgba(18,14,12,.16) 58%,rgba(18,14,12,0) 76%);opacity:0;transform:scale(.1)}
 .duel.go .duel-ink{animation:duelInk 1.6s var(--ease-ink) forwards}
 @keyframes duelInk{0%{opacity:.0;transform:scale(.05) rotate(-20deg)}20%{opacity:.9}100%{opacity:.55;transform:scale(1) rotate(10deg)}}
 .duel>*:not(.duel-shade):not(.duel-ink){position:relative;opacity:0;transition:opacity .8s .5s}
@@ -1448,7 +1448,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .auc-head{display:flex;gap:12px;align-items:baseline;font-family:var(--f-head);font-size:17px;letter-spacing:.4em;color:rgba(239,230,211,.65);margin-top:8px}
 .auc-head em{font-style:normal;font-family:var(--f-body);font-size:12px;letter-spacing:.2em;color:#d58a6c}
 .auc-lot{position:relative;margin-top:26px;text-align:center;max-width:330px}
-.auc-lot::before{content:"";position:absolute;left:50%;top:-30px;width:250px;height:250px;margin-left:-125px;background:var(--blot-big) center/contain no-repeat;filter:invert(1) sepia(.6) hue-rotate(-12deg);opacity:.06;pointer-events:none}
+.auc-lot::before{content:"";position:absolute;left:50%;top:-30px;width:250px;height:250px;margin-left:-125px;background:radial-gradient(closest-side,rgba(224,140,100,.9),rgba(224,140,100,0) 72%);opacity:.08;pointer-events:none}
 .auc-name{font-family:var(--f-head);font-size:40px;letter-spacing:.18em;line-height:1.2;color:#efe4cc;text-shadow:0 0 26px rgba(224,120,80,.18)}
 .auc-desc{font-size:13.5px;line-height:1.85;color:rgba(239,230,211,.62);margin-top:8px}
 .auc-price{display:flex;align-items:baseline;gap:8px;margin-top:20px;flex-wrap:wrap;justify-content:center}

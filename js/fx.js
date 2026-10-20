@@ -4,6 +4,7 @@ const FX = (() => {
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
   const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
+  const cheapFx = () => document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite';
   const coarsePhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   const $ = s => document.querySelector(s);
@@ -444,40 +445,453 @@ const FX = (() => {
     });
   }
 
-  /* ---------- 墨染转场 ---------- */
+  /* ---------- 墨落入水 / 一笔扫过 ---------- */
   let washBusy = false;
-  async function wash(swap, x, y) {
+  let dropCv = null;
+  let dropGen = 0;
+
+  const DROP_VERT = 'attribute vec2 aPos; varying vec2 vUv; void main(){ vUv = aPos * .5 + .5; gl_Position = vec4(aPos, 0., 1.); }';
+  const DROP_FRAG = [
+    'precision highp float;',
+    'varying vec2 vUv;',
+    'uniform vec2 uRes, uC;',
+    'uniform float uK, uFade, uSeed, uCheap;',
+    'float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }',
+    'float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3. - 2. * f);',
+    '  return mix(mix(hash(i), hash(i + vec2(1., 0.)), u.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), u.x), u.y); }',
+    'float fbm(vec2 p){ float v = 0., a = .55; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+    '  v += a * noise(p); p = m * p; a *= .5; v += a * noise(p);',
+    '  if (uCheap < .5) { p = m * p; a *= .5; v += a * noise(p); } return v; }',
+    'float fibre(vec2 p){ vec2 a = mat2(.8, .6, -.6, .8) * p; vec2 b = mat2(.4, -.9, .9, .4) * p;',
+    '  return max(noise(a * vec2(14., 1.6)), noise(b * vec2(1.7, 16.))); }',
+    'void main(){',
+    '  vec2 px = vUv * uRes; float m = min(uRes.x, uRes.y); vec2 p = (px - uC) / m;',
+    '  float w1 = fbm(p * 1.8 + uSeed), w2 = fbm(p * 1.8 + uSeed + 3.7);',
+    '  vec2 q = p + (vec2(w1, w2) - .5) * (.05 + .10 * uK);',
+    '  float d = length(q); float ang = atan(q.y, q.x);',
+    '  float fib = fibre(vec2(cos(ang), sin(ang)) * 1.2 + uSeed);',
+    '  float fib2 = fibre(q * 2.8 + uSeed * 1.7);',
+    '  float lobe = .74 + .18 * fib + .08 * fib2;',
+    '  float R = max(uK, .0008) * 2.05 * lobe;',
+    '  float edgeN = fbm(vec2(ang * 1.7 + uSeed, d * 2.4));',
+    '  float dd = d + (edgeN - .5) * .10 * uK;',
+    '  float soft = smoothstep(R, R * .62, dd);',
+    '  float body = smoothstep(R * .88, R * .18, dd);',
+    '  float core = smoothstep(R * .46, R * .02, dd);',
+    '  float pool = fbm(q * 3.2 + uSeed * 2.);',
+    '  float a = clamp(soft * (.42 + .58 * body) + core * .22, 0., 1.);',
+    '  float seal = smoothstep(.86, 1., uK) * (1. - smoothstep(1.15, 1.45, d));',
+    '  a = max(a, seal);',
+    '  vec3 pale = vec3(.46, .40, .34); vec3 midc = vec3(.20, .16, .13); vec3 deep = vec3(.07, .055, .045);',
+    '  float dens = clamp(core * .85 + body * .4 + pool * core * .15, 0., 1.);',
+    '  vec3 col = mix(pale, mix(midc, deep, dens), clamp(body * .85 + core * .4, 0., 1.));',
+    '  a *= (1. - uFade);',
+    '  gl_FragColor = vec4(col, a);',
+    '}',
+  ].join('\n');
+
+  function armSkip() {
+    const gate = { skip: false, down: false };
+    const stop = e => { e.preventDefault(); e.stopPropagation(); };
+    const onDown = e => {
+      if (e.button != null && e.button !== 0) return;
+      gate.skip = true; gate.down = true; stop(e);
+    };
+    const onUp = e => { gate.down = false; stop(e); };
+    const onKey = e => {
+      if (e.repeat) return;
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { gate.skip = true; stop(e); }
+    };
+    const onClick = e => stop(e);
+    const opt = { capture: true, passive: false };
+    window.addEventListener('pointerdown', onDown, opt);
+    window.addEventListener('pointerup', onUp, opt);
+    window.addEventListener('pointercancel', onUp, opt);
+    window.addEventListener('click', onClick, true);
+    window.addEventListener('keydown', onKey, true);
+    gate.off = () => {
+      window.removeEventListener('pointerdown', onDown, opt);
+      window.removeEventListener('pointerup', onUp, opt);
+      window.removeEventListener('pointercancel', onUp, opt);
+      window.removeEventListener('click', onClick, true);
+      window.removeEventListener('keydown', onKey, true);
+    };
+    return gate;
+  }
+  function settle(gate) {
+    if (!gate || !gate.down) return Promise.resolve();
+    return new Promise(resolve => {
+      const up = ev => {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        window.removeEventListener('pointerup', up, true);
+        window.removeEventListener('pointercancel', up, true);
+        const eat = e => { e.preventDefault(); e.stopPropagation(); window.removeEventListener('click', eat, true); };
+        window.addEventListener('click', eat, true);
+        setTimeout(() => { window.removeEventListener('click', eat, true); resolve(); }, 60);
+      };
+      window.addEventListener('pointerup', up, true);
+      window.addEventListener('pointercancel', up, true);
+    });
+  }
+  function sizePass(cv, thin) {
+    const vw = Math.max(1, innerWidth), vh = Math.max(1, innerHeight);
+    let w, h;
+    if (thin) {
+      const s = Math.min(1, 640 / Math.max(vw, vh));
+      w = Math.max(2, Math.round(vw * s));
+      h = Math.max(2, Math.round(vh * s));
+      cv.style.filter = 'blur(1.4px)';
+    } else {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = Math.max(2, Math.round(vw * dpr));
+      h = Math.max(2, Math.round(vh * dpr));
+      cv.style.filter = '';
+    }
+    if (cv.width !== w) cv.width = w;
+    if (cv.height !== h) cv.height = h;
+  }
+  function takeDrop(host) {
+    if (!dropCv) {
+      dropCv = document.createElement('canvas');
+      dropCv.className = 'ink-pass';
+      dropCv.setAttribute('aria-hidden', 'true');
+    }
+    if (dropCv.parentNode !== host) host.appendChild(dropCv);
+    dropCv.style.opacity = '1';
+    return dropCv;
+  }
+  function linkDrop(gl, frag) {
+    const sh = (type, src) => {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); gl.deleteShader(s); return null; }
+      return s;
+    };
+    const vs = sh(gl.VERTEX_SHADER, DROP_VERT);
+    const fs = sh(gl.FRAGMENT_SHADER, frag);
+    if (!vs || !fs) return null;
+    const p = gl.createProgram();
+    gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(p)); return null; }
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    return {
+      p, buf,
+      aPos: gl.getAttribLocation(p, 'aPos'),
+      uRes: gl.getUniformLocation(p, 'uRes'),
+      uC: gl.getUniformLocation(p, 'uC'),
+      uK: gl.getUniformLocation(p, 'uK'),
+      uFade: gl.getUniformLocation(p, 'uFade'),
+      uSeed: gl.getUniformLocation(p, 'uSeed'),
+      uCheap: gl.getUniformLocation(p, 'uCheap'),
+    };
+  }
+  function prepDropGL(cv, thin) {
+    if (cv.__dropFailed) return null;
+    const attrib = { alpha: true, premultipliedAlpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: true };
+    const gl = cv.__gl || cv.getContext('webgl', attrib) || cv.getContext('experimental-webgl', attrib);
+    if (!gl) { cv.__dropFailed = true; return null; }
+    cv.__gl = gl;
+    if (gl.isContextLost && gl.isContextLost()) { cv.__dropFailed = true; return null; }
+    if (!cv.__dropProg) {
+      let P = linkDrop(gl, DROP_FRAG);
+      if (!P) P = linkDrop(gl, DROP_FRAG.replace('precision highp float;', 'precision mediump float;'));
+      if (!P) { cv.__dropFailed = true; return null; }
+      cv.__dropProg = P;
+    }
+    cv.__dropCheap = thin ? 1 : 0;
+    return { gl, P: cv.__dropProg };
+  }
+  function drawDropGL(pack, cv, grow, fade, seed) {
+    const gl = pack.gl, P = pack.P;
+    gl.viewport(0, 0, cv.width, cv.height);
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(P.p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, P.buf);
+    gl.enableVertexAttribArray(P.aPos);
+    gl.vertexAttribPointer(P.aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform2f(P.uRes, cv.width, cv.height);
+    gl.uniform2f(P.uC, cv.width * 0.5, cv.height * 0.5);
+    gl.uniform1f(P.uK, grow);
+    gl.uniform1f(P.uFade, fade);
+    gl.uniform1f(P.uSeed, seed);
+    gl.uniform1f(P.uCheap, cv.__dropCheap || 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  function softSprite() {
+    if (softSprite.cv) return softSprite.cv;
+    const s = 512, cv = document.createElement('canvas'); cv.width = cv.height = s;
+    const c = cv.getContext('2d');
+    const R = n => { const x = Math.sin(n * 127.1) * 43758.5453; return x - Math.floor(x); };
+    for (let i = 0; i < 8; i++) {
+      const a = R(i + 1) * 6.28, d = s * (0.02 + R(i + 2) * 0.08);
+      const x = s / 2 + Math.cos(a) * d, y = s / 2 + Math.sin(a) * d;
+      const r = s * (0.24 + R(i + 3) * 0.2);
+      const g = c.createRadialGradient(x, y, r * 0.02, x, y, r);
+      const deep = i < 2 ? 0.7 : i < 5 ? 0.38 : 0.14;
+      g.addColorStop(0, 'rgba(18,14,12,' + deep + ')');
+      g.addColorStop(0.42, 'rgba(40,32,26,' + (deep * 0.5) + ')');
+      g.addColorStop(0.75, 'rgba(78,66,56,' + (deep * 0.14) + ')');
+      g.addColorStop(1, 'rgba(90,78,66,0)');
+      c.fillStyle = g; c.fillRect(0, 0, s, s);
+    }
+    return (softSprite.cv = cv);
+  }
+  function drawDrop2D(ctx, cv, grow, fade, seed, thin) {
+    const w = cv.width, h = cv.height, sprite = softSprite();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.5, cy = h * 0.5, m = Math.min(w, h);
+    const base = m * 1.2 * grow;
+    const lobes = thin ? 3 : 5;
+    for (let i = 0; i < lobes; i++) {
+      const ang = seed + i * 1.7;
+      const ox = Math.cos(ang) * base * 0.08, oy = Math.sin(ang * 1.3) * base * 0.07;
+      const rw = base * (0.86 + 0.18 * Math.sin(seed * 2 + i));
+      const rh = base * (0.8 + 0.2 * Math.cos(seed * 3 + i));
+      ctx.globalAlpha = (1 - fade) * (i === 0 ? 0.92 : 0.42);
+      ctx.drawImage(sprite, cx + ox - rw, cy + oy - rh, rw * 2, rh * 2);
+    }
+    if (grow > 0.88) {
+      ctx.globalAlpha = (1 - fade) * Math.min(1, (grow - 0.88) / 0.12);
+      ctx.fillStyle = 'rgba(22,18,16,0.97)';
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function playInk(opt) {
+    const host = opt.host;
+    if (!host) return Promise.resolve();
+    const thin = !!opt.thin;
+    const maxGrow = opt.maxGrow == null ? 1 : opt.maxGrow;
+    const growMs = opt.growMs || 500;
+    const fadeMs = opt.fadeMs || 260;
+    const gate = opt.gate;
+    const onCover = opt.onCover;
+    const gen = ++dropGen;
+    return new Promise(resolve => {
+      const cv = takeDrop(host);
+      sizePass(cv, thin);
+      const pack = prepDropGL(cv, thin);
+      const ctx = pack ? null : cv.getContext('2d', { alpha: true });
+      const seed = 1.3 + Math.random() * 6.5;
+      const t0 = performance.now();
+      let dead = false, mode = 'grow', fadeT0 = 0, started = false;
+      const finish = () => {
+        if (dead) return;
+        dead = true;
+        if (gen === dropGen && cv.parentNode) cv.parentNode.removeChild(cv);
+        resolve();
+      };
+      const frame = now => {
+        if (dead) return;
+        if (gen !== dropGen) { dead = true; resolve(); return; }
+        const skip = !!(gate && gate.skip);
+        const elapsed = Math.max(0, now - t0);
+        const gk = Math.min(1, elapsed / growMs);
+        const e = gk < 0.5 ? 2 * gk * gk : 1 - Math.pow(-2 * gk + 2, 2) / 2;
+        const full = skip || mode !== 'grow' || e >= 0.98 || elapsed >= growMs;
+        const grow = (full ? 1 : e) * maxGrow;
+        const fade = mode === 'fade' && !skip ? Math.min(1, (now - fadeT0) / fadeMs) : 0;
+        if (pack) drawDropGL(pack, cv, grow, fade, seed);
+        else drawDrop2D(ctx, cv, grow, fade, seed, thin);
+        const ready = full;
+        if (onCover && !started && ready) {
+          started = true;
+          mode = 'wait';
+          let p;
+          try { p = Promise.resolve(onCover()); }
+          catch (err) { p = Promise.resolve(); }
+          p.then(() => {
+            if (dead || gen !== dropGen) return;
+            if (gate && gate.skip) { finish(); return; }
+            mode = 'fade';
+            fadeT0 = performance.now();
+            requestAnimationFrame(frame);
+          }, () => finish());
+          return;
+        }
+        if (!onCover && mode === 'grow' && ready) {
+          mode = 'fade';
+          fadeT0 = now;
+          if (skip) { finish(); return; }
+        }
+        if (skip && mode !== 'wait') { finish(); return; }
+        if (mode === 'fade' && (now - fadeT0) >= fadeMs) { finish(); return; }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+  function fadeEl(el, a, b, ms, gate) {
+    if (!el) return Promise.resolve();
+    if (gate && gate.skip) { el.style.opacity = String(b); return Promise.resolve(); }
+    const anim = el.animate([{ opacity: a }, { opacity: b }], { duration: ms, fill: 'forwards', easing: 'ease' });
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearInterval(t);
+        anim.cancel();
+        el.style.opacity = String(b);
+        resolve();
+      };
+      const t = setInterval(() => { if (gate && gate.skip) finish(); }, 32);
+      anim.finished.then(finish).catch(finish);
+    });
+  }
+  async function wash(swap) {
     const u = $('#wash');
+    if (!u) { await swap(); return; }
     if (washBusy) { await swap(); return; }
     washBusy = true;
-    if (reduced()) {
-      u.classList.add('on'); const f = u.querySelector('.wash-full');
-      await f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, fill: 'forwards' }).finished.catch(() => {});
-      await swap();
-      await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.catch(() => {});
-      u.classList.remove('on'); washBusy = false; return;
+    const gate = armSkip();
+    try {
+      const ae = document.activeElement;
+      if (ae && ae.blur && ae !== document.body) ae.blur();
+      u.classList.add('on');
+      if (reduced()) {
+        const f = u.querySelector('.wash-full');
+        await fadeEl(f, 0, 1, 250, gate);
+        await swap();
+        if (!gate.skip) await fadeEl(f, 1, 0, 280, gate);
+        if (f) { f.style.opacity = '0'; f.getAnimations().forEach(a => a.cancel()); }
+      } else {
+        await playInk({
+          host: u, thin: cheapFx(), maxGrow: 1, growMs: 500, fadeMs: 260, gate, onCover: swap,
+        });
+      }
+      await settle(gate);
+    } finally {
+      gate.off();
+      u.classList.remove('on');
+      washBusy = false;
     }
-    if (typeof InkGL !== 'undefined' && InkGL.spreadOk) {   // WebGL：纸面以域扭曲的边缘洇开，外缘一圈淡墨
-      const cv = $('#inkfx'); cv.classList.remove('fade'); u.classList.add('on');
-      await InkGL.spread({ mode: 0, x, y, from: 0, to: 1.02, dur: 1050, ease: 'inOut', scale: .5, z: 41 });
-      await swap(); await sleep(60);
-      cv.classList.add('fade'); await sleep(820);
-      InkGL.hide(); cv.classList.remove('fade'); u.classList.remove('on'); washBusy = false; return;
-    }
-    const ink = u.querySelector('.wash-ink'), paper = u.querySelector('.wash-paper'), full = u.querySelector('.wash-full');
-    u.style.setProperty('--wx', (x ?? innerWidth / 2) + 'px'); u.style.setProperty('--wy', (y ?? innerHeight * .55) + 'px');
-    u.classList.add('on');
-    const ease = 'cubic-bezier(.3,.1,.2,1)';
-    ink.animate([{ transform: 'scale(.02) rotate(0deg)', opacity: .9 }, { transform: 'scale(1.8) rotate(20deg)', opacity: .65 }], { duration: 760, easing: ease, fill: 'forwards' });
-    paper.animate([{ transform: 'scale(0) rotate(0deg)' }, { transform: 'scale(.02) rotate(0deg)', offset: .12 }, { transform: 'scale(1.85) rotate(-14deg)' }], { duration: 860, easing: ease, fill: 'forwards' });
-    const f1 = full.animate([{ opacity: 0 }, { opacity: 0, offset: .55 }, { opacity: 1 }], { duration: 900, easing: 'ease-in', fill: 'forwards' });
-    await f1.finished.catch(() => {});
-    await swap();
-    ink.getAnimations().forEach(a => a.cancel()); paper.getAnimations().forEach(a => a.cancel());
-    await sleep(80);
-    await full.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.04)' }], { duration: 760, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished.catch(() => {});
-    full.getAnimations().forEach(a => a.cancel());
-    u.classList.remove('on'); washBusy = false;
+  }
+  function titleDrop() {
+    if (reduced() || document.body.classList.contains('intro-done')) return;
+    setTimeout(() => {
+      if (washBusy || reduced() || document.body.classList.contains('intro-done')) return;
+      const host = $('#intro'); if (!host) return;
+      playInk({ host, thin: cheapFx(), maxGrow: 0.42, growMs: 420, fadeMs: 460 });
+    }, 560);
+  }
+  function brushDab() {
+    if (brushDab.cv) return brushDab.cv;
+    const s = 64, cv = document.createElement('canvas'); cv.width = cv.height = s;
+    const c = cv.getContext('2d');
+    const g = c.createRadialGradient(32, 30, 1, 32, 32, 30);
+    g.addColorStop(0, 'rgba(239,230,211,1)');
+    g.addColorStop(0.42, 'rgba(226,214,190,0.9)');
+    g.addColorStop(0.72, 'rgba(210,196,168,0.28)');
+    g.addColorStop(1, 'rgba(210,196,168,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.ellipse(32, 32, 20, 28, 0, 0, 7); c.fill();
+    return (brushDab.cv = cv);
+  }
+  function brushSweep(opt) {
+    opt = opt || {};
+    if (reduced()) return Promise.resolve();
+    const host = opt.host;
+    if (!host) return Promise.resolve();
+    const thin = opt.thin != null ? !!opt.thin : cheapFx();
+    const broken = !!opt.broken;
+    const dur = opt.dur || 700;
+    const seal = opt.seal || '';
+    const cv = document.createElement('canvas');
+    cv.className = 'ink-pass brush-pass';
+    cv.setAttribute('aria-hidden', 'true');
+    host.appendChild(cv);
+    const dpr = thin ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.max(1, innerWidth), H = Math.max(1, innerHeight);
+    cv.width = Math.max(2, Math.round(W * dpr));
+    cv.height = Math.max(2, Math.round(H * dpr));
+    if (thin) cv.style.filter = 'blur(0.7px)';
+    const c = cv.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const gate = armSkip();
+    const y = H * 0.46;
+    const x0 = -W * 0.08;
+    const x1 = W * (broken ? 0.7 : 1.08);
+    const N = thin ? 52 : 128;
+    const img = brushDab();
+    const ph = Math.random() * 6.28;
+    let drawn = 0, sealed = false;
+    const t0 = performance.now();
+    const stamp = i => {
+      const t = i / (N - 1);
+      const limit = broken ? 0.66 : 1;
+      if (t > limit) return;
+      const x = x0 + (x1 - x0) * t;
+      const wob = Math.sin(t * 8.5 + ph) * H * 0.012 + Math.sin(t * 21 + ph * 2) * H * 0.004;
+      const yy = y + wob;
+      const press = 1 + 0.7 * Math.exp(-t * 11);
+      const lift = t < 0.4 ? 1 : 1 - Math.pow((t - 0.4) / 0.6, 1.3) * 0.8;
+      const thick = (thin ? 20 : 32) * press * Math.max(0.16, lift);
+      const tw = thick * (0.4 + 0.08 * Math.sin(t * 13 + ph));
+      const dry = t > 0.46 && Math.sin(i * 0.83 + ph * 4) > 0.12;
+      if (dry) {
+        for (let h = 0; h < 3; h++) {
+          if (Math.sin(i * 1.7 + h * 2.2 + ph) > 0.52) continue;
+          const oy = (h - 1) * thick * 0.3;
+          const rw = Math.max(0.8, tw * 0.34), rh = Math.max(0.6, thick * 0.11);
+          c.globalAlpha = 0.62 * Math.max(0.35, lift);
+          c.drawImage(img, x - rw, yy + oy - rh, rw * 2, rh * 2);
+        }
+        return;
+      }
+      c.globalAlpha = 0.14 * lift;
+      c.drawImage(img, x - tw * 2.4, yy - thick * 1.2, tw * 4.8, thick * 2.4);
+      c.globalAlpha = 0.42;
+      c.drawImage(img, x - tw, yy - thick * 0.7, tw * 2, thick * 1.4);
+    };
+    const paintSeal = () => {
+      if (sealed || broken || !seal) return;
+      sealed = true;
+      const s = Math.max(48, Math.min(86, W * 0.07));
+      const sx = W * 0.8, sy = y + Math.min(78, H * 0.07);
+      c.save();
+      c.translate(sx, sy);
+      c.rotate(-0.09);
+      c.globalAlpha = 0.94;
+      c.fillStyle = '#9d342e';
+      c.fillRect(-s / 2, -s / 2, s, s);
+      c.strokeStyle = 'rgba(243,234,214,0.88)';
+      c.lineWidth = Math.max(2, s * 0.035);
+      c.strokeRect(-s / 2 + s * 0.08, -s / 2 + s * 0.08, s * 0.84, s * 0.84);
+      c.fillStyle = '#f3ead6';
+      c.font = Math.round(s * 0.56) + 'px MoShu, serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(seal, 0, s * 0.04);
+      c.restore();
+      c.globalAlpha = 1;
+    };
+    return new Promise(resolve => {
+      const frame = now => {
+        const skip = gate.skip;
+        const k = skip ? 1 : Math.min(1, (now - t0) / dur);
+        const upto = Math.floor(k * (N - 1));
+        for (; drawn <= upto; drawn++) stamp(drawn);
+        c.globalAlpha = 1;
+        if (!broken && seal && (k > 0.84 || skip)) paintSeal();
+        if (k < 1) { requestAnimationFrame(frame); return; }
+        settle(gate).then(() => {
+          gate.off();
+          resolve();
+          cv.style.transition = 'opacity .45s ease';
+          requestAnimationFrame(() => { cv.style.opacity = '0'; });
+          setTimeout(() => { if (cv.parentNode) cv.parentNode.removeChild(cv); }, 480);
+        });
+      };
+      requestAnimationFrame(frame);
+    });
   }
 
   /* ---------- iOS 按压态 ---------- */
@@ -497,5 +911,5 @@ const FX = (() => {
     ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(ev => window.addEventListener(ev, off, { passive: true }));
   }
 
-  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, initPress, bloomAt, reduced, syncMotion, thinNow };
+  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, brushSweep, titleDrop, initPress, bloomAt, reduced, syncMotion, thinNow };
 })();

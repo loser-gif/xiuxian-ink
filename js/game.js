@@ -135,7 +135,7 @@ async function initVisuals() {
     Ink.inkBlot(160, 15, { core: 0.33, rough: 0.08, splatter: 7, alpha: 0.95 }),
     Ink.inkBlot(160, 22, { core: 0.3, rough: 0.08, splatter: 4, alpha: 0.95 }),
     Ink.inkBlot(420, 31, { core: 0.3, rough: 0.04, splatter: 14, alpha: 0.92, halo: 0.18 }),
-    Ink.inkBlot(1000, 77, { core: 0.3, rough: 0.16, splatter: 150, alpha: 0.94, halo: 0.07, rgb: [18, 14, 12], feibai: true }),
+    Ink.inkBlot(1000, 77, { soft: true, rgb: [32, 26, 22] }),
     Ink.scene(800, 220),
   ]);
   root.style.setProperty('--mtn-img', `url(${scene})`);
@@ -1638,15 +1638,7 @@ async function runBreak(usePill) {
   a.textContent = b.textContent = target;
   if (!meta) $('#bt-stamp-t').textContent = ok ? '成' : '败';
   await sleep(30); bt.classList.add('go');
-  // 墨染入场：渡劫更慢更沉，筑基略轻
-  const spreadDur = from === 4 ? 3200 : from === 0 ? 2000 : 2600;
-  if (InkGL.spreadOk && !FX.reduced()) {
-    const cv = $('#inkfx'); cv.classList.remove('fade');
-    const ink = $('#bt-ink');
-    bt.insertBefore(cv, ink || bt.firstChild); bt.classList.add('gl');
-    InkGL.spread({ mode: 1, y: innerHeight * (from === 4 ? .36 : .44), from: 0, to: 1.08, dur: spreadDur, ease: 'inOut', scale: .5, z: 'auto' });
-  }
-  await sleep(FX.reduced() ? 80 : (from === 4 ? 1200 : 900));
+  await sleep(FX.reduced() ? 80 : (from === 4 ? 900 : 700));
   if (typeof BtFx !== 'undefined') await BtFx.chargePhase(bt, from, usePill, r.pill);
   else {
     const l1 = document.createElement('div'); lines.appendChild(l1);
@@ -1655,6 +1647,11 @@ async function runBreak(usePill) {
     const l2 = document.createElement('div'); lines.appendChild(l2);
     inkWrite(l2, from === 4 ? '劫云压顶……' : '引天地灵气，冲击瓶颈……', { immediate: true, step: 70 });
     await sleep(1900); bt.classList.remove('charge');
+  }
+  if (!FX.reduced() && FX.brushSweep) {
+    bt.classList.add('sweep');
+    const sealEl = $('#bt-stamp-t');
+    FX.brushSweep({ host: bt, seal: ok && sealEl ? sealEl.textContent : '', broken: !ok });
   }
   if (typeof BtFx !== 'undefined') await BtFx.revealPhase(bt, from, ok);
   else {
@@ -2054,10 +2051,6 @@ async function runRite(res) {
   $('#rite-title').innerHTML = `<span>晋</span>${res.name}`;
   $('#rite-text').textContent = ''; $('#rite-tags').innerHTML = ''; $('#rite-close').hidden = true;
   await sleep(30); el.classList.add('go');
-  if (typeof InkGL !== 'undefined' && InkGL.spreadOk && !FX.reduced()) {
-    const cv = $('#inkfx'); cv.classList.remove('fade'); el.insertBefore(cv, $('#rite-token')); el.classList.add('gl');
-    InkGL.spread({ mode: 1, y: innerHeight * .4, from: 0, to: 1.08, dur: 2400, ease: 'inOut', scale: .5, z: 'auto' });
-  }
   await sleep(FX.reduced() ? 100 : 1300);
   el.classList.add('show');
   await sleep(FX.reduced() ? 100 : 1900);
@@ -3405,7 +3398,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=58').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=59').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -3447,6 +3440,7 @@ Promise.all([
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!document.body.classList.contains('go')) document.body.classList.add('go');
     document.body.classList.remove('hold');
+    if (typeof FX !== 'undefined' && FX.titleDrop) FX.titleDrop();
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
   // 首访不在中途打 intro-done，也不要在墨滴落地时 display:none（会逼 InkGL 重扫、掐断晕开）。
