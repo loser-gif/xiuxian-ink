@@ -502,16 +502,16 @@ const Loop = (() => {
     const L = ensure(s);
     const id = ev.id || '';
     if (id === 'xw_altar' && L.zhen === 'sha') {
-      out.push({ label: '走到坛前改阵', sub: '留下的杀阵 · 不另奖灵石', act: st => { st.flags.zhenAltar = 1; return { text: '杀阵铺到坛前，幽火矮了一寸。你没有捡坛下的灵石。', fx: { xj: 1 } }; } });
+      out.push({ label: '走到坛前改阵', sub: '杀阵', act: st => { st.flags.zhenAltar = 1; return { text: '杀阵铺到坛前，幽火矮了一寸。你没有捡坛下的灵石。', fx: { xj: 1 } }; } });
     }
     if (id === 'm_zhenmai' && L.zhen === 'sheng' && ev._uid != null && ev._mid) {
-      out.push({ label: '以阵镇脉', sub: '留下的生阵 · 不另加这一笔修为之外的奖', act: st => Core.missionAct(st, ev._uid, ev._mid, { gxm: 1, lsm: 0, xw: 0, ok: '你按生阵把灵气按回脉里。白霜退了。这一桩按原成功结算，没有另开一笔灵石。', fail: '阵纹和脉眼拧了一下。', risk: -0.25 }) });
+      out.push({ label: '以阵镇脉', sub: '生阵', act: st => Core.missionAct(st, ev._uid, ev._mid, { gxm: 1, lsm: 0, xw: 0, ok: '你按生阵把灵气按回脉里。白霜退了。这一桩按原成功结算，没有另开一笔灵石。', fail: '阵纹和脉眼拧了一下。', risk: -0.25 }) });
     }
     const key = fuKey(ev);
-    if (key === 'xian' && L.fu.xian > 0) out.push({ label: '贴显形符', sub: '用掉一张 · 副题里的虚实变成实话 · 不加奖', side: 'xian' });
-    else if (key && L.fu[key] > 0) out.push({ label: fuLabel(key), sub: fuSub(key), act: st => fuAct(st, key, ev) });
+    if (key === 'xian' && L.fu.xian > 0) out.push({ label: '贴显形符', sub: '符·一张', side: 'xian' });
+    else if (key && L.fu[key] > 0) out.push({ label: fuLabel(key), sub: '符·一张', act: st => fuAct(st, key, ev) });
     const wrong = wrongKey(L, key);
-    if (wrong) out.push({ label: '贴上' + FU[wrong], sub: '这张不对，会烧掉，事情照旧', side: 'burn', burn: wrong });
+    if (wrong) out.push({ label: '贴上' + FU[wrong], sub: '不对', side: 'burn', burn: wrong });
     return out;
   }
   function fuKey(ev) {
@@ -525,11 +525,6 @@ const Loop = (() => {
     if (k === 'gui') return '贴镇鬼符';
     if (k === 'lu') return '贴路引';
     return '贴显形符';
-  }
-  function fuSub(k) {
-    if (k === 'gui') return '用掉一张 · 险路换成稳住的一句 · 不另奖灵石';
-    if (k === 'lu') return '用掉一张 · 绕开这一场 · 月数不减';
-    return '用掉一张 · 看清虚实';
   }
   function wrongKey(L, right) {
     const keys = ['gui', 'jing', 'lu', 'xian'];

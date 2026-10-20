@@ -2477,8 +2477,8 @@ body[data-screen=main] .scroll-paper{
 .ev-main{min-height:0;overflow-y:auto}
 .ev-side{min-height:0}
 .choice{flex-wrap:nowrap;align-items:center}
-.choice>span{flex:1 1 auto;min-width:0;line-height:1.45}
-.choice small{max-width:none;white-space:nowrap;text-align:right;line-height:1.2}
+.choice>span{flex:1 1 auto;min-width:4.5em;line-height:1.45;white-space:nowrap}
+.choice small{flex:none;max-width:none;white-space:nowrap;text-align:right;line-height:1.2}
 .choice small:empty{display:none}
 .chips{flex-wrap:wrap;row-gap:6px}
 .chip{min-width:0}
@@ -3247,12 +3247,9 @@ html[data-theme="night"] .naihe{background-color:#070605}
 .codex-copy b{display:block;font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.12em}
 .codex-copy em{display:block;font-style:normal;margin-top:2px;font-size:13px;line-height:1.65;color:var(--ink3)}
 .codex-card.sil .codex-copy b{color:var(--ink4);letter-spacing:.22em}
-.sil-ink{display:block;width:46px;height:28px;border-radius:40% 46% 42% 48%;background:rgba(27,24,20,.16)}
-.sil-ink.sil-stele{width:14px;height:40px;border-radius:1px;background:rgba(27,24,20,.34)}
-.sil-ink.sil-book{width:30px;height:36px;border-radius:1px 5px 2px 1px;background:rgba(27,24,20,.22);box-shadow:inset 9px 0 0 rgba(27,24,20,.16)}
-.sil-ink.sil-qi{width:36px;height:12px;border-radius:40%;background:rgba(27,24,20,.28);transform:rotate(-16deg)}
-.sil-ink.sil-face{width:26px;height:32px;border-radius:46% 46% 40% 40%;background:rgba(27,24,20,.24)}
-.sil-ink.sil-door{width:24px;height:36px;border-radius:11px 11px 2px 2px;background:transparent;box-shadow:inset 0 0 0 3px rgba(27,24,20,.28)}
+.sil-ink{display:flex;align-items:center;justify-content:center;width:64px;height:56px;border-radius:0;background:none;box-shadow:none;transform:none;color:rgba(27,24,20,.58)}
+.sil-ink svg{display:block;width:100%;height:100%;overflow:visible}
+.codex-art.sil-art{background:transparent}
 html[data-palette="songyan"] #paper{filter:saturate(.86) contrast(1.03)}
 html[data-palette="lengjin"] #paper{filter:sepia(.14) saturate(1.05)}
 html[data-palette="yuqing"] #paper{filter:sepia(.06) hue-rotate(14deg) saturate(.9)}
@@ -3274,12 +3271,33 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 .page-aside i{font-style:normal}
 @media (min-width:1000px) and (min-height:600px){
   body[data-screen=main] .page-aside{
-    display:flex;position:fixed;z-index:3;top:18%;
-    flex-direction:column;align-items:center;gap:.2em;
-    font-size:12px;line-height:1.15;letter-spacing:.28em;color:var(--ink3);
+    display:block;position:fixed;z-index:3;top:36%;
+    font-size:13px;line-height:1;letter-spacing:.46em;color:var(--ink3);
     pointer-events:none;
+    writing-mode:vertical-rl;
+    text-orientation:upright;
   }
-  #margin-l{left:10px}
-  #margin-r{right:10px}
-  body[data-screen=main] #scenery .m1{left:-28%;width:156%}
+  body[data-screen=main] #margin-l{left:16px;right:auto}
+  body[data-screen=main] #margin-r{right:18px;left:auto}
+  body[data-screen=main] #scenery{
+    opacity:.78;transform:none;
+    -webkit-mask-image:none;mask-image:none;
+  }
+  body[data-screen=main] #scenery .m1{
+    opacity:.92;top:2%;height:46%;left:-42%;width:184%;
+  }
+  body[data-screen=main] #scenery .m2{opacity:.22;top:16%;height:40%;left:-30%;width:160%}
+  body[data-screen=main] #scenery .m3,
+  body[data-screen=main] #scenery .m4,
+  body[data-screen=main] #scenery .mist,
+  body[data-screen=main] #scenery .lake,
+  body[data-screen=main] #scenery .atmo,
+  body[data-screen=main] #scenery .sun,
+  body[data-screen=main] #scenery .cranes,
+  body[data-screen=main] #scenery .pine{opacity:0}
+  /* 远峰单独铺在栏外。中卷是不透的纸，峰从两侧留白里伸出来。 */
+  body[data-screen=main] #vignette::before{
+    content:"";position:absolute;left:-6%;right:-6%;top:22%;height:240px;pointer-events:none;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200' preserveAspectRatio='none'><path fill='%2358646c' fill-opacity='.62' d='M0 168L60 96 130 140 200 48 270 128 340 72 430 156 520 28 620 132 710 56 820 148 930 24 1040 116 1130 64 1200 150 1200 200 0 200Z'/></svg>") center/100% 100% no-repeat;
+  }
 }

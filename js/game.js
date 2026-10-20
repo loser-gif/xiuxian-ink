@@ -2682,7 +2682,14 @@ function openAtlasSheet(startTab) {
   w.className = 'codex';
   let cur = startTab || 'ending';
   const vague = ['路上还会遇见的一件事。', '纸边还空着一笔。', '你走过，却没有记住。', '风里有一句没听清的话。', '某处的门还关着。'];
-  const sil = kind => `<span class="sil-ink sil-${kind}"></span>`;
+  const SIL_SVG = {
+    stele: '<svg viewBox="0 0 40 64" aria-hidden="true"><path fill="currentColor" d="M20 1l14 9h-5v34h9v8H2v-8h9V10H6z"/></svg>',
+    book: '<svg viewBox="0 0 64 48" aria-hidden="true"><path fill="currentColor" d="M6 10c8-4 16-4 24 0v30c-8-4-16-4-24 0V10z"/><path fill="currentColor" opacity=".5" d="M34 10c8-4 16-4 26 0v30c-10-4-18-4-26 0V10z"/><path fill="currentColor" d="M30 8h4v34h-4z"/></svg>',
+    qi: '<svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M2 22h12v8H2zm48 0h12v8H50zM12 16h40v6H12zM18 22h28v14c0 11-6 16-14 16s-14-5-14-16V22zM20 52h7v9h-7zm17 0h7v9h-7z"/></svg>',
+    face: '<svg viewBox="0 0 64 72" aria-hidden="true"><path fill="currentColor" d="M26 22C24 10 34 4 40 8c6 4 6 10 4 12l8 2 6 6-8 4 2 4-8 6c-6 6-12 4-14 0l-2 14-12 10-10-4 8-10 2-16c-4-6 0-12 10-14z"/></svg>',
+    door: '<svg viewBox="0 0 48 64" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M4 8h40v50H4V8zm10 16a10 14 0 0 1 20 0v34H14V24z"/></svg>',
+  };
+  const sil = kind => `<span class="sil-ink sil-${kind}">${SIL_SVG[kind] || ''}</span>`;
   const card = (on, art, title, line) => `<article class="codex-card${on ? ' on' : ' sil'}">${art}<div class="codex-copy"><b>${esc(on ? title : '未录')}</b><em>${esc(line)}</em></div></article>`;
   function entries(m, tab) {
     const a = m.atlas || {};
