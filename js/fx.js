@@ -829,67 +829,78 @@ const FX = (() => {
     cv.height = Math.max(2, Math.round(H * dpr));
     const c = cv.getContext('2d');
     const gate = armSkip();
-    const x0 = -W * 0.03, x1 = W * (broken ? 0.62 : 0.9);
-    const limitT = broken ? 0.66 : 1;
-    const count = thin ? 28 : 52;
-    const hairs = [];
-    for (let i = 0; i < count; i++) {
-      const u = count === 1 ? 0.5 : i / (count - 1);
-      const edge = Math.abs(u - 0.5) * 2;
-      hairs.push({
+    host.classList.add('brush-on');
+    const headR = H * 0.074;
+    const x0 = W * 0.11 + headR;
+    const x1 = W * (broken ? 0.6 : 0.90);
+    const limitT = broken ? 0.68 : 1;
+    const cy = H * 0.5;
+    const strandN = thin ? 8 : 14;
+    const strands = [];
+    for (let i = 0; i < strandN; i++) {
+      const u = (i + 0.5) / strandN;
+      strands.push({
         u,
-        jitter: (brushHash(i + 2) - 0.5) * 0.06,
-        start: Math.pow(edge, 1.45) * 0.11,
-        die: Math.min(limitT, 0.52 + 0.48 * Math.pow(1 - edge, 0.5) * (0.78 + 0.22 * brushHash(i + 5))),
-        phase: brushHash(i + 9) * 6.28,
-        freq: 5 + brushHash(i + 4) * 7,
-        gold: brushHash(i + 6),
+        phase: brushHash(i + 3) * 6.28,
+        freq: 1.1 + brushHash(i + 8) * 1.3,
+        die: Math.min(limitT, 0.66 + 0.34 * brushHash(i + 5)),
+        width: H * (0.0032 + brushHash(i + 2) * 0.0055),
+        amp: 0.1 + brushHash(i + 11) * 0.16,
+        ink: 0.16 + brushHash(i + 6) * 0.22,
       });
     }
     const pointAt = t => {
       const x = x0 + (x1 - x0) * t;
-      const arc = Math.sin(t * Math.PI) * H * 0.04;
-      const y = H * 0.5 - arc - t * H * 0.012;
-      return [x, y];
+      const arc = Math.sin(t * Math.PI) * H * 0.02;
+      const drift = Math.sin(t * 2.4 + 0.7) * H * 0.008;
+      return [x, cy - arc + drift];
     };
     const halfW = t => {
-      const belly = 0.62 + 0.38 * Math.exp(-Math.pow((t - 0.22) / 0.34, 2));
-      const taper = t < 0.4 ? 1 : Math.pow(Math.max(0, 1 - (t - 0.4) / 0.6), 1.35);
-      return H * 0.085 * belly * (0.2 + 0.8 * Math.max(0.05, taper));
+      const belly = 0.86 + 0.14 * Math.exp(-Math.pow((t - 0.26) / 0.34, 2));
+      const taper = t < 0.46 ? 1 : Math.pow(Math.max(0, 1 - (t - 0.46) / 0.54), 1.2);
+      const wob = 1 + 0.045 * Math.sin(t * 5.2 + 0.8) + 0.03 * Math.sin(t * 11.0 + 2.1);
+      return H * 0.078 * belly * Math.max(0.07, taper) * wob;
     };
     const normalAt = t => {
-      const a = pointAt(Math.max(0, t - 0.01)), b = pointAt(Math.min(0.999, t + 0.01));
+      const a = pointAt(Math.max(0, t - 0.012)), b = pointAt(Math.min(0.999, t + 0.012));
       let nx = -(b[1] - a[1]), ny = b[0] - a[0];
       const nl = Math.hypot(nx, ny) || 1;
       return [nx / nl, ny / nl];
     };
-    const ribbon = (tEnd, widthScale, alpha, color) => {
-      const left = [], right = [], steps = thin ? 28 : 42;
+    const tangentAt = t => {
+      const n = normalAt(t);
+      return [n[1], -n[0]];
+    };
+    const traceBody = (tEnd, extra) => {
+      const steps = thin ? 28 : 48;
+      const left = [], right = [];
+      const end = Math.max(0.02, Math.min(tEnd, limitT));
       for (let i = 0; i <= steps; i++) {
-        const t = Math.min(tEnd, limitT) * (i / steps);
-        const hw = halfW(t) * widthScale * (1 + 0.03 * Math.sin(t * 17 + 1.2));
+        const t = end * (i / steps);
+        const hw = halfW(t) + extra;
         const p = pointAt(t), n = normalAt(t);
         left.push([p[0] + n[0] * hw, p[1] + n[1] * hw]);
         right.push([p[0] - n[0] * hw, p[1] - n[1] * hw]);
       }
-      if (left.length < 2) return;
       c.beginPath();
+      const head = pointAt(0), n0 = normalAt(0), tg = tangentAt(0);
+      const hr = halfW(0.02) + extra;
+      const ang = Math.atan2(tg[1], tg[0]);
+      c.ellipse(head[0], head[1], hr * 1.08, hr * 0.9, ang, 0, Math.PI * 2);
       c.moveTo(left[0][0], left[0][1]);
       for (let i = 1; i < left.length; i++) c.lineTo(left[i][0], left[i][1]);
       for (let i = right.length - 1; i >= 0; i--) c.lineTo(right[i][0], right[i][1]);
       c.closePath();
-      c.fillStyle = color;
-      c.globalAlpha = alpha;
-      c.fill();
     };
     const paintSeal = k => {
       if (broken || !seal || k < 0.8) return;
-      const tip = pointAt(Math.min(limitT, 0.84));
+      const tip = pointAt(Math.min(limitT, 0.93));
       const s = H * 0.07;
       const press = Math.min(1, (k - 0.8) / 0.18);
       const sc = 1.28 - 0.28 * (1 - Math.pow(1 - press, 2));
       c.save();
-      c.translate(tip[0] - W * 0.01, tip[1] + H * 0.055);
+      c.filter = 'none';
+      c.translate(tip[0] + s * 0.08, tip[1] + s * 0.12);
       c.rotate(-0.08);
       c.scale(sc, sc);
       c.globalAlpha = Math.min(1, press * 1.4) * 0.95;
@@ -906,46 +917,87 @@ const FX = (() => {
       c.restore();
     };
     const paint = k => {
-      const reach = Math.min(limitT, k);
+      const reach = Math.min(limitT, Math.max(0.02, k));
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.clearRect(0, 0, W, H);
       c.globalCompositeOperation = 'source-over';
-      const head = pointAt(0.03), hn = normalAt(0.03), hr = halfW(0.04);
-      c.globalAlpha = 0.9;
-      c.fillStyle = 'rgba(239, 226, 196, 0.95)';
-      c.beginPath();
-      c.ellipse(head[0], head[1], hr * 0.95, hr * 0.82, Math.atan2(hn[0], hn[1]), 0, 7);
-      c.fill();
-      ribbon(Math.min(reach, 0.58), 0.82, 0.92, 'rgba(236, 220, 188, 0.96)');
-      ribbon(Math.min(reach, 0.42), 0.48, 0.4, 'rgba(214, 184, 130, 0.85)');
       c.lineCap = 'round';
       c.lineJoin = 'round';
-      const hairColor = b => b.gold > 0.78 ? 'rgba(226, 196, 140, 0.96)' : 'rgba(246, 234, 210, 0.97)';
-      const steps = thin ? 36 : 64;
-      for (let bi = 0; bi < hairs.length; bi++) {
-        const b = hairs[bi];
+      c.save();
+      c.filter = 'blur(' + (thin ? 2.2 : 3) + 'px)';
+      c.globalAlpha = 0.42;
+      c.fillStyle = 'rgba(62,44,30,0.55)';
+      traceBody(reach, H * 0.012);
+      c.fill();
+      c.restore();
+      const g = c.createLinearGradient(x0, cy, x1, cy);
+      g.addColorStop(0, 'rgba(198,164,112,0.98)');
+      g.addColorStop(0.22, 'rgba(228,206,168,0.96)');
+      g.addColorStop(0.55, 'rgba(240,226,198,0.9)');
+      g.addColorStop(0.78, 'rgba(246,234,214,0.8)');
+      g.addColorStop(0.92, 'rgba(246,236,220,0.48)');
+      g.addColorStop(1, 'rgba(246,236,220,0.2)');
+      c.save();
+      c.filter = 'blur(' + (thin ? 1.4 : 1.6) + 'px)';
+      c.globalAlpha = 1;
+      c.fillStyle = g;
+      traceBody(reach, 0);
+      c.fill();
+      c.restore();
+      c.save();
+      c.filter = 'blur(2px)';
+      c.globalAlpha = 0.34;
+      c.fillStyle = 'rgba(122,86,48,0.7)';
+      traceBody(Math.min(reach, 0.38), -H * 0.028);
+      c.fill();
+      c.restore();
+      c.save();
+      traceBody(reach, 0);
+      c.clip();
+      c.filter = 'blur(0.8px)';
+      for (let si = 0; si < strands.length; si++) {
+        const b = strands[si];
         c.beginPath();
         let pen = false;
+        const steps = thin ? 32 : 52;
         for (let i = 0; i <= steps; i++) {
           const t = reach * (i / steps);
-          const tail = Math.max(0, (t - 0.42) / 0.58);
-          const wave = Math.sin(t * b.freq * 1.4 + b.phase);
-          const gap = tail > 0.08 && wave > (0.82 - tail * 1.45);
-          const alive = t >= b.start && t <= b.die && t <= reach && !gap;
-          if (!alive) { pen = false; continue; }
-          const hw = halfW(t);
-          const across = (b.u - 0.5 + b.jitter) * hw * 2;
-          const p = pointAt(t), n = normalAt(t);
-          const x = p[0] + n[0] * across, y = p[1] + n[1] * across;
+          const tail = Math.max(0, (t - 0.5) / 0.5);
+          const wave = Math.sin(t * b.freq * Math.PI * 2 + b.phase);
+          const gap = tail > 0.12 && wave > (0.35 - tail * 1.05);
+          if (t < 0.06 || t > b.die || gap) { pen = false; continue; }
+          const side = (b.u - 0.5) * 1.15 + wave * (b.amp + tail * 0.22);
+          const p = pointAt(t), n = normalAt(t), hw = halfW(t);
+          const x = p[0] + n[0] * side * hw;
+          const y = p[1] + n[1] * side * hw + Math.sin(t * 8 + b.phase) * H * 0.004;
           if (!pen) { c.moveTo(x, y); pen = true; }
           else c.lineTo(x, y);
         }
-        c.strokeStyle = hairColor(b);
-        c.globalAlpha = 0.55 + b.gold * 0.4;
-        c.lineWidth = Math.max(1.4, H * (thin ? 0.006 : 0.0042));
+        const dry = 0.25 + brushHash(si + 15) * 0.2;
+        c.strokeStyle = 'rgba(74,52,32,' + (b.ink * (1 - dry * 0.35)).toFixed(3) + ')';
+        c.globalAlpha = 0.85;
+        c.lineWidth = b.width * (0.75 + 0.5 * brushHash(si + 19));
         c.stroke();
       }
+      c.filter = 'none';
+      c.globalAlpha = 0.09;
+      c.strokeStyle = 'rgba(60,42,28,0.8)';
+      c.lineWidth = 1;
+      const specks = thin ? 24 : 64;
+      for (let i = 0; i < specks; i++) {
+        const t = brushHash(i + 21) * reach * 0.96;
+        const p = pointAt(t), n = normalAt(t);
+        const side = (brushHash(i + 70) - 0.5) * halfW(t) * 1.5;
+        const x = p[0] + n[0] * side, y = p[1] + n[1] * side;
+        const len = 5 + brushHash(i + 33) * 16;
+        c.beginPath();
+        c.moveTo(x, y);
+        c.lineTo(x + len, y + (brushHash(i + 44) - 0.5) * 2.4);
+        c.stroke();
+      }
+      c.restore();
       c.globalAlpha = 1;
+      c.filter = 'none';
       paintSeal(k);
     };
     const t0 = performance.now();
@@ -957,6 +1009,7 @@ const FX = (() => {
         if (k < 1) { requestAnimationFrame(frame); return; }
         settle(gate).then(() => {
           gate.off();
+          host.classList.remove('brush-on');
           resolve();
           cv.style.transition = 'opacity .45s ease';
           requestAnimationFrame(() => { cv.style.opacity = '0'; });
