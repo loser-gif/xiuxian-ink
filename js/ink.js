@@ -3,6 +3,13 @@
 const Ink = (() => {
   function mulberry(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  function layerScale(W, H) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches && Math.min(window.innerWidth, window.innerHeight) < 1000;
+    const area = Math.max(1, W * H);
+    if (coarse) return Math.min(dpr, 1.5, Math.max(1, Math.sqrt(2.2e6 / area)));
+    return Math.min(dpr, Math.max(1, Math.sqrt(1.2e7 / area)));
+  }
 
   function toURL(cv) {
     return new Promise(res => {
@@ -90,9 +97,8 @@ const Ink = (() => {
   }
 
   function mountainLayer(cv, o) {
-    const W = o.W || cv.clientWidth, H = o.H || cv.clientHeight; if (!W || !H) return;
-    // 水墨远山本就朦胧：屏幕上的山层最高 1.5 倍像素，省下近半显存（iOS 上 2× 时每层约 3MB）
-    const dpr = o.W ? 1 : Math.min(DPR, 1.5, Math.max(1, Math.sqrt(2.2e6 / (W * H))));   // 宽屏每层不超过约 2.2MP
+    const W = o.W || cv.clientWidth, H = o.H || cv.clientHeight; if (!W || !H) return false;
+    const dpr = o.W ? 1 : layerScale(W, H);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
     const R = mulberry(o.seed);
@@ -301,5 +307,5 @@ const Ink = (() => {
     mountainLayer(cv, { W, H, seed: 91, rgb: [60, 66, 70], alpha: 0.9, base: 1.02, amp: 0.8, peaks: 4, width: 0.08, sharp: 2.2, fade: 0.8, wash: 0.35, cun: 0.15, cunLen: 0.7, folds: 2, line: 0.8, dots: 0.05, hero: 1, trees: 2, treeSize: 0.6, bottomFade: false });
     return toURL(cv);
   }
-  return { scene, paperTile, mountainLayer, mistSprite, inkBlot, brushPath, brushSVG, mulberry, DPR };
+  return { scene, paperTile, mountainLayer, mistSprite, inkBlot, brushPath, brushSVG, mulberry, DPR, layerScale };
 })();

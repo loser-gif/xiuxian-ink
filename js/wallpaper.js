@@ -2,7 +2,6 @@
 'use strict';
 const Wallpaper = (() => {
   const $ = s => document.querySelector(s);
-  const DPR = Math.min(window.devicePixelRatio || 1, 2);
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
   const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
@@ -16,10 +15,13 @@ const Wallpaper = (() => {
   const rnd = (a, b) => a + R() * (b - a);
 
   /* ---------- 前景松枝 ---------- */
+  function px() { return Math.min(window.devicePixelRatio || 1, coarse() ? 1.5 : 2); }
   function drawPine(cv) {
-    const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
-    cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR);
-    const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, w, h);
+    if (!cv) return false;
+    const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return false;
+    const dpr = px();
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
     const r = Ink.mulberry(77), s = w / 250;
     const bez = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]; };
     // 枝干：带粗细变化的填充笔触
@@ -93,19 +95,20 @@ const Wallpaper = (() => {
     }
     clouds.push([T[3][0], T[3][1] - 2 * s, 74 * s, 19 * s, .55]);
     for (const cl of clouds) cloud(...cl);
+    return true;
   }
 
   /* ---------- 湖面倒影（静态预渲染，交给 CSS 做波光） ---------- */
   function drawLake() {
     const lake = $('.lake'), cv = $('.lake-refl'); if (!lake || !cv) return;
-    const lw = lake.offsetWidth, lh = lake.offsetHeight, ltop = lake.offsetTop; if (!lw || !lh) return;
-    cv.width = Math.round(lw); cv.height = Math.round(lh);
-    const c = cv.getContext('2d'); c.clearRect(0, 0, lw, lh);
+    const lw = lake.offsetWidth, lh = lake.offsetHeight, ltop = lake.offsetTop; if (!lw || !lh) return false;
+    const dpr = px();
+    cv.width = Math.round(lw * dpr); cv.height = Math.round(lh * dpr);
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, lw, lh);
     for (const [sel, a] of [['.m2', .45], ['.m3', 1]]) {
       const m = $('#scenery ' + sel); if (!m || !m.width) continue;
       c.save(); c.globalAlpha = a;
-      // 以水线为轴镜像：lake 内 y = ltop - 屏幕 y
-      c.setTransform(1, 0, 0, -0.92, 0, ltop * 0.92);
+      c.setTransform(dpr, 0, 0, -0.92 * dpr, 0, ltop * 0.92 * dpr);
       c.drawImage(m, 0, m.offsetTop, m.offsetWidth, m.offsetHeight);
       c.restore();
     }
@@ -120,6 +123,7 @@ const Wallpaper = (() => {
     const g = c.createLinearGradient(0, 0, 0, lh); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.55, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,1)');
     c.fillStyle = g; c.fillRect(0, 0, lw, lh);
     c.globalCompositeOperation = 'source-over';
+    return true;
   }
 
   function glints() {
@@ -140,8 +144,8 @@ const Wallpaper = (() => {
     return cv.toDataURL();
   }
 
-  /* ---------- 流雾与云影：1/4 分辨率画布，30fps ---------- */
-  const K = 0.25;
+  /* ---------- 流雾与云影：固定 1/4 分辨率，放大后才柔，不能按像素比画实 ---------- */
+  function mistK() { return 0.25; }
   const A = { layers: [], raf: 0, last: 0, t0: 0, frame: 0 };
   let fogImg = null, shadowImg = null;
   function sprite(rgb, a0) {
@@ -151,11 +155,13 @@ const Wallpaper = (() => {
     c.fillStyle = g; c.fillRect(0, 0, 64, 64); return cv;
   }
   function makeLayer(cv, mtnSel, band, nFog, nShadow) {
-    const W = innerWidth, H = innerHeight, w = Math.ceil(W * K), h = Math.ceil(H * K);
+    const W = cv.clientWidth || innerWidth, H = cv.clientHeight || innerHeight;
+    const w = Math.max(2, Math.ceil(W * mistK())), h = Math.max(2, Math.ceil(H * mistK()));
     cv.width = w; cv.height = h;
     const sil = document.createElement('canvas'); sil.width = w; sil.height = h;
     const m = $('#scenery ' + mtnSel);
-    if (m && m.width) sil.getContext('2d').drawImage(m, m.offsetLeft * K, m.offsetTop * K, m.offsetWidth * K, m.offsetHeight * K);
+    const kSil = w / Math.max(1, W);
+    if (m && m.width) sil.getContext('2d').drawImage(m, m.offsetLeft * kSil, m.offsetTop * kSil, m.offsetWidth * kSil, m.offsetHeight * kSil);
     const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
     const fogBase = nFog, shBase = nShadow;
     const nF = fogN(fogBase), nS = thinNow() ? 1 : (coarse() ? Math.min(2, shBase) : shBase);
@@ -169,7 +175,8 @@ const Wallpaper = (() => {
     tc.globalCompositeOperation = 'source-over'; tc.clearRect(0, 0, w, h);
     for (const s of L.sh) {
       s.x += s.v * dt; if (s.x - s.rw > W) s.x = -s.rw * 1.2;
-      tc.globalAlpha = s.a; tc.drawImage(shadowImg, (s.x - s.rw) * K, (s.y - s.rh) * K, s.rw * 2 * K, s.rh * 2 * K);
+      const k = L.w / Math.max(1, L.W);
+      tc.globalAlpha = s.a; tc.drawImage(shadowImg, (s.x - s.rw) * k, (s.y - s.rh) * k, s.rw * 2 * k, s.rh * 2 * k);
     }
     tc.globalAlpha = 1; tc.globalCompositeOperation = 'destination-in'; tc.drawImage(L.sil, 0, 0);
     c.clearRect(0, 0, w, h); c.drawImage(L.tmp, 0, 0);
@@ -179,7 +186,8 @@ const Wallpaper = (() => {
       if (f.v > 0 && f.x - f.rw > W) f.x = -f.rw; if (f.v < 0 && f.x + f.rw < 0) f.x = W + f.rw;
       const y = f.y + Math.sin(t * .13 + f.ph) * f.bob;
       c.globalAlpha = f.a * (.7 + .3 * Math.sin(t * .21 + f.ph * 2));
-      c.drawImage(fogImg, (f.x - f.rw) * K, (y - f.rh) * K, f.rw * 2 * K, f.rh * 2 * K);
+      const k = L.w / Math.max(1, L.W);
+      c.drawImage(fogImg, (f.x - f.rw) * k, (y - f.rh) * k, f.rw * 2 * k, f.rh * 2 * k);
     }
     c.globalAlpha = 1;
   }
@@ -227,6 +235,21 @@ const Wallpaper = (() => {
     drawPine($('.pine'));
     drawLake();
     if (!document.documentElement.style.getPropertyValue('--glint-img')) document.documentElement.style.setProperty('--glint-img', `url(${glints()})`);
+    if (needsBuild() && (build._n = (build._n || 0) + 1) < 8) {
+      clearTimeout(build._t);
+      build._t = setTimeout(build, 80);
+    } else build._n = 0;
+  }
+  function bitmapStale(cv) {
+    if (!cv) return false;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h) return true;
+    if (cv.classList.contains('atmo')) return cv.width === 300 && cv.height === 150 && w > 400;
+    const dpr = px();
+    return Math.abs(cv.width - Math.round(w * dpr)) > 2 || Math.abs(cv.height - Math.round(h * dpr)) > 2;
+  }
+  function needsBuild() {
+    return bitmapStale($('.pine')) || bitmapStale($('.lake-refl')) || bitmapStale($('.atmo-far')) || bitmapStale($('.atmo-near'));
   }
   function init() {
     build();
@@ -235,5 +258,5 @@ const Wallpaper = (() => {
       if (document.body.dataset.screen === 'title') start();
     }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
   }
-  return { init, rebuild: build, syncMotion, kick };
+  return { init, rebuild: build, syncMotion, kick, needsBuild };
 })();

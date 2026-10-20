@@ -396,6 +396,7 @@ body.go .title-menu .brush-btn small{animation-delay:calc(var(--ink-d) + .46s),c
 
 /* ---------- 奇遇横卷 ---------- */
 .modal{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:calc(var(--sat) + 16px) calc(var(--sar) + 10px) calc(var(--sab) + 16px) calc(var(--sal) + 10px)}
+.modal:not(.open){pointer-events:none}
 .modal-shade{position:absolute;top:0;right:0;bottom:0;left:0;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(20,17,14,.38),rgba(20,17,14,.62));opacity:0;transition:opacity .6s}
 .modal.open .modal-shade{opacity:1}
 .hscroll{position:relative;width:min(100%,560px);max-height:100%;display:flex;align-items:stretch;--half:180px}
@@ -462,9 +463,14 @@ body.go .title-menu .brush-btn small{animation-delay:calc(var(--ink-d) + .46s),c
 .choice:active{background:rgba(27,24,20,.05)}
 .choice:active::before{transform:scale(1.5)}
 .choice:disabled{opacity:.32!important}
-.ev-choices.chosen .choice{pointer-events:none;transition:opacity .4s}
-.ev-choices.chosen .choice:not(.picked){opacity:0!important;height:0;padding:0;overflow:hidden;transition:opacity .35s}
-.ev-choices.chosen .choice.picked{color:var(--zhu)}
+.ev-choices.chosen .choice{animation:none;pointer-events:none;cursor:default}
+.ev-choices.chosen .choice:not(.picked){opacity:.32;height:0;min-height:0;margin:0;padding-top:0;padding-bottom:0;overflow:hidden}
+.ev-choices.chosen .choice.picked{color:var(--ink3);opacity:.72}
+@keyframes inkShake{0%,100%{transform:none}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+.ev-choices.ink-shake{animation:inkShake .45s var(--ease-ink)}
+@media (prefers-reduced-motion:reduce){
+  .ev-choices.ink-shake{animation:none;box-shadow:inset 0 0 0 1px rgba(179,48,42,.45)}
+}
 .ev-result{margin-top:10px}
 .ev-result .r-text{font-size:16px;line-height:2;text-align:justify;color:var(--ink2)}
 .ev-result .entry-tags{margin-top:8px;font-size:12.5px}
@@ -1595,10 +1601,11 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 
 /* 平板及以上：抽屉改为居中的纸笺 */
 @media (min-width:700px) and (min-height:520px){
-  .sheet-panel{left:50%;right:auto;top:50%;bottom:auto;width:min(660px,calc(100vw - 72px));max-width:none;max-height:min(84vh,880px);max-height:min(84dvh,880px);margin:0;
+  .sheet-panel{left:50%;right:auto;top:50%;bottom:auto;width:min(660px,calc(100vw - 72px));max-width:none;max-height:min(84vh,880px);max-height:min(84dvh,880px);margin:0;overflow:hidden;
     padding:20px 32px 26px;border-radius:3px;opacity:0;transform:translate3d(-50%,-46%,0) scale(.978) rotateX(3deg);
     transition:transform .5s var(--ease-curl),opacity .35s var(--ease-curl);box-shadow:0 24px 64px rgba(20,14,8,.32),inset 0 0 0 1px rgba(27,24,20,.07)}
   .sheet.open .sheet-panel{opacity:1;transform:translate3d(-50%,-50%,0) scale(1) rotateX(0deg)}
+  .sheet-body{min-height:0}
   .sheet-panel::before,.sheet-panel::after{content:"";position:absolute;left:-7px;right:-7px;height:11px;border-radius:6px;background:linear-gradient(180deg,#5b4433,#2d2119 40%,#1a130e 65%,#3c2d22);box-shadow:0 2px 3px rgba(30,20,10,.3)}
   .sheet-panel::before{top:-6px}.sheet-panel::after{bottom:-6px}
   .sheet-handle{visibility:hidden;height:2px;margin-bottom:6px}
@@ -1868,6 +1875,23 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 @media (prefers-reduced-motion:reduce){
   .path-cer,.path-cer-sealbox,.path-opt{animation:none!important;opacity:1;transform:none;transition:none}
 }
+.goal-cer .path-cer-panel{width:min(920px,calc(100vw - 28px));height:auto;max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px);min-height:0}
+.goal-cer .path-cer-body{flex:1 1 auto;min-height:0;overflow-y:auto}
+.goal-cer .path-cer-foot{flex:none;display:flex;flex-direction:column;align-items:center;
+  background:transparent;box-shadow:none;border-top:0}
+@media (max-height:860px){
+  .goal-cer .path-cer-panel{padding-top:12px}
+  .goal-cer .path-cer-sealbox{width:40px;height:40px;margin-bottom:2px}
+  .goal-cer .path-cer-title{font-size:34px;margin-bottom:4px}
+  .goal-cer .path-cer-lead{min-height:0;font-size:13px;line-height:1.5;max-height:4.6em;overflow:auto}
+  .goal-cer .path-cer-head{margin-bottom:4px}
+  .goal-cer .path-cer-opts{gap:6px;margin:2px 0 6px}
+  .goal-cer .path-opt{padding:7px 8px}
+  .goal-cer .path-opt p{font-size:12px;line-height:1.45;max-height:2.9em;overflow:hidden}
+  .goal-cer .path-opt em{margin-bottom:2px}
+  .goal-cer .path-cer-foot{padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px))}
+  .goal-cer .path-cer-hint{margin-bottom:4px}
+}
 
 /* ===== polish: 定型洗纹／状态 ===== */
 .path-wash{margin-top:18px;padding-top:14px;border-top:1px dashed rgba(27,24,20,.12)}
@@ -2106,23 +2130,25 @@ body[data-screen=main] .scroll-paper{
   to{transform:none}
 }
 
-/* 抽屉：自下卷起 */
-.sheet{perspective:1400px}
-.sheet-panel{
-  transform:translate3d(0,105%,0) rotateX(7deg);
-  transform-origin:50% 100%;
-  transition:transform .6s var(--ease-curl);
-  box-shadow:
-    0 -12px 36px rgba(0,0,0,.28),
-    inset 0 16px 18px -14px rgba(40,28,16,.16),
-    inset 0 1px 0 rgba(255,248,230,.2) !important;
-}
-.sheet.open .sheet-panel{
-  transform:translate3d(0,0,0) rotateX(0deg);
-  box-shadow:
-    0 -10px 28px rgba(0,0,0,.22),
-    inset 0 10px 12px -10px rgba(40,28,16,.1),
-    inset 0 1px 0 rgba(255,248,230,.12) !important;
+/* 抽屉自下卷起：只留给窄屏 / 矮屏。宽屏居中规则在上面，不能再被这里盖掉。 */
+@media (max-width:699px), (max-height:519px){
+  .sheet{perspective:1400px}
+  .sheet-panel{
+    transform:translate3d(0,105%,0) rotateX(7deg);
+    transform-origin:50% 100%;
+    transition:transform .6s var(--ease-curl);
+    box-shadow:
+      0 -12px 36px rgba(0,0,0,.28),
+      inset 0 16px 18px -14px rgba(40,28,16,.16),
+      inset 0 1px 0 rgba(255,248,230,.2) !important;
+  }
+  .sheet.open .sheet-panel{
+    transform:translate3d(0,0,0) rotateX(0deg);
+    box-shadow:
+      0 -10px 28px rgba(0,0,0,.22),
+      inset 0 10px 12px -10px rgba(40,28,16,.1),
+      inset 0 1px 0 rgba(255,248,230,.12) !important;
+  }
 }
 
 /* 奇遇横卷：启合时轴侧微卷高光 */
@@ -2302,6 +2328,10 @@ body[data-screen=main] .scroll-paper{
   #splash.play .splash-paper,#splash.skip .splash-paper,#splash.play .splash-roller.bot,#splash.skip .splash-roller.bot{transform:none}
   #splash.play .splash-char,#splash.skip .splash-char{opacity:.92}
 }
+@media (prefers-reduced-motion:reduce) and (min-width:700px) and (min-height:520px){
+  .sheet-panel{transform:translate3d(-50%,-50%,0)!important}
+  .sheet.open .sheet-panel{transform:translate3d(-50%,-50%,0)!important;opacity:1}
+}
 
 /* ===== v29：开场卷、三卷存档、未解之缘、终卷绘卷 ===== */
 #splash{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
@@ -2464,8 +2494,8 @@ body[data-screen=main] .scroll-paper{
   body[data-screen=title] .title-menu{box-sizing:border-box;padding-right:148px}
   body[data-screen=title] .title-menu-sub{width:min(620px,100%);max-width:100%}
 }
-@media (min-width:1000px) and (min-height:600px){
-  body[data-screen=title] .title-menu{padding-right:260px}
+@media (min-width:1120px){
+  body[data-screen=title] .title-menu{padding-right:0}
 }
 
 /* ===== v33：夜墨、字号、动效、双栏、逐页不裁 ===== */
@@ -2601,9 +2631,9 @@ html[data-font="lg"] #inp-name{font-size:32px}
 /* 平板与 iPad：左笺右卷，两栏铺满 */
 @media (min-width:760px) and (max-width:1279px) and (min-height:620px){
   #scr-main{max-width:none;display:grid;grid-template-columns:minmax(248px,340px) minmax(0,1fr);
-    grid-template-rows:minmax(0,1fr) auto auto;column-gap:clamp(18px,2.4vw,36px);justify-content:stretch;
+    grid-template-rows:auto auto minmax(0,1fr) auto auto;column-gap:clamp(18px,2.4vw,36px);justify-content:stretch;
     padding:calc(var(--sat) + 18px) calc(var(--sar) + 22px) calc(var(--sab) + 14px) calc(var(--sal) + 22px)}
-  #scr-main .hud{grid-column:1;grid-row:1;align-self:stretch;overflow:auto;min-height:0;margin:0;
+  #scr-main .hud{grid-column:1;grid-row:1;align-self:start;height:auto;overflow:auto;max-height:none;min-height:0;margin:0;
     padding:22px 18px 16px;position:relative;
     background:linear-gradient(rgba(250,246,234,.9),rgba(250,246,234,.9)),var(--paper-img);background-size:auto,256px;
     box-shadow:0 10px 28px rgba(60,40,20,.1),inset 0 0 0 1px rgba(27,24,20,.06)}
@@ -2612,11 +2642,16 @@ html[data-font="lg"] #inp-name{font-size:32px}
   #scr-main .hud::before{top:-6px}#scr-main .hud::after{bottom:-6px}
   #scr-main .realm-name{font-size:44px}
   #scr-main .chips{flex-direction:row;flex-wrap:wrap}
-  #scr-main .scroll{grid-column:2;grid-row:1;margin:6px 0}
-  #scr-main .status-line{grid-column:2;grid-row:2}
-  #scr-main .actions{grid-column:2;grid-row:3;width:100%;max-width:640px;justify-self:center}
-  #scr-main .side{display:flex;flex-direction:column;gap:10px;grid-column:1;grid-row:2/4;align-self:stretch;
-    min-height:0;max-height:min(42vh,340px);overflow:auto;margin:8px 0 0}
+  #scr-main .scroll{grid-column:2;grid-row:1 / span 3;margin:0;min-height:0;height:100%}
+  #scr-main .scroll-paper{height:100%;min-height:0}
+  #scr-main .scroll-paper{--juan-h:72px}
+  #scr-main .juan-head{height:72px;margin:4px 8px}
+  #scr-main .status-line{grid-column:2;grid-row:4}
+  #scr-main .actions{grid-column:2;grid-row:5;align-self:start;width:100%;max-width:640px;justify-self:center;grid-template-columns:repeat(4,minmax(0,1fr))}
+  #scr-main .act{height:64px;min-height:0}
+  #scr-main .side{display:flex;flex-direction:column;gap:10px;grid-column:1;grid-row:2;align-self:start;
+    min-height:0;max-height:none;overflow:auto;margin:10px 0 0}
+  body[data-screen=main] #scr-main{padding-bottom:calc(var(--sab) + 10px);padding-right:calc(var(--sar) + 58px)}
   #scr-main .side-card{display:block;width:100%;text-align:left;padding:10px 14px;border-radius:2px;
     background:linear-gradient(rgba(250,246,234,.9),rgba(250,246,234,.9)),var(--paper-img);background-size:auto,256px;
     box-shadow:inset 0 0 0 1px rgba(27,24,20,.06)}
@@ -2845,6 +2880,9 @@ html[data-theme="night"] .end-actions{background:none}
 
 /* 抽屉不超过可视区，正文在卷内滚 */
 .sheet-panel{max-height:min(78vh,calc(100vh - var(--sat) - 12px));max-height:min(78dvh,calc(100dvh - var(--sat) - 12px))}
+@media (min-width:700px) and (min-height:520px){
+  .sheet-panel{max-height:min(78vh,880px,var(--sheet-cap,78vh));max-height:min(78dvh,880px,var(--sheet-cap,78dvh))}
+}
 .sect-home,.bag-list,.cult-wrap,.atlas-sheet{overflow-x:hidden;max-width:100%}
 
 /* 游玩：设 / 声横排放进行动列下方的空档，不压行囊与日志 */
@@ -3087,9 +3125,9 @@ html[data-theme="night"] .end{
   .hscroll{width:min(100%,680px)}
   .end-paper{width:min(560px,46vw)}
   .sheet-panel{width:min(720px,calc(100vw - 96px)) !important}
+  .map-scroll-wrap{width:100%;max-width:1200px;margin-left:auto;margin-right:auto}
   .mj{align-items:center}
   .mj-body,.mj-head,.mj-chain,.mj-bars,.mj-loot{width:min(760px,calc(100% - 48px))}
-  .map-scroll-wrap{max-width:1200px;margin-left:auto;margin-right:auto}
   .dan-stage{width:min(58vh,560px);height:min(58vh,560px)}
   #scr-create{max-width:640px;margin-left:auto;margin-right:auto}
 }
@@ -3287,4 +3325,7 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
     content:"";position:absolute;left:-8%;right:-8%;top:6%;height:42%;pointer-events:none;
     background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 420'><defs><filter id='w' x='-15%25' y='-40%25' width='130%25' height='180%25'><feGaussianBlur stdDeviation='18'/></filter><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23515f68' stop-opacity='.55'/><stop offset='.5' stop-color='%23515f68' stop-opacity='.2'/><stop offset='1' stop-color='%23515f68' stop-opacity='0'/></linearGradient></defs><g filter='url(%23w)' fill='url(%23g)'><ellipse cx='70' cy='250' rx='150' ry='100'/><ellipse cx='250' cy='200' rx='190' ry='140'/><ellipse cx='470' cy='240' rx='160' ry='90'/><ellipse cx='700' cy='180' rx='210' ry='150'/><ellipse cx='940' cy='220' rx='180' ry='110'/><ellipse cx='1160' cy='190' rx='200' ry='145'/><ellipse cx='1360' cy='245' rx='160' ry='95'/></g></svg>") center/100% 100% no-repeat;
   }
+}
+@media (max-width:1679px){
+  body[data-screen=main] .page-aside{display:none}
 }
