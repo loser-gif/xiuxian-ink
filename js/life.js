@@ -154,82 +154,121 @@ const Life = (() => {
   }
   function xinmoLines(s) {
     const f = xinmoFacts(s);
-    const q = f.quote;
+    const realm = Math.max(0, Math.min(4, s.realm | 0));
     const realms = [
       [
-        `识海里先响起的是风，像你离开家那天的风。有个声音用你自己的嗓子问：你答应过要回来的那一句，还算数吗？它把「${q}」摊在你面前。`,
+        {
+          line: '识海里先响起的是风，像你离开家那天的风。有个声音用你自己的嗓子问：炼气走到这一步，你答应过要回来的那一句，还算数吗？这一步，是筑基。',
+          theme: '回家那一句还算不算数',
+        },
         f.origin === 'xiaohuan'
-          ? '宫墙的灯又亮了一盏。心魔坐在灯下，问你还是不是那个把灯放低的人。它不要你的命，只要你承认：你听过那一声很小的哭。'
+          ? { line: '宫墙的灯又亮了一盏。心魔坐在灯下，问你还是不是那个把灯放低的人。它不要你的命，只要你承认：筑基之前，你听过那一声很小的哭。', theme: '你是不是那个把灯放低的人' }
           : f.origin === 'moyi'
-            ? '血衣的布纹在识海里硬得像刀。心魔问：你留下它，是为了记得，还是为了有一天把它还给谁？'
-            : `山门外的石阶还在。心魔蹲在第一级上，像个等你的人：「炼气这一步，你是为自己走的，还是为了不再回去？」旁边摊着旧事：${q}。`,
-        f.goal ? `心魔把「${f.goal}」三个字写在雾上，又擦掉。「你现在连气都没炼完。这一愿，是真的，还是怕自己没事可做？」` : `心魔学着你的声音，把「${q}」念得很慢。它问：若这一步踏出去，你还认不认门槛外的自己。`,
+            ? { line: '血衣的布纹在识海里硬得像刀。心魔问：你留下它，是为了记得，还是为了有一天把它还给谁？这一步若踏出去，血衣还跟不跟你去筑基。', theme: '血衣是为了记得，还是为了还人' }
+            : { line: '山门外的石阶还在。心魔蹲在第一级上：「炼气这一步走到头，你是为自己走去筑基，还是为了不再回去？」', theme: '这一步是为自己走，还是为了不再回去' },
+        f.goal
+          ? { line: `心魔把「${f.goal}」三个字写在雾上，又擦掉。「你现在要的是筑基。这一愿，是真的，还是怕自己没事可做？」`, theme: `所求「${f.goal}」是不是真的` }
+          : { line: '心魔问：若筑基这一步踏出去，你还认不认门槛外的自己。', theme: '踏出去之后还认不认从前的自己' },
       ],
       [
+        f.goal
+          ? { line: `金丹将凝。心魔把「${f.goal}」写进将成的丹纹里，一笔一笔。「这一愿若是假的，丹会裂。你现在还敢说它是真的吗？」`, theme: `所求「${f.goal}」敢不敢写进丹纹` }
+          : { line: '丹光将起未起。心魔坐在炉边：「金丹这一步，是你自己要凝的，还是被日子推着走的？」', theme: '金丹是自己要凝，还是被日子推着走' },
         f.mate && !f.lost
-          ? `筑基的关隘里站着${f.mate}。不是真人，是你记得的那个站法。心魔说：「你筑的这座基，有一半是给这个人留的位置。位置若空了，基还在不在？」`
+          ? { line: `${f.mate}的呼吸在识海里慢了半拍。心魔问：「两个人的息，凝得进同一枚金丹吗？凝不进，你舍哪一边？」`, theme: `与${f.mate}的息凝不凝得进同一枚丹` }
           : f.lost && f.mate
-            ? `识海里有一只空杯。心魔把杯转过来，杯底写着${f.mate}的名字。「人已经不在了。你还把道基砌在一个空位上。」`
-            : `道基将成未成。心魔在基石上敲了敲：「这一基，是你自己选的，还是被日子推着走的？」它把「${q}」压在石下，让你看见。`,
-        f.foe ? `${f.foe}的声音从关隘另一头传来，不像仇，倒像提醒。「你筑基的时候，可还记着这一剑？」心魔笑：「记着，基就歪一点。不记，你就不是你。」` : `心魔把你这些年的选择铺成一条路。「${q}」。它问：筑基之后，这条路还走不走得回去。`,
-        f.sect ? `${f.sect}的钟在识海里响了一下。心魔问：「钟若是为你响，你承不承得起？钟若不为你响，你这基又算谁的？」` : '心魔不催你死。它只把一只空碗放在关前：「基要筑在实处。你碗里现在是空的。空，也能当基吗？」',
+            ? { line: `识海里有一只空杯，杯底是${f.mate}的名字。心魔说：「人已经不在了。你还要把这一枚金丹，砌在一个空位上吗？」`, theme: `金丹还要不要砌在${f.mate}留下的空位上` }
+            : f.scar
+              ? { line: `旧伤在将凝的丹光里发亮。心魔念你留下的那句：「${f.scar}」它问：带伤凝丹，丹是你的，还是伤的？`, theme: '带伤凝的丹是你的还是伤的' }
+              : { line: '心魔把一枚空丹托在掌心。「金丹一成，很多路就回不去了。你回不去的那条，叫什么名字？」', theme: '金丹之后回不去的那条路叫什么' },
+        f.foe
+          ? { line: `${f.foe}的名字在将成的丹纹上绕了一圈。心魔说：「${f.foe}若死在你前面，这枚丹还凝不凝？若不死，你的丹是不是为这一剑准备的？」`, theme: `这枚金丹与${f.foe}有没有关系` }
+          : f.sect
+            ? { line: `${f.sect}的钟在识海里响了一下。心魔问：「钟若是为你这枚金丹响，你承不承得起？钟若不为你响，丹又算谁的？」`, theme: '这枚金丹算不算你自己的' }
+            : { line: '心魔不催你死。它只问：金丹落定之后，你还回不回得去筑基时的那个人。', theme: '金丹之后还回不回得去从前' },
       ],
       [
-        f.goal ? `金丹将凝。心魔把「${f.goal}」写进丹纹里，一笔一笔。「这一愿若是假的，丹会裂。你现在还敢说它是真的吗？」` : `丹光里照出一张旧脸。心魔说：「凝丹的人，不该再躲${q}。躲，丹就有裂纹。」`,
         f.mate && !f.lost
-          ? `${f.mate}的呼吸在识海里慢了半拍，和你不一样。心魔问：「两个人的息，凝得进同一枚丹吗？凝不进，你舍哪一边？」`
-          : f.scar
-            ? `旧伤在丹光里发亮。心魔念你留下的那句：「${f.scar}」它问：带伤凝丹，丹是你的，还是伤的？`
-            : `心魔坐在丹炉边上，像个不请自来的丹师。「${q}」。它说这一笔若写进丹里，你后半辈子都要认。`,
-        f.foe ? `仇人的名字在丹纹上绕了一圈。心魔说：「${f.foe}若死在你前面，这枚丹还凝不凝？若不死，你的丹是不是为他准备的刀？」` : '心魔把一枚空丹托在掌心。「金丹一成，很多路就回不去了。你回不去的那条，叫什么名字？」',
+          ? { line: `元婴将成。心魔让你看${f.mate}的背影：「婴若离体，你还回不回得来这具坐在人身边的壳？回不来的话，先说一声。」`, theme: `元婴离体之后还回不回得来${f.mate}身边` }
+          : f.lost && f.mate
+            ? { line: `元婴将出的那一瞬，你看见${f.mate}站在很远的地方，不进来。心魔小声说：「婴可以离体。人不能。你还要不要把这个名字带进元婴？」`, theme: `还要不要把${f.mate}的名字带进元婴` }
+            : { line: '识海忽然很宽。心魔站在远处，声音却近：「元婴一出，你就不再只是这个身体里的人。这一步，你是自己要出的吗？」', theme: '元婴这一步是不是自己要出的' },
+        f.goal === '守一人'
+          ? { line: '心魔问得很轻：「你说要守一人。元婴能守人，也能把人守丢。你守的是人，还是守这个念头？」', theme: '你守的是人，还是守这个念头' }
+          : f.goal
+            ? { line: `心魔把「${f.goal}」放在将成的婴影前面。「出了金丹，所求会变重。你还抬得动吗？」`, theme: `所求「${f.goal}」还抬不抬得动` }
+            : f.scar
+              ? { line: `心魔指了指你留下的暗伤：「${f.scar}」婴最怕的不是雷，是你不肯看的那一寸。看，或者带着它进元婴。你选。`, theme: '这道暗伤带不带进元婴' }
+              : { line: '心魔只用你的声音问：元婴记住的第一件事，配不配被你带出这具身体。', theme: '元婴该记住的第一件事是什么' },
+        f.sect
+          ? { line: `${f.sect}的山门在识海里缩小成一粒。心魔问：「你若成了元婴，山门还是家，还是你路过的一座山？」`, theme: '成了元婴之后山门还是不是家' }
+          : f.foe
+            ? { line: `${f.foe}的声音从关隘另一头传来。「你化婴的时候，可还记着这一剑？」心魔说：记着，婴就歪一点。不记，你就不是你。`, theme: `化婴时还记不记得${f.foe}那一剑` }
+            : { line: '心魔把这些年的选择铺成一条路。它问：元婴之后，这条路还走不走得回去。', theme: '元婴之后这条路还走不走得回去' },
       ],
       [
+        f.goal === '求长生'
+          ? { line: '化神的门槛上没有人。心魔却在。「长生若是真的，你从前亏过的人，要在哪一年还？还不起，化神这一步就是逃。」', theme: '化神这一步是不是在逃' }
+          : f.goal
+            ? { line: `天风里只剩一句：「${f.goal}」。心魔说：「到了化神，所求若还只是一句话，你就还没有准备好让它变成你。」`, theme: `所求「${f.goal}」准备好没有变成你` }
+            : { line: '心魔用你现在的脸说话。它问：化神这一步之后，还有没有一件事值得你停留。', theme: '化神之后还有没有值得停留的事' },
         f.lost && f.mate
-          ? `元婴出窍的那一瞬，你看见${f.mate}站在很远的地方，不进来。心魔小声说：「婴可以离体。人不能。你还要不要把这个名字带出去？」`
+          ? { line: `${f.mate}没有出现。心魔偏要你想起这个名字。「化神的人，常常把名字落在山门里。你落不落？」`, theme: `化神时落不落${f.mate}的名字` }
           : f.mate
-            ? `元婴将成。心魔让你看${f.mate}的背影：「婴若离体，你还回不回得来这具坐在人身边的壳？回不来的话，先说一声。」`
-            : `识海忽然很宽。心魔站在远处，声音却近：「元婴一出，你就不再只是这个身体里的人。${q}——这件事，你带不带出去？」`,
-        f.goal === '守一人' ? '心魔问得很轻：「你说要守一人。元婴能守人，也能把人守丢。你守的是人，还是守这个念头？」' : f.goal ? `心魔把「${f.goal}」放在婴影前面。「出了这关，所求会变重。你还抬得动吗？」` : `心魔不化形。它只用你的声音说：「${q}」。然后问：这句话，配不配被一具元婴记住。`,
-        f.sect ? `${f.sect}的山门在识海里缩小成一粒。心魔问：「你若成了婴，山门还是家，还是你路过的一座山？」` : '心魔指了指你留下的暗伤：「婴最怕的不是雷，是你自己不肯看的那一寸。看，或者带着它出去。你选。」',
+            ? { line: `${f.mate}在风里说了一句听不清的话。心魔替你翻译：「若你过了化神，谁还在这具身边记得你？」`, theme: `过了化神谁还记得你与${f.mate}` }
+            : f.sect
+              ? { line: `${f.sect}的山门在识海里更小了。心魔问：「你若成了化神，山门还是家，还是你走过的一座山？」`, theme: '成了化神之后山门还是不是家' }
+              : { line: '心魔把你这一生的选择收成一页。「页要是在化神这里合上一角，人就只剩路。你还想在页边上留一个名字吗？」', theme: '化神这一页边上还留不留名字' },
+        f.scar
+          ? { line: `心魔点着你的暗伤：「${f.scar}」带着这个去化神，天会看见。不带，你就少了一块自己。`, theme: '这道暗伤带不带去化神' }
+          : f.foe
+            ? { line: `${f.foe}的影子被风吹薄。心魔说：「仇到了化神，已经轻得可以不报。不报，你还是你吗？」`, theme: `到了化神还报不报${f.foe}` }
+            : { line: '心魔不再翻旧账。它只问：「你这一步，是要化神，还是要躲开化神？」问完，它就站在那里等。', theme: '这一步是要化神还是要躲开' },
       ],
       [
-        f.goal === '求长生' ? '化神的门槛上没有人。心魔却在。「长生若是真的，你从前亏过的人，要在哪一年还？还不起，这一步就是逃。」' : f.goal ? `天风里只剩一句：「${f.goal}」。心魔说：「到了这里，所求若还只是一句话，你就还没有准备好让它变成你。」` : `心魔终于用你现在的脸说话。「${q}」。它问：这一步之后，还有没有一件事值得你停留。`,
+        f.goal === '求长生'
+          ? { line: '飞升的门槛上没有人。心魔却在。「长生若是真的，你从前亏过的人，要在哪一年还？还不起，这一步就是逃。」', theme: '飞升这一步是不是在逃' }
+          : f.goal
+            ? { line: `天风里只剩一句：「${f.goal}」。心魔说：「到了飞升，所求若还只是一句话，你就还没有准备好让它变成你。」`, theme: `所求「${f.goal}」在飞升前还是不是一句空话` }
+            : { line: '心魔终于用你现在的脸说话。它问：飞升之后，还有没有一件事值得你回头。', theme: '飞升之后还有没有值得回头的事' },
         f.lost && f.mate
-          ? `${f.mate}没有出现。心魔偏要你想起这个名字。「飞升的人，常常把名字落在山下。你落不落？」`
+          ? { line: `${f.mate}没有出现。心魔偏要你想起这个名字。「飞升的人，常常把名字落在山下。你落不落？」`, theme: `飞升时落不落${f.mate}的名字` }
           : f.mate
-            ? `${f.mate}在风里说了一句听不清的话。心魔替你翻译：「若你上去了，谁在下面记得你？」它不等你答。`
+            ? { line: `${f.mate}在风里说了一句听不清的话。心魔替你翻译：「若你上去了，谁在下面记得你？」它不等你答。`, theme: `若你飞升谁在下面记得你与${f.mate}` }
             : f.foe
-              ? `${f.foe}的影子被风吹薄。心魔说：「仇到了这一境，已经轻得可以不报。不报，你还是你吗？」`
-              : '心魔把你这一生的选择收成一页。「页要是合上，人就只剩路。你还想在页边上留一个名字吗？」',
-        f.scar ? `最后一问很短。心魔点着你的暗伤：「${f.scar}」它说，带着这个上去，天会看见。不带，你就少了一块自己。` : '心魔不再问旧事。它只问：「你还怕不怕死？」问完，它就站在那里，等你用自己的声音回答。',
+              ? { line: `${f.foe}的影子被风吹薄。心魔说：「仇到了这一步，已经轻得可以不报。不报，你还是你吗？」`, theme: `飞升前还报不报${f.foe}` }
+              : { line: '心魔把你这一生的选择收成一页。「页要是合上，人就只剩路。你还想在页边上留一个名字吗？」', theme: '飞升前还在不在页边留一个名字' },
+        f.scar
+          ? { line: `最后一问很短。心魔点着你的暗伤：「${f.scar}」它说，带着这个上去，天会看见。不带，你就少了一块自己。`, theme: '这道暗伤带不带去飞升' }
+          : { line: '心魔不再问旧事。它只问：「你还怕不怕死？」问完，它就站在那里，等你用自己的声音回答。', theme: '你还怕不怕死' },
       ],
     ];
-    const realm = Math.max(0, Math.min(4, s.realm | 0));
     const lines = realms[realm].filter(Boolean);
     const n = (s.months | 0) + (s.age | 0) + realm * 3;
-    return { line: lines[n % lines.length], quote: q, who: f.past.who || '' };
+    const picked = lines[n % lines.length];
+    return { line: picked.line, theme: picked.theme, quote: picked.theme, who: '' };
   }
   function xinmoEvent(s) {
     const picked = xinmoLines(s);
-    const quote = picked.quote;
+    const theme = picked.theme;
     const realm = s.realm | 0;
     return {
       id: 'xinmo_r' + realm, title: '心魔', seal: '魔', xinmo: true,
       text: () => picked.line,
       choices: () => [
-        { label: '把那件事说完', sub: '道心微定', act: s2 => {
+        { label: '把这一问说完', sub: '道心微定', act: s2 => {
           finishXinmo(s2, 'clear');
           tint(s2, 4);
-          return { text: `你把「${quote}」又说了一遍，一个字不改。心魔听完，像雾一样散了。关隘还在，可你知道自己是从哪一条路上走来的。`, fx: { xj: 5 }, afterBreak: true };
+          return { text: `你把这一问说完：${theme}。一个字不躲。心魔听完，像雾一样散了。关隘还在，可你知道自己答的是眼前这一步。`, fx: { xj: 5 }, afterBreak: true };
         }},
         { label: '不许它再提', sub: '或留暗伤', act: s2 => {
-          finishXinmo(s2, 'scar', `你不许心魔提起${picked.who || '那件事'}。它停了，伤却留在识海内侧，像一根没拔的刺。`);
-          return { text: '你抬手斩断那声音。识海静了，静得发空。破境仍可继续——只是下一次关隘，这根刺还会疼一下。', fx: { xj: -3 }, afterBreak: true };
+          finishXinmo(s2, 'scar', `你不许心魔再问这一句：${theme}。它停了，这一问却留在识海内侧。`);
+          return { text: `你抬手斩断那声音。它问的是：${theme}。你不许它再提。识海静了，静得发空。破境仍可继续——只是下一次关隘，这一问还会疼一下。`, fx: { xj: -3 }, afterBreak: true };
         }},
         { label: '随口应了它', sub: '心境动摇', act: s2 => {
-          finishXinmo(s2, 'scar', `你随口应了心魔。它用你的声音把「${quote}」又念了一遍，像在记账。`);
+          finishXinmo(s2, 'scar', `你随口应了心魔。它问的是：${theme}。你没有当真。`);
           tint(s2, -6);
-          return { text: '你应了一声。心魔笑了，笑得像你自己。它没有要你的命，只在道心上按了一个指印。这个指印，叫暗伤。', fx: { xj: -6 }, afterBreak: true };
+          return { text: `你应了一声。心魔问的是：${theme}。你答得太轻。它笑了，笑得像你自己。这个指印，叫暗伤。`, fx: { xj: -6 }, afterBreak: true };
         }},
       ],
     };
@@ -246,7 +285,7 @@ const Life = (() => {
       }
       note(s, { t: '暗伤', d: scarText || '识海留刺', k: 'scar' });
     } else {
-      note(s, { t: '心魔', d: '你把旧事说完，道心未裂', k: 'xinmo' });
+      note(s, { t: '心魔', d: '你把这一问说完，道心未裂', k: 'xinmo' });
     }
   }
   function scarPen(s) {
@@ -414,6 +453,36 @@ const Life = (() => {
     return '';
   }
 
+  function lifeRecall(s) {
+    const life = L(s);
+    const bits = [];
+    const deeds = (life.deeds || []).filter(d => d && d.line);
+    const prefer = deeds.filter(d => d.kind === 'save' || d.kind === 'spare');
+    const pool = (prefer.length ? prefer : deeds).slice();
+    const seen = {};
+    const lines = [];
+    for (const d of pool) {
+      if (lines.length >= 3) break;
+      if (seen[d.who]) continue;
+      seen[d.who] = 1;
+      let bit = String(d.line);
+      if (bit.indexOf('你') === 0) bit = bit.slice(1);
+      lines.push(bit);
+    }
+    if (lines.length) bits.push('这一生里，还留着：' + lines.join('；'));
+    let mate = '';
+    if (typeof Juan !== 'undefined' && Juan.mateName) mate = Juan.mateName(s) || '';
+    else if (s.karma && s.karma.mate && typeof NPCS !== 'undefined' && NPCS[s.karma.mate]) mate = NPCS[s.karma.mate].name || '';
+    if (mate && s.bond && s.bond.lost) bits.push(mate + '曾替你挡过一劫');
+    else if (mate) bits.push('与' + mate + '同行过一程');
+    let mjN = 0;
+    if (s.mj) for (const st of Object.values(s.mj)) mjN += (st && st.n) || 0;
+    if (mjN) bits.push('秘境去过' + (typeof cn === 'function' ? cn(mjN) : mjN) + '回');
+    const g = goalName(s);
+    if (g && lines.length < 3) bits.push('所求仍是「' + g + '」');
+    return bits;
+  }
+
   function juebi(s, kind) {
     const name = (s && s.name) || '无名';
     const age = typeof cn === 'function' ? cn(s.age | 0) : String(s.age | 0);
@@ -440,7 +509,8 @@ const Life = (() => {
       text = `${name}放下长生时，${age}岁。舟上没有带功法，只把「${quote}」在心里过了一遍，然后不再过。`;
       thread = `来世若在江上看见空船，不必上，看一眼就好。`;
     } else if (kind === 'ascend') {
-      text = `${name}飞升前回了一次头。云下很安静。安静里有一句没带走的话：${quote}。`;
+      const rec = lifeRecall(s);
+      text = `${name}于${age}岁飞升。此世已毕，可开下一世。` + (rec.length ? rec.join('。') + '。' : '云下很安静。');
       thread = g ? `来世不必再求「${g}」。若还记得，就当是风。` : `来世若还想飞，先记得自己曾经低头看过人间。`;
     } else if (kind === 'renhuang') {
       text = `登基那日，${name}在诏书空白处写了很小的一行，写的是${who}，又涂掉了。史官没有看见。`;
@@ -669,7 +739,7 @@ const Life = (() => {
     { id: 'zhouwan', title: '茶债', seal: '茶', who: '周晚',
       roleGood: '听雨楼的管事', roleBad: '来收旧账的儿子',
       text: '茶摊的女子把账簿推到你面前，耳根红了：「周晚。这名字不值钱。债倒是值钱。客官若肯替我垫上，茶不要钱。若不肯，当我没说。」',
-      save: { label: '替她垫上', line: '你替茶摊的周晚垫了一笔债', kind: 'save',
+      save: { label: '替她垫上', toll: { ls: -6 }, fx: { ls: -6 }, line: '你替茶摊的周晚垫了一笔债', kind: 'save',
         out: '你把灵石按在账簿上。她把最好的那罐茶给你满上，手很稳。临走只说：「我记性好。」' },
       bad: { label: '压价，拿走茶', line: '你压低了周晚的茶价，还拿走了罐子', kind: 'wrong',
         out: '你把价压到可笑，又把罐子提走。她没有拦。罐沿还留着她的指温。你走出十步，指温就没了。' } },
@@ -727,16 +797,22 @@ const Life = (() => {
       },
       cond: fresh(sp.id),
       text: () => sp.text,
-      choices: () => [
-        { label: sp.save.label, sub: '', act: s => {
+      choices: s0 => {
+        const toll = sp.save.toll;
+        const poor = !!(toll && toll.ls && typeof Core !== 'undefined' && s0.ls < Core.scaleLs(s0, -toll.ls));
+        return [
+        { label: sp.save.label, sub: '', toll: toll, disabled: poor, act: s => {
           const ok = Life.plant(s, { id: sp.id, who: sp.who, kind: sp.save.kind, line: sp.save.line, roleGood: sp.roleGood, roleBad: sp.roleBad, years: 22 + Math.floor(Math.random() * 9) });
-          return { text: sp.save.out, fx: { xj: 4, xw: 0.05 }, tags: ok ? [{ t: '回响已埋', c: 'gold' }] : [] };
+          const fx = { xj: 4, xw: 0.05 };
+          if (sp.save.fx) Object.assign(fx, sp.save.fx);
+          return { text: sp.save.out, fx, tags: ok ? [{ t: '回响已埋', c: 'gold' }] : [] };
         }},
         { label: sp.bad.label, sub: '', act: s => {
           const ok = Life.plant(s, { id: sp.id, who: sp.who, kind: sp.bad.kind, line: sp.bad.line, roleGood: sp.roleGood, roleBad: sp.roleBad, years: 22 + Math.floor(Math.random() * 9) });
           return { text: sp.bad.out, fx: { xj: -3 }, tags: ok ? [{ t: '回响已埋', c: 'gold' }] : [] };
         }},
-      ],
+      ];
+      },
     });
 
     EVENTS.push({
@@ -747,8 +823,13 @@ const Life = (() => {
         const good = d && (d.kind === 'save' || d.kind === 'spare');
         const role = good ? sp.roleGood : sp.roleBad;
         const years = d ? Math.max(1, Math.round((s.months - (d.year * 12)) / 12)) : 20;
+        const yr = typeof cn === 'function' ? cn(years) : years;
+        const raw = d && d.line ? d.line : ('遇见' + sp.who);
+        const ago = raw.charAt(0) === '你' ? ('距' + raw) : ('距你' + raw);
         if (!good && typeof Core !== 'undefined' && Core.showFoe) Core.showFoe(s, { rel: 0 }, { name: role, title: '旧怨' });
-        return `距你${d ? d.line : '遇见' + sp.who}，约莫${typeof cn === 'function' ? cn(years) : years}年。${sp.who}没有以旧模样出现。来的是${role}。对方看你的眼神，仍停在当年那一刻。`;
+        if (good && sp.id === 'fox') return `${ago}，约莫${yr}年。白狐没有再夹着腿出现。来的是一场梦：山中那灵把当年的伤腿转向你，伤已经收口。`;
+        if (good && sp.id === 'zhouwan') return `${ago}，约莫${yr}年。周晚没有再推账簿。来的是听雨楼的管事，袖口仍有茶烟。她看你的眼神，停在你按上灵石的那一页。`;
+        return `${ago}，约莫${yr}年。${sp.who}没有以旧模样出现。来的是${role}。对方看你的眼神，仍停在当年那一刻。`;
       },
       choices: s => {
         const d = Life.deed(s, sp.id);
@@ -761,9 +842,14 @@ const Life = (() => {
               if (sp.id === 'linzhao' && s2.sect && s2.sect.org) fx.gx = 36;
               else if (sp.id === 'qingzhen' && s2.court && (s2.court.rank | 0) >= 0) fx.xj = 4;
               else if (sp.id === 'beggar') fx.btBuff = 0.02;
+              else if (sp.id === 'fox') { fx.luck = 1; }
+              else if (sp.id === 'zhouwan') { /* 茶账销了，不再另赠清心丹 */ }
               else fx.item = { '清心丹': 1 };
               if (sp.id === 'zhaoheng') fx.ls = 2;
-              return { text: `${sp.roleGood}向你拱手。没有大礼，只有一句：「当年那件事，我一直记着。」你发现有些债，是用很多年来还的，还的时候轻得像一阵风。`, fx };
+              let said = `${sp.roleGood}向你拱手。没有大礼，只有一句：「当年那件事，我一直记着。」你发现有些债，是用很多年来还的，还的时候轻得像一阵风。`;
+              if (sp.id === 'fox') said = '梦里那只白狐把一粒温热的珠子放在你掌心。不是道谢。它让你看见：当年那条伤腿，好了。';
+              if (sp.id === 'zhouwan') said = '周晚把账簿翻到旧页，那一笔已经划掉。「茶债我记了这些年。今日销了。」她把当年那罐茶又温上，手仍很稳：「茶仍不要钱。人，我记得。」';
+              return { text: said, fx };
             }},
             { label: '说已经忘了', sub: '', act: s2 => {
               Life.seal(s2, sp.id);

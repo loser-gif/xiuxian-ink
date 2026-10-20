@@ -259,7 +259,7 @@ const Samsara = (() => {
     if (s.events) lines.push(`奇遇 ${typeof cn === 'function' ? cn(s.events) : s.events} 桩`);
     lines.push('');
     const seal = {
-      ascend: '碑阴无字，只余松涛。',
+      ascend: '此世已毕，可开下一世。',
       zuohua: '山风过石门，案上笔未干。',
       rumo: '墨落成血，不可复洗。',
       guiyin: '空船自横，钓丝无饵。',
@@ -383,6 +383,12 @@ const Samsara = (() => {
   function bridgeOpen() {
     const b = loadMeta().bridge;
     return !!(b && b.open);
+  }
+  function dismissBridge() {
+    const m = loadMeta();
+    if (!m.bridge || !m.bridge.open) return;
+    m.bridge = Object.assign({}, m.bridge, { open: 0, chosen: 'ascend' });
+    saveMeta(m);
   }
   function chooseNaihe(kind) {
     const m = loadMeta();
@@ -627,6 +633,6 @@ const Samsara = (() => {
     dailyStatus, claimDaily, todayKey,
     trialSeed, isTrial, atlasStats,
     encounterCatalog, seeEncounter, markRelic,
-    END_IDS, PERSON_IDS, bridgeOpen, chooseNaihe, volumeStats, setPalette, noteGongfa, harvest,
+    END_IDS, PERSON_IDS, bridgeOpen, dismissBridge, chooseNaihe, volumeStats, setPalette, noteGongfa, harvest,
   };
 })();

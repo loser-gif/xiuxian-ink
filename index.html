@@ -57,7 +57,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 </style>
 <script>
 (function () {
-  var EXPECT = 'moxian-v59';
+  var EXPECT = 'moxian-v60';
   var pending = '';
   function showFail(kind) {
     var box = document.getElementById('boot-fail');
@@ -112,21 +112,25 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   window.addEventListener('load', checkCss);
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   var had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=59').then(function (reg) {
+  function armWorker(reg) {
     try { if (reg.active) reg.active.postMessage({ type: 'HELLO', cache: EXPECT }); } catch (e) {}
-    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-    reg.addEventListener('updatefound', function () {
-      var nw = reg.installing;
-      if (!nw) return;
-      nw.addEventListener('statechange', function () {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          try { nw.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
-          var bar = document.getElementById('sw-refresh');
-          if (bar) bar.hidden = false;
-        }
-      });
-    });
-  }).catch(function () {});
+    function track(w) {
+      if (!w || w._mx) return;
+      w._mx = 1;
+      function poke() {
+        if (w.state !== 'installed' || !navigator.serviceWorker.controller) return;
+        try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e2) {}
+        var bar = document.getElementById('sw-refresh');
+        if (bar) bar.hidden = false;
+      }
+      if (w.state === 'installed') poke();
+      w.addEventListener('statechange', poke);
+    }
+    track(reg.installing);
+    track(reg.waiting);
+    reg.addEventListener('updatefound', function () { track(reg.installing); });
+  }
+  navigator.serviceWorker.register('./sw.js?v=60').then(armWorker).catch(function () {});
   var reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (!had || reloading) return;
@@ -139,13 +143,13 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   });
 })();
 </script>
-<link rel="manifest" href="manifest.webmanifest?v=59">
-<link rel="icon" href="icon.svg?v=59" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=59">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=59" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=59" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=59">
-<link rel="stylesheet" href="css/style.css?v=59">
+<link rel="manifest" href="manifest.webmanifest?v=60">
+<link rel="icon" href="icon.svg?v=60" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=60">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=60" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=60" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=60">
+<link rel="stylesheet" href="css/style.css?v=60">
 </head>
 <body>
 <div id="boot-fail" hidden>
@@ -193,11 +197,11 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
  <div id="realm-scape" aria-hidden="true">
-  <picture><source srcset="img/realm-0.avif?v=59" type="image/avif"><source srcset="img/realm-0.webp?v=59" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=59" alt="" decoding="async" width="720" height="404"></picture>
-  <picture><source srcset="img/realm-1.avif?v=59" type="image/avif"><source srcset="img/realm-1.webp?v=59" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=59" alt="" decoding="async" width="720" height="336"></picture>
-  <picture><source srcset="img/realm-2.avif?v=59" type="image/avif"><source srcset="img/realm-2.webp?v=59" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=59" alt="" decoding="async" width="720" height="405"></picture>
-  <picture><source srcset="img/realm-3.avif?v=59" type="image/avif"><source srcset="img/realm-3.webp?v=59" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=59" alt="" decoding="async" width="720" height="401"></picture>
-  <picture><source srcset="img/realm-4.avif?v=59" type="image/avif"><source srcset="img/realm-4.webp?v=59" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=59" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-0.avif?v=60" type="image/avif"><source srcset="img/realm-0.webp?v=60" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=60" alt="" decoding="async" width="720" height="404"></picture>
+  <picture><source srcset="img/realm-1.avif?v=60" type="image/avif"><source srcset="img/realm-1.webp?v=60" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=60" alt="" decoding="async" width="720" height="336"></picture>
+  <picture><source srcset="img/realm-2.avif?v=60" type="image/avif"><source srcset="img/realm-2.webp?v=60" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=60" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-3.avif?v=60" type="image/avif"><source srcset="img/realm-3.webp?v=60" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=60" alt="" decoding="async" width="720" height="401"></picture>
+  <picture><source srcset="img/realm-4.avif?v=60" type="image/avif"><source srcset="img/realm-4.webp?v=60" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=60" alt="" decoding="async" width="720" height="405"></picture>
  </div>
  <div id="season-veil" aria-hidden="true"></div>
 </div>
@@ -215,8 +219,8 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 <div id="sw-refresh" hidden>
-  <span>新墨已备</span>
-  <button type="button" id="sw-refresh-btn">重开</button>
+  <span>新版已至，刷新</span>
+  <button type="button" id="sw-refresh-btn">刷新</button>
 </div>
 
 <main id="app">
@@ -359,6 +363,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     </div>
 
     <div class="status-line" id="status-line"></div>
+    <div class="trace-note" id="trace-note" hidden></div>
 
     <nav class="actions">
       <button class="act" data-act="tuna"><span class="act-ink"></span><span class="act-t">吐纳</span><small id="dur-tuna">一季</small></button>
@@ -607,38 +612,38 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 
-<script src="js/data.js?v=59"></script>
-<script src="js/gongfa.js?v=59"></script>
-<script src="js/gear.js?v=59"></script>
-<script src="js/story.js?v=59"></script>
-<script src="js/sect.js?v=59"></script>
-<script src="js/baijia.js?v=59"></script>
-<script src="js/world.js?v=59"></script>
-<script src="js/tianxia.js?v=59"></script>
-<script src="js/karma.js?v=59"></script>
-<script src="js/life.js?v=59"></script>
-<script src="js/juan.js?v=59"></script>
-<script src="js/path.js?v=59"></script>
-<script src="js/core.js?v=59"></script>
-<script src="js/loops.js?v=59"></script>
-<script src="js/codec.js?v=59"></script>
-<script src="js/slots.js?v=59"></script>
-<script src="js/samsara.js?v=59"></script>
-<script src="js/jianghu.js?v=59"></script>
-<script src="js/folio.js?v=59"></script>
-<script src="js/ink.js?v=59"></script>
-<script src="js/ding.js?v=59"></script>
-<script src="js/map.js?v=59"></script>
-<script src="js/audio.js?v=59"></script>
-<script src="js/fx.js?v=59"></script>
-<script src="js/btfx.js?v=59"></script>
-<script src="js/fabaoart.js?v=59"></script>
-<script src="js/wallpaper.js?v=59"></script>
-<script src="js/inkgl.js?v=59"></script>
-<script src="js/jhui.js?v=59"></script>
-<script src="js/scrollart.js?v=59"></script>
-<script src="js/portraits.js?v=59"></script>
-<script src="js/notices.js?v=59"></script>
-<script src="js/game.js?v=59"></script>
+<script src="js/data.js?v=60"></script>
+<script src="js/gongfa.js?v=60"></script>
+<script src="js/gear.js?v=60"></script>
+<script src="js/story.js?v=60"></script>
+<script src="js/sect.js?v=60"></script>
+<script src="js/baijia.js?v=60"></script>
+<script src="js/world.js?v=60"></script>
+<script src="js/tianxia.js?v=60"></script>
+<script src="js/karma.js?v=60"></script>
+<script src="js/life.js?v=60"></script>
+<script src="js/juan.js?v=60"></script>
+<script src="js/path.js?v=60"></script>
+<script src="js/core.js?v=60"></script>
+<script src="js/loops.js?v=60"></script>
+<script src="js/codec.js?v=60"></script>
+<script src="js/slots.js?v=60"></script>
+<script src="js/samsara.js?v=60"></script>
+<script src="js/jianghu.js?v=60"></script>
+<script src="js/folio.js?v=60"></script>
+<script src="js/ink.js?v=60"></script>
+<script src="js/ding.js?v=60"></script>
+<script src="js/map.js?v=60"></script>
+<script src="js/audio.js?v=60"></script>
+<script src="js/fx.js?v=60"></script>
+<script src="js/btfx.js?v=60"></script>
+<script src="js/fabaoart.js?v=60"></script>
+<script src="js/wallpaper.js?v=60"></script>
+<script src="js/inkgl.js?v=60"></script>
+<script src="js/jhui.js?v=60"></script>
+<script src="js/scrollart.js?v=60"></script>
+<script src="js/portraits.js?v=60"></script>
+<script src="js/notices.js?v=60"></script>
+<script src="js/game.js?v=60"></script>
 </body>
 </html>

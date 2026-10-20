@@ -1151,6 +1151,8 @@ function render() {
   }
   st.textContent = msg;
   renderSide();
+  renderTraces();
+  maybeInjHint();
   renderSeals();
 }
 function stackAside(el, text) {
@@ -1229,8 +1231,30 @@ function renderSide() {
   if (typeof Folio !== 'undefined' && Folio.keqOn(S)) notes.push(`凡间 · ${Folio.keqTitle(S)}`);
   if (S.dan) notes.push(`丹道 ${cn(S.dan.lv)}重`);
   if (typeof JHUI !== 'undefined' && JHUI.aucWindow()) notes.push('<span class="zhu">听雨楼拍卖将开</span>');
-  if (typeof Jianghu !== 'undefined' && S.mj) { const open = Jianghu.mjAll ? Object.keys(S.mj).filter(id => Jianghu.mjOpen(S, id)) : []; if (open.length) notes.push(`<span class="zhu">秘境现世 · ${open.map(id => esc(MIJING[id].name)).join('、')}</span>`); }
-  $('#sd-loc').innerHTML = `<b class="sd-name">${loc ? esc(loc.name) : '山中'}</b><span class="sd-row">${notes.join('<br>') || '暂无风声'}</span>`;
+  if (typeof Jianghu !== 'undefined' && Jianghu.mjOpenList) {
+    const open = Jianghu.mjOpenList(S);
+    if (open.length) notes.push(`<span class="zhu">秘境未闭 · ${open.map(o => esc(o.name) + (o.left ? '·约' + cnDur(o.left) : '')).join('、')}</span>`);
+  }
+  const traces = typeof karmaTraces === 'function' ? karmaTraces(S) : [];
+  const trace = traces.length ? `<ul class="sd-trace">${traces.map(t => `<li><em>${esc(t.st)}</em>${esc(t.name)}${t.hint ? ' · ' + esc(t.hint) : ''}</li>`).join('')}</ul>` : '';
+  $('#sd-loc').innerHTML = `<b class="sd-name">${loc ? esc(loc.name) : '山中'}</b><span class="sd-row">${notes.join('<br>') || '暂无风声'}</span>${trace}`;
+}
+function renderTraces() {
+  const el = $('#trace-note'); if (!el || !S) return;
+  const rows = typeof karmaTraces === 'function' ? karmaTraces(S) : [];
+  const open = (typeof Jianghu !== 'undefined' && Jianghu.mjOpenList) ? Jianghu.mjOpenList(S) : [];
+  const mj = open.length ? `<div class="sd-row zhu">秘境未闭 · ${open.map(o => esc(o.name) + (o.left ? '·约' + cnDur(o.left) : '')).join('、')}</div>` : '';
+  if (!rows.length && !open.length) { el.hidden = true; el.classList.remove('on'); el.innerHTML = ''; return; }
+  el.hidden = false; el.classList.add('on');
+  const list = rows.length ? `<ul class="sd-trace">${rows.map(t => `<li><em>${esc(t.st)}</em>${esc(t.name)}${t.hint ? ' · ' + esc(t.hint) : ''}</li>`).join('')}</ul>` : '';
+  el.innerHTML = `<b>行迹</b>${mj}${list}`;
+}
+function maybeInjHint() {
+  if (!S || S.dead || !(S.inj > 0)) return;
+  S.flags = S.flags || {};
+  if (S.flags.injTold) return;
+  S.flags.injTold = 1;
+  pushLog({ title: '伤势', text: '这是你第一次负伤。伤未愈时，吐纳与闭关都要减半。宗门俸禄里偶尔有丹；坊市可买回春丹；买来之后，打开行囊服下，伤才会好。', cls: 'warn' });
 }
 
 /* ================= 行动 ================= */
@@ -1262,8 +1286,17 @@ function act(kind) {
     if (typeof InkGL !== 'undefined' && InkGL.qi) InkGL.qi($('.scroll-paper'), { cy: .5, onSink: done });
     else { const sp = $('.scroll-paper').getBoundingClientRect(); FX.qiSwirl(sp.left + sp.width / 2, sp.top + sp.height * 0.55, done); }
     return;
-  } else if (kind === 'biguan') {
+  }   else if (kind === 'biguan') {
     S.flags.cultRun = (S.flags.cultRun | 0) + 1;
+    if (typeof Jianghu !== 'undefined' && Jianghu.mjLapseWarn) {
+      const tm = Core.gt(S, 'time', 1);
+      const cfT = typeof courtFriction === 'function' ? (courtFriction(S).time || 1) : 1;
+      let span = R().T * Core.K.biguanMonths;
+      if (S.loop && S.loop.moCut && S.gf !== 'tianmo') span *= 0.8;
+      span = Math.max(1, Math.round(span * tm * cfT));
+      const warn = Jianghu.mjLapseWarn(S, span);
+      if (warn) pushLog({ title: '秘境将阖', text: warn, cls: 'warn' });
+    }
     if (typeof MoAudio !== 'undefined') MoAudio.play('cave');
     lock(1100);
     FX.cave();
@@ -1627,6 +1660,7 @@ function openBreak() {
 }
 async function runBreak(usePill) {
   busy = true;
+  if ((S.realm | 0) === 4 && !(S.path && S.path.jiewen)) await openPathCeremony('jiewen', false);
   const r = R(), B = buffer(), res = Core.resolveBreak(S, usePill, B.emit), from = res.from, ok = res.ok;
   save();
   const bt = $('#bt');
@@ -1683,6 +1717,7 @@ async function runBreak(usePill) {
     const ttl = ok ? (from === 4 ? '渡劫飞升' : `破境 · ${NEXT_REALM_NAME[from]}`) : { bingjie: '兵解', yunluo: '身殒', rumo: '入魔' }[res.ending] || '破境未果';
     pushLog({ title: ttl, text: logText, cls: ok ? 'gold' : 'warn', div: true });
     B.flush(); render(); save();
+    if (ok && res.pendingAscend && !res.needPath) Core.finishAscend(S);
     if (ok && res.needPath) {
       await openPathCeremony(res.needPath, !!res.pendingAscend);
       busy = false; render(); save();
@@ -1702,7 +1737,7 @@ const PATH_LEAD = {
   danwen: '金丹凝成，丹面尚白。可刻一至二道丹纹。纹成之后，若要洗去，需以极重代价。',
   faxiang: '元婴化形。识海之中，一尊法相将成。法相一定，斗法招式与机缘皆随之偏转。',
   wendao: '化神之际，你站在天地之间。可问天、问心、或问地——一问即可。',
-  jiewen: '劫云将散。这一道烙在识海上的劫纹，将随你飞升而去。',
+  jiewen: '渡劫之前，先定劫纹。这一纹算在即将落下的这一劫上：刚劫破劫略利，失败时更易重伤；柔劫失败时稍安；忘劫不改凶险，只利心境与机缘。纹定之后，雷才落下。',
 };
 
 async function maybeFabaoCeremony() {
@@ -1859,7 +1894,7 @@ async function openPathCeremony(kind, pendingAscend) {
       opts.classList.add('locked');
       const list = [...selected];
       const B = buffer();
-      const r = Core.choosePath(S, kind, list, B.emit);
+      const r = Core.choosePath(S, kind, list, null);
       if (r.err) { toast(r.err); opts.classList.remove('locked'); return; }
       save();
       foot.hidden = true;
@@ -1939,6 +1974,13 @@ function openSect(tab) {
   openSheet(title(tab), wrap);
   show(tab);
 }
+function dabiWhen(o, sc, r) {
+  const best = sc.dabiBest >= 0 ? `<br>最佳名次 · ${DABI_PLACE[sc.dabiBest]}` : '';
+  if (r > 3) return `${o.dabi} · 你已列席观礼${best}`;
+  const yrs = cn(Math.max(1, Math.ceil((sc.dabiAt - S.months) / 12)));
+  if (sc.dabiDue) return `本届待参加 · ${o.dabi}<br>下届约${yrs}年后${best}`;
+  return `下届${o.dabi} · 约${yrs}年后${best}`;
+}
 function sectHome() {
   const w = document.createElement('div'); w.className = 'sect-home';
   const o = Core.org(S), sc = S.sect;
@@ -1965,7 +2007,7 @@ function sectHome() {
       <div class="req ${cp.realmOk ? 'ok' : ''}"><span>境界</span><div class="req-word">${REALMS[cp.need.realm].name}${cp.need.stage ? REALMS[cp.need.realm].stages[cp.need.stage] : ''}以上</div><b>${cp.realmOk ? '已足' : '未足'}</b></div>
       <button class="brush-btn small promo-btn" ${cp.ok ? '' : 'disabled'}><span class="bb-ink"></span><span class="bb-text">请升${o.ranks[r + 1].replace('弟子', '')}</span></button>
     </div>` : '<div class="sect-note center">位极一宗，再无可升。</div>'}
-    <div class="dabi-line">${r <= 3 ? `下届${o.dabi} · 约${cn(Math.max(1, Math.ceil((sc.dabiAt - S.months) / 12)))}年后` : `${o.dabi} · 你已列席观礼`}${sc.dabiBest >= 0 ? `<br>最佳名次 · ${DABI_PLACE[sc.dabiBest]}` : ''}</div>
+    <div class="dabi-line">${dabiWhen(o, sc, r)}</div>
     <button type="button" class="defect-btn" id="btn-defect">叛宗<small>解牌下山 · 代价极重</small></button>`;
   const pb = w.querySelector('.promo-btn');
   if (pb) pb.onclick = async () => { if (!Core.canPromote(S).ok) return; await closeSheet(); const res = Core.promote(S, pushLog); if (res) runRite(res); };
@@ -2645,7 +2687,7 @@ function openSlots() {
 
 /* ================= 仙途志 / 奈何 ================= */
 const END_BOOK = {
-  ascend: { name: '飞升', hint: '白日里，满山的松忽然不响。', note: '碑阴无字，只余松涛。' },
+  ascend: { name: '飞升', hint: '白日里，满山的松忽然不响。', note: '此世已毕，可开下一世。' },
   zuohua: { name: '坐化', hint: '石门开着，案上的笔停在半行。', note: '山风过石门，案上笔未干。' },
   rumo: { name: '入魔', hint: '有人眼里只剩一种颜色。', note: '墨落成血，不可复洗。' },
   guiyin: { name: '归隐', hint: '江心多过一条不系饵的船。', note: '空船自横，钓丝无饵。' },
@@ -2957,8 +2999,11 @@ function showEnd(kind) {
     if (legObj.courtMark) carry.push('皇命印记');
     if (legObj.cave) carry.push('旧洞残钥');
   }
-  const leg = carry.length ? `<span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
-    : (isTrial ? '<span class="end-legacy">试炼局 · 不入轮回簿</span>' : '<span class="end-legacy">奈何桥上，只许带一样</span>');
+  const leg = kind === 'ascend'
+    ? '<span class="end-legacy">此世已毕，可开下一世</span>'
+    : (carry.length ? `<span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
+      : (isTrial ? '<span class="end-legacy">试炼局 · 不入轮回簿</span>' : '<span class="end-legacy">奈何桥上，只许带一样</span>'));
+  if (kind === 'ascend' && typeof Samsara !== 'undefined' && Samsara.dismissBridge) Samsara.dismissBridge();
   $('#end-stats').innerHTML = leg;
   save();
   $('#btn-reborn').onclick = async () => {
@@ -2970,7 +3015,7 @@ function showEnd(kind) {
       else if (typeof Slots !== 'undefined') window.__slotTarget = Slots.newestIndex();
       resetCreate(); initTitle(); unrollTo('create');
     };
-    if (!isTrial && typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) {
+    if (!isTrial && kind !== 'ascend' && typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) {
       e.hidden = true;
       openNaihe(proceed);
       return;
@@ -3398,15 +3443,20 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=59').then(reg => {
-    if (!had) return;
-    const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
-    if (reg.waiting) ask();
-    reg.addEventListener('updatefound', () => {
-      const nw = reg.installing;
-      if (!nw) return;
-      nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) ask(); });
-    });
+  navigator.serviceWorker.register('./sw.js?v=60').then(reg => {
+    const ask = w => {
+      const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
+      if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
+    };
+    const track = w => {
+      if (!w || w._mx) return;
+      w._mx = 1;
+      const poke = () => { if (w.state === 'installed' && navigator.serviceWorker.controller) ask(w); };
+      if (w.state === 'installed') poke();
+      w.addEventListener('statechange', poke);
+    };
+    track(reg.installing); track(reg.waiting);
+    reg.addEventListener('updatefound', () => track(reg.installing));
   }).catch(() => {});
   const btn = document.getElementById('sw-refresh-btn');
   if (btn) btn.onclick = () => {
