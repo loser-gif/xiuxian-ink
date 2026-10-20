@@ -2525,7 +2525,7 @@ html[data-font="lg"] #inp-name{font-size:32px}
   .end{padding:calc(var(--sat) + 8px) 10px calc(var(--sab) + 10px)}
   .end-paper{width:100%;padding:18px 14px 16px;max-height:calc(100vh - var(--sat) - var(--sab) - 16px);max-height:calc(100dvh - var(--sat) - var(--sab) - 16px)}
   .end-title{font-size:clamp(36px,15vw,52px)}
-  .end-epitaph-long{max-height:20vh}
+  .end-epitaph-long{max-height:none;overflow:visible}
   .path-cer-title{font-size:clamp(30px,10vw,44px)}
   .path-cer{padding:max(8px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
   #inp-name{font-size:28px;letter-spacing:.1em}
@@ -2822,22 +2822,20 @@ html[data-theme="night"] .scroll-hint{color:#f4ecdc}
   html[data-theme="night"] body[data-screen="main"] .stick{background:linear-gradient(90deg,#c4a882,#f0e2cc)}
 }
 
-/* 终卷：正文可滚，三枚印钮始终落在卷内可见处 */
+/* 终卷：卷面自己滚，引文按整段撑开，不把一行裁成半截 */
 .end{padding:calc(var(--sat) + 10px) 12px calc(var(--sab) + 10px)}
-.end-paper{display:flex;flex-direction:column;overflow:hidden;
+.end-paper{display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch;
   max-height:calc(100vh - var(--sat) - var(--sab) - 20px);max-height:calc(100dvh - var(--sat) - var(--sab) - 20px);padding:22px 18px 12px}
 .end-title{flex:none;font-size:clamp(40px,12vw,72px)}
-.end-epitaph{flex:none;max-height:22vh;overflow:auto;margin:8px 0}
-.end-judge{flex:none;max-height:16vh;overflow:auto}
-.end-epitaph-long{flex:1 1 auto;min-height:0;max-height:none;margin:6px 0}
-.end-stats{flex:none;max-height:18vh;overflow:auto;margin-bottom:8px}
-.end-actions{flex:none;position:sticky;bottom:0;z-index:2;gap:8px;padding-top:8px;
-  background:linear-gradient(180deg,rgba(249,245,233,0),rgba(249,245,233,.97) 30%)}
-html[data-theme="night"] .end-actions{background:linear-gradient(180deg,rgba(249,245,233,0),rgba(249,245,233,.97) 30%)}
+.end-epitaph{flex:none;max-height:none;overflow:visible;margin:8px 0}
+.end-judge{flex:none;max-height:none;overflow:visible}
+.end-epitaph-long{flex:none;min-height:calc(1.95em + 24px);max-height:none;overflow:visible;margin:6px 0}
+.end-stats{flex:none;max-height:none;overflow:visible;margin-bottom:8px}
+.end-actions{flex:none;position:relative;z-index:2;gap:8px;padding-top:8px;background:none}
+html[data-theme="night"] .end-actions{background:none}
 @media (max-height:700px){
   .end-title{font-size:clamp(34px,11vw,52px)}
-  .end-epitaph{max-height:16vh}
-  .end-stats{max-height:14vh}
+  .end-epitaph,.end-stats,.end-epitaph-long{max-height:none;overflow:visible}
   .end-paper{padding:14px 14px 8px}
 }
 @media (max-width:360px){
