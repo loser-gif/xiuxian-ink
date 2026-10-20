@@ -459,33 +459,61 @@ const FX = (() => {
     'float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }',
     'float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3. - 2. * f);',
     '  return mix(mix(hash(i), hash(i + vec2(1., 0.)), u.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), u.x), u.y); }',
-    'float fbm(vec2 p){ float v = 0., a = .55; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
-    '  v += a * noise(p); p = m * p; a *= .5; v += a * noise(p);',
-    '  if (uCheap < .5) { p = m * p; a *= .5; v += a * noise(p); } return v; }',
-    'float fibre(vec2 p){ vec2 a = mat2(.8, .6, -.6, .8) * p; vec2 b = mat2(.4, -.9, .9, .4) * p;',
-    '  return max(noise(a * vec2(14., 1.6)), noise(b * vec2(1.7, 16.))); }',
+    'float fbm(vec2 p){',
+    '  float v = 0., a = .5, sum = 0.;',
+    '  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+    '  v += a * noise(p); sum += a; p = m * p; a *= .5;',
+    '  v += a * noise(p); sum += a; p = m * p; a *= .5;',
+    '  if (uCheap < .5) { v += a * noise(p); sum += a; p = m * p; a *= .5; v += a * noise(p); sum += a; }',
+    '  return v / sum;',
+    '}',
     'void main(){',
-    '  vec2 px = vUv * uRes; float m = min(uRes.x, uRes.y); vec2 p = (px - uC) / m;',
-    '  float w1 = fbm(p * 1.8 + uSeed), w2 = fbm(p * 1.8 + uSeed + 3.7);',
-    '  vec2 q = p + (vec2(w1, w2) - .5) * (.05 + .10 * uK);',
-    '  float d = length(q); float ang = atan(q.y, q.x);',
-    '  float fib = fibre(vec2(cos(ang), sin(ang)) * 1.2 + uSeed);',
-    '  float fib2 = fibre(q * 2.8 + uSeed * 1.7);',
-    '  float lobe = .74 + .18 * fib + .08 * fib2;',
-    '  float R = max(uK, .0008) * 2.05 * lobe;',
-    '  float edgeN = fbm(vec2(ang * 1.7 + uSeed, d * 2.4));',
-    '  float dd = d + (edgeN - .5) * .10 * uK;',
-    '  float soft = smoothstep(R, R * .62, dd);',
-    '  float body = smoothstep(R * .88, R * .18, dd);',
-    '  float core = smoothstep(R * .46, R * .02, dd);',
-    '  float pool = fbm(q * 3.2 + uSeed * 2.);',
-    '  float a = clamp(soft * (.42 + .58 * body) + core * .22, 0., 1.);',
-    '  float seal = smoothstep(.86, 1., uK) * (1. - smoothstep(1.15, 1.45, d));',
-    '  a = max(a, seal);',
-    '  vec3 pale = vec3(.46, .40, .34); vec3 midc = vec3(.20, .16, .13); vec3 deep = vec3(.07, .055, .045);',
-    '  float dens = clamp(core * .85 + body * .4 + pool * core * .15, 0., 1.);',
-    '  vec3 col = mix(pale, mix(midc, deep, dens), clamp(body * .85 + core * .4, 0., 1.));',
-    '  a *= (1. - uFade);',
+    '  vec2 px = vUv * uRes;',
+    '  float m = min(uRes.x, uRes.y);',
+    '  vec2 p = (px - uC) / m;',
+    '  float s = uSeed;',
+    '  vec2 w = vec2(fbm(p * 1.05 + s), fbm(p * 1.05 + s + 5.2)) - .5;',
+    '  vec2 q = p + w * (.16 + .48 * uK);',
+    '  if (uCheap < .5) {',
+    '    vec2 w2 = vec2(fbm(q * 2.1 + s + 1.8), fbm(q * 2.1 + s + 8.4)) - .5;',
+    '    q += w2 * .22 * uK;',
+    '  }',
+    '  float ang = atan(q.y, q.x);',
+    '  float lobe = 1. + .30 * sin(ang * 2. + s) + .18 * sin(ang * 3. + s * 1.7) + .10 * sin(ang * 5. - s * .4);',
+    '  float n = fbm(q * 1.15 + s * 1.1);',
+    '  float n2 = fbm(q * 2.35 + s * 2.2);',
+    '  float R = uK * 1.02 * lobe * (.62 + .70 * n);',
+    '  R += (n2 - .5) * .22 * uK;',
+    '  if (uCheap < .5) {',
+    '    float n3 = fbm(q * 4.4 + vec2(s * 1.4, n));',
+    '    float ridge = 1. - abs(n3 * 2. - 1.);',
+    '    R += smoothstep(.62, .90, ridge) * .10 * uK;',
+    '  }',
+    '  float floorR = mix(0., 1.12, smoothstep(.80, 1., uK));',
+    '  R = max(R, floorR);',
+    '  float d = length(q);',
+    '  float sd = d - R;',
+    '  float tw = d / max(R, .001);',
+    '  tw += (fbm(q * 1.45 + s * 2.6) - .5) * .20;',
+    '  vec3 deep = vec3(.169, .149, .129);',
+    '  vec3 midc = vec3(.255, .224, .196);',
+    '  vec3 pale = vec3(.353, .322, .282);',
+    '  vec3 wash = vec3(.47, .43, .38);',
+    '  vec3 col = mix(deep, midc, smoothstep(.08, .24, tw));',
+    '  col = mix(col, pale, smoothstep(.40, .62, tw));',
+    '  col = mix(col, wash, smoothstep(.74, .96, tw));',
+    '  float pools = fbm(q * .9 + s * 3.3);',
+    '  col = mix(col, midc, smoothstep(.45, .80, pools) * .48 * smoothstep(.14, .42, tw));',
+    '  col = mix(col, deep, smoothstep(.55, .90, 1. - pools) * .40 * (1. - smoothstep(.04, .20, tw)));',
+    '  float body = smoothstep(.040, -.018, sd);',
+    '  float halo = smoothstep(.13, .018, sd) * (1. - body);',
+    '  float rim = exp(-pow((sd + .006) / .018, 2.));',
+    '  vec3 rimC = vec3(.11, .09, .075);',
+    '  col = mix(col, rimC, rim * smoothstep(.05, -.015, sd) * .9);',
+    '  col = mix(col, wash, halo * .8);',
+    '  float a = body * .98;',
+    '  a += halo * .38;',
+    '  a = clamp(a, 0., .98) * (1. - uFade);',
     '  gl_FragColor = vec4(col, a);',
     '}',
   ].join('\n');
@@ -634,10 +662,10 @@ const FX = (() => {
       const r = s * (0.24 + R(i + 3) * 0.2);
       const g = c.createRadialGradient(x, y, r * 0.02, x, y, r);
       const deep = i < 2 ? 0.7 : i < 5 ? 0.38 : 0.14;
-      g.addColorStop(0, 'rgba(18,14,12,' + deep + ')');
-      g.addColorStop(0.42, 'rgba(40,32,26,' + (deep * 0.5) + ')');
-      g.addColorStop(0.75, 'rgba(78,66,56,' + (deep * 0.14) + ')');
-      g.addColorStop(1, 'rgba(90,78,66,0)');
+    g.addColorStop(0, 'rgba(43,38,33,' + deep + ')');
+    g.addColorStop(0.35, 'rgba(64,56,48,' + (deep * 0.62) + ')');
+    g.addColorStop(0.68, 'rgba(90,82,72,' + (deep * 0.28) + ')');
+    g.addColorStop(1, 'rgba(122,110,96,0)');
       c.fillStyle = g; c.fillRect(0, 0, s, s);
     }
     return (softSprite.cv = cv);
@@ -647,20 +675,16 @@ const FX = (() => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, w, h);
     const cx = w * 0.5, cy = h * 0.5, m = Math.min(w, h);
-    const base = m * 1.2 * grow;
-    const lobes = thin ? 3 : 5;
+    const base = m * 1.15 * grow;
+    const lobes = thin ? 4 : 7;
     for (let i = 0; i < lobes; i++) {
-      const ang = seed + i * 1.7;
-      const ox = Math.cos(ang) * base * 0.08, oy = Math.sin(ang * 1.3) * base * 0.07;
-      const rw = base * (0.86 + 0.18 * Math.sin(seed * 2 + i));
-      const rh = base * (0.8 + 0.2 * Math.cos(seed * 3 + i));
-      ctx.globalAlpha = (1 - fade) * (i === 0 ? 0.92 : 0.42);
+      const ang = seed + i * (6.28 / lobes);
+      const reach = 0.55 + 0.55 * Math.abs(Math.sin(seed * 1.7 + i * 1.3));
+      const ox = Math.cos(ang) * base * 0.22 * reach, oy = Math.sin(ang * 0.9) * base * 0.16 * reach;
+      const rw = base * (0.42 + 0.38 * reach);
+      const rh = base * (0.36 + 0.34 * Math.cos(seed + i));
+      ctx.globalAlpha = (1 - fade) * (i === 0 ? 0.72 : 0.38);
       ctx.drawImage(sprite, cx + ox - rw, cy + oy - rh, rw * 2, rh * 2);
-    }
-    if (grow > 0.88) {
-      ctx.globalAlpha = (1 - fade) * Math.min(1, (grow - 0.88) / 0.12);
-      ctx.fillStyle = 'rgba(22,18,16,0.97)';
-      ctx.fillRect(0, 0, w, h);
     }
     ctx.globalAlpha = 1;
   }
@@ -782,18 +806,9 @@ const FX = (() => {
       playInk({ host, thin: cheapFx(), maxGrow: 0.42, growMs: 420, fadeMs: 460 });
     }, 560);
   }
-  function brushDab() {
-    if (brushDab.cv) return brushDab.cv;
-    const s = 64, cv = document.createElement('canvas'); cv.width = cv.height = s;
-    const c = cv.getContext('2d');
-    const g = c.createRadialGradient(32, 30, 1, 32, 32, 30);
-    g.addColorStop(0, 'rgba(239,230,211,1)');
-    g.addColorStop(0.42, 'rgba(226,214,190,0.9)');
-    g.addColorStop(0.72, 'rgba(210,196,168,0.28)');
-    g.addColorStop(1, 'rgba(210,196,168,0)');
-    c.fillStyle = g;
-    c.beginPath(); c.ellipse(32, 32, 20, 28, 0, 0, 7); c.fill();
-    return (brushDab.cv = cv);
+  function brushHash(n) {
+    const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
   }
   function brushSweep(opt) {
     opt = opt || {};
@@ -812,58 +827,76 @@ const FX = (() => {
     const W = Math.max(1, innerWidth), H = Math.max(1, innerHeight);
     cv.width = Math.max(2, Math.round(W * dpr));
     cv.height = Math.max(2, Math.round(H * dpr));
-    if (thin) cv.style.filter = 'blur(0.7px)';
     const c = cv.getContext('2d');
-    c.setTransform(dpr, 0, 0, dpr, 0, 0);
     const gate = armSkip();
-    const y = H * 0.46;
-    const x0 = -W * 0.08;
-    const x1 = W * (broken ? 0.7 : 1.08);
-    const N = thin ? 52 : 128;
-    const img = brushDab();
-    const ph = Math.random() * 6.28;
-    let drawn = 0, sealed = false;
-    const t0 = performance.now();
-    const stamp = i => {
-      const t = i / (N - 1);
-      const limit = broken ? 0.66 : 1;
-      if (t > limit) return;
+    const x0 = -W * 0.03, x1 = W * (broken ? 0.62 : 0.9);
+    const limitT = broken ? 0.66 : 1;
+    const count = thin ? 28 : 52;
+    const hairs = [];
+    for (let i = 0; i < count; i++) {
+      const u = count === 1 ? 0.5 : i / (count - 1);
+      const edge = Math.abs(u - 0.5) * 2;
+      hairs.push({
+        u,
+        jitter: (brushHash(i + 2) - 0.5) * 0.06,
+        start: Math.pow(edge, 1.45) * 0.11,
+        die: Math.min(limitT, 0.52 + 0.48 * Math.pow(1 - edge, 0.5) * (0.78 + 0.22 * brushHash(i + 5))),
+        phase: brushHash(i + 9) * 6.28,
+        freq: 5 + brushHash(i + 4) * 7,
+        gold: brushHash(i + 6),
+      });
+    }
+    const pointAt = t => {
       const x = x0 + (x1 - x0) * t;
-      const wob = Math.sin(t * 8.5 + ph) * H * 0.012 + Math.sin(t * 21 + ph * 2) * H * 0.004;
-      const yy = y + wob;
-      const press = 1 + 0.7 * Math.exp(-t * 11);
-      const lift = t < 0.4 ? 1 : 1 - Math.pow((t - 0.4) / 0.6, 1.3) * 0.8;
-      const thick = (thin ? 20 : 32) * press * Math.max(0.16, lift);
-      const tw = thick * (0.4 + 0.08 * Math.sin(t * 13 + ph));
-      const dry = t > 0.46 && Math.sin(i * 0.83 + ph * 4) > 0.12;
-      if (dry) {
-        for (let h = 0; h < 3; h++) {
-          if (Math.sin(i * 1.7 + h * 2.2 + ph) > 0.52) continue;
-          const oy = (h - 1) * thick * 0.3;
-          const rw = Math.max(0.8, tw * 0.34), rh = Math.max(0.6, thick * 0.11);
-          c.globalAlpha = 0.62 * Math.max(0.35, lift);
-          c.drawImage(img, x - rw, yy + oy - rh, rw * 2, rh * 2);
-        }
-        return;
-      }
-      c.globalAlpha = 0.14 * lift;
-      c.drawImage(img, x - tw * 2.4, yy - thick * 1.2, tw * 4.8, thick * 2.4);
-      c.globalAlpha = 0.42;
-      c.drawImage(img, x - tw, yy - thick * 0.7, tw * 2, thick * 1.4);
+      const arc = Math.sin(t * Math.PI) * H * 0.04;
+      const y = H * 0.5 - arc - t * H * 0.012;
+      return [x, y];
     };
-    const paintSeal = () => {
-      if (sealed || broken || !seal) return;
-      sealed = true;
-      const s = Math.max(48, Math.min(86, W * 0.07));
-      const sx = W * 0.8, sy = y + Math.min(78, H * 0.07);
+    const halfW = t => {
+      const belly = 0.62 + 0.38 * Math.exp(-Math.pow((t - 0.22) / 0.34, 2));
+      const taper = t < 0.4 ? 1 : Math.pow(Math.max(0, 1 - (t - 0.4) / 0.6), 1.35);
+      return H * 0.085 * belly * (0.2 + 0.8 * Math.max(0.05, taper));
+    };
+    const normalAt = t => {
+      const a = pointAt(Math.max(0, t - 0.01)), b = pointAt(Math.min(0.999, t + 0.01));
+      let nx = -(b[1] - a[1]), ny = b[0] - a[0];
+      const nl = Math.hypot(nx, ny) || 1;
+      return [nx / nl, ny / nl];
+    };
+    const ribbon = (tEnd, widthScale, alpha, color) => {
+      const left = [], right = [], steps = thin ? 28 : 42;
+      for (let i = 0; i <= steps; i++) {
+        const t = Math.min(tEnd, limitT) * (i / steps);
+        const hw = halfW(t) * widthScale * (1 + 0.03 * Math.sin(t * 17 + 1.2));
+        const p = pointAt(t), n = normalAt(t);
+        left.push([p[0] + n[0] * hw, p[1] + n[1] * hw]);
+        right.push([p[0] - n[0] * hw, p[1] - n[1] * hw]);
+      }
+      if (left.length < 2) return;
+      c.beginPath();
+      c.moveTo(left[0][0], left[0][1]);
+      for (let i = 1; i < left.length; i++) c.lineTo(left[i][0], left[i][1]);
+      for (let i = right.length - 1; i >= 0; i--) c.lineTo(right[i][0], right[i][1]);
+      c.closePath();
+      c.fillStyle = color;
+      c.globalAlpha = alpha;
+      c.fill();
+    };
+    const paintSeal = k => {
+      if (broken || !seal || k < 0.8) return;
+      const tip = pointAt(Math.min(limitT, 0.84));
+      const s = H * 0.07;
+      const press = Math.min(1, (k - 0.8) / 0.18);
+      const sc = 1.28 - 0.28 * (1 - Math.pow(1 - press, 2));
       c.save();
-      c.translate(sx, sy);
-      c.rotate(-0.09);
-      c.globalAlpha = 0.94;
+      c.translate(tip[0] - W * 0.01, tip[1] + H * 0.055);
+      c.rotate(-0.08);
+      c.scale(sc, sc);
+      c.globalAlpha = Math.min(1, press * 1.4) * 0.95;
       c.fillStyle = '#9d342e';
       c.fillRect(-s / 2, -s / 2, s, s);
-      c.strokeStyle = 'rgba(243,234,214,0.88)';
-      c.lineWidth = Math.max(2, s * 0.035);
+      c.strokeStyle = 'rgba(243,234,214,0.9)';
+      c.lineWidth = Math.max(1.5, s * 0.04);
       c.strokeRect(-s / 2 + s * 0.08, -s / 2 + s * 0.08, s * 0.84, s * 0.84);
       c.fillStyle = '#f3ead6';
       c.font = Math.round(s * 0.56) + 'px MoShu, serif';
@@ -871,16 +904,56 @@ const FX = (() => {
       c.textBaseline = 'middle';
       c.fillText(seal, 0, s * 0.04);
       c.restore();
-      c.globalAlpha = 1;
     };
+    const paint = k => {
+      const reach = Math.min(limitT, k);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, W, H);
+      c.globalCompositeOperation = 'source-over';
+      const head = pointAt(0.03), hn = normalAt(0.03), hr = halfW(0.04);
+      c.globalAlpha = 0.9;
+      c.fillStyle = 'rgba(239, 226, 196, 0.95)';
+      c.beginPath();
+      c.ellipse(head[0], head[1], hr * 0.95, hr * 0.82, Math.atan2(hn[0], hn[1]), 0, 7);
+      c.fill();
+      ribbon(Math.min(reach, 0.58), 0.82, 0.92, 'rgba(236, 220, 188, 0.96)');
+      ribbon(Math.min(reach, 0.42), 0.48, 0.4, 'rgba(214, 184, 130, 0.85)');
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      const hairColor = b => b.gold > 0.78 ? 'rgba(226, 196, 140, 0.96)' : 'rgba(246, 234, 210, 0.97)';
+      const steps = thin ? 36 : 64;
+      for (let bi = 0; bi < hairs.length; bi++) {
+        const b = hairs[bi];
+        c.beginPath();
+        let pen = false;
+        for (let i = 0; i <= steps; i++) {
+          const t = reach * (i / steps);
+          const tail = Math.max(0, (t - 0.42) / 0.58);
+          const wave = Math.sin(t * b.freq * 1.4 + b.phase);
+          const gap = tail > 0.08 && wave > (0.82 - tail * 1.45);
+          const alive = t >= b.start && t <= b.die && t <= reach && !gap;
+          if (!alive) { pen = false; continue; }
+          const hw = halfW(t);
+          const across = (b.u - 0.5 + b.jitter) * hw * 2;
+          const p = pointAt(t), n = normalAt(t);
+          const x = p[0] + n[0] * across, y = p[1] + n[1] * across;
+          if (!pen) { c.moveTo(x, y); pen = true; }
+          else c.lineTo(x, y);
+        }
+        c.strokeStyle = hairColor(b);
+        c.globalAlpha = 0.55 + b.gold * 0.4;
+        c.lineWidth = Math.max(1.4, H * (thin ? 0.006 : 0.0042));
+        c.stroke();
+      }
+      c.globalAlpha = 1;
+      paintSeal(k);
+    };
+    const t0 = performance.now();
     return new Promise(resolve => {
       const frame = now => {
         const skip = gate.skip;
         const k = skip ? 1 : Math.min(1, (now - t0) / dur);
-        const upto = Math.floor(k * (N - 1));
-        for (; drawn <= upto; drawn++) stamp(drawn);
-        c.globalAlpha = 1;
-        if (!broken && seal && (k > 0.84 || skip)) paintSeal();
+        paint(k);
         if (k < 1) { requestAnimationFrame(frame); return; }
         settle(gate).then(() => {
           gate.off();
