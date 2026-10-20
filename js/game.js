@@ -409,7 +409,7 @@ function openNotice() {
     card.className = 'notice-card';
     const head = document.createElement('header');
     const ver = document.createElement('b');
-    ver.textContent = n.to ? ('v' + n.v + ' · 至 v' + n.to) : ('v' + n.v);
+    ver.textContent = n.name ? n.name : (n.to ? ('v' + n.v + ' · 至 v' + n.to) : ('v' + n.v));
     const time = document.createElement('time');
     time.dateTime = n.date || '';
     time.textContent = noticeDate(n.date);
@@ -449,12 +449,21 @@ function initTitle() {
   const subAtlas = $('#atlas-sub');
   if (subAtlas && typeof Samsara !== 'undefined') {
     const st = Samsara.atlasStats();
-    subAtlas.textContent = st.lives ? `轮回 ${cn(st.lives)} 世 · 墓志 ${cn(st.epitaphs)}` : '尚未入轮回簿';
+    subAtlas.textContent = '仙途志';
   }
+  paintLunhuiSeal();
   const legPeek = (typeof Samsara !== 'undefined' && Samsara.peekLegacy) ? Samsara.peekLegacy() : null;
+  const bridgeOn = typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen();
   const legHint = $('#legacy-hint');
   if (legHint) {
-    if (legPeek) {
+    if (bridgeOn) {
+      legHint.hidden = false;
+      legHint.textContent = '奈何桥上，还有一件事没选';
+    } else if (legPeek && legPeek.naihe) {
+      const lab = { mem: '一缕记忆', page: '一卷残篇', bond: '一段因果', none: '空手过桥' }[legPeek.kind] || '已择';
+      legHint.hidden = false;
+      legHint.textContent = '前世已择 · ' + lab;
+    } else if (legPeek) {
       const bits = [];
       if (legPeek.wx) bits.push('悟性残念');
       if (legPeek.canhun) bits.push('法宝残魂');
@@ -487,8 +496,12 @@ function initTitle() {
   $('#btn-new').onclick = async () => {
     FX.requestTilt();
     window.__trialStart = false;
-    if (!(await pickSlotForNew(false))) return;
-    resetCreate(); unrollTo('create');
+    const go = async () => {
+      if (!(await pickSlotForNew(false))) return;
+      resetCreate(); unrollTo('create');
+    };
+    if (typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) { openNaihe(go); return; }
+    go();
   };
   const btnTrial = $('#btn-trial');
   if (btnTrial) {
@@ -610,6 +623,15 @@ function rollLinggen() {
   const tot = LINGGEN.reduce((a, b) => a + b.w, 0); let r = Math.random() * tot, lg = LINGGEN[LINGGEN.length - 1];
   for (const l of LINGGEN) { if ((r -= l.w) < 0) { lg = l; break; } }
   const sh = [...ELEMENTS].sort(() => Math.random() - 0.5);
+  let lean = '';
+  if (!window.__trialStart && typeof Samsara !== 'undefined' && Samsara.peekLegacy) {
+    const leg = Samsara.peekLegacy();
+    if (leg && leg.naihe && leg.kind === 'mem' && leg.el && ELEMENTS.indexOf(leg.el) >= 0) lean = leg.el;
+  }
+  if (lean) {
+    const i = sh.indexOf(lean);
+    if (i > 0) { sh.splice(i, 1); sh.unshift(lean); }
+  }
   const n = { tian: 1, shuang: 2, san: 3, si: 4, wei: 5 }[lg.id];
   const els = lg.id === 'yi' ? [pick(['雷', '风', '冰'])] : sh.slice(0, n).sort((a, b) => ELEMENTS.indexOf(a) - ELEMENTS.indexOf(b));
   const wx = clamp(3 + Math.floor(Math.random() * 5) + (Math.random() < 0.12 ? 2 : 0), 1, 10);
@@ -679,15 +701,18 @@ function initCreate() {
 }
 
 function newGame(name, r, choice, originId) {
+  const trial = !!window.__trialStart;
   let legacy = null;
-  if (typeof Samsara !== 'undefined' && Samsara.consumeLegacy) legacy = Samsara.consumeLegacy();
-  else { try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {} }
+  if (!trial) {
+    if (typeof Samsara !== 'undefined' && Samsara.consumeLegacy) legacy = Samsara.consumeLegacy();
+    else { try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {} }
+  }
   const orgId = choice && choice.id !== 'free' ? choice.id : null;
   const free = !!(choice && choice.id === 'free');
-  const trial = !!window.__trialStart;
   window.__trialStart = false;
   const rr = Object.assign({}, r, { org: orgId, free, trial, origin: originId || 'qingshi' });
   S = Core.newState(name, rr, legacy);
+  if (!trial && typeof Samsara !== 'undefined' && Samsara.loadMeta) S.flags.lives = Samsara.loadMeta().lives | 0;
   if (typeof Folio !== 'undefined') {
     const w = window.__who || {};
     Folio.setWho(S, w.sex || 'm', w.mate || 'any');
@@ -732,7 +757,15 @@ function newGame(name, r, choice, originId) {
     pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
   }
   pushLog({ text: sectLine });
-  if (legacy) {
+  if (legacy && legacy.naihe && legacy.kind && legacy.kind !== 'none') {
+    const tags = S._legacyTags || [{ t: '奈何', c: 'gold' }];
+    const line = legacy.kind === 'page'
+      ? '行囊底上多了一卷残页，字缺了半边。它还不成主修，要等你自己把它走成一条路。'
+      : legacy.kind === 'bond'
+        ? '有一个名字在心里停了一停。不是这世认识的，却像会在路上遇见。'
+        : '入山那夜，你梦见一条很浅的河。醒来后，有些道理像在骨头里。';
+    pushLog({ title: '奈何', text: line, tags, cls: 'gold' });
+  } else if (legacy) {
     const tags = S._legacyTags || [{ t: '前世残念', c: 'gold' }];
     pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags, cls: 'gold' });
     const bits = [];
@@ -753,8 +786,22 @@ function newGame(name, r, choice, originId) {
   if (!trial) setTimeout(() => { if (S && !(S.life && S.life.goal)) openGoalPicker(); }, 800);
 }
 
+function paintLunhuiSeal() {
+  const el = $('#lunhui-seal');
+  const n = $('#lunhui-seal-n');
+  if (!el) return;
+  let lives = 0;
+  if (typeof Samsara !== 'undefined' && Samsara.loadMeta) lives = Samsara.loadMeta().lives | 0;
+  if (lives < 1) { el.hidden = true; return; }
+  el.hidden = false;
+  const word = cn(lives + 1);
+  if (n) n.textContent = word;
+  el.setAttribute('aria-label', '第' + word + '世');
+}
 async function openOrigin() {
-  const list = (typeof Juan !== 'undefined' && Juan.ORIGINS) ? Juan.ORIGINS : null;
+  const all = (typeof Juan !== 'undefined' && Juan.ORIGINS) ? Juan.ORIGINS : null;
+  const meta = (typeof Samsara !== 'undefined' && Samsara.loadMeta) ? Samsara.loadMeta() : null;
+  const list = all ? all.filter(o => !o.need || (meta && meta.boons && meta.boons[o.need])) : null;
   const pc = $('#origin-cer');
   if (!pc || !list || !list.length) return 'qingshi';
   return new Promise(resolve => {
@@ -955,6 +1002,12 @@ function render() {
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
   const trialSeal = $('#trial-seal');
   if (trialSeal) trialSeal.hidden = !(S.flags && S.flags.trial);
+  const lun = $('#lunhui-hud');
+  if (lun) {
+    const lv = S.flags ? (S.flags.lives | 0) : 0;
+    if (S.flags && S.flags.trial || lv < 1) lun.hidden = true;
+    else { lun.hidden = false; lun.textContent = cn(lv + 1) + '世'; }
+  }
   setText('#h-name', S.name);
   const cr = typeof courtRankName === 'function' ? courtRankName(S) : '';
   const sexMark = (typeof Folio !== 'undefined' && S.who && S.who.sex) ? ({ f: '女', n: '不言', m: '男' }[Folio.sex(S)] || '') : '';
@@ -1261,6 +1314,16 @@ function portraitHtml(ev) {
   if (typeof InkPortrait === 'undefined' || !ev) return '';
   if ((ev.id === 'bond_dual' || ev.id === 'bond_jie') && S && S.karma && S.karma.mate) {
     const svg = InkPortrait.svg(S.karma.mate);
+    if (svg) return svg;
+  }
+  if (S && (ev.id === 'echo_meet' || ev.id === 'echo_hunt' || ev.id === 'echo_grace')) {
+    const c = S.flags && S.flags.karmaCarry;
+    const hook = S.echo && S.echo.by;
+    let id = '';
+    if (ev.id === 'echo_meet') id = (c && c.role === 'mate' && c.id) || (hook && hook.mate && hook.mate.id) || '';
+    else if (ev.id === 'echo_hunt') id = (c && c.role === 'foe' && c.id) || (hook && hook.foe && hook.foe.id) || '';
+    else id = (c && c.role === 'en' && c.id) || '';
+    const svg = id ? InkPortrait.svg(id) : '';
     if (svg) return svg;
   }
   return InkPortrait.forEvent(ev);
@@ -2208,7 +2271,7 @@ function gfPage() {
     const row = document.createElement('div'); row.className = 'gf-row g' + g0.grade + (g0.mo ? ' mo' : '');
     row.innerHTML = `<span class="gf-seal">${GF_GRADE[g0.grade]}</span>
       <div class="gf-row-info"><div class="gf-row-name">${g0.name}<em>${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
-      <div class="gf-row-sub">${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g0.trait}</div>
+      <div class="gf-row-sub">${e.broken ? '残篇未补 · 转修之后才走这条路 · ' : ''}${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g0.trait}</div>
       <div class="gf-cost">${(c => `散功转修：${c.lose ? `修为 −${fmtNum(c.lose)} · ` : ''}心境 −${c.xj} · 耗时${cnDur(c.months + c.extra)}${c.extra ? `（修为不足，以${cnDur(c.extra)}苦功补足）` : ''}${c.layer ? ` · 《${GONGFA[S.gf].name}》跌一层` : ''}`)(Core.switchCost(S, id))}</div></div>
       <div class="gf-acts"></div>`;
     const acts = row.querySelector('.gf-acts');
@@ -2445,64 +2508,192 @@ function openSlots() {
   openSheet('存档', w);
 }
 
-/* ================= 轮回图鉴／墓志长卷 ================= */
-function openAtlasSheet() {
-  if (typeof Samsara === 'undefined') { toast('轮回未启'); return; }
-  const m = Samsara.loadMeta();
-  const st = Samsara.atlasStats(m);
-  const w = document.createElement('div'); w.className = 'atlas-sheet';
-  const END_N = { ascend: '飞升', zuohua: '坐化', rumo: '入魔', guiyin: '归隐', bingjie: '兵解', yunluo: '身殒', renhuang: '人皇', quancheng: '权臣', huashen: '山神', zhenmo: '镇魔', chuanshuo: '传说' };
-  const sec = (title, html) => `<section class="atlas-sec"><h4>${title}</h4><div class="atlas-grid">${html}</div></section>`;
-  const cell = (name, on, sub) => `<div class="atlas-cell${on ? ' on' : ''}"><b>${esc(name)}</b>${sub ? '<em>' + esc(sub) + '</em>' : ''}${on ? '' : '<i>未识</i>'}</div>`;
-  const sil = i => {
-    const dx = ((i * 17) % 9) - 4, dy = ((i * 5) % 7) - 3, sc = (0.86 + (i % 4) * 0.06).toFixed(2);
-    return `<div class="atlas-cell sil" aria-label="未解之缘"><span class="sil-ink" style="transform:translate(${dx}px,${dy}px) scale(${sc})"></span><em>未解之缘</em></div>`;
-  };
-  let daojiH = '', faxiangH = '', shenqiH = '', endingH = '', encH = '';
-  if (typeof DAOJI !== 'undefined') for (const id of Object.keys(DAOJI)) daojiH += cell(DAOJI[id].name, !!m.atlas.daoji[id], DAOJI[id].seal);
-  if (typeof FAXIANG !== 'undefined') for (const id of Object.keys(FAXIANG)) faxiangH += cell(FAXIANG[id].name, !!m.atlas.faxiang[id], FAXIANG[id].seal);
-  if (typeof SHENQI_ZHI !== 'undefined') for (const z of SHENQI_ZHI) shenqiH += cell(z.name, !!m.atlas.shenqi[z.name], z.seal || '器');
-  let endKnown = 0, silI = 0;
-  for (const k of Object.keys(END_N)) {
-    if (m.atlas.ending[k]) { endingH += cell(END_N[k], true, '×' + m.atlas.ending[k]); endKnown++; }
-    else endingH += sil(silI++);
+/* ================= 仙途志 / 奈何 ================= */
+const END_BOOK = {
+  ascend: { name: '飞升', hint: '白日里，满山的松忽然不响。', note: '碑阴无字，只余松涛。' },
+  zuohua: { name: '坐化', hint: '石门开着，案上的笔停在半行。', note: '山风过石门，案上笔未干。' },
+  rumo: { name: '入魔', hint: '有人眼里只剩一种颜色。', note: '墨落成血，不可复洗。' },
+  guiyin: { name: '归隐', hint: '江心多过一条不系饵的船。', note: '空船自横，钓丝无饵。' },
+  bingjie: { name: '兵解', hint: '肉身散了，有一缕还不肯散。', note: '真灵一缕，尚在轮回。' },
+  yunluo: { name: '身殒', hint: '碑上没有字，草却一年比一年高。', note: '无字碑前，野草年年。' },
+  renhuang: { name: '人皇', hint: '山门的钟，有一天一起哑了。', note: '仙凡一统，山门钟哑。' },
+  quancheng: { name: '权臣', hint: '史书不敢写下一个名字。', note: '摄政如天，史不敢名。' },
+  huashen: { name: '山神', hint: '没有门的祠前，风会替人点头。', note: '祠前无门，风替人点头。' },
+  zhenmo: { name: '镇魔', hint: '有人把剑横在膝上，当作镇纸。', note: '裂口合拢，剑作镇纸。' },
+  chuanshuo: { name: '传说', hint: '石室里有一本没有封面的册子。', note: '册子无名，句子还在。' },
+};
+const PERSON_BOOK = {
+  shifu: { name: '玄微真人', hint: '峰顶有人煮茶，茶是留给后辈的。', note: '茶案上多一只杯，是留给你的。' },
+  lu: { name: '陆沉舟', hint: '有个剑修，很少把同辈放在眼里。', note: '同辈之中，你是他唯一想赢的人。' },
+  su: { name: '苏晚晴', hint: '袖口总有一点药香。', note: '她记得你上回的伤好了没有。' },
+  wen: { name: '温庭玉', hint: '笑得很温，扇骨却是冷的。', note: '这样的人，竟也会记一笔人情。' },
+  shi: { name: '石小满', hint: '饭量很大，认死理。', note: '逢人便说，他认得一个天下第一好的人。' },
+  bai: { name: '江疏白', hint: '桥上有人撑伞，话很少。', note: '一程可以。再远的，走着看。' },
+  xie: { name: '谢疏影', hint: '溪边有一把纸伞，看人走路。', note: '案上多一只杯，空的时候也像在等。' },
+};
+const FB_HINT = {
+  '噬主骨刃': '白骨祭坛上，有一件会认主的短东西。',
+  '忘川灯': '有一盏灯，照见来路，不照前路。',
+  '裂空绫': '有一匹很薄的丝，抖开时空间会裂。',
+  '子午罗盘': '有一面盘，指针不指眼前。',
+  '九婴骨笛': '有一支吹不响的笛，夜里却有人应。',
+  '沉渊砚': '有一方砚，池子像未干的夜。',
+};
+const CODEX_REWARD = {
+  ending: '此卷已齐。出身「桥边人」可在开卷时选。不加修为。',
+  gongfa: '此卷已齐。卷色「松烟」可换。只改纸色。',
+  fabao: '此卷已齐。卷色「冷金」可换。只改纸色。',
+  person: '此卷已齐。出身「旧识」可在开卷时选。不加修为。',
+  encounter: '此卷已齐。卷色「雨青」可换。只改纸色。',
+};
+const CODEX_TABS = [['ending', '结局'], ['gongfa', '功法'], ['fabao', '法宝'], ['person', '人物'], ['encounter', '奇遇']];
+function gfHintLine(g) {
+  if (!g) return '还有一本没被你遇见的册子。';
+  if (g.mo) return '页边发暗，像会反过来读人。';
+  const depth = ['薄薄一册', '读来顺手的一卷', '压在箱底的一部', '不该轻易摊开的一篇'][g.grade] || '一册';
+  const el = g.el ? ('字里有' + g.el + '的意思') : '不挑五行';
+  return depth + '，' + el + '。';
+}
+function openNaihe(done) {
+  const box = $('#naihe');
+  if (!box || typeof Samsara === 'undefined' || !Samsara.bridgeOpen || !Samsara.bridgeOpen()) {
+    if (done) done();
+    return;
   }
-  const enc = Samsara.encounterCatalog();
-  m.atlas.encounter = m.atlas.encounter || {};
-  let encKnown = 0;
-  const knownEnc = [], unknownN = [];
-  enc.forEach(e => { if (m.atlas.encounter[e.id]) knownEnc.push(e); else unknownN.push(e); });
-  encKnown = knownEnc.length;
-  knownEnc.forEach(e => { encH += cell(e.title, true, e.seal || '缘'); });
-  unknownN.forEach(() => { encH += sil(silI++); });
-  const relicH = (m.relics || []).slice(0, 8).map(r => {
-    const lab = r.kind === 'cave' ? '旧洞' : r.kind === 'fabao' ? '旧器' : r.kind === 'page' ? '残页' : '遗';
-    return cell(lab, true, r.name || '');
-  }).join('');
-  const got = (st.daoji | 0) + (st.faxiang | 0) + (st.shenqi | 0) + endKnown + encKnown;
-  const max = (st.daojiMax | 0) + (st.faxiangMax | 0) + (st.shenqiMax | 0) + Object.keys(END_N).length + enc.length;
-  const epis = (m.epitaphs || []).slice(0, 8).map((ep, i) => {
-    const t = (ep.short || ep.text || '').slice(0, 64);
-    return `<button type="button" class="atlas-epi" data-i="${i}"><b>${esc(ep.name || '无名')} · ${esc(END_N[ep.ending] || ep.ending || '')}</b><span>${cn(ep.age)}岁 · ${esc(t)}</span></button>`;
-  }).join('') || '<p class="atlas-empty">尚无墓志。了结一世后，长卷自会落下。</p>';
-  w.innerHTML = `<div class="atlas-head">已录 ${cn(got)} / ${cn(max)}　·　轮回 ${cn(st.lives)} 世　最高 ${cn(st.best.age || 0)} 岁</div>
-    <p class="atlas-count">终局 ${cn(endKnown)}/${cn(Object.keys(END_N).length)}　奇遇 ${cn(encKnown)}/${cn(enc.length)}　道基 ${cn(st.daoji)}/${cn(st.daojiMax)}　法相 ${cn(st.faxiang)}/${cn(st.faxiangMax)}　神器 ${cn(st.shenqi)}/${cn(st.shenqiMax)}</p>
-    ${sec('道基 ' + cn(st.daoji) + '/' + cn(st.daojiMax), daojiH || '<p class="atlas-empty">—</p>')}
-    ${sec('法相 ' + cn(st.faxiang) + '/' + cn(st.faxiangMax), faxiangH || '<p class="atlas-empty">—</p>')}
-    ${sec('神器 ' + cn(st.shenqi) + '/' + cn(st.shenqiMax), shenqiH || '<p class="atlas-empty">—</p>')}
-    ${sec('终局 ' + cn(endKnown) + '/' + cn(Object.keys(END_N).length), endingH)}
-    ${relicH ? sec('轮回遗物', relicH) : ''}
-    ${sec('奇遇 ' + cn(encKnown) + '/' + cn(enc.length), encH || '<p class="atlas-empty">—</p>')}
-    <section class="atlas-sec"><h4>墓志长卷</h4><div class="atlas-epis">${epis}</div>
-      <pre class="atlas-long" id="atlas-long-view" hidden></pre></section>`;
-  w.onclick = e => {
-    const b = e.target.closest('.atlas-epi'); if (!b) return;
-    const ep = (m.epitaphs || [])[+b.dataset.i]; if (!ep) return;
-    const view = w.querySelector('#atlas-long-view');
-    view.hidden = false; view.textContent = ep.text || ep.short || '';
-    w.querySelectorAll('.atlas-epi').forEach(x => x.classList.toggle('on', x === b));
+  const b = Samsara.loadMeta().bridge || {};
+  const lead = $('#naihe-lead');
+  const opts = $('#naihe-opts');
+  if (lead) {
+    const first = (b.lives | 0) === 1;
+    lead.textContent = (first ? '第一世已尽。桥上只许带一样。带了，下世开卷会略有不同；不带，也干净。' : '此生已了。过桥时，只许带一样。')
+      + (b.name ? '「' + b.name + '」停在这里。' : '');
+  }
+  if (opts) {
+    opts.innerHTML = '';
+    const add = (kind, seal, title, prose) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'naihe-opt';
+      btn.innerHTML = '<span class="naihe-seal"></span><span class="naihe-body"><b></b><em></em></span>';
+      btn.querySelector('.naihe-seal').textContent = seal;
+      btn.querySelector('b').textContent = title;
+      btn.querySelector('em').textContent = prose;
+      btn.onclick = () => {
+        if (Samsara.chooseNaihe) Samsara.chooseNaihe(kind);
+        box.hidden = true;
+        if (done) done();
+      };
+      opts.appendChild(btn);
+    };
+    const mem = b.mem || {};
+    add('mem', '忆', '一缕记忆', mem.el ? ('有些道理像在骨头里。下世悟性深一寸，灵根微微偏向' + mem.el + '，不是换一条根。') : '有些道理像在骨头里。下世悟性深一寸。');
+    if (b.page && b.page.name) add('page', '残', '一卷残篇', '《' + b.page.name + '》只剩残页。下世它在胸中，不成主修，要等你自己转修。');
+    if (b.bond && b.bond.name) {
+      const role = b.bond.role === 'mate' ? '道侣' : b.bond.role === 'foe' ? '仇人' : '恩人';
+      add('bond', '缘', '一段因果', role + '「' + b.bond.name + '」。下世若还有缘，会再遇见这个人。');
+    }
+    add('none', '空', '什么都不带', '把这一世放下。桥下的水不记名字。');
+  }
+  box.hidden = false;
+}
+function openAtlasSheet(startTab) {
+  if (typeof Samsara === 'undefined') { toast('仙途志未启'); return; }
+  if (S && Samsara.harvest) {
+    const m0 = Samsara.loadMeta();
+    Samsara.harvest(m0, S);
+    Samsara.saveMeta(m0);
+  }
+  const w = document.createElement('div');
+  w.className = 'codex';
+  let cur = startTab || 'ending';
+  const vague = ['路上还会遇见的一件事。', '纸边还空着一笔。', '你走过，却没有记住。', '风里有一句没听清的话。', '某处的门还关着。'];
+  const sil = i => {
+    const dx = ((i * 17) % 9) - 4, dy = ((i * 5) % 7) - 3;
+    return `<span class="sil-ink" style="transform:translate(${dx}px,${dy}px)"></span>`;
   };
-  openSheet('轮回图鉴', w);
+  const card = (on, art, title, line) => `<article class="codex-card${on ? ' on' : ' sil'}">${art}<div class="codex-copy"><b>${esc(on ? title : '未录')}</b><em>${esc(line)}</em></div></article>`;
+  function entries(m, tab) {
+    const a = m.atlas || {};
+    if (tab === 'ending') {
+      return Object.keys(END_BOOK).map(id => {
+        const book = END_BOOK[id];
+        const on = !!(a.ending && a.ending[id]);
+        const art = on && typeof END_ART !== 'undefined' && END_ART[id] ? `<div class="codex-art">${END_ART[id]}</div>` : `<div class="codex-art sil-art">${sil(id.length)}</div>`;
+        return card(on, art, book.name, on ? book.note : book.hint);
+      }).join('');
+    }
+    if (tab === 'gongfa' && typeof GONGFA !== 'undefined') {
+      return Object.keys(GONGFA).map((id, i) => {
+        const g = GONGFA[id];
+        const on = !!(a.gongfa && a.gongfa[id]);
+        const art = `<div class="codex-art seal-art"><b>${esc(on ? (GF_GRADE[g.grade] || '法') : '？')}</b></div>`;
+        return card(on, art, g.name, on ? (g.trait || '此法已入志。') : gfHintLine(g));
+      }).join('');
+    }
+    if (tab === 'fabao' && typeof SHENQI_ZHI !== 'undefined') {
+      return SHENQI_ZHI.map((z, i) => {
+        const on = !!(a.shenqi && a.shenqi[z.name]);
+        const art = `<div class="codex-art seal-art"><b>${esc(on ? (z.seal || '器') : '？')}</b></div>`;
+        return card(on, art, z.name, on ? (z.blurb || '此器已入志。') : (FB_HINT[z.name] || '有一件还没现身的器物。'));
+      }).join('');
+    }
+    if (tab === 'person') {
+      const ids = (Samsara.PERSON_IDS || Object.keys(PERSON_BOOK));
+      return ids.map((id, i) => {
+        const book = PERSON_BOOK[id] || { name: id, hint: '有一个人，你还没记住。', note: '名字已经落下。' };
+        const on = !!(a.person && a.person[id]);
+        const name = (typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].name) || book.name;
+        let pic = '';
+        if (on && typeof InkPortrait !== 'undefined' && InkPortrait.svg) pic = InkPortrait.svg(id) || '';
+        const art = pic ? `<div class="codex-art portrait">${pic}</div>` : `<div class="codex-art sil-art">${on ? '<b class="seal-face">' + esc((typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].seal) || name.slice(0, 1)) + '</b>' : sil(i)}</div>`;
+        return card(on, art, name, on ? book.note : book.hint);
+      }).join('');
+    }
+    const enc = Samsara.encounterCatalog();
+    return enc.map((e, i) => {
+      const on = !!(a.encounter && a.encounter[e.id]);
+      const art = `<div class="codex-art seal-art"><b>${esc(on ? (e.seal || '缘') : '？')}</b></div>`;
+      return card(on, art, e.title, on ? '这一笔，已经落在你的卷上。' : vague[i % vague.length]);
+    }).join('');
+  }
+  function paint() {
+    const m = Samsara.loadMeta();
+    const st = Samsara.volumeStats ? Samsara.volumeStats(m) : null;
+    const tabs = CODEX_TABS.map(([id, name]) => {
+      return `<button type="button" class="codex-tab${cur === id ? ' on' : ''}" data-tab="${id}">${name}</button>`;
+    }).join('');
+    const reward = st && st[cur] && st[cur].done ? `<p class="codex-reward">${esc(CODEX_REWARD[cur] || '')}</p>` : '<p class="codex-reward dim">集齐此卷，得一桩妆点。不加修为，不加灵石。</p>';
+    const pals = [['', '素纸', true], ['songyan', '松烟', !!(m.boons && m.boons.gongfa)], ['lengjin', '冷金', !!(m.boons && m.boons.fabao)], ['yuqing', '雨青', !!(m.boons && m.boons.encounter)]].filter(x => x[2]);
+    const palRow = pals.length > 1 ? `<div class="codex-pals">${pals.map(([id, name]) => `<button type="button" class="codex-pal${(m.palette || '') === id ? ' on' : ''}" data-pal="${id}">${name}</button>`).join('')}</div>` : '';
+    let epi = '';
+    if (cur === 'ending') {
+      const rows = (m.epitaphs || []).slice(0, 8).map((ep, i) => {
+        const nm = END_BOOK[ep.ending] ? END_BOOK[ep.ending].name : (ep.ending || '');
+        return `<button type="button" class="atlas-epi" data-i="${i}"><b>${esc(ep.name || '无名')} · ${esc(nm)}</b><span>${cn(ep.age)}岁</span></button>`;
+      }).join('');
+      epi = `<section class="atlas-sec"><h4>墓志</h4><div class="atlas-epis">${rows || '<p class="atlas-empty">尚无墓志。</p>'}</div><pre class="atlas-long" id="atlas-long-view" hidden></pre></section>`;
+    }
+    const headN = st && st[cur] ? `${cn(st[cur].got)} / ${cn(st[cur].max)}` : '';
+    w.innerHTML = `<div class="codex-tabs">${tabs}</div><p class="codex-count">本卷 ${headN}　·　轮回 ${cn((m.lives | 0))} 世</p>${reward}${palRow}<div class="codex-grid">${entries(m, cur) || '<p class="atlas-empty">这一卷还是空的。</p>'}</div>${epi}`;
+  }
+  w.addEventListener('click', e => {
+    const tab = e.target.closest('[data-tab]');
+    if (tab) { cur = tab.dataset.tab; paint(); return; }
+    const pal = e.target.closest('[data-pal]');
+    if (pal && Samsara.setPalette) { Samsara.setPalette(pal.dataset.pal); applyPalette(); paint(); return; }
+    const b = e.target.closest('.atlas-epi');
+    if (!b) return;
+    const m = Samsara.loadMeta();
+    const ep = (m.epitaphs || [])[+b.dataset.i];
+    if (!ep) return;
+    const view = w.querySelector('#atlas-long-view');
+    if (!view) return;
+    view.hidden = false;
+    view.textContent = ep.text || ep.short || '';
+    w.querySelectorAll('.atlas-epi').forEach(x => x.classList.toggle('on', x === b));
+  });
+  paint();
+  openSheet('仙途志', w);
 }
 
 /* ================= 终卷 ================= */
@@ -2589,16 +2780,24 @@ function showEnd(kind) {
     if (legObj.cave) carry.push('旧洞残钥');
   }
   const leg = carry.length ? `<br><span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
-    : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '');
+    : (isTrial ? '<br><span class="end-legacy">试炼局 · 不入轮回簿</span>' : '<br><span class="end-legacy">奈何桥上，只许带一样</span>');
   $('#end-stats').innerHTML = `${S.name} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}<br>${lab}${gfl}${pfl}${fbl}${goalBit}<br>悟性 <b>${cn(S.wx)}</b>　心境 <b>${xinjingWord(S.xj)}</b>${leg}`;
   save();
   $('#btn-reborn').onclick = async () => {
-    const kept = typeof Slots !== 'undefined' && Slots.firstEmpty() >= 0;
-    e.hidden = true; S = null;
-    window.__trialStart = false;
-    if (kept) toast('前卷留在存档里');
-    else if (typeof Slots !== 'undefined') window.__slotTarget = Slots.newestIndex();
-    resetCreate(); initTitle(); unrollTo('create');
+    const proceed = () => {
+      const kept = typeof Slots !== 'undefined' && Slots.firstEmpty() >= 0;
+      e.hidden = true; S = null;
+      window.__trialStart = false;
+      if (kept) toast('前卷留在存档里');
+      else if (typeof Slots !== 'undefined') window.__slotTarget = Slots.newestIndex();
+      resetCreate(); initTitle(); unrollTo('create');
+    };
+    if (!isTrial && typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) {
+      e.hidden = true;
+      openNaihe(proceed);
+      return;
+    }
+    proceed();
   };
   const btnAtlasEnd = $('#btn-end-atlas');
   if (btnAtlasEnd) btnAtlasEnd.onclick = () => openAtlasSheet();
@@ -2656,6 +2855,16 @@ const LOOK_KEY = 'moxian.look';
 function readLook() {
   try { return JSON.parse(localStorage.getItem(LOOK_KEY) || '{}') || {}; } catch (e) { return {}; }
 }
+function applyPalette() {
+  let p = '';
+  if (typeof Samsara !== 'undefined' && Samsara.loadMeta) {
+    const m = Samsara.loadMeta();
+    const map = { songyan: 'gongfa', lengjin: 'fabao', yuqing: 'encounter' };
+    if (m.palette && map[m.palette] && m.boons && m.boons[map[m.palette]]) p = m.palette;
+  }
+  if (p) document.documentElement.dataset.palette = p;
+  else delete document.documentElement.dataset.palette;
+}
 function applyLook(partial) {
   const prev = readLook();
   const prevTheme = document.documentElement.dataset.theme || '';
@@ -2666,6 +2875,7 @@ function applyLook(partial) {
   document.documentElement.dataset.theme = nextTheme;
   document.documentElement.dataset.font = (p.font === 'lg' || p.font === 'sm') ? p.font : 'md';
   document.documentElement.dataset.motion = p.motion === 'lite' ? 'lite' : 'full';
+  applyPalette();
   const wantThin = p.motion === 'lite' || matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (wantThin) document.documentElement.dataset.fx = 'thin';
   else if (partial && partial.motion === 'full') delete document.documentElement.dataset.fx;
@@ -2975,7 +3185,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=54').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=55').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
@@ -3032,5 +3242,5 @@ Promise.all([
   log.addEventListener('scroll', mark, { passive: true });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openShop, openSexSheet, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, openGoalPicker, openAnnals, openLook, applyLook };
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openShop, openSexSheet, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openNaihe, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, openGoalPicker, openAnnals, openLook, applyLook };
 })();

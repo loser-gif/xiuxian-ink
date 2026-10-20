@@ -26,7 +26,7 @@ const Core = (() => {
     const parts = [];
     if (s.gf && GONGFA[s.gf]) parts.push({ t: GONGFA[s.gf].t, w: 1, spd: 1 });
     for (const id of (s.aux || [])) {
-      const g = GONGFA[id], e = s.gfs[id]; if (!g || !e) continue;
+      const g = GONGFA[id], e = s.gfs[id]; if (!g || !e || e.broken) continue;
       const w = Math.min(e.lv, typeof AUX_LAYER_CAP !== 'undefined' ? AUX_LAYER_CAP : 3) / (typeof GF_LAYERS !== 'undefined' ? GF_LAYERS : 9);
       parts.push({ t: g.t, w: 0.55 * w, spd: 0.25 * w });
     }
@@ -120,7 +120,7 @@ const Core = (() => {
   function auxSpd(s) {
     let m = 1;
     for (const id of (s.aux || [])) {
-      const g = GONGFA[id], e = s.gfs[id]; if (!g || !e || !g.t.spd) continue;
+      const g = GONGFA[id], e = s.gfs[id]; if (!g || !e || e.broken || !g.t.spd) continue;
       const w = 0.25 * Math.min(e.lv, typeof AUX_LAYER_CAP !== 'undefined' ? AUX_LAYER_CAP : 3) / 9;
       m *= 1 + (g.t.spd - 1) * w;
     }
@@ -196,6 +196,7 @@ const Core = (() => {
       tags && tags.push({ t: '残页应验 · 起手二层', c: 'gold' });
     }
     s.gfs[id] = { lv: lv0, xp: 0 };
+    if (typeof Samsara !== 'undefined' && Samsara.noteGongfa) Samsara.noteGongfa(id);
     tags && tags.push({ t: `得功法《${GONGFA[id].name}》`, c: 'up' });
     if (!s.gf) { s.gf = id; emit && emit({ text: `你开始修习《${GONGFA[id].name}》。从此吐纳有法，不再是盲人摸象。`, cls: 'sys' }); }
     return true;
@@ -223,6 +224,7 @@ const Core = (() => {
     const c = switchCost(s, id), old = s.gf;
     if (old && c.layer) s.gfs[old].lv -= 1;
     s.gf = id; s.xw = Math.max(0, s.xw - c.xw); s.xj = clamp(s.xj - c.xj, 0, 100);
+    if (s.gfs[id] && s.gfs[id].broken) delete s.gfs[id].broken;
     s.aux = (s.aux || []).filter(x => x !== id);
     s.bnLogged = false;
     passTime(s, c.months + c.extra, emit);
@@ -1013,6 +1015,9 @@ const Core = (() => {
     if (typeof s.xwBank !== 'number') s.xwBank = 0;
     if (typeof Folio !== 'undefined' && Folio.ensure) Folio.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;
+    if (!(s.flags && s.flags.trial) && s.flags.lives == null && typeof Samsara !== 'undefined' && Samsara.loadMeta) {
+      s.flags.lives = Samsara.loadMeta().lives | 0;
+    }
     // 功法层数：旧档缺层数时作第一层，已有层数保留
     s.gfs = s.gfs || {};
     for (const id in s.gfs) {

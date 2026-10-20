@@ -100,7 +100,9 @@ const Folio = (() => {
           ending: d.ending || (d.ascended ? 'ascend' : 'zuohua'),
           realm: d.realm | 0, age: d.age | 0,
           mate: (d.karma && d.karma.mate && typeof NPCS !== 'undefined' && NPCS[d.karma.mate]) ? NPCS[d.karma.mate].name : '',
+          mateId: (d.karma && d.karma.mate) || '',
           foe: (d.karma && d.karma.foe && typeof NPCS !== 'undefined' && NPCS[d.karma.foe]) ? NPCS[d.karma.foe].name : '',
+          foeId: (d.karma && d.karma.foe) || '',
           sect: (d.sect && d.sect.org && typeof ORGS !== 'undefined' && ORGS[d.sect.org]) ? ORGS[d.sect.org].name : '',
           fabao: (d.fabao && d.fabao.name) || (d.eq && d.eq.weapon) || '',
           goal: (d.life && d.life.goal) || '',
@@ -118,7 +120,6 @@ const Folio = (() => {
       if (e.name && s.name && e.name === s.name && (e.age | 0) === (s.age | 0)) return;
       hooksOf(e).forEach(h => pool.push({ h, e }));
     });
-    if (!pool.length) { s.echo = { kinds: [], by: {} }; return; }
     const picked = [];
     const by = {};
     while (pool.length && picked.length < 2) {
@@ -126,7 +127,22 @@ const Folio = (() => {
       const row = pool.splice(i, 1)[0];
       if (picked.indexOf(row.h) >= 0) continue;
       picked.push(row.h);
-      by[row.h] = { name: row.e.name, mate: row.e.mate || '', foe: row.e.foe || '', sect: row.e.sect || '', fabao: row.e.fabao || '', goal: row.e.goal || '', ending: row.e.ending || '' };
+      const hid = row.h === 'mate' ? (row.e.mateId || '') : row.h === 'foe' ? (row.e.foeId || '') : '';
+      by[row.h] = { name: row.e.name, mate: row.e.mate || '', foe: row.e.foe || '', sect: row.e.sect || '', fabao: row.e.fabao || '', goal: row.e.goal || '', ending: row.e.ending || '', id: hid };
+    }
+    const carry = s.flags && s.flags.karmaCarry;
+    if (carry && carry.id && !s.flags.trial) {
+      const h = carry.role === 'mate' ? 'mate' : carry.role === 'foe' ? 'foe' : 'en';
+      if (picked.indexOf(h) < 0) picked.push(h);
+      const prev = by[h] || {};
+      by[h] = {
+        name: prev.name || s.name || '',
+        mate: carry.role === 'mate' ? (carry.name || prev.mate || '') : (prev.mate || ''),
+        foe: carry.role === 'foe' ? (carry.name || prev.foe || '') : (prev.foe || ''),
+        sect: prev.sect || '', fabao: prev.fabao || '', goal: prev.goal || '', ending: prev.ending || '',
+        id: carry.id || prev.id || '',
+        en: carry.role === 'en' ? (carry.name || '') : (prev.en || ''),
+      };
     }
     s.echo = { kinds: picked, by };
   }
@@ -134,6 +150,34 @@ const Folio = (() => {
     return !!(s && s.echo && s.echo.kinds && s.echo.kinds.indexOf(id) >= 0 && s.echo.by && s.echo.by[id]);
   }
   function hook(s, id) { return (s.echo && s.echo.by && s.echo.by[id]) || {}; }
+  function livesOf(s) { return s && s.flags ? (s.flags.lives | 0) : 0; }
+  function idByName(name) {
+    if (!name || typeof NPCS === 'undefined') return '';
+    for (const id in NPCS) if (NPCS[id] && NPCS[id].name === name) return id;
+    return '';
+  }
+  function sexOf(id, name) {
+    const fixed = { xie: 'f', su: 'f', bai: 'm', lu: 'm', wen: 'm', shi: 'm', shifu: 'm' };
+    if (id && fixed[id]) return fixed[id];
+    if (name === '苏晚晴' || name === '谢疏影') return 'f';
+    if (name === '江疏白' || name === '陆沉舟' || name === '温庭玉' || name === '石小满' || name === '玄微真人') return 'm';
+    return '';
+  }
+  function taOf(g) { return g === 'f' ? '她' : g === 'm' ? '他' : '那人'; }
+  function pastMate(s) {
+    const c = s.flags && s.flags.karmaCarry;
+    if (c && c.role === 'mate' && c.name) return { name: c.name, id: c.id || idByName(c.name) };
+    const h = hook(s, 'mate');
+    const name = h.mate || '';
+    return { name, id: h.id || idByName(name) };
+  }
+  function pastFoe(s) {
+    const c = s.flags && s.flags.karmaCarry;
+    if (c && c.role === 'foe' && c.name) return { name: c.name, id: c.id || idByName(c.name) };
+    const h = hook(s, 'foe');
+    const name = h.foe || '';
+    return { name, id: h.id || idByName(name) };
+  }
 
   function ensure(s) {
     if (!s) return;
@@ -254,11 +298,11 @@ const Folio = (() => {
         text: s => { const h = hook(s, 'shan'); return `没有门的祠前，风替人点头。石上的名字很浅，浅处却认得出是「${h.name}」。你站了一会儿，干果自己从供盘里滚到你脚边。`; },
         choices: () => [{ label: '放下一块干粮', act: () => ({ text: '你没有报名。山也不问。走的时候，脚步轻了一点，像有人在后面让了让路。', fx: { xj: 4, btBuff: 0.02 } }) }] },
       { id: 'echo_mate', title: '旧人', seal: '旧', w: 2, once: true, rm: [1, 4],
-        cond: s => hasHook(s, 'mate'),
+        cond: s => hasHook(s, 'mate') && livesOf(s) < 2 && !(s.flags && s.flags.karmaCarry && s.flags.karmaCarry.role === 'mate'),
         text: s => { const h = hook(s, 'mate'); return `茶摊的人听见你的路数，忽然停杯：“上一世有个人，身边总坐着${h.mate}。你走路的影子，有一点像那个空出来的位置。”`; },
         choices: () => [{ label: '听完就走', act: () => ({ text: '你没有承认，也没有否认。杯底的茶叶沉下去，像一个不愿意被讲完的名字。', fx: { xj: 2 } }) }] },
       { id: 'echo_foe', title: '余仇', seal: '余', w: 2, once: true, rm: [1, 4],
-        cond: s => hasHook(s, 'foe'),
+        cond: s => hasHook(s, 'foe') && livesOf(s) < 2 && !(s.flags && s.flags.karmaCarry && s.flags.karmaCarry.role === 'foe'),
         text: s => { const h = hook(s, 'foe'); return `路口有人挡你，不是为了劫道。他说：“我认得${h.foe}。也认得那个把这笔账带到下一世的人。你若是，就自己心里有数。”`; },
         choices: () => [{ label: '拱手过去', act: () => ({ text: '你过去了。背后没有刀。只有一句很旧的名字，在风里磨了一下。', fx: { xj: 1 } }) }] },
       { id: 'echo_sect', title: '旧籍', seal: '籍', w: 2, once: true, rm: [0, 4],
@@ -278,7 +322,7 @@ const Folio = (() => {
         text: s => { const h = hook(s, 'edict'); return `城门口的碑上刻着很短的一句：昔有${h.name}，仙凡都要低头。碑新，字旧。你读的时候，守门的人没有叫你行礼。`; },
         choices: () => [{ label: '读完便走', act: () => ({ text: '碑不认识你。你也不必认识碑。可那一行字在心里停了一停，像从前有人把位子坐热过。', fx: { xj: 1 } }) }] },
       { id: 'echo_grave', title: '旧洞', seal: '洞', w: 2, once: true, rm: [0, 4],
-        cond: s => hasHook(s, 'grave'),
+        cond: s => hasHook(s, 'grave') && livesOf(s) < 3,
         text: s => { const h = hook(s, 'grave'); return `一座空洞的门框上，有人用炭写了「${h.name}」。字被雨冲淡了，还剩一个轮廓。洞里没有尸骨，只有一盏干了的灯。`; },
         choices: () => [{ label: '添一盏新油', act: () => ({ text: '油是你的。灯不是。点着之后你就退出去，没有在门框上加自己的名字。', fx: { xj: 3 } }) }] },
       { id: 'echo_wish', title: '残愿', seal: '愿', w: 2, once: true, rm: [0, 4],
@@ -289,6 +333,96 @@ const Folio = (() => {
         cond: s => hasHook(s, 'boat'),
         text: s => { const h = hook(s, 'boat'); return `江心有一条空船，缆绳系在没有人的桩上。船头刻着「${h.name}」，刻得很浅，像主人离开时特意没有带走名字。`; },
         choices: () => [{ label: '看一眼，不上船', act: () => ({ text: '你看了一眼。船自己微微一晃，又稳住。稳住的意思是：这一世，你可以不重复上一次的离开。', fx: { xj: 3 } }) }] },
+
+      { id: 'echo_meet', title: '重逢', seal: '逢', w: 5, once: true, rm: [0, 4],
+        cond: s => {
+          if (s.flags && s.flags.trial) return false;
+          if ((s.age | 0) < 17 || !pastMate(s).name) return false;
+          const carried = s.flags && s.flags.karmaCarry && s.flags.karmaCarry.role === 'mate';
+          return carried || (livesOf(s) >= 2 && hasHook(s, 'mate'));
+        },
+        text: s => {
+          const p = pastMate(s);
+          const g = sexOf(p.id, p.name);
+          const ta = taOf(g);
+          return `桥栏还是湿的。${p.name}站在你来的方向，像等了很久，又像只是路过。「你走路的样子，我在另一世见过。」${ta}没有笑。名字是对的。脸也是。`;
+        },
+        choices: s => {
+          const p = pastMate(s);
+          const g = sexOf(p.id, p.name);
+          const ta = taOf(g);
+          const allow = !!(p.id && g && wantMate(s, g));
+          const opts = [];
+          if (allow) {
+            opts.push({ label: '再走一程', act: s2 => {
+              if (typeof setMate === 'function') setMate(s2, p.id);
+              if (s2.bond) s2.bond.mateSex = g;
+              if (s2.npc && s2.npc[p.id]) { s2.npc[p.id].met = true; s2.npc[p.id].a = Math.min(100, (s2.npc[p.id].a | 0) + 12); }
+              if (typeof Life !== 'undefined' && Life.meet) Life.meet(s2, p.name, '转世重逢');
+              return { text: `${ta}把袖子往你这边让了让。「这一世的路，我还是不认得。你若肯，就并肩走到看清为止。」没有誓。只有两个人同时迈了一步。`, fx: { xj: 4 }, tags: [{ t: '重逢 · ' + p.name, c: 'gold' }] };
+            } });
+          }
+          opts.push({ label: allow ? '认出，却不重续' : '远远看一眼', act: () => ({ text: allow ? `你报了自己的名字。${ta}点头，像把一个旧约定轻轻放回桥下。「那就当认错了人。」人走了。桥还在。` : `你没有上前。这一世你不想把道侣的位子，许给一个对不上的人。${p.name}也没有追。只是回头看了一眼，像把名字还给风。`, fx: { xj: 2 } }) });
+          return opts;
+        } },
+      { id: 'echo_hunt', title: '寻仇', seal: '仇', w: 5, once: true, rm: [0, 4],
+        cond: s => {
+          if (s.flags && s.flags.trial) return false;
+          if ((s.age | 0) < 17 || !pastFoe(s).name) return false;
+          const carried = s.flags && s.flags.karmaCarry && s.flags.karmaCarry.role === 'foe';
+          return carried || (livesOf(s) >= 2 && hasHook(s, 'foe'));
+        },
+        text: s => {
+          const p = pastFoe(s);
+          const ta = taOf(sexOf(p.id, p.name));
+          return `洞口的石阶上坐着${p.name}。不是为了劫道。${ta}把一块旧石头放在你脚边：「上一世的账，我带到了这一世。人可以重来，这笔不行。」`;
+        },
+        choices: s => {
+          const p = pastFoe(s);
+          const ta = taOf(sexOf(p.id, p.name));
+          return [
+            { label: '把旧账说开', act: s2 => {
+              if (s2.npc && p.id && s2.npc[p.id]) { s2.npc[p.id].met = true; s2.npc[p.id].a = Math.max(-20, (s2.npc[p.id].a | 0) - 8); }
+              if (s2.karma && p.id && !s2.karma.foe) s2.karma.foe = p.id;
+              return { text: `你没有动手。${ta}也没有。话说到石头凉了，${p.name}站起来。「听到了。这一世，我先看着你。」人走远，账还在，只是不再堵门。`, fx: { xj: 2 }, tags: [{ t: '旧仇上门', c: 'gold' }] };
+            } },
+            { label: '避而不见', act: () => ({ text: `你从侧岭绕开。${p.name}在洞口坐到天黑，没有闯进来。第二天石头还在，人已经不在。`, fx: { xj: -1 } }) },
+          ];
+        } },
+      { id: 'echo_grace', title: '旧恩', seal: '恩', w: 5, once: true, rm: [0, 4],
+        cond: s => {
+          const c = s.flags && s.flags.karmaCarry;
+          return !!(c && c.role === 'en' && c.name) && !(s.flags && s.flags.trial) && (s.age | 0) >= 17;
+        },
+        text: s => {
+          const c = s.flags.karmaCarry;
+          const ta = taOf(sexOf(c.id, c.name));
+          return `集上有人叫住你。是${c.name}。${ta}看了你很久，才说：「上一世你帮过我。这一世我还没想好怎么还，先把你认出来。」`;
+        },
+        choices: s => {
+          const c = s.flags.karmaCarry;
+          return [
+            { label: '也认出对方', act: s2 => {
+              if (s2.npc && c.id && s2.npc[c.id]) { s2.npc[c.id].met = true; s2.npc[c.id].a = Math.min(100, (s2.npc[c.id].a | 0) + 10); }
+              if (typeof Life !== 'undefined' && Life.meet) Life.meet(s2, c.name, '旧恩再遇');
+              return { text: '你们没有把那件事再讲一遍。点过头，就像把一笔很轻的账，从上一世挪到了这一世的袖里。', fx: { xj: 3 }, tags: [{ t: '旧恩 · ' + c.name, c: 'gold' }] };
+            } },
+            { label: '说自己不记得', act: () => ({ text: `${c.name}也不勉强。「不记得也好。恩情若要人记住，就重了。」人没入集里。你站了一会儿。`, fx: { xj: 1 } }) },
+          ];
+        } },
+      { id: 'echo_cave_mem', title: '忆洞', seal: '忆', w: 5, once: true, rm: [0, 4],
+        cond: s => livesOf(s) >= 3 && hasHook(s, 'grave') && !(s.flags && s.flags.trial) && (s.age | 0) >= 18,
+        text: s => {
+          const h = hook(s, 'grave');
+          const who = h.name || '一个旧名字';
+          return `你在一条没有路牌的山凹里站住。门框是空的，灯是干的。炭写的「${who}」被雨冲得只剩轮廓。你忽然记得这盏灯的油从哪来，也记得自己曾经坐在这里，把一句没写完的话停在案上。`;
+        },
+        choices: () => [
+          { label: '站一会儿就走', act: s2 => {
+            s2.flags.caveMem = 1;
+            return { text: '你没有往洞里搬东西，也没有把名字补全。记得，就已经够了。风从空门里穿过去，像有人侧身让你。', fx: { xj: 4 }, tags: [{ t: '忆起旧洞', c: 'gold' }] };
+          } },
+        ] },
     );
   }
 

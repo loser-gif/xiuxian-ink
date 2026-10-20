@@ -36,6 +36,14 @@ const Juan = (() => {
       intro: '魔门遗孤，年方十六。血衣是别人给你披上的，你还没决定要不要脱掉。',
       prose: '灭门那夜你活了下来。世上有人要你的命，也有人要你的恨。',
       flags: ['moBlood'] },
+    { id: 'qiaobian', name: '桥边人', seal: '桥', lean: '无', need: 'ending',
+      intro: '桥边人，年方十六。你不记得自己从哪一户出来，只记得水声。',
+      prose: '没有镇籍，没有家谱。你从桥栏上醒来，袖里空空。',
+      flags: [] },
+    { id: 'jiushi', name: '旧识', seal: '识', lean: '无', need: 'person',
+      intro: '旧识之后，年方十六。街上有人看你眼熟，你也看他们眼熟。',
+      prose: '你说不出上一面在何时。只是点头的时候，像早就认识。',
+      flags: [] },
   ];
   const byId = id => ORIGINS.find(o => o.id === id) || ORIGINS[0];
 

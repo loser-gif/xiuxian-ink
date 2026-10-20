@@ -48,13 +48,13 @@ function root(id) {
   delete fresh.played;
   const raw = JSON.parse(JSON.stringify(fresh));
   const m = Core.migrate(raw);
-  if (!m || m.v !== 12) note('fail', 'v10 存档未能迁到 v12');
+  if (!m || m.v !== 13) note('fail', 'v10 存档未能迁到 v13');
   else {
     if (m.xw !== xw) note('fail', '迁移改动了修为 xw');
     if (!Array.isArray(m.marks)) note('fail', '迁移后缺少 marks');
     if (m.played !== Math.round(acts * 6500)) note('fail', '旧档游玩时长估算不对：' + m.played);
     if (!m.life || typeof m.life !== 'object' || m.life.goal != null) note('fail', '迁移后 life 缺省不对');
-    if (!findings.some(f => f.kind === 'fail')) note('ok', 'v10→v12：补 marks、played 与 life，修为未缩放');
+    if (!findings.some(f => f.kind === 'fail')) note('ok', 'v10→v13：补 marks、played 与 life，修为未缩放');
   }
 }
 

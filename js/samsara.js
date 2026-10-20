@@ -1,19 +1,30 @@
-/* 墨仙录 · v1.0 轮回：残魂／残忆／图鉴／墓志／日缘／试炼 */
+/* 墨仙录 · 轮回与仙途志。进度只写 moxian.meta，不进存档槽。 */
 'use strict';
 const Samsara = (() => {
   const META_KEY = 'moxian.meta';
   const LEGACY_KEY = 'moxian.legacy';
   const META_V = 1;
+  const END_IDS = ['ascend', 'zuohua', 'rumo', 'guiyin', 'bingjie', 'yunluo', 'renhuang', 'quancheng', 'huashen', 'zhenmo', 'chuanshuo'];
+  const PERSON_IDS = ['shifu', 'lu', 'su', 'wen', 'shi', 'bai', 'xie'];
+  const ELS = ['金', '木', '水', '火', '土'];
 
+  function emptyAtlas() {
+    return { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {}, encounter: {}, gongfa: {}, person: {} };
+  }
   function emptyMeta() {
     return {
       v: META_V, lives: 0,
       epitaphs: [],
-      atlas: { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {}, encounter: {} },
+      atlas: emptyAtlas(),
       guide: 0,
       daily: { day: '', claimed: false },
       best: { age: 0, realm: 0, ascend: 0 },
       relics: [],
+      echoes: [],
+      boons: {},
+      palette: '',
+      bridge: null,
+      backfilled: 0,
     };
   }
 
@@ -21,15 +32,23 @@ const Samsara = (() => {
     try {
       const m = JSON.parse(localStorage.getItem(META_KEY) || 'null');
       if (!m || typeof m !== 'object') return emptyMeta();
-      m.atlas = m.atlas || { daoji: {}, faxiang: {}, shenqi: {}, ending: {}, danwen: {}, encounter: {} };
-      for (const k of ['daoji', 'faxiang', 'shenqi', 'ending', 'danwen', 'encounter']) m.atlas[k] = m.atlas[k] || {};
+      m.atlas = m.atlas || emptyAtlas();
+      for (const k of ['daoji', 'faxiang', 'shenqi', 'ending', 'danwen', 'encounter', 'gongfa', 'person']) m.atlas[k] = m.atlas[k] || {};
       if (m.guide == null) m.guide = 0;
       m.epitaphs = Array.isArray(m.epitaphs) ? m.epitaphs : [];
       m.daily = m.daily || { day: '', claimed: false };
       m.best = m.best || { age: 0, realm: 0, ascend: 0 };
       m.relics = Array.isArray(m.relics) ? m.relics : [];
       m.echoes = Array.isArray(m.echoes) ? m.echoes : [];
+      m.boons = m.boons && typeof m.boons === 'object' ? m.boons : {};
+      if (m.palette !== 'songyan' && m.palette !== 'lengjin' && m.palette !== 'yuqing') m.palette = '';
       m.lives = m.lives | 0;
+      if (!m.backfilled) {
+        backfill(m);
+        m.backfilled = 1;
+        grantBoons(m);
+        saveMeta(m);
+      } else if (grantBoons(m)) saveMeta(m);
       return m;
     } catch (e) { return emptyMeta(); }
   }
@@ -142,6 +161,7 @@ const Samsara = (() => {
     if (!s || !legacy) return [];
     const tags = [];
     s.flags = s.flags || {};
+    if (legacy.naihe) return applyNaihe(s, legacy, tags);
     s.flags.legacy = 1;
     const wxAdd = Math.min(2, legacy.wx | 0);
     if (wxAdd) {
@@ -277,7 +297,9 @@ const Samsara = (() => {
         key: (s.name || '') + '|' + (ending || '') + '|' + (s.age | 0),
         name: s.name || '无名', ending: ending || 'zuohua', realm: s.realm | 0, age: s.age | 0,
         mate: (s.karma && s.karma.mate && typeof NPCS !== 'undefined' && NPCS[s.karma.mate]) ? NPCS[s.karma.mate].name : '',
+        mateId: (s.karma && s.karma.mate) || '',
         foe: (s.karma && s.karma.foe && typeof NPCS !== 'undefined' && NPCS[s.karma.foe]) ? NPCS[s.karma.foe].name : '',
+        foeId: (s.karma && s.karma.foe) || '',
         sect: (s.sect && s.sect.org && typeof ORGS !== 'undefined' && ORGS[s.sect.org]) ? ORGS[s.sect.org].name : '',
         fabao: (s.fabao && s.fabao.name) || (s.eq && s.eq.weapon) || '',
         goal: (s.life && s.life.goal) || '',
@@ -285,10 +307,215 @@ const Samsara = (() => {
       if (!m.echoes.some(x => x && x.key === echo.key)) m.echoes.unshift(echo);
       if (m.echoes.length > 16) m.echoes.length = 16;
     }
+    harvest(m, s);
+    m.bridge = bridgeFrom(s, ending, m.lives | 0);
+    if ((m.lives | 0) > 0) m.guide = 1;
+    grantBoons(m);
     saveMeta(m);
-    const leg = buildLegacy(s, ending);
+    return { meta: m, legacy: null, epitaph: long, bridge: m.bridge };
+  }
+
+  function applyNaihe(s, legacy, tags) {
+    s.flags.legacy = 1;
+    s.flags.naihe = legacy.kind || 'none';
+    if (legacy.kind === 'mem') {
+      const add = Math.min(1, legacy.wx | 0);
+      if (add) {
+        s.wx = Math.max(1, Math.min(10, (s.wx | 0) + add));
+        tags.push({ t: '前世记忆 · 悟性 +1', c: 'up' });
+      }
+      if (legacy.el && ELS.indexOf(legacy.el) >= 0) {
+        s.flags.lgLean = legacy.el;
+        tags.push({ t: '灵根微偏 · ' + legacy.el, c: 'gold' });
+      }
+    } else if (legacy.kind === 'page' && legacy.page && typeof GONGFA !== 'undefined' && GONGFA[legacy.page] && s.gf !== legacy.page) {
+      const id = legacy.page;
+      if (!s.gfs[id]) s.gfs[id] = { lv: 1, xp: 0, broken: 1 };
+      else if (!s.gfs[id].lv) s.gfs[id] = { lv: 1, xp: 0, broken: 1 };
+      else s.gfs[id].broken = 1;
+      s.flags.brokenPage = id;
+      tags.push({ t: '残篇 · 《' + GONGFA[id].name + '》', c: 'gold' });
+    } else if (legacy.kind === 'bond' && legacy.bond && legacy.bond.id) {
+      s.flags.karmaCarry = {
+        role: legacy.bond.role || 'en',
+        id: legacy.bond.id,
+        name: legacy.bond.name || '',
+      };
+      const lab = legacy.bond.role === 'foe' ? '旧仇' : legacy.bond.role === 'mate' ? '旧侣' : '旧恩';
+      tags.push({ t: lab + ' · ' + (legacy.bond.name || '有人'), c: 'gold' });
+    }
+    return tags;
+  }
+
+  function bridgeFrom(s, ending, lives) {
+    const mem = { wx: 1, el: '' };
+    if (s && s.lg && s.lg.id !== 'wei' && s.lgEls && s.lgEls.length) {
+      for (let i = 0; i < s.lgEls.length; i++) if (ELS.indexOf(s.lgEls[i]) >= 0) { mem.el = s.lgEls[i]; break; }
+    }
+    let page = null;
+    if (s && s.gfs && typeof GONGFA !== 'undefined') {
+      const ids = Object.keys(s.gfs).filter(id => GONGFA[id]);
+      ids.sort((a, b) => (GONGFA[b].grade - GONGFA[a].grade) || ((s.gfs[b].lv | 0) - (s.gfs[a].lv | 0)));
+      let pickId = '';
+      for (let i = 0; i < ids.length; i++) if (ids[i] !== 'qingming') { pickId = ids[i]; break; }
+      if (pickId) page = { id: pickId, name: GONGFA[pickId].name, grade: GONGFA[pickId].grade | 0 };
+    }
+    let bond = null;
+    if (s && s.karma && s.karma.mate && typeof NPCS !== 'undefined' && NPCS[s.karma.mate]) {
+      bond = { role: 'mate', id: s.karma.mate, name: NPCS[s.karma.mate].name };
+    } else if (s && s.karma && s.karma.foe && typeof NPCS !== 'undefined' && NPCS[s.karma.foe]) {
+      bond = { role: 'foe', id: s.karma.foe, name: NPCS[s.karma.foe].name };
+    } else if (s && s.npc && typeof NPCS !== 'undefined') {
+      let best = '', bestA = 39;
+      for (const id in s.npc) {
+        const n = s.npc[id];
+        if (!n || !n.met || !NPCS[id] || n.dead) continue;
+        if ((n.a | 0) > bestA) { bestA = n.a | 0; best = id; }
+      }
+      if (best) bond = { role: 'en', id: best, name: NPCS[best].name };
+    }
+    return {
+      open: 1, name: (s && s.name) || '', ending: ending || '',
+      mem, page, bond, lives: lives | 0,
+    };
+  }
+
+  function bridgeOpen() {
+    const b = loadMeta().bridge;
+    return !!(b && b.open);
+  }
+  function chooseNaihe(kind) {
+    const m = loadMeta();
+    const b = m.bridge || {};
+    const leg = { v: 2, naihe: 1, kind: 'none' };
+    if (kind === 'mem') { leg.kind = 'mem'; leg.wx = 1; leg.el = (b.mem && b.mem.el) || ''; }
+    else if (kind === 'page' && b.page && b.page.id) { leg.kind = 'page'; leg.page = b.page.id; }
+    else if (kind === 'bond' && b.bond && b.bond.id) {
+      leg.kind = 'bond';
+      leg.bond = { role: b.bond.role || 'en', id: b.bond.id, name: b.bond.name || '' };
+    }
     writeLegacy(leg);
-    return { meta: m, legacy: leg, epitaph: long };
+    m.bridge = Object.assign({}, b, { open: 0, chosen: leg.kind });
+    saveMeta(m);
+    return leg;
+  }
+
+  function harvest(m, s) {
+    if (!m || !s) return;
+    m.atlas = m.atlas || emptyAtlas();
+    if (s.gfs && typeof GONGFA !== 'undefined') {
+      for (const id in s.gfs) if (GONGFA[id]) m.atlas.gongfa[id] = 1;
+    }
+    if (s.gf && typeof GONGFA !== 'undefined' && GONGFA[s.gf]) m.atlas.gongfa[s.gf] = 1;
+    if (typeof SHENQI_ZHI !== 'undefined') {
+      for (let i = 0; i < SHENQI_ZHI.length; i++) {
+        const z = SHENQI_ZHI[i];
+        if ((s.flags && s.flags[z.flag]) || (s.items && s.items[z.name]) || (s.eq && s.eq.weapon === z.name))
+          m.atlas.shenqi[z.name] = 1;
+      }
+    }
+    if (s.npc) {
+      for (const id in s.npc) if (s.npc[id] && s.npc[id].met) m.atlas.person[id] = 1;
+    }
+    if (s.karma) {
+      if (s.karma.mate) m.atlas.person[s.karma.mate] = 1;
+      if (s.karma.foe) m.atlas.person[s.karma.foe] = 1;
+    }
+    if (s.life && Array.isArray(s.life.people) && typeof NPCS !== 'undefined') {
+      const byName = {};
+      for (const id in NPCS) if (NPCS[id] && NPCS[id].name) byName[NPCS[id].name] = id;
+      s.life.people.forEach(p => { if (p && byName[p.name]) m.atlas.person[byName[p.name]] = 1; });
+    }
+    if (s.seen) {
+      const ids = {};
+      encounterCatalog().forEach(e => { ids[e.id] = 1; });
+      for (const id in s.seen) if (ids[id]) m.atlas.encounter[id] = 1;
+    }
+    if (s.path) {
+      if (s.path.daoji) m.atlas.daoji[s.path.daoji] = 1;
+      if (s.path.faxiang) m.atlas.faxiang[s.path.faxiang] = 1;
+      for (const id of (s.path.danwen || [])) m.atlas.danwen[id] = 1;
+    }
+  }
+
+  function absorbSave(m, d) {
+    if (!d || typeof d !== 'object') return false;
+    let fin = false;
+    if (d.dead || d.ascended || d.ending) fin = true;
+    if (d.ending) m.atlas.ending[d.ending] = m.atlas.ending[d.ending] || 1;
+    else if (d.ascended) m.atlas.ending.ascend = m.atlas.ending.ascend || 1;
+    harvest(m, d);
+    return fin;
+  }
+
+  function backfill(m) {
+    const seenFin = {};
+    let fin = 0;
+    function take(d) {
+      if (!absorbSave(m, d)) return;
+      const k = (d.name || '') + '|' + (d.ending || (d.ascended ? 'ascend' : '')) + '|' + (d.age | 0);
+      if (seenFin[k]) return;
+      seenFin[k] = 1;
+      fin++;
+    }
+    (m.epitaphs || []).forEach(ep => { if (ep && ep.ending) m.atlas.ending[ep.ending] = m.atlas.ending[ep.ending] || 1; });
+    try {
+      if (typeof localStorage === 'undefined' || !localStorage) return;
+      take(JSON.parse(localStorage.getItem('moxian.v1') || 'null'));
+      const box = JSON.parse(localStorage.getItem('moxian.slots') || 'null');
+      const slots = box && box.slots;
+      if (Array.isArray(slots)) slots.forEach(sl => take(sl && sl.data));
+    } catch (e) {}
+    if ((m.epitaphs || []).length > fin) fin = m.epitaphs.length;
+    if ((m.lives | 0) < fin) m.lives = fin;
+    if ((m.lives | 0) > 0) m.guide = 1;
+  }
+
+  function volumeStats(m) {
+    m = m || loadMeta();
+    const a = m.atlas || emptyAtlas();
+    const endingGot = END_IDS.filter(k => a.ending && a.ending[k]).length;
+    const gfIds = (typeof GONGFA !== 'undefined') ? Object.keys(GONGFA) : [];
+    const gfGot = gfIds.filter(id => a.gongfa && a.gongfa[id]).length;
+    const fb = (typeof SHENQI_ZHI !== 'undefined') ? SHENQI_ZHI : [];
+    const fbGot = fb.filter(z => a.shenqi && a.shenqi[z.name]).length;
+    const pGot = PERSON_IDS.filter(id => a.person && a.person[id]).length;
+    const enc = encounterCatalog();
+    const eGot = enc.filter(e => a.encounter && a.encounter[e.id]).length;
+    const pack = (got, max) => ({ got, max, done: max > 0 && got >= max });
+    return {
+      ending: pack(endingGot, END_IDS.length),
+      gongfa: pack(gfGot, gfIds.length),
+      fabao: pack(fbGot, fb.length),
+      person: pack(pGot, PERSON_IDS.length),
+      encounter: pack(eGot, enc.length),
+    };
+  }
+  function grantBoons(m) {
+    if (!m) return false;
+    m.boons = m.boons || {};
+    const st = volumeStats(m);
+    let changed = false;
+    ['ending', 'gongfa', 'fabao', 'person', 'encounter'].forEach(k => {
+      if (st[k].done && !m.boons[k]) { m.boons[k] = 1; changed = true; }
+    });
+    return changed;
+  }
+  function setPalette(id) {
+    const m = loadMeta();
+    const map = { songyan: 'gongfa', lengjin: 'fabao', yuqing: 'encounter' };
+    if (id && map[id] && m.boons && m.boons[map[id]]) m.palette = id;
+    else m.palette = '';
+    saveMeta(m);
+    return m.palette;
+  }
+  function noteGongfa(id) {
+    if (!id || typeof GONGFA === 'undefined' || !GONGFA[id]) return;
+    const m = loadMeta();
+    if (m.atlas.gongfa[id]) return;
+    m.atlas.gongfa[id] = 1;
+    grantBoons(m);
+    saveMeta(m);
   }
 
   /* ---------- 日缘 ---------- */
@@ -344,13 +571,21 @@ const Samsara = (() => {
 
   function isTrial(s) { return !!(s && s.flags && s.flags.trial); }
 
+  function plainTitle(e) {
+    if (!e || e.title == null) return '';
+    if (typeof e.title === 'string') return e.title;
+    // 个别奇遇的题随身份变。志上只记一个稳定的名字，不把函数印出来。
+    if (e.id === 'cangjing') return '藏经阁';
+    return '';
+  }
   function encounterCatalog() {
     if (typeof EVENTS === 'undefined') return [];
     const seen = {}, out = [];
     for (const e of EVENTS) {
-      if (!e || !e.once || !e.title || !e.id || e.mission || seen[e.id]) continue;
+      const title = plainTitle(e);
+      if (!e || !e.once || !title || !e.id || e.mission || seen[e.id]) continue;
       seen[e.id] = 1;
-      out.push({ id: e.id, title: e.title, seal: e.seal || '缘' });
+      out.push({ id: e.id, title, seal: e.seal || '缘' });
     }
     return out;
   }
@@ -384,7 +619,7 @@ const Samsara = (() => {
     };
   }
 
-  return {
+    return {
     META_KEY, LEGACY_KEY, loadMeta, saveMeta, emptyMeta,
     buildLegacy, writeLegacy, peekLegacy, consumeLegacy, applyLegacy,
     recordLife, epitaphLong, unlockAtlas,
@@ -392,5 +627,6 @@ const Samsara = (() => {
     dailyStatus, claimDaily, todayKey,
     trialSeed, isTrial, atlasStats,
     encounterCatalog, seeEncounter, markRelic,
+    END_IDS, PERSON_IDS, bridgeOpen, chooseNaihe, volumeStats, setPalette, noteGongfa, harvest,
   };
 })();
