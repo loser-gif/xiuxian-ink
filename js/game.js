@@ -99,7 +99,23 @@ function drawMountains(force, opt) {
   finish();
 }
 let wallpaperOn = false;
+function mountPaperField() {
+  const host = document.getElementById('paper'); if (!host || !Ink.paperField) return;
+  let cv = host.querySelector('canvas.xuan');
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.className = 'xuan'; cv.setAttribute('aria-hidden', 'true');
+    host.appendChild(cv);
+  }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = Math.max(host.clientWidth || 0, window.innerWidth || 0, 1);
+  const cssH = Math.max(host.clientHeight || 0, window.innerHeight || 0, 1);
+  const w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
+  if (cv.width === w && cv.height === h) return;
+  cv.width = w; cv.height = h;
+  try { Ink.paperField(cv); } catch (e) { console.warn(e); }
+}
 async function initVisuals() {
+  mountPaperField();
   root.style.setProperty('--brush-img', brushBtnImg(5, '#1b1814', 0.95));
   root.style.setProperty('--brush-img-light', brushBtnImg(12, '#1b1814', 0.14));
   root.style.setProperty('--brush-img-paper', brushBtnImg(19, '#f3ead6', 0.95));
@@ -153,11 +169,6 @@ function fiberTile() {
     c.quadraticCurveTo(x0 + len * 0.4, y + (Math.random() - 0.5) * 3, x0 + len, y + (Math.random() - 0.5) * 2);
     c.stroke();
   }
-  for (let i = 0; i < 40; i++) {
-    const x = Math.random() * s, y = Math.random() * s;
-    c.fillStyle = `rgba(90,70,40,${0.015 + Math.random() * 0.03})`;
-    c.beginPath(); c.ellipse(x, y, 8 + Math.random() * 18, 3 + Math.random() * 6, Math.random() * 0.4, 0, 7); c.fill();
-  }
   return cv.toDataURL();
 }
 let resizeT;
@@ -173,6 +184,7 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeT);
   resizeT = setTimeout(() => {
     drawMountains(false);
+    mountPaperField();
     if (wallpaperOn && typeof Wallpaper !== 'undefined' && Wallpaper.rebuild) Wallpaper.rebuild();
   }, 250);
 });
