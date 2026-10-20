@@ -3460,11 +3460,17 @@ function mountSW() {
   }).catch(() => {});
   const btn = document.getElementById('sw-refresh-btn');
   if (btn) btn.onclick = () => {
+    try { save(); } catch (e) {}
     navigator.serviceWorker.getRegistration().then(reg => {
-      const w = reg && reg.waiting;
-      if (w) w.postMessage({ type: 'SKIP_WAITING' });
-      else location.reload();
-    });
+      const w = reg && (reg.waiting || reg.installing);
+      if (w && navigator.serviceWorker.controller) {
+        try { sessionStorage.setItem('mx-refresh', '1'); } catch (e) {}
+        try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e2) { location.reload(); }
+      } else {
+        try { sessionStorage.removeItem('mx-refresh'); } catch (e3) {}
+        location.reload();
+      }
+    }).catch(() => location.reload());
   };
 }
 mountSW();

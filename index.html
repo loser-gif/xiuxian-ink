@@ -132,12 +132,31 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   }
   navigator.serviceWorker.register('./sw.js?v=60').then(armWorker).catch(function () {});
   var reloading = false;
+  function playing() {
+    var screen = document.body && document.body.getAttribute('data-screen');
+    if (screen && screen !== 'title') return true;
+    try { if (window.__moxian && window.__moxian.S) return true; } catch (e) {}
+    return false;
+  }
+  function saveNow() {
+    try { if (window.__moxian && window.__moxian.save) window.__moxian.save(); } catch (e) {}
+  }
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (!had || reloading) return;
-    try {
-      if (sessionStorage.getItem('mx-heal') === EXPECT) return;
-      sessionStorage.setItem('mx-heal', EXPECT);
-    } catch (e) {}
+    try { if (sessionStorage.getItem('mx-heal') === EXPECT) return; } catch (e) {}
+    var asked = false;
+    try { asked = sessionStorage.getItem('mx-refresh') === '1'; } catch (e2) {}
+    // 卷首没有对局，可以直接换成新版。对局里只亮提示，等玩家自己点。
+    if (playing() && !asked) {
+      var bar = document.getElementById('sw-refresh');
+      if (bar) bar.hidden = false;
+      return;
+    }
+    if (asked) {
+      saveNow();
+      try { sessionStorage.removeItem('mx-refresh'); } catch (e3) {}
+    }
+    try { sessionStorage.setItem('mx-heal', EXPECT); } catch (e4) {}
     reloading = true;
     location.reload();
   });
