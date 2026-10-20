@@ -845,7 +845,7 @@ const FX = (() => {
       nameEl.style.margin = '0 auto';
       nameEl.style.width = 'max-content';
       nameEl.style.zIndex = '5';
-      nameEl.style.color = '#1b1814';
+      nameEl.style.color = '#1e1a16';
       nameEl.style.textShadow = 'none';
     }
     const xA = W * (narrow ? 0.086 : 0.11);
@@ -858,22 +858,32 @@ const FX = (() => {
     const p3 = [xB, cy - lift * 0.15];
     const limitT = broken ? 0.66 : 1;
     const maxHalf = H * (narrow ? 0.042 : 0.068);
-    const nBrist = thin ? 18 : (narrow ? 24 : 28);
+    const nBrist = thin ? 22 : (narrow ? 36 : 46);
     const bristles = [];
     for (let i = 0; i < nBrist; i++) {
-      const g = (i + 0.5) / nBrist;
-      const o = (g - 0.5) * 2;
-      const extra = Math.pow(brushHash(i + 4), 1.15) * 0.42 - Math.abs(o) * 0.05;
-      let life = Math.max(0.56, 0.57 + extra);
-      if (brushHash(i + 21) > 0.78 && Math.abs(o) < 0.5) life = 1;
+      const o = ((i + 0.5) / nBrist - 0.5) * 2;
+      const edge = Math.abs(o);
+      let life = 0.45 + brushHash(i + 4) * 0.55;
+      if (edge > 0.8) life = 0.45 + brushHash(i + 6) * 0.3;
+      if (broken) life = Math.min(life, 0.62 + brushHash(i + 8) * 0.2);
+      const tone = brushHash(i + 12);
       bristles.push({
         i,
         o,
-        life: Math.min(limitT, life * (broken ? 0.82 : 1)),
+        bias: (brushHash(i + 3) - 0.5) * 0.035,
+        life,
         phase: brushHash(i + 9) * 6.28,
-        freq: 1.4 + brushHash(i + 2) * 1.8,
-        ink: 0.72 + brushHash(i + 12) * 0.28,
+        freq: 1.05 + brushHash(i + 2) * 1.5,
+        tone,
+        color: inkTone(tone),
       });
+    }
+    function inkTone(h) {
+      const t = h * 0.42;
+      const r = Math.round(0x1e + (0x5c - 0x1e) * t);
+      const g = Math.round(0x1a + (0x50 - 0x1a) * t);
+      const b = Math.round(0x16 + (0x44 - 0x16) * t);
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
     }
     const bez = (t, a, b, c0, d) => {
       const u = 1 - t;
@@ -893,19 +903,29 @@ const FX = (() => {
       return { x, y, tx: dx, ty: dy, nx: -dy, ny: dx };
     };
     const envelope = tn => {
-      let w = 0.94 + 0.06 * Math.exp(-Math.pow((tn - 0.30) / 0.2, 2));
-      if (tn < 0.1) {
-        const u = tn / 0.1;
-        const bulb = 0.98 + 0.08 * Math.sin(u * Math.PI);
-        w = bulb * (1 - u) + w * u;
-      }
-      if (tn > 0.55) {
-        const u = (tn - 0.55) / 0.45;
-        w *= Math.max(0.46, 1 - u * 0.62);
+      const peakAt = 0.27;
+      const head = 0.84;
+      const tail = 0.36;
+      let w;
+      if (tn < peakAt) {
+        const u = tn / peakAt;
+        const s = u * u * (3 - 2 * u);
+        w = head + (1 - head) * s;
+      } else {
+        const u = (tn - peakAt) / (1 - peakAt);
+        const s = u * u * (3 - 2 * u);
+        w = 1 + (tail - 1) * s;
       }
       return maxHalf * w;
     };
-    const Rcap = maxHalf * 1.02;
+    const coverage = (tn, life) => {
+      if (tn >= life) return 0;
+      const start = Math.max(0.42, life - 0.22);
+      if (tn <= start) return 1;
+      const u = (tn - start) / Math.max(0.04, life - start);
+      const s = u * u * (3 - 2 * u);
+      return 1 - s;
+    };
     const paintSeal = k => {
       if (broken || !seal || k < 0.82) return;
       const tip = sample(Math.min(limitT, 0.93));
@@ -933,55 +953,75 @@ const FX = (() => {
       c.restore();
     };
     const spanPx = Math.max(1, xB - xA);
-    const steps = Math.max(40, Math.round(spanPx / (thin ? 8 : (narrow ? 5 : 6))));
+    const steps = Math.max(48, Math.round(spanPx / (thin ? 7 : 4)));
+    const S = thin ? 1 : 2;
+    const off = document.createElement('canvas');
+    off.width = Math.max(2, Math.round(W * S));
+    off.height = Math.max(2, Math.round(H * S));
+    const g = off.getContext('2d');
     const place = (b, tn) => {
       const t = Math.max(0, Math.min(limitT, tn * limitT));
       const p = sample(t);
       const env = envelope(tn);
-      const sideAmp = env;
-      const wander = Math.sin(tn * b.freq + b.phase) * sideAmp * (tn < 0.55 ? 0.008 : 0.05);
-      const fan = b.o * sideAmp * (tn < 0.12 ? 0.05 * (1 - tn / 0.12) : 0);
-      const side = b.o * sideAmp + wander + fan;
-      const lagK = tn < 0.14 ? Math.pow(1 - tn / 0.14, 1.15) : 0;
-      const lag = Rcap * (1 - Math.sqrt(Math.max(0, 1 - Math.min(1, b.o * b.o)))) * lagK;
-      const spacing = Math.max(0.8, (2 * sideAmp) / nBrist);
-      let rad;
-      if (tn < 0.55) rad = spacing * 2.55;
-      else {
-        const u = (tn - 0.55) / 0.45;
-        const mul = Math.max(0.2, 2.55 * Math.pow(Math.max(0, 1 - u), 2.8));
-        rad = Math.max(narrow ? 1.05 : 1.45, spacing * mul);
+      const ink = coverage(tn, b.life);
+      const wander = Math.sin(tn * b.freq + b.phase) * env * (0.012 + 0.045 * (1 - ink));
+      const side = (b.o + b.bias) * env + wander;
+      const lagT = 0.18;
+      let lag = 0;
+      if (tn < lagT) {
+        const u = tn / lagT;
+        const s = u * u * (3 - 2 * u);
+        const arc = 1 - Math.sqrt(Math.max(0, 1 - Math.min(1, b.o * b.o)));
+        lag = envelope(0) * arc * (1 - s);
       }
-      if (tn < 0.09) rad *= 1.18;
-      if (tn > b.life - 0.04) rad *= 0.45 + 0.55 * Math.max(0, (b.life - tn) / 0.04);
+      const spacing = Math.max(0.75, (2 * env) / nBrist);
+      const rad = spacing * 1.22 * (0.7 + 0.3 * ink);
+      const alpha = ink * (0.84 + 0.12 * (1 - b.tone));
       return {
         x: p.x + p.tx * lag + p.nx * side,
         y: p.y + p.ty * lag + p.ny * side,
-        nx: p.nx, ny: p.ny, rad, tn,
+        nx: p.nx, ny: p.ny, rad, alpha, tn,
       };
     };
     const build = (b, reach) => {
-      const maxTn = Math.min(1, reach / limitT, b.life / limitT);
+      const maxTn = Math.min(1, reach / limitT, b.life);
       const pts = [];
       if (maxTn <= 0) return pts;
       const count = Math.max(2, Math.round(steps * maxTn));
       for (let i = 0; i <= count; i++) {
-        const tParam = i / steps;
-        if (tParam > maxTn + 1e-5) break;
-        pts.push(place(b, tParam));
+        const tn = i / steps;
+        if (tn > maxTn + 1e-5) break;
+        const pt = place(b, tn);
+        pts.push(pt);
+        if (pt.alpha <= 0.02) break;
       }
       return pts;
     };
-    const fillRibbon = (pts, radScale, alpha) => {
+    const fillRibbon = (ctx, pts, radScale, alpha, color) => {
       const L = pts.length;
-      if (L < 2 || alpha <= 0.01) return;
-      c.beginPath();
-      c.moveTo(pts[0].x + pts[0].nx * pts[0].rad * radScale, pts[0].y + pts[0].ny * pts[0].rad * radScale);
-      for (let i = 1; i < L; i++) c.lineTo(pts[i].x + pts[i].nx * pts[i].rad * radScale, pts[i].y + pts[i].ny * pts[i].rad * radScale);
-      for (let i = L - 1; i >= 0; i--) c.lineTo(pts[i].x - pts[i].nx * pts[i].rad * radScale, pts[i].y - pts[i].ny * pts[i].rad * radScale);
-      c.closePath();
-      c.globalAlpha = alpha;
-      c.fill();
+      if (L < 2 || alpha <= 0.012) return;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x + pts[0].nx * pts[0].rad * radScale, pts[0].y + pts[0].ny * pts[0].rad * radScale);
+      for (let i = 1; i < L; i++) ctx.lineTo(pts[i].x + pts[i].nx * pts[i].rad * radScale, pts[i].y + pts[i].ny * pts[i].rad * radScale);
+      for (let i = L - 1; i >= 0; i--) ctx.lineTo(pts[i].x - pts[i].nx * pts[i].rad * radScale, pts[i].y - pts[i].ny * pts[i].rad * radScale);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.fill();
+    };
+    const drawVarying = (ctx, pts, color, radScale, alphaScale) => {
+      let i = 0;
+      while (i < pts.length - 1) {
+        let j = Math.min(pts.length - 1, i + 1);
+        const a0 = pts[i].alpha;
+        while (j < pts.length - 1 && Math.abs(pts[j].alpha - a0) < 0.07) j++;
+        const seg = pts.slice(i, j + 1);
+        let a = 0;
+        for (let k = 0; k < seg.length; k++) a += seg[k].alpha;
+        fillRibbon(ctx, seg, radScale, (a / seg.length) * alphaScale, color);
+        if (j <= i) break;
+        i = j;
+      }
     };
     const paint = k => {
       const reach = Math.min(limitT, Math.max(0, k));
@@ -990,80 +1030,34 @@ const FX = (() => {
       c.globalCompositeOperation = 'source-over';
       c.filter = 'none';
       if (reach <= 0) return;
+      g.setTransform(S, 0, 0, S, 0, 0);
+      g.clearRect(0, 0, W, H);
+      g.globalCompositeOperation = 'source-over';
       const ribbons = [];
       for (let i = 0; i < bristles.length; i++) {
         const pts = build(bristles[i], reach);
-        if (pts.length > 1) ribbons.push(pts);
+        if (pts.length > 1) ribbons.push({ pts, b: bristles[i] });
       }
-      const capPts = [];
-      for (let i = 0; i < bristles.length; i++) capPts.push(place(bristles[i], 0));
-      const pool = sample(Math.min(limitT, 0.045));
-      const capOut = (pt, extra) => {
-        const cx = pool.x, cy0 = pool.y;
-        let vx = pt.x - cx, vy = pt.y - cy0;
-        const len = Math.hypot(vx, vy) || 1;
-        return { x: pt.x + (vx / len) * extra, y: pt.y + (vy / len) * extra };
-      };
-      c.fillStyle = 'rgba(148,114,78,1)';
-      c.beginPath();
-      const h0 = capOut(capPts[0], 3.2);
-      c.moveTo(h0.x, h0.y);
-      for (let i = 1; i < capPts.length; i++) {
-        const h = capOut(capPts[i], 3.2);
-        c.lineTo(h.x, h.y);
-      }
-      c.lineTo(pool.x + Rcap * 0.2, pool.y);
-      c.closePath();
-      c.globalAlpha = reach > 0.02 ? 0.18 : 0.18 * (reach / 0.02);
-      c.fill();
       for (let r = 0; r < ribbons.length; r++) {
+        const pts = ribbons[r].pts;
         const wet = [];
-        for (let i = 0; i < ribbons[r].length; i++) if (ribbons[r][i].tn < 0.62) wet.push(ribbons[r][i]);
-        if (wet.length > 1) fillRibbon(wet, 1.42, 0.11);
+        for (let i = 0; i < pts.length; i++) if (pts[i].alpha > 0.55) wet.push(pts[i]);
+        if (wet.length > 1) drawVarying(g, wet, 'rgb(146,112,78)', 1.45, 0.16);
       }
-      c.fillStyle = '#1b1814';
-      c.beginPath();
-      c.moveTo(capPts[0].x, capPts[0].y);
-      for (let i = 1; i < capPts.length; i++) c.lineTo(capPts[i].x, capPts[i].y);
-      c.lineTo(pool.x, pool.y);
-      c.closePath();
-      c.globalAlpha = Math.min(1, reach / 0.03);
-      c.fill();
       for (let r = 0; r < ribbons.length; r++) {
-        const pts = ribbons[r];
-        let cut = -1;
-        for (let i = 0; i < pts.length; i++) if (pts[i].tn >= 0.55) { cut = i; break; }
-        if (cut !== 0) {
-          const wet = cut < 0 ? pts : pts.slice(0, cut + 1);
-          if (wet.length > 1) fillRibbon(wet, 1, Math.min(1, 0.9 + 0.1 * bristles[r].ink));
-        }
-        if (cut > 0) {
-          const dry = pts.slice(cut - 1);
-          const n = dry.length;
-          const parts = 4;
-          for (let s = 0; s < parts; s++) {
-            const a = Math.floor(s * (n - 1) / parts);
-            const b = Math.floor((s + 1) * (n - 1) / parts);
-            if (b <= a) continue;
-            const seg = dry.slice(a, b + 1);
-            const u = Math.min(1, Math.max(0, (seg[seg.length - 1].tn - 0.55) / 0.45));
-            fillRibbon(seg, 1, 0.86 - u * 0.22);
-          }
-        }
+        const pts = ribbons[r].pts;
+        const b = ribbons[r].b;
+        g.fillStyle = b.color;
+        g.globalAlpha = Math.min(1, pts[0].alpha);
+        g.beginPath();
+        g.arc(pts[0].x, pts[0].y, Math.max(0.6, pts[0].rad), 0, 6.2832);
+        g.fill();
+        drawVarying(g, pts, b.color, 1, 1);
       }
-      c.fillStyle = '#3c3128';
-      for (let r = 0; r < ribbons.length; r += 3) {
-        const wet = [];
-        for (let i = 0; i < ribbons[r].length; i++) if (ribbons[r][i].tn < 0.55) wet.push(ribbons[r][i]);
-        if (wet.length > 1) fillRibbon(wet, 0.42, 0.34);
-      }
-      c.fillStyle = '#100e0c';
-      for (let r = 1; r < ribbons.length; r += 4) {
-        const wet = [];
-        for (let i = 0; i < ribbons[r].length; i++) if (ribbons[r][i].tn < 0.5) wet.push(ribbons[r][i]);
-        if (wet.length > 1) fillRibbon(wet, 0.32, 0.42);
-      }
+      c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = 'high';
       c.globalAlpha = 1;
+      c.drawImage(off, 0, 0, off.width, off.height, 0, 0, W, H);
       paintSeal(k);
     };
     const t0 = performance.now();
