@@ -258,8 +258,8 @@ const Samsara = (() => {
     }
     if (s.events) lines.push(`奇遇 ${typeof cn === 'function' ? cn(s.events) : s.events} 桩`);
     lines.push('');
-    const seal = {
-      ascend: '此世已毕，可开下一世。',
+    const seals = {
+      ascend: '',
       zuohua: '山风过石门，案上笔未干。',
       rumo: '墨落成血，不可复洗。',
       guiyin: '空船自横，钓丝无饵。',
@@ -270,8 +270,9 @@ const Samsara = (() => {
       huashen: '祠前无门，风替人点头。',
       zhenmo: '裂口合拢，剑作镇纸。',
       chuanshuo: '册子无名，句子还在。',
-    }[ending] || '青石一方，记此一念。';
-    lines.push(seal);
+    };
+    const seal = Object.prototype.hasOwnProperty.call(seals, ending) ? seals[ending] : '青石一方，记此一念。';
+    if (seal) lines.push(seal);
     return lines.filter((x, i, a) => x !== '' || (a[i - 1] !== '')).join('\n');
   }
 

@@ -510,7 +510,7 @@ const Life = (() => {
       thread = `来世若在江上看见空船，不必上，看一眼就好。`;
     } else if (kind === 'ascend') {
       const rec = lifeRecall(s);
-      text = `${name}于${age}岁飞升。此世已毕，可开下一世。` + (rec.length ? rec.join('。') + '。' : '云下很安静。');
+      text = `${name}于${age}岁飞升。` + (rec.length ? rec.join('。') + '。' : '云下很安静。');
       thread = g ? `来世不必再求「${g}」。若还记得，就当是风。` : `来世若还想飞，先记得自己曾经低头看过人间。`;
     } else if (kind === 'renhuang') {
       text = `登基那日，${name}在诏书空白处写了很小的一行，写的是${who}，又涂掉了。史官没有看见。`;

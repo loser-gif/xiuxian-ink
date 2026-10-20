@@ -2981,10 +2981,11 @@ function showEnd(kind) {
     if (S.events) lines.push(`奇遇 ${cn(S.events)} 桩`);
     lines.push(`悟性 ${cn(S.wx)}　心境 ${xinjingWord(S.xj)}`);
     const archived = (typeof Samsara !== 'undefined' && Samsara.epitaphLong) ? Samsara.epitaphLong(S, kind, '') : '';
-    const seal = String(archived || '').trim().split('\n').filter(Boolean).pop() || '青石一方，记此一念。';
+    const last = String(archived || '').trim().split('\n').filter(Boolean).pop() || '';
+    const seal = kind === 'ascend' ? '' : (last || '青石一方，记此一念。');
     const shown = epitaph + judgeBits.join('');
     const body = lines.filter(t => t && shown.indexOf(t) < 0);
-    const bio = body.concat(['', seal]).join('\n');
+    const bio = body.concat(seal ? ['', seal] : []).join('\n');
     longEl.textContent = bio;
     longEl.hidden = !bio.trim();
   }
