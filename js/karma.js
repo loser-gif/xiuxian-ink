@@ -49,6 +49,43 @@ const KARMA_HINT = {
   court_grace: '京畿百姓唱起一支无名小调，调子里有你当年开仓的影子。',
   xiang_fan: '识海中法相忽然不稳，像一面镜子裂了纹。',
 };
+const KARMA_NAME = {
+  su_vow: '灯约', su_aid: '道侣之约', lu_foe: '同辈剑意', wen_foe: '折扇旧怨',
+  hei_echo: '夜路血煞', tu_return: '弟子归来', court_echo: '朝案', court_grace: '开仓', xiang_fan: '法相',
+};
+const DEED_HINT = {
+  ahe: '崖边', shengu: '伤药', qingzhen: '镇疫', zhouwan: '茶债', fox: '伤狐',
+  linzhao: '碎壶', beggar: '一口饭', qiuniang: '渡口', zhaoheng: '路费', aman: '猎户',
+};
+function karmaTraces(s) {
+  if (!s) return [];
+  const months = s.months | 0;
+  const rows = [];
+  const deeds = (s.life && s.life.deeds) || [];
+  for (const d of deeds) {
+    const st = d.done ? '已了' : (months >= (d.due | 0) ? '将至' : '伏笔');
+    rows.push({ st, name: d.who || '旧事', hint: DEED_HINT[d.id] || '回响' });
+  }
+  const seeds = (s.karma && s.karma.seeds) || [];
+  const seen = {};
+  for (const k of seeds) {
+    seen[k.id] = 1;
+    const done = s.flags && s.flags['karma_done_' + k.id];
+    const st = done ? '已了' : (months >= (k.due | 0) ? '将至' : '伏笔');
+    rows.push({ st, name: KARMA_NAME[k.id] || '因果', hint: '因果' });
+  }
+  if (s.flags) {
+    Object.keys(KARMA_NAME).forEach(id => {
+      if (seen[id] || !s.flags['karma_done_' + id]) return;
+      rows.push({ st: '已了', name: KARMA_NAME[id], hint: '因果' });
+    });
+  }
+  const rank = { '将至': 0, '伏笔': 1, '已了': 2 };
+  rows.sort((a, b) => rank[a.st] - rank[b.st]);
+  const open = rows.filter(r => r.st !== '已了');
+  const done = rows.filter(r => r.st === '已了').slice(0, 2);
+  return open.concat(done).slice(0, 6);
+}
 function karmaTick(s, emit) {
   if (!s.karma || !(s.karma.seeds || []).length) return;
   for (const k of s.karma.seeds) {

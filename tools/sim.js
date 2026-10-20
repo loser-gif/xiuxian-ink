@@ -91,7 +91,11 @@ function play(rootId, strat, opt = {}) {
       const pill = s.items[REALMS[s.realm].pill] > 0, p = Core.btChance(s, pill);
       const left = s.lifespan - s.age;
       if (pill || p >= 0.5 || idle >= 3 || left < REALMS[s.realm].T * 6) {
+        if ((s.realm | 0) === 4 && !(s.path && s.path.jiewen)) {
+          Core.choosePath(s, 'jiewen', pathPick('jiewen'), noop); sec += 8;
+        }
         const before = s.realm; const res = Core.resolveBreak(s, pill, noop); sec += SEC.break; n.break++; idle = 0;
+        if (res.ok && res.pendingAscend && !res.needPath) Core.finishAscend(s, noop);
         if (res.ok && res.needPath) {
           const pick = res.needPath === 'danwen' ? pathPick('danwen', true) : pathPick(res.needPath);
           Core.choosePath(s, res.needPath, pick, noop);

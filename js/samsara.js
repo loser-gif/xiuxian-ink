@@ -258,8 +258,8 @@ const Samsara = (() => {
     }
     if (s.events) lines.push(`奇遇 ${typeof cn === 'function' ? cn(s.events) : s.events} 桩`);
     lines.push('');
-    const seal = {
-      ascend: '碑阴无字，只余松涛。',
+    const seals = {
+      ascend: '',
       zuohua: '山风过石门，案上笔未干。',
       rumo: '墨落成血，不可复洗。',
       guiyin: '空船自横，钓丝无饵。',
@@ -270,8 +270,9 @@ const Samsara = (() => {
       huashen: '祠前无门，风替人点头。',
       zhenmo: '裂口合拢，剑作镇纸。',
       chuanshuo: '册子无名，句子还在。',
-    }[ending] || '青石一方，记此一念。';
-    lines.push(seal);
+    };
+    const seal = Object.prototype.hasOwnProperty.call(seals, ending) ? seals[ending] : '青石一方，记此一念。';
+    if (seal) lines.push(seal);
     return lines.filter((x, i, a) => x !== '' || (a[i - 1] !== '')).join('\n');
   }
 
@@ -383,6 +384,12 @@ const Samsara = (() => {
   function bridgeOpen() {
     const b = loadMeta().bridge;
     return !!(b && b.open);
+  }
+  function dismissBridge() {
+    const m = loadMeta();
+    if (!m.bridge || !m.bridge.open) return;
+    m.bridge = Object.assign({}, m.bridge, { open: 0, chosen: 'ascend' });
+    saveMeta(m);
   }
   function chooseNaihe(kind) {
     const m = loadMeta();
@@ -627,6 +634,6 @@ const Samsara = (() => {
     dailyStatus, claimDaily, todayKey,
     trialSeed, isTrial, atlasStats,
     encounterCatalog, seeEncounter, markRelic,
-    END_IDS, PERSON_IDS, bridgeOpen, chooseNaihe, volumeStats, setPalette, noteGongfa, harvest,
+    END_IDS, PERSON_IDS, bridgeOpen, dismissBridge, chooseNaihe, volumeStats, setPalette, noteGongfa, harvest,
   };
 })();

@@ -794,9 +794,10 @@ const Core = (() => {
     if (ok) {
       const need = pathAtBreak(from);
       if (from === 4) {
-        // 渡劫成功：先定劫纹，再飞升（UI 选完后调用 finishAscend）
+        // 劫纹若已在落雷前选定，这一次的凶险已经算过，不必再开一次仪式
         sync(s);
-        return { ok, from, text: TEXT.btSuccess[from], needPath: need, pendingAscend: true };
+        const picked = s.path && s.path.jiewen;
+        return { ok, from, text: TEXT.btSuccess[from], needPath: picked ? null : need, pendingAscend: true };
       }
       s.realm++; s.stage = 0; s.fails = 0; s.inj = 0; s.bnLogged = false; s.xj = clamp(s.xj + 5 - btXj, 0, 100);
       const banked = s.xwBank || 0; s.xwBank = 0; s.xw = 0;
@@ -829,10 +830,9 @@ const Core = (() => {
     checkXj(s, emit);
     return { ok, from, text: fText + `休养${cnDur(r.T * 6)}，方能再试。`, ending: s.dead ? s.ending : null };
   }
-  function finishAscend(s, emit) {
+  function finishAscend(s) {
     if (s.ascended) return;
     s.ascended = true; s.ending = 'ascend'; sync(s);
-    if (emit) emit({ title: '飞升', text: TEXT.btSuccess[4], cls: 'gold', div: true });
   }
 
   function sectReward(s, emit) {
@@ -1181,11 +1181,11 @@ const Core = (() => {
     if (dr >= 2) p = 0.92;
     else if (dr === 1) p = 0.78;
     else p = clamp((+base || 0.5) + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
-    if (p >= 0.75) return '从容可胜';
-    if (p >= 0.58) return '胜机在握';
-    if (p >= 0.45) return '胜负五五';
-    if (p >= 0.3) return '出手宜慎';
-    return '多半不利';
+    if (p >= 0.75) return '胜算较高，仍可能负伤';
+    if (p >= 0.58) return '多半能胜，或有损耗';
+    if (p >= 0.45) return '胜负五五，或伤或损';
+    if (p >= 0.3) return '出手宜慎，易有损耗';
+    return '多半不利，恐伤及身';
   }
   function originJab(s) {
     const id = (s && s.origin) || 'qingshi';

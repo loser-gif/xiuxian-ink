@@ -449,6 +449,37 @@ const Jianghu = (() => {
     return { text, tags, ups: o.ups, months, how };
   }
   const mjAll = () => Object.keys(MIJING);
+  function mjOpenList(s) {
+    if (!s || !s.mj) return [];
+    const out = [];
+    for (const id of Object.keys(MIJING)) {
+      if (!mjOpen(s, id)) continue;
+      const st = s.mj[id];
+      const left = Math.max(0, (st.close | 0) - (s.months | 0));
+      const loc = LOC[MIJING[id].loc];
+      out.push({ id, name: MIJING[id].name, left, where: loc ? loc.name : '' });
+    }
+    return out;
+  }
+  function mjLapseWarn(s, span) {
+    if (!s || !s.mj) return '';
+    const windowM = span > 0 ? span : REALMS[s.realm].T * 10;
+    const lapsing = mjOpenList(s).filter(o => o.left > 0 && o.left <= windowM);
+    if (!lapsing.length) return '';
+    s.flags = s.flags || {};
+    const fresh = lapsing.filter(o => {
+      const key = 'mjwarn_' + o.id + '_' + ((s.mj[o.id] && s.mj[o.id].close) | 0);
+      if (s.flags[key]) return false;
+      s.flags[key] = 1;
+      return true;
+    });
+    if (!fresh.length) return '';
+    const bits = fresh.map(o => {
+      const where = o.where && o.where !== o.name ? `（${o.where}）` : '';
+      return `${o.name}${where}约${cnDur(o.left)}后闭合`;
+    });
+    return bits.join('，') + '。这一关若错过，入口会自己合上。';
+  }
 
   /* ---------- 新增 fx 与丹药 ---------- */
   function fx(s, f, tags) {
@@ -470,5 +501,5 @@ const Jianghu = (() => {
     aucOpen, aucNew, aucLot, aucRaise, aucPass, aucPlayConsign, lotName, consignList, consign,
     shopOpen, shopCost, shopBuy, shopPut, shopTake,
     libRecipes, buyRecipe, learnRecipe, hasHerbs, danChance, danMonths, craft, danNeed,
-    fxFrag, mjOpen, mjHere, mjEnter, mjNode, mjBase, mjResolve, mjLeave, mjAll, fx, useItem };
+    fxFrag, mjOpen, mjHere, mjEnter, mjNode, mjBase, mjResolve, mjLeave, mjAll, mjOpenList, mjLapseWarn, fx, useItem };
 })();
