@@ -848,8 +848,8 @@ const FX = (() => {
       nameEl.style.color = '#1b1814';
       nameEl.style.textShadow = 'none';
     }
-    const xA = W * (narrow ? 0.14 : 0.11);
-    const xB = W * (broken ? 0.58 : (narrow ? 0.86 : 0.87));
+    const xA = W * (narrow ? 0.086 : 0.11);
+    const xB = W * (broken ? 0.58 : (narrow ? 0.92 : 0.87));
     const cy = H * 0.5;
     const lift = H * (narrow ? 0.025 : 0.035);
     const p0 = [xA, cy];
@@ -858,20 +858,21 @@ const FX = (() => {
     const p3 = [xB, cy - lift * 0.15];
     const limitT = broken ? 0.66 : 1;
     const maxHalf = H * (narrow ? 0.042 : 0.068);
-    const nBrist = thin ? 24 : (narrow ? 36 : 46);
+    const nBrist = thin ? 18 : (narrow ? 24 : 28);
     const bristles = [];
     for (let i = 0; i < nBrist; i++) {
       const g = (i + 0.5) / nBrist;
       const o = (g - 0.5) * 2;
-      const edge = Math.abs(o);
+      const extra = Math.pow(brushHash(i + 4), 1.15) * 0.42 - Math.abs(o) * 0.05;
+      let life = Math.max(0.56, 0.57 + extra);
+      if (brushHash(i + 21) > 0.78 && Math.abs(o) < 0.5) life = 1;
       bristles.push({
+        i,
         o,
-        life: Math.min(limitT, (0.46 + brushHash(i + 4) * 0.54) * (edge > 0.72 ? 0.7 : 1) * (broken ? 0.7 : 1)),
+        life: Math.min(limitT, life * (broken ? 0.82 : 1)),
         phase: brushHash(i + 9) * 6.28,
-        freq: 1.2 + brushHash(i + 2) * 2.4,
-        rx: 2.4 + brushHash(i + 6) * 2.8,
-        ry: 0.7 + brushHash(i + 8) * 0.9,
-        ink: 0.55 + brushHash(i + 12) * 0.45,
+        freq: 1.4 + brushHash(i + 2) * 1.8,
+        ink: 0.72 + brushHash(i + 12) * 0.28,
       });
     }
     const bez = (t, a, b, c0, d) => {
@@ -891,14 +892,20 @@ const FX = (() => {
       dx /= len; dy /= len;
       return { x, y, tx: dx, ty: dy, nx: -dy, ny: dx };
     };
-    const pressure = t => {
-      const u = Math.min(1, t / 0.08);
-      const entry = Math.sin(u * Math.PI * 0.5);
-      const head = 0.16 + 0.84 * entry;
-      const belly = 0.76 + 0.24 * Math.exp(-Math.pow((t - 0.32) / 0.26, 2));
-      const liftP = t < 0.55 ? 1 : Math.max(0.16, Math.pow(Math.max(0, 1 - (t - 0.55) / 0.45), 1.05));
-      return head * belly * liftP;
+    const envelope = tn => {
+      let w = 0.94 + 0.06 * Math.exp(-Math.pow((tn - 0.30) / 0.2, 2));
+      if (tn < 0.1) {
+        const u = tn / 0.1;
+        const bulb = 0.98 + 0.08 * Math.sin(u * Math.PI);
+        w = bulb * (1 - u) + w * u;
+      }
+      if (tn > 0.55) {
+        const u = (tn - 0.55) / 0.45;
+        w *= Math.max(0.46, 1 - u * 0.62);
+      }
+      return maxHalf * w;
     };
+    const Rcap = maxHalf * 1.02;
     const paintSeal = k => {
       if (broken || !seal || k < 0.82) return;
       const tip = sample(Math.min(limitT, 0.93));
@@ -925,58 +932,137 @@ const FX = (() => {
       c.fillText(seal, 0, s * 0.04);
       c.restore();
     };
-    const dabSprite = (w, h, rx, ry, blur, color) => {
-      const cv2 = document.createElement('canvas');
-      cv2.width = w; cv2.height = h;
-      const g = cv2.getContext('2d');
-      g.filter = 'blur(' + blur + 'px)';
-      g.fillStyle = color;
-      g.beginPath();
-      g.ellipse(w / 2, h / 2, rx, ry, 0, 0, 6.2832);
-      g.fill();
-      return cv2;
+    const spanPx = Math.max(1, xB - xA);
+    const steps = Math.max(40, Math.round(spanPx / (thin ? 8 : (narrow ? 5 : 6))));
+    const place = (b, tn) => {
+      const t = Math.max(0, Math.min(limitT, tn * limitT));
+      const p = sample(t);
+      const env = envelope(tn);
+      const sideAmp = env;
+      const wander = Math.sin(tn * b.freq + b.phase) * sideAmp * (tn < 0.55 ? 0.008 : 0.05);
+      const fan = b.o * sideAmp * (tn < 0.12 ? 0.05 * (1 - tn / 0.12) : 0);
+      const side = b.o * sideAmp + wander + fan;
+      const lagK = tn < 0.14 ? Math.pow(1 - tn / 0.14, 1.15) : 0;
+      const lag = Rcap * (1 - Math.sqrt(Math.max(0, 1 - Math.min(1, b.o * b.o)))) * lagK;
+      const spacing = Math.max(0.8, (2 * sideAmp) / nBrist);
+      let rad;
+      if (tn < 0.55) rad = spacing * 2.55;
+      else {
+        const u = (tn - 0.55) / 0.45;
+        const mul = Math.max(0.2, 2.55 * Math.pow(Math.max(0, 1 - u), 2.8));
+        rad = Math.max(narrow ? 1.05 : 1.45, spacing * mul);
+      }
+      if (tn < 0.09) rad *= 1.18;
+      if (tn > b.life - 0.04) rad *= 0.45 + 0.55 * Math.max(0, (b.life - tn) / 0.04);
+      return {
+        x: p.x + p.tx * lag + p.nx * side,
+        y: p.y + p.ty * lag + p.ny * side,
+        nx: p.nx, ny: p.ny, rad, tn,
+      };
     };
-    const inkDab = dabSprite(16, 8, 5.2, 2.1, 0.8, 'rgba(27,24,20,0.95)');
-    const haloDab = dabSprite(22, 14, 7.2, 4.2, 1.1, 'rgba(150,118,82,0.55)');
+    const build = (b, reach) => {
+      const maxTn = Math.min(1, reach / limitT, b.life / limitT);
+      const pts = [];
+      if (maxTn <= 0) return pts;
+      const count = Math.max(2, Math.round(steps * maxTn));
+      for (let i = 0; i <= count; i++) {
+        const tParam = i / steps;
+        if (tParam > maxTn + 1e-5) break;
+        pts.push(place(b, tParam));
+      }
+      return pts;
+    };
+    const fillRibbon = (pts, radScale, alpha) => {
+      const L = pts.length;
+      if (L < 2 || alpha <= 0.01) return;
+      c.beginPath();
+      c.moveTo(pts[0].x + pts[0].nx * pts[0].rad * radScale, pts[0].y + pts[0].ny * pts[0].rad * radScale);
+      for (let i = 1; i < L; i++) c.lineTo(pts[i].x + pts[i].nx * pts[i].rad * radScale, pts[i].y + pts[i].ny * pts[i].rad * radScale);
+      for (let i = L - 1; i >= 0; i--) c.lineTo(pts[i].x - pts[i].nx * pts[i].rad * radScale, pts[i].y - pts[i].ny * pts[i].rad * radScale);
+      c.closePath();
+      c.globalAlpha = alpha;
+      c.fill();
+    };
     const paint = k => {
       const reach = Math.min(limitT, Math.max(0, k));
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.clearRect(0, 0, W, H);
       c.globalCompositeOperation = 'source-over';
       c.filter = 'none';
-      const span = Math.max(1, xB - xA);
-      const steps = Math.max(12, Math.round(span / (thin ? 9 : 5.5)));
-      const last = Math.max(0, Math.round(steps * (reach / limitT)));
-      for (let i = 0; i <= last; i++) {
-        const t = (i / steps) * limitT;
-        if (t > reach) break;
-        const pr = pressure(t / limitT);
-        const hw = maxHalf * pr;
-        const s = sample(t);
-        const ang = Math.atan2(s.ty, s.tx);
-        const cos = Math.cos(ang), sin = Math.sin(ang);
-        for (let bi = 0; bi < bristles.length; bi++) {
-          const b = bristles[bi];
-          if (t > b.life) continue;
-          const fade = t > b.life - 0.05 ? Math.max(0.45, (b.life - t) / 0.05) : 1;
-          const wander = Math.sin(t * b.freq + b.phase) * hw * 0.08;
-          const jit = (brushHash(bi + 1 + i * 0.37) - 0.5) * 2.2;
-          const side = b.o * hw + wander + jit;
-          const x = s.x + s.nx * side;
-          const y = s.y + s.ny * side;
-          const along = (b.rx * (0.9 + (1 - pr) * 0.85)) / 5.2;
-          const across = (b.ry * (0.85 + pr * 0.7)) / 2.1;
-          if (t < b.life * 0.7 && (bi % 3) === 0 && (i & 1) === 0) {
-            c.globalAlpha = 0.09 * fade;
-            c.setTransform(dpr * cos * along * 1.8, dpr * sin * along * 1.8, -dpr * sin * across * 1.7, dpr * cos * across * 1.7, dpr * x, dpr * y);
-            c.drawImage(haloDab, -11, -7);
+      if (reach <= 0) return;
+      const ribbons = [];
+      for (let i = 0; i < bristles.length; i++) {
+        const pts = build(bristles[i], reach);
+        if (pts.length > 1) ribbons.push(pts);
+      }
+      const capPts = [];
+      for (let i = 0; i < bristles.length; i++) capPts.push(place(bristles[i], 0));
+      const pool = sample(Math.min(limitT, 0.045));
+      const capOut = (pt, extra) => {
+        const cx = pool.x, cy0 = pool.y;
+        let vx = pt.x - cx, vy = pt.y - cy0;
+        const len = Math.hypot(vx, vy) || 1;
+        return { x: pt.x + (vx / len) * extra, y: pt.y + (vy / len) * extra };
+      };
+      c.fillStyle = 'rgba(148,114,78,1)';
+      c.beginPath();
+      const h0 = capOut(capPts[0], 3.2);
+      c.moveTo(h0.x, h0.y);
+      for (let i = 1; i < capPts.length; i++) {
+        const h = capOut(capPts[i], 3.2);
+        c.lineTo(h.x, h.y);
+      }
+      c.lineTo(pool.x + Rcap * 0.2, pool.y);
+      c.closePath();
+      c.globalAlpha = reach > 0.02 ? 0.18 : 0.18 * (reach / 0.02);
+      c.fill();
+      for (let r = 0; r < ribbons.length; r++) {
+        const wet = [];
+        for (let i = 0; i < ribbons[r].length; i++) if (ribbons[r][i].tn < 0.62) wet.push(ribbons[r][i]);
+        if (wet.length > 1) fillRibbon(wet, 1.42, 0.11);
+      }
+      c.fillStyle = '#1b1814';
+      c.beginPath();
+      c.moveTo(capPts[0].x, capPts[0].y);
+      for (let i = 1; i < capPts.length; i++) c.lineTo(capPts[i].x, capPts[i].y);
+      c.lineTo(pool.x, pool.y);
+      c.closePath();
+      c.globalAlpha = Math.min(1, reach / 0.03);
+      c.fill();
+      for (let r = 0; r < ribbons.length; r++) {
+        const pts = ribbons[r];
+        let cut = -1;
+        for (let i = 0; i < pts.length; i++) if (pts[i].tn >= 0.55) { cut = i; break; }
+        if (cut !== 0) {
+          const wet = cut < 0 ? pts : pts.slice(0, cut + 1);
+          if (wet.length > 1) fillRibbon(wet, 1, Math.min(1, 0.9 + 0.1 * bristles[r].ink));
+        }
+        if (cut > 0) {
+          const dry = pts.slice(cut - 1);
+          const n = dry.length;
+          const parts = 4;
+          for (let s = 0; s < parts; s++) {
+            const a = Math.floor(s * (n - 1) / parts);
+            const b = Math.floor((s + 1) * (n - 1) / parts);
+            if (b <= a) continue;
+            const seg = dry.slice(a, b + 1);
+            const u = Math.min(1, Math.max(0, (seg[seg.length - 1].tn - 0.55) / 0.45));
+            fillRibbon(seg, 1, 0.86 - u * 0.22);
           }
-          c.globalAlpha = (0.36 + 0.4 * b.ink) * fade;
-          c.setTransform(dpr * cos * along, dpr * sin * along, -dpr * sin * across, dpr * cos * across, dpr * x, dpr * y);
-          c.drawImage(inkDab, -8, -4);
         }
       }
-      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.fillStyle = '#3c3128';
+      for (let r = 0; r < ribbons.length; r += 3) {
+        const wet = [];
+        for (let i = 0; i < ribbons[r].length; i++) if (ribbons[r][i].tn < 0.55) wet.push(ribbons[r][i]);
+        if (wet.length > 1) fillRibbon(wet, 0.42, 0.34);
+      }
+      c.fillStyle = '#100e0c';
+      for (let r = 1; r < ribbons.length; r += 4) {
+        const wet = [];
+        for (let i = 0; i < ribbons[r].length; i++) if (ribbons[r][i].tn < 0.5) wet.push(ribbons[r][i]);
+        if (wet.length > 1) fillRibbon(wet, 0.32, 0.42);
+      }
       c.globalAlpha = 1;
       paintSeal(k);
     };
