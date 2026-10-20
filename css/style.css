@@ -3032,13 +3032,24 @@ html[data-motion="lite"] .choice.picked::after,html[data-fx="thin"] .choice.pick
 .modal-shade,
 .sheet-shade,
 .end{
-  background-color:#0c0a08 !important;
+  background-color:#3a2e24 !important;
+  background-image:none !important;
 }
+html[data-theme="night"] .bt-shade,
+html[data-theme="night"] .rite-shade,
+html[data-theme="night"] .duel-shade,
+html[data-theme="night"] .auc-shade,
+html[data-theme="night"] .path-cer-shade,
+html[data-theme="night"] .fb-cer-shade,
+html[data-theme="night"] .ask-shade,
+html[data-theme="night"] .scroll-shade,
 html[data-theme="night"] .modal-shade,
 html[data-theme="night"] .sheet-shade,
 html[data-theme="night"] .end{
-  background-color:#070605 !important;
+  background-color:#2a221c !important;
+  background-image:none !important;
 }
+.modal-shade{top:12px;right:12px;bottom:12px;left:12px}
 .path-cer-panel{background-color:#161310 !important}
 .hpaper,
 .sheet-panel,
@@ -3237,6 +3248,11 @@ html[data-theme="night"] .naihe{background-color:#070605}
 .codex-copy em{display:block;font-style:normal;margin-top:2px;font-size:13px;line-height:1.65;color:var(--ink3)}
 .codex-card.sil .codex-copy b{color:var(--ink4);letter-spacing:.22em}
 .sil-ink{display:block;width:46px;height:28px;border-radius:40% 46% 42% 48%;background:rgba(27,24,20,.16)}
+.sil-ink.sil-stele{width:14px;height:40px;border-radius:1px;background:rgba(27,24,20,.34)}
+.sil-ink.sil-book{width:30px;height:36px;border-radius:1px 5px 2px 1px;background:rgba(27,24,20,.22);box-shadow:inset 9px 0 0 rgba(27,24,20,.16)}
+.sil-ink.sil-qi{width:36px;height:12px;border-radius:40%;background:rgba(27,24,20,.28);transform:rotate(-16deg)}
+.sil-ink.sil-face{width:26px;height:32px;border-radius:46% 46% 40% 40%;background:rgba(27,24,20,.24)}
+.sil-ink.sil-door{width:24px;height:36px;border-radius:11px 11px 2px 2px;background:transparent;box-shadow:inset 0 0 0 3px rgba(27,24,20,.28)}
 html[data-palette="songyan"] #paper{filter:saturate(.86) contrast(1.03)}
 html[data-palette="lengjin"] #paper{filter:sepia(.14) saturate(1.05)}
 html[data-palette="yuqing"] #paper{filter:sepia(.06) hue-rotate(14deg) saturate(.9)}
@@ -3246,4 +3262,24 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 @media (max-width:380px){
   .codex-tab{font-size:14px;letter-spacing:.08em}
   .naihe-title{font-size:34px}
+}
+.loop-block{margin-top:16px;padding-top:12px;border-top:1px solid rgba(27,24,20,.12)}
+.loop-stat{font-family:var(--f-head);letter-spacing:.16em;margin:0 0 6px;color:var(--ink)}
+.loop-note,.loop-tut{font-size:13.5px;line-height:1.75;color:var(--ink2);margin:0 0 8px}
+.loop-actions{display:flex;flex-direction:column;gap:8px}
+.zhen-table{width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.55;margin:0 0 10px}
+.zhen-table th,.zhen-table td{border-bottom:1px solid rgba(27,24,20,.1);padding:4px 4px;text-align:left;vertical-align:top}
+.zhen-table th{font-weight:400;letter-spacing:.12em;color:var(--ink3)}
+.page-aside{display:none}
+.page-aside i{font-style:normal}
+@media (min-width:1000px) and (min-height:600px){
+  body[data-screen=main] .page-aside{
+    display:flex;position:fixed;z-index:3;top:18%;
+    flex-direction:column;align-items:center;gap:.2em;
+    font-size:12px;line-height:1.15;letter-spacing:.28em;color:var(--ink3);
+    pointer-events:none;
+  }
+  #margin-l{left:10px}
+  #margin-r{right:10px}
+  body[data-screen=main] #scenery .m1{left:-28%;width:156%}
 }

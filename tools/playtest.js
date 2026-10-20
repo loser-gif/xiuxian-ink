@@ -19,7 +19,7 @@ function boot() {
     TextEncoder, TextDecoder, Uint8Array, btoa, atob,
     localStorage: makeLS(),
   });
-  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'core', 'codec', 'samsara', 'jianghu', 'slots']) {
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'core', 'loops', 'codec', 'samsara', 'jianghu', 'slots']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
   }
   return ctx;
@@ -46,15 +46,18 @@ function root(id) {
   fresh.v = 10;
   delete fresh.marks;
   delete fresh.played;
+  delete fresh.loop;
   const raw = JSON.parse(JSON.stringify(fresh));
   const m = Core.migrate(raw);
-  if (!m || m.v !== 13) note('fail', 'v10 存档未能迁到 v13');
+  if (!m || m.v !== 14) note('fail', 'v10 存档未能迁到 v14');
   else {
     if (m.xw !== xw) note('fail', '迁移改动了修为 xw');
     if (!Array.isArray(m.marks)) note('fail', '迁移后缺少 marks');
     if (m.played !== Math.round(acts * 6500)) note('fail', '旧档游玩时长估算不对：' + m.played);
     if (!m.life || typeof m.life !== 'object' || m.life.goal != null) note('fail', '迁移后 life 缺省不对');
-    if (!findings.some(f => f.kind === 'fail')) note('ok', 'v10→v13：补 marks、played 与 life，修为未缩放');
+    if (!m.loop || m.loop.jian !== 0 || m.loop.ti !== 0 || m.loop.lu !== 0 || m.loop.mo !== 0) note('fail', '循环资源缺省不是 0');
+    if (!m.loop.fu || m.loop.fu.gui || m.loop.fu.jing || m.loop.fu.lu || m.loop.fu.xian) note('fail', '符箓不该在迁移里带出来');
+    if (!findings.some(f => f.kind === 'fail')) note('ok', 'v10→v14：补 marks、played、life 与 loop，修为未缩放');
   }
 }
 

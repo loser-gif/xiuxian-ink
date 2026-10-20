@@ -509,13 +509,42 @@ function makeJHUI(G) {
     if (typeof mountFoeSlip === 'function') mountFoeSlip($('#mj-text'));
     const dl = inkWrite($('#mj-text'), text, { immediate: true, step: 18 });
     const box = $('#mj-choices');
-    nd.choices(G.S).forEach((c, i) => {
+    let list = nd.choices(G.S);
+    const mjEv = { id: 'mj:' + nd.t, title: nd.t };
+    if (typeof Loop !== 'undefined' && Loop.dress) list = Loop.dress(list, mjEv, G.S);
+    list.forEach((c, i) => {
       const b = document.createElement('button'); b.className = 'choice';
       const short = c.ling && d.ling + c.ling < 0;
       b.disabled = !!c.disabled || short;
+      b._choice = c;
       b.style.animationDelay = (400 + dl * .5 + i * 110) + 'ms';
       b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = c.label; b.lastChild.textContent = short ? '灵力不足' : (typeof choiceSub === 'function' ? choiceSub(c, G.S) : (c.sub || ''));
-      b.onclick = () => mjChoose(c, b);
+      b.onclick = () => {
+        if (c.side && typeof Loop !== 'undefined') {
+          if (c.side === 'burn') {
+            const r = Loop.burn(G.S, c.burn);
+            b.disabled = true; b.classList.add('picked');
+            toast(r.text || '符烧了。事情按原来的走。');
+            save();
+            return;
+          }
+          if (c.side === 'xian') {
+            const r = Loop.reveal(G.S);
+            if (r.err) { toast(r.err); return; }
+            b.disabled = true; b.classList.add('picked');
+            box.querySelectorAll('.choice').forEach(x => {
+              if (!x._choice) return;
+              const small = x.querySelector('small');
+              if (small && typeof choiceSub === 'function') small.textContent = choiceSub(x._choice, G.S);
+            });
+            if (typeof mountFoeSlip === 'function') mountFoeSlip($('#mj-text'));
+            toast(r.text);
+            save();
+            return;
+          }
+        }
+        mjChoose(c, b);
+      };
       box.appendChild(b);
     });
   }

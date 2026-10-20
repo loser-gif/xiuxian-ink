@@ -4,11 +4,11 @@
 const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 function load() {
-  const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String });
-  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
-  return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, PATH_KIND, DAOJI })', ctx);
+  const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String, process });
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+  return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, PATH_KIND, DAOJI, Loop })', ctx);
 }
-const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE } = G;
+const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, Loop } = G;
 const JH = !process.env.NOJH;
 if (process.env.JK) Object.assign(Jianghu.K, JSON.parse(process.env.JK));
 if (process.env.K) Object.assign(Core.K, JSON.parse(process.env.K));
@@ -55,9 +55,7 @@ function play(rootId, strat, opt = {}) {
     // 定型补选（迁移存档）
     const pk = Core.pendingPath(s);
     if (pk) {
-      const tab = PATH_TABLE[pk], ids = Object.keys(tab);
-      const pick = pk === 'danwen' ? ids.slice(0, 1) : [ids[Math.floor(Math.random() * ids.length)]];
-      Core.choosePath(s, pk, pick, noop); sec += 8;
+      Core.choosePath(s, pk, pathPick(pk), noop); sec += 8;
     }
     // 物品
     for (const k of ['延寿果', '延寿丹', '回春丹', '聚气丹', '清心丹', '破障丹']) {
@@ -95,8 +93,7 @@ function play(rootId, strat, opt = {}) {
       if (pill || p >= 0.5 || idle >= 3 || left < REALMS[s.realm].T * 6) {
         const before = s.realm; const res = Core.resolveBreak(s, pill, noop); sec += SEC.break; n.break++; idle = 0;
         if (res.ok && res.needPath) {
-          const tab = PATH_TABLE[res.needPath], ids = Object.keys(tab);
-          const pick = res.needPath === 'danwen' ? ids.slice(0, 1 + (Math.random() < 0.45 ? 1 : 0)) : [ids[Math.floor(Math.random() * ids.length)]];
+          const pick = res.needPath === 'danwen' ? pathPick('danwen', true) : pathPick(res.needPath);
           Core.choosePath(s, res.needPath, pick, noop);
           if (res.pendingAscend) Core.finishAscend(s, noop);
         }
@@ -104,6 +101,7 @@ function play(rootId, strat, opt = {}) {
         continue;
       }
       idle++; // 去游历碰碰运气（找破境丹）
+      if (loopInstead(s)) { sec += 18; n.youli++; continue; }
       doYouli(s); sec += tsAdd('youli', SEC.youli); n.youli++; continue;
     }
     if (s.sect.org && !opt.noSect && Math.random() < mix.mission) {
@@ -113,6 +111,7 @@ function play(rootId, strat, opt = {}) {
     const r = Math.random();
     if (r < mix.biguan) { const o = Core.biguan(s, noop); Core.afterGain(s, o.ups, noop); sec += SEC.biguan; n.biguan++; }
     else if (r < mix.biguan + mix.tuna) { const o = Core.tuna(s, noop); Core.afterGain(s, o.ups, noop); sec += SEC.tuna; n.tuna++; }
+    else if (loopInstead(s)) { sec += 18; n.youli++; }
     else { doYouli(s); sec += tsAdd('youli', SEC.youli); n.youli++; }
   }
   if (process.env.TS) for (const k in n) tsAdd('n.' + k, n[k] * 60);
@@ -123,6 +122,37 @@ function takeManual(s, o) {
   const id = o.manual, offer = Core.manualOffer(s, id);
   if (offer && !offer.cap && (id === s.gf || (s.aux || []).includes(id) || Core.gfMatch(s, id) >= 1)) Core.studyManual(s, id);
   else Core.sellManual(s, id);
+}
+function pathPick(kind, rich) {
+  const tab = PATH_TABLE[kind], ids = Object.keys(tab);
+  const mode = process.env.LOOP || '';
+  if (kind === 'daoji' && mode && mode !== 'never' && mode !== 'always' && mode !== 'fu' && tab[mode]) return [mode];
+  if (kind === 'danwen') return ids.slice(0, rich && Math.random() < 0.45 ? 2 : 1);
+  return [ids[Math.floor(Math.random() * ids.length)]];
+}
+function loopInstead(s) {
+  const mode = process.env.LOOP || '';
+  if (!mode || mode === 'never' || !Loop || !Loop.simStep) return false;
+  const step = Loop.simStep(s);
+  if (!step) return false;
+  Core.checkXj(s);
+  return true;
+}
+function preferFu(s, ev, cs) {
+  const mode = process.env.LOOP || '';
+  if ((mode !== 'fu' && mode !== 'zhen' && mode !== 'always') || !Loop || !Loop.dress) return null;
+  const dressed = Loop.dress(cs.slice(), ev, s);
+  if (mode === 'fu') {
+    const see = dressed.find(c => c.side === 'xian');
+    if (see) Loop.reveal(s);
+    const good = dressed.find(c => c.act && !c.side && c.label && c.label.indexOf('贴') === 0);
+    if (good) return good;
+  }
+  if (mode === 'zhen' || mode === 'always') {
+    const extra = dressed.find(c => c.label === '走到坛前改阵' || c.label === '以阵镇脉');
+    if (extra) return extra;
+  }
+  return null;
 }
 function doYouli(s) {
   let ev;
@@ -138,7 +168,7 @@ function doYouli(s) {
   } else { Core.passTime(s, REALMS[s.realm].T * Core.K.youliMonths, noop); if (s.dead) return; ev = Core.pickEvent(s); }
   ev.text(s);
   const cs = ev.choices(s).filter(c => !c.disabled && !(c.sub || '').includes('此卷终'));
-  const c = cs[Math.floor(Math.random() * cs.length)];
+  const c = preferFu(s, ev, cs) || cs[Math.floor(Math.random() * cs.length)];
   const res = Core.resolveChoice(s, c); fightCheck(s, ev.id + '·' + c.label, res);
   const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); takeManual(s, o);
 }
@@ -151,7 +181,7 @@ function fightCheck(s, key, res) {
 }
 function doMission(s, uid) {
   const ev = Core.missionEvent(s, uid); ev.text(s); const cs = ev.choices(s);
-  const c = cs[Math.floor(Math.random() * cs.length)];
+  const c = preferFu(s, ev, cs) || cs[Math.floor(Math.random() * cs.length)];
   const res = Core.resolveChoice(s, c); fightCheck(s, ev.id + '·' + c.label, res);
   const o = Core.applyFx(s, res.fx || {}, noop); Core.afterGain(s, o.ups, noop); takeManual(s, o);
 }
@@ -225,7 +255,8 @@ function dive(s, id) {
     const d = s.dive;
     if ((d.hp < 40 && !nd.boss) || (nd.boss && d.hp < 45)) { const o = Jianghu.mjLeave(s, 'retreat', noop); Core.afterGain(s, o.ups, noop); break; }
     const cs = nd.choices(s).filter(c => !(c.ling && d.ling + c.ling < 0));
-    const c = cs.length ? cs[Math.floor(Math.random() * cs.length)] : nd.choices(s)[0];
+    const pool = cs.length ? cs : nd.choices(s);
+    const c = preferFu(s, { id: 'mj:' + nd.t, title: nd.t }, pool) || pool[Math.floor(Math.random() * pool.length)];
     let won;
     if (c.duelOpp) { const r = autoDuel(s, c.duelOpp(s)); won = r.won; sec += r.sec; }
     const res = Jianghu.mjResolve(s, c, won); sec += SEC.mjNode;

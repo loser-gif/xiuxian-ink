@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 13;
+  const SAVE_V = 14;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -305,7 +305,8 @@ const Core = (() => {
   function fabaoFeed(s, n, emit) {
     if (!s.fabao) return;
     let mul = 1;
-    if (s.path && s.path.daoji && typeof DAOJI !== 'undefined' && DAOJI[s.path.daoji] && DAOJI[s.path.daoji].fabao)
+    if (s.loop && s.loop.qiMute) mul = 1;
+    else if (s.path && s.path.daoji && typeof DAOJI !== 'undefined' && DAOJI[s.path.daoji] && DAOJI[s.path.daoji].fabao)
       mul = DAOJI[s.path.daoji].fabao;
     s.fabao.bond = (s.fabao.bond || 0) + Math.round(n * mul);
     if (!s.fabao.gfId && s.gf) s.fabao.gfId = s.gf;
@@ -391,6 +392,7 @@ const Core = (() => {
     const k = s.realm + ':' + s.lifeBonus;
     if (left <= span * 0.05 && !s.warned['95' + k] && left > 0) { s.warned['95' + k] = 1; emit && emit({ text: TEXT.old95, cls: 'warn' }); }
     else if (left <= span * 0.2 && !s.warned['80' + k] && left > 0) { s.warned['80' + k] = 1; emit && emit({ text: TEXT.old80, cls: 'warn' }); }
+    if (s.flags && s.flags.zhenCarve && s.loc === 'xuewu' && typeof Loop !== 'undefined' && Loop.arrive) Loop.arrive(s, emit);
     if (s.age >= s.lifespan && !s.dead) { s.dead = true; s.ending = 'zuohua'; }
     if (!s.dead) sectTick(s, emit);
     if (!s.dead && typeof Jianghu !== 'undefined') Jianghu.tick(s, emit);
@@ -404,9 +406,15 @@ const Core = (() => {
     if (s.buff) { m *= s.buff.mul; if (--s.buff.n <= 0) s.buff = null; }
     return m;
   }
+  function soakInj(s, n) {
+    if (!(n > 0)) return 0;
+    if (s.loop && s.loop.ti > 0) return Math.max(0, n - 1);
+    return n;
+  }
   // 心境：跌至谷底即走火入魔
   function checkXj(s, emit) {
     if (s.dead) return;
+    if (s.loop && s.loop.mo >= 3 && s.xj <= 12) { s.dead = true; s.ending = 'rumo'; return; }
     if (s.xj <= 0) { s.dead = true; s.ending = 'rumo'; return; }
     if (s.xj < 15 && !s.warned.xjLow) { s.warned.xjLow = 1; emit && emit({ text: TEXT.xjLow, cls: 'warn' }); }
     if (s.xj >= 25) s.warned.xjLow = 0;
@@ -418,7 +426,9 @@ const Core = (() => {
     s.xj = clamp(s.xj - loss, 0, 100); tags.push({ t: `心境 −${loss}`, c: 'down' });
     if (heavy && s.xj < K.moRiskXj && Math.random() < (K.moRiskXj - s.xj) * K.moRisk) {
       if (s.xj < 12) { s.dead = true; s.ending = 'rumo'; return 'rumo'; }
-      s.inj += 3; s.xw = Math.max(0, s.xw - Math.round(req(s) * 0.15)); s.xj = clamp(s.xj - 5, 0, 100);
+      const hit = soakInj(s, 3);
+      if (hit) s.inj += hit;
+      s.xw = Math.max(0, s.xw - Math.round(req(s) * 0.15)); s.xj = clamp(s.xj - 5, 0, 100);
       tags.push({ t: '走火', c: 'down' }, { t: '负伤', c: 'down' });
       return 'zouhuo';
     }
@@ -441,14 +451,39 @@ const Core = (() => {
   function biguan(s, emit) {
     const r = REALMS[s.realm], mul = gainMul(s), tags = [];
     const cfXm = typeof courtFriction === 'function' ? courtFriction(s).xinmo : 1;
-    const pXm = clamp(0.06 + (50 - s.xj) / 400, 0.02, 0.22) * gt(s, 'xinmo', 1) * cfXm;
+    const L = s.loop;
+    let pXm = clamp(0.06 + (50 - s.xj) / 400, 0.02, 0.22) * gt(s, 'xinmo', 1) * cfXm;
+    if (L && L.moHeart) pXm = 1;
     const pDw = clamp(0.08 + s.luck * 0.006 + (s.wx - 5) * 0.012 + gt(s, 'dunwu', 0), 0.03, 0.4);
-    const roll = Math.random(); let text = pick(TEXT.biguan).replace(/\{d\}/g, cnDur(r.T * K.biguanMonths)), cls = '', ups = [];
-    passTime(s, r.T * K.biguanMonths, emit);
+    const cfT = typeof courtFriction === 'function' ? courtFriction(s).time : 1;
+    const timeMul = (gt(s, 'time', 1) || 1) * cfT;
+    let span = r.T * K.biguanMonths;
+    let durLabel = cnDur(r.T * K.biguanMonths);
+    if (L && L.moCut) {
+      if (s.gf !== 'tianmo') {
+        const shown = Math.max(1, Math.round(span * 0.8 * timeMul));
+        span = shown / (timeMul || 1);
+        durLabel = cnDur(shown);
+      }
+      L.moCut = 0;
+    }
+    const roll = Math.random(); let text = pick(TEXT.biguan).replace(/\{d\}/g, durLabel), cls = '', ups = [];
+    passTime(s, span, emit);
+    const jingOk = !!(L && L.fu && L.fu.jing > 0 && s.months >= (L.fuJingAt || -99999) + 3);
     if (roll < pXm) {
-      text += pick(TEXT.xinmo); cls = 'warn';
-      addXw(s, -req(s) * 0.12, tags); s.inj += 2; tags.push({ t: '负伤', c: 'down' });
-      s.xj = clamp(s.xj - 6, 0, 100); tags.push({ t: '心境 −6', c: 'down' });
+      if (L) L.moHeart = 0;
+      if (jingOk) {
+        L.fu.jing--;
+        L.fuJingAt = s.months;
+        text += '静心符贴在眉心。心魔这一回没有进来，心境也没有因此回升。';
+      } else {
+        if (L && s.path && s.path.daoji === 'mo') L.moPing = 1;
+        text += pick(TEXT.xinmo); cls = 'warn';
+        addXw(s, -req(s) * 0.12, tags);
+        const hit = soakInj(s, 2);
+        if (hit) { s.inj += hit; tags.push({ t: '负伤', c: 'down' }); }
+        s.xj = clamp(s.xj - 6, 0, 100); tags.push({ t: '心境 −6', c: 'down' });
+      }
     } else {
       let g = unit(s) * K.biguanGain * (0.88 + Math.random() * 0.24) * mul * gfSpeed(s) * caveMul(s);
       if (roll > 1 - pDw) { g *= 1.6; text += pick(TEXT.dunwu); cls = 'gold'; if (Math.random() < 0.25 && s.wx < 10) { s.wx++; tags.push({ t: '悟性 +1', c: 'up' }); } }
@@ -569,7 +604,7 @@ const Core = (() => {
     if (fx.xj) { const b = s.xj; s.xj = clamp(s.xj + fx.xj, 0, 100); const d = s.xj - b; if (d) tags.push({ t: `心境 ${d > 0 ? '+' : '−'}${Math.abs(d)}`, c: d > 0 ? 'up' : 'down' }); }
     if (fx.wx) { const b = s.wx; s.wx = clamp(s.wx + fx.wx, 1, 10); if (s.wx !== b) tags.push({ t: `悟性 ${fx.wx > 0 ? '+' : '−'}${Math.abs(s.wx - b)}`, c: fx.wx > 0 ? 'up' : 'down' }); }
     if (fx.luck) s.luck = clamp(s.luck + fx.luck, -5, 10);
-    if (fx.inj) { s.inj += fx.inj; tags.push({ t: '负伤', c: 'down' }); }
+    if (fx.inj) { const v = soakInj(s, fx.inj); if (v) { s.inj += v; tags.push({ t: '负伤', c: 'down' }); } }
     if (fx.item) for (const [k, n] of Object.entries(fx.item)) {
       s.items[k] = Math.max(0, (s.items[k] || 0) + n); if (!s.items[k]) delete s.items[k];
       tags.push(n > 0 ? { t: `得${k}${n > 1 ? '×' + n : ''}`, c: 'up' } : { t: `失${k}`, c: 'down' });
@@ -711,6 +746,7 @@ const Core = (() => {
     } else if (kind === 'daoji') {
       const n = DAOJI[s.path.daoji].name;
       s.path.daoji = null;
+      if (typeof Loop !== 'undefined' && Loop.resetDaoji) Loop.resetDaoji(s);
       text = `你强行震碎丹田中的${n}虚影。经脉如遭雷劈，好在尚能重塑。道基一空，百年倾向尽散——此等代价，寻常修士不敢想。`;
       tags.unshift({ t: '道基已散', c: 'gold' });
       title = '易基';
@@ -743,12 +779,14 @@ const Core = (() => {
   function btChance(s, usePill) {
     const mem = (typeof Samsara !== 'undefined' && Samsara.daojiAffinity && s.path) ? Samsara.daojiAffinity(s, s.path.daoji) : 0;
     const scar = (typeof Life !== 'undefined' && Life.scarPen) ? Life.scarPen(s) : 0;
+    const moBt = (s.loop && s.loop.moBt) ? 0.03 : 0;
     return clamp(REALMS[s.realm].base + s.lg.bt + (s.xj - 50) / 250 + (usePill ? 0.2 : 0) + Math.min(0.12, s.fails * 0.04)
-      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt + mem - scar, 0.05, 0.95);
+      - (s.inj > 0 ? 0.15 : 0) + (s.btBuff || 0) + s.luck * 0.005 + gt(s, 'bt', 0) + (s.gf ? (gfLv(s) - 1) * 0.004 : 0) + npcHelp(s).bt + mem - scar + moBt, 0.05, 0.95);
   }
   // 返回 {ok, text, ending}；会直接改写 s；宗门赐法等追加日志走 emit
   function resolveBreak(s, usePill, emit) {
     const r = REALMS[s.realm], from = s.realm, p = btChance(s, usePill), ok = Math.random() < p;
+    if (s.loop && s.loop.moBt) s.loop.moBt = 0;
     if (usePill) { s.items[r.pill]--; if (s.items[r.pill] <= 0) delete s.items[r.pill]; }
     s.btBuff = 0;
     const btXj = gt(s, 'btXj', 0);
@@ -774,8 +812,11 @@ const Core = (() => {
     }
     // 高境界破境失败，可能身死道消；身怀兵解玉符者兵解转修
     let pd = K.btDeath[from] * (s.inj > 0 ? 1.3 : 1) * (1 - Math.min(0.4, Math.max(0, s.luck) * 0.04));
-    if (from === 4 && s.path && s.path.jiewen && typeof JIEWEN !== 'undefined' && JIEWEN[s.path.jiewen] && JIEWEN[s.path.jiewen].risk)
-      pd *= JIEWEN[s.path.jiewen].risk;
+    if (from === 4 && s.path && s.path.jiewen && typeof JIEWEN !== 'undefined' && JIEWEN[s.path.jiewen] && JIEWEN[s.path.jiewen].risk) {
+      let risk = JIEWEN[s.path.jiewen].risk;
+      if (s.path.jiewen === 'gang' && s.loop && s.loop.ti >= 6 && s.loop.tiAsk) risk = 1;
+      pd *= risk;
+    }
     if (Math.random() < pd) {
       s.dead = true;
       if (s.items['兵解玉符'] > 0) { s.items['兵解玉符']--; s.ending = 'bingjie'; return { ok, from, text: TEXT.bingjie, ending: 'bingjie' }; }
@@ -895,11 +936,16 @@ const Core = (() => {
   }
 
   /* ---------- 新卷 / 旧卷迁移 ---------- */
+  function emptyLoop() {
+    if (typeof Loop !== 'undefined' && Loop.empty) return Loop.empty();
+    return { tut: 0, jian: 0, jianAt: -99999, jianAsk: '', ti: 0, tiAt: -99999, tiAsk: 0, zhen: '', zhenAt: -99999, zhenBan: 0, zhenAsk: '', mo: 0, moAt: -99999, moQuiet: 0, moPing: 0, moCut: 0, moBt: 0, moHeart: 0, lu: 0, luBoom: 0, luAt: -99999, luAsk: '', qiMem: '', qiMute: 0, qiAsk: '', qiAt: -99999, fu: { gui: 0, jing: 0, lu: 0, xian: 0 }, fuKnown: 0, fuJingAt: -99999 };
+  }
   function newState(name, r, legacy) {
     const s = { v: SAVE_V, name, lg: { id: r.lg.id, name: r.lg.name, mult: r.lg.mult, bt: r.lg.bt, sect: r.lg.sect }, lgEls: r.els,
       wx: r.wx, xj: 50, luck: r.luck, ls: 20, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
+      loop: emptyLoop(),
       seen: {}, recent: [], acts: 0, ending: null, marks: [], played: 0,
       court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 },
       karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] },
@@ -1001,6 +1047,10 @@ const Core = (() => {
       s.v = 13;
       if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
     }
+    if (s.v === 13) {  // v13 → v14：道基循环与符箓。新字段缺省为 0，修为不换算
+      s.v = 14;
+      if (!s.loop) s.loop = emptyLoop();
+    }
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
@@ -1014,6 +1064,8 @@ const Core = (() => {
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
     if (typeof s.xwBank !== 'number') s.xwBank = 0;
     if (typeof Folio !== 'undefined' && Folio.ensure) Folio.ensure(s);
+    if (!s.loop) s.loop = emptyLoop();
+    if (typeof Loop !== 'undefined' && Loop.ensure) Loop.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;
     if (!(s.flags && s.flags.trial) && s.flags.lives == null && typeof Samsara !== 'undefined' && Samsara.loadMeta) {
       s.flags.lives = Samsara.loadMeta().lives | 0;
@@ -1472,7 +1524,12 @@ const Core = (() => {
   }
   function duelNew(s, opp) {
     const P = duelPower(s);
-    return { hp: [3, 3], qi: [1, 1], round: 0, P, Q: P * opp.q, opp, sword: isSword(s), over: null, next: null };
+    const d = { hp: [3, 3], qi: [1, 1], round: 0, P, Q: P * opp.q, opp, sword: isSword(s), over: null, next: null, zhenOpen: 0, zhenLine: '', tiSaid: 0 };
+    if (s.sect && s.sect.org === 'xj' && s.path && s.path.daoji === 'zhen') {
+      d.zhenOpen = 1;
+      d.zhenLine = '你先看了对方的步点。';
+    }
+    return d;
   }
   function duelTell(d) {
     const w = DUEL_STYLE[d.opp.style].slice(); if (!d.qi[1]) w[3] = 0;
@@ -1480,9 +1537,12 @@ const Core = (() => {
     for (let i = 0; i < 4; i++) if ((x -= w[i]) < 0) { o = ids[i]; break; }
     d.next = o;
     let tell = o;
-    if (Math.random() > d.opp.rel) { const oth = ids.filter(i => i !== o && (i !== 'qi' || d.qi[1])); tell = pick(oth); }
+    const honest = d.zhenOpen && d.round === 0;
+    if (!honest && Math.random() > d.opp.rel) { const oth = ids.filter(i => i !== o && (i !== 'qi' || d.qi[1])); tell = pick(oth); }
     const lines = (DUEL_TELL[d.opp.npc] || DUEL_TELL._)[tell] || DUEL_TELL._[tell];
-    return { tell, line: pick(lines).replace('对手', d.opp.npc ? NPCS[d.opp.npc].name : '对手') };
+    let line = pick(lines).replace('对手', d.opp.npc ? NPCS[d.opp.npc].name : '对手');
+    if (honest && d.zhenLine) line = d.zhenLine + line;
+    return { tell, line };
   }
   function duelRound(s, d, m) {
     const o = d.next, r = d.P / d.Q, dmg = [0, 0], on = d.opp.name.replace(/^.* · /, '');
@@ -1503,6 +1563,7 @@ const Core = (() => {
       else { dmg[1] = 1; text = DUEL_TEXT.clash[m] + DUEL_TEXT.edgeLose; }
     }
     d.hp[1] = Math.max(0, d.hp[1] - dmg[0]); d.hp[0] = Math.max(0, d.hp[0] - dmg[1]); d.round++;
+    if (dmg[1] > 0 && s.loop && s.loop.ti > 0 && !d.tiSaid) { d.tiSaid = 1; text += '你挨得住。'; }
     if (d.hp[1] <= 0) d.over = 'win'; else if (d.hp[0] <= 0) d.over = 'lose';
     else if (d.round >= 9) d.over = d.hp[0] > d.hp[1] ? 'win' : d.hp[0] < d.hp[1] ? 'lose' : (Math.random() < clamp(0.5 + (r - 1), 0.2, 0.8) ? 'win' : 'lose');
     return { m, o, kind, dmg, text: text.replace(/\{o\}/g, on) };
