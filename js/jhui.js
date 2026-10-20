@@ -227,22 +227,59 @@ function makeJHUI(G) {
     wrap.querySelector('.sheet-tabs').onclick = e => { const b = e.target.closest('.stab'); if (b) show(b.dataset.t); };
     openSheet('云岳坊', wrap); show(tabs.find(t => t[0] === tab) ? tab : 'buy');
   }
-  const itemDesc = k => k === 'SCROLL' ? '瞎眼说书人兜售的功法残卷。真假难辨，全凭眼力与运气。' : k.startsWith('R:') ? `${RECIPES[k.slice(2)].name}的丹方。需${Object.entries(RECIPES[k.slice(2)].need).map(([h, n]) => h + cn(n)).join('、')}。` : (typeof GEAR !== 'undefined' && GEAR[k] ? GEAR[k].desc : (PILLS[k] && PILLS[k].desc) || '');
+  const itemDesc = k => k === 'SCROLL' ? '瞎眼说书人兜售的功法残卷。真假难辨，全凭眼力与运气。' : k.startsWith('R:') ? `${RECIPES[k.slice(2)].name}的丹方。需${Object.entries(RECIPES[k.slice(2)].need).map(([h, n]) => h + cn(n)).join('、')}。` : (typeof GEAR !== 'undefined' && GEAR[k] ? GEAR[k].desc : (typeof Core !== 'undefined' && Core.itemEffect ? Core.itemEffect(G.S, k) : (PILLS[k] && PILLS[k].desc) || ''));
   const itemName = k => k === 'SCROLL' ? '功法残卷' : k.startsWith('R:') ? RECIPES[k.slice(2)].name + '方' : k;
   function trend(k) { const f = G.S.mkt.f[k] || 1; return f >= 1.15 ? '<i class="tr up">贵</i>' : f <= .85 ? '<i class="tr dn">贱</i>' : ''; }
+  const stackable = k => k !== 'SCROLL' && String(k).indexOf('R:') !== 0 && !(typeof GEAR !== 'undefined' && GEAR[k]) && (G.S.mkt.st[k] | 0) > 1;
+  const dearBuy = (k, n, p) => {
+    const gate = Math.max(30, Math.round(28 * REALMS[G.S.realm].lsScale));
+    return n > 1 || p >= gate || p * n >= Math.max(gate, Math.floor(G.S.ls * 0.5));
+  };
   function buyPage(refresh) {
     const w = document.createElement('div'); w.className = 'mkt-list';
     const keys = Object.keys(G.S.mkt.st).filter(k => G.S.mkt.st[k] > 0);
     if (!keys.length) w.innerHTML = '<div class="empty">货架已空，改日再来</div>';
     keys.forEach(k => {
-      const p = J.price(G.S, k), row = document.createElement('div'); row.className = 'item mkt-row';
+      const p0 = J.price(G.S, k), row = document.createElement('div'); row.className = 'item mkt-row';
+      const stack = stackable(k);
+      const maxN = Math.max(1, Math.min(9, G.S.mkt.st[k] | 0, Math.floor(G.S.ls / Math.max(1, p0))));
+      row._n = 1;
       row.innerHTML = `<div class="item-info"><div class="item-name">${itemName(k)}<em>余${cn(G.S.mkt.st[k])}</em>${trend(k)}</div><div class="item-desc"></div></div>
-        <button class="item-use price" ${G.S.ls < p ? 'disabled' : ''}><b>${fmtNum(p)}</b><small>灵石</small></button>`;
+        <div class="mkt-buy">${stack ? `<div class="qty"><button type="button" class="qty-btn" data-q="-1" aria-label="少一件">−</button><b class="qty-n">一</b><button type="button" class="qty-btn" data-q="1" aria-label="多一件">+</button></div>` : ''}
+        <button class="item-use price" ${G.S.ls < p0 ? 'disabled' : ''}><b>${fmtNum(p0)}</b><small>灵石</small></button></div>`;
       row.querySelector('.item-desc').textContent = itemDesc(k);
-      row.querySelector('button').onclick = () => {
-        const r = J.buy(G.S, k); if (!r) return toast('灵石不足');
-        if (r.text) pushLog({ title: '坊市', text: r.text, tags: r.tags, cls: 'event', div: true }); else pushLog({ text: `你在云岳坊购得${itemName(k)}。`, tags: r.tags, cls: 'sys' });
-        render(); save(); toast(r.fake ? '上当了' : `得${itemName(k)}`); refresh();
+      const btn = row.querySelector('.item-use');
+      const paintQty = () => {
+        const n = row._n;
+        const cost = p0 * n;
+        const b = btn.querySelector('b'); if (b) b.textContent = fmtNum(cost);
+        const qn = row.querySelector('.qty-n'); if (qn) qn.textContent = cn(n);
+        btn.disabled = G.S.ls < cost;
+        btn.dataset.arm = '';
+        const sm = btn.querySelector('small'); if (sm) sm.textContent = '灵石';
+      };
+      row.querySelectorAll('.qty-btn').forEach(qb => {
+        qb.onclick = () => {
+          const dir = qb.dataset.q === '1' ? 1 : -1;
+          const cap = Math.max(1, Math.min(9, G.S.mkt.st[k] | 0, Math.floor(G.S.ls / Math.max(1, p0)) || 1));
+          row._n = Math.max(1, Math.min(cap, (row._n | 0) + dir));
+          paintQty();
+        };
+      });
+      btn.onclick = () => {
+        const n = row._n | 0 || 1;
+        const p = J.price(G.S, k);
+        if (G.S.ls < p * n) return toast('灵石不足');
+        if (dearBuy(k, n, p) && btn.dataset.arm !== '1') {
+          btn.dataset.arm = '1';
+          const sm = btn.querySelector('small'); if (sm) sm.textContent = '确认';
+          return;
+        }
+        const r = J.buy(G.S, k, n); if (!r) return toast('灵石不足');
+        const got = itemName(k) + ((r.n | 0) > 1 ? '×' + cn(r.n) : '');
+        if (r.text) pushLog({ title: '坊市', text: r.text, tags: r.tags, cls: 'event', div: true });
+        else pushLog({ text: `你在云岳坊购得${got}。`, tags: r.tags, cls: 'sys' });
+        render(); save(); toast(r.fake ? '上当了' : `得${got}`); refresh();
       };
       w.appendChild(row);
     });
@@ -257,7 +294,7 @@ function makeJHUI(G) {
       const p = J.sellPrice(G.S, k), row = document.createElement('div'); row.className = 'item mkt-row';
       row.innerHTML = `<div class="item-info"><div class="item-name">${k}<em>×${G.S.items[k]}</em>${trend(k)}</div><div class="item-desc"></div></div>
         <button class="item-use price"><b>${fmtNum(p)}</b><small>售出</small></button>`;
-      row.querySelector('.item-desc').textContent = (PILLS[k] && PILLS[k].desc) || '';
+      row.querySelector('.item-desc').textContent = (typeof Core !== 'undefined' && Core.itemEffect) ? Core.itemEffect(G.S, k) : ((PILLS[k] && PILLS[k].desc) || '');
       row.querySelector('button').onclick = () => { const r = J.sell(G.S, k); if (!r) return; pushLog({ text: `你将一份${k}卖与坊中商户。`, tags: r.tags, cls: 'sys' }); render(); save(); refresh(); };
       w.appendChild(row);
     });

@@ -183,26 +183,16 @@ const Ink = (() => {
 
   /* ---------- 云雾贴图 ---------- */
   function mistSprite() {
-    const W = 1000, H = 320, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const c = cv.getContext('2d'); const R = mulberry(31);
-    const clumps = [[0.12, 0.62, 0.22], [0.38, 0.42, 0.28], [0.66, 0.58, 0.2], [0.88, 0.4, 0.16]];
-    for (const [cx, cy, cw] of clumps) {
-      for (let i = 0; i < 26; i++) {
-        const t = R(), env = Math.sin(t * Math.PI);
-        const x = W * (cx + (t - 0.5) * cw * 2), y = H * cy + (R() - 0.5) * 40 * env - env * 18;
-        const r = (20 + R() * 46) * (0.4 + env * 0.6);
-        for (const ox of [-W, 0, W]) {
-          c.save(); c.translate(x + ox, y); c.scale(2.2, 1);
-          const g = c.createRadialGradient(0, 0, 0, 0, 0, r);
-          g.addColorStop(0, 'rgba(250,247,238,0.2)'); g.addColorStop(0.5, 'rgba(250,247,238,0.08)'); g.addColorStop(1, 'rgba(250,247,238,0)');
-          c.fillStyle = g; c.fillRect(-r, -r, r * 2, r * 2); c.restore();
-        }
-      }
-    }
-    // 极淡的整体薄雾，连接云团
-    const g = c.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0.2, 'rgba(250,247,238,0)'); g.addColorStop(0.55, 'rgba(250,247,238,0.07)'); g.addColorStop(0.85, 'rgba(250,247,238,0)');
-    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // 横向必须均匀。一排椭圆铺开会在宽屏上读成重复的云朵。
+    const W = 32, H = 280, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    const veil = c.createLinearGradient(0, 0, 0, H);
+    veil.addColorStop(0, 'rgba(248,244,236,0)');
+    veil.addColorStop(0.28, 'rgba(248,244,236,0.03)');
+    veil.addColorStop(0.55, 'rgba(248,244,236,0.09)');
+    veil.addColorStop(0.78, 'rgba(248,244,236,0.05)');
+    veil.addColorStop(1, 'rgba(248,244,236,0)');
+    c.fillStyle = veil; c.fillRect(0, 0, W, H);
     return toURL(cv);
   }
 
