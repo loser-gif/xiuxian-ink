@@ -67,7 +67,9 @@ const Jianghu = (() => {
   function travel(s, to, emit) {
     const m = travelMonths(s, to), tags = [], from = s.loc;
     Core.passTime(s, m, emit);
-    s.loc = to; if (!s.dead) gather(s, to, tags);
+    s.loc = to;
+    if (typeof Loop !== 'undefined' && Loop.arrive) Loop.arrive(s, emit);
+    if (!s.dead) gather(s, to, tags);
     return { months: m, tags, from };
   }
   // 地点的奇遇池：本地者全权，未归处者半权

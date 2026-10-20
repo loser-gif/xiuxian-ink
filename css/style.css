@@ -1039,9 +1039,9 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .gf-row .item-use{margin-top:6px}
 
 /* ---------- 终卷诸相 ---------- */
-.end-art{height:96px;margin:-14px -6px 0;pointer-events:none}
+.end-art{flex:none;height:112px;margin:0 0 4px;pointer-events:none;overflow:hidden}
 .end-art:empty{display:none}
-.end-art svg{width:100%;height:100%;display:block;overflow:visible}
+.end-art svg{width:100%;height:100%;display:block;overflow:hidden}
 .end-legacy{color:var(--zhu);letter-spacing:.2em}
 /* 飞升：金光自地平线放出 */
 .end-ascend .end-title{color:#8a6a2a;text-shadow:0 0 18px rgba(214,170,80,.45)}
@@ -2477,8 +2477,8 @@ body[data-screen=main] .scroll-paper{
 .ev-main{min-height:0;overflow-y:auto}
 .ev-side{min-height:0}
 .choice{flex-wrap:nowrap;align-items:center}
-.choice>span{flex:1 1 auto;min-width:0;line-height:1.45}
-.choice small{max-width:none;white-space:nowrap;text-align:right;line-height:1.2}
+.choice>span{flex:1 1 auto;min-width:4.5em;line-height:1.45;white-space:nowrap}
+.choice small{flex:none;max-width:none;white-space:nowrap;text-align:right;line-height:1.2}
 .choice small:empty{display:none}
 .chips{flex-wrap:wrap;row-gap:6px}
 .chip{min-width:0}
@@ -2525,7 +2525,7 @@ html[data-font="lg"] #inp-name{font-size:32px}
   .end{padding:calc(var(--sat) + 8px) 10px calc(var(--sab) + 10px)}
   .end-paper{width:100%;padding:18px 14px 16px;max-height:calc(100vh - var(--sat) - var(--sab) - 16px);max-height:calc(100dvh - var(--sat) - var(--sab) - 16px)}
   .end-title{font-size:clamp(36px,15vw,52px)}
-  .end-epitaph-long{max-height:20vh}
+  .end-epitaph-long{max-height:none;overflow:visible}
   .path-cer-title{font-size:clamp(30px,10vw,44px)}
   .path-cer{padding:max(8px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
   #inp-name{font-size:28px;letter-spacing:.1em}
@@ -2822,22 +2822,20 @@ html[data-theme="night"] .scroll-hint{color:#f4ecdc}
   html[data-theme="night"] body[data-screen="main"] .stick{background:linear-gradient(90deg,#c4a882,#f0e2cc)}
 }
 
-/* 终卷：正文可滚，三枚印钮始终落在卷内可见处 */
+/* 终卷：卷面自己滚，引文按整段撑开，不把一行裁成半截 */
 .end{padding:calc(var(--sat) + 10px) 12px calc(var(--sab) + 10px)}
-.end-paper{display:flex;flex-direction:column;overflow:hidden;
+.end-paper{display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch;
   max-height:calc(100vh - var(--sat) - var(--sab) - 20px);max-height:calc(100dvh - var(--sat) - var(--sab) - 20px);padding:22px 18px 12px}
 .end-title{flex:none;font-size:clamp(40px,12vw,72px)}
-.end-epitaph{flex:none;max-height:22vh;overflow:auto;margin:8px 0}
-.end-judge{flex:none;max-height:16vh;overflow:auto}
-.end-epitaph-long{flex:1 1 auto;min-height:0;max-height:none;margin:6px 0}
-.end-stats{flex:none;max-height:18vh;overflow:auto;margin-bottom:8px}
-.end-actions{flex:none;position:sticky;bottom:0;z-index:2;gap:8px;padding-top:8px;
-  background:linear-gradient(180deg,rgba(249,245,233,0),rgba(249,245,233,.97) 30%)}
-html[data-theme="night"] .end-actions{background:linear-gradient(180deg,rgba(249,245,233,0),rgba(249,245,233,.97) 30%)}
+.end-epitaph{flex:none;max-height:none;overflow:visible;margin:8px 0}
+.end-judge{flex:none;max-height:none;overflow:visible}
+.end-epitaph-long{flex:none;min-height:calc(1.95em + 24px);max-height:none;overflow:visible;margin:6px 0}
+.end-stats{flex:none;max-height:none;overflow:visible;margin-bottom:8px}
+.end-actions{flex:none;position:relative;z-index:2;gap:8px;padding-top:8px;background:none}
+html[data-theme="night"] .end-actions{background:none}
 @media (max-height:700px){
   .end-title{font-size:clamp(34px,11vw,52px)}
-  .end-epitaph{max-height:16vh}
-  .end-stats{max-height:14vh}
+  .end-epitaph,.end-stats,.end-epitaph-long{max-height:none;overflow:visible}
   .end-paper{padding:14px 14px 8px}
 }
 @media (max-width:360px){
@@ -3032,13 +3030,24 @@ html[data-motion="lite"] .choice.picked::after,html[data-fx="thin"] .choice.pick
 .modal-shade,
 .sheet-shade,
 .end{
-  background-color:#0c0a08 !important;
+  background-color:#3a2e24 !important;
+  background-image:none !important;
 }
+html[data-theme="night"] .bt-shade,
+html[data-theme="night"] .rite-shade,
+html[data-theme="night"] .duel-shade,
+html[data-theme="night"] .auc-shade,
+html[data-theme="night"] .path-cer-shade,
+html[data-theme="night"] .fb-cer-shade,
+html[data-theme="night"] .ask-shade,
+html[data-theme="night"] .scroll-shade,
 html[data-theme="night"] .modal-shade,
 html[data-theme="night"] .sheet-shade,
 html[data-theme="night"] .end{
-  background-color:#070605 !important;
+  background-color:#2a221c !important;
+  background-image:none !important;
 }
+.modal-shade{top:12px;right:12px;bottom:12px;left:12px}
 .path-cer-panel{background-color:#161310 !important}
 .hpaper,
 .sheet-panel,
@@ -3236,7 +3245,10 @@ html[data-theme="night"] .naihe{background-color:#070605}
 .codex-copy b{display:block;font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.12em}
 .codex-copy em{display:block;font-style:normal;margin-top:2px;font-size:13px;line-height:1.65;color:var(--ink3)}
 .codex-card.sil .codex-copy b{color:var(--ink4);letter-spacing:.22em}
-.sil-ink{display:block;width:46px;height:28px;border-radius:40% 46% 42% 48%;background:rgba(27,24,20,.16)}
+.sil-ink{display:flex;align-items:center;justify-content:center;width:64px;height:56px;border-radius:0;background:none;box-shadow:none;transform:none;color:rgba(27,24,20,.58)}
+.sil-ink.sil-face{width:46px;height:56px}
+.sil-ink svg{display:block;width:100%;height:100%;overflow:visible}
+.codex-art.sil-art{background:transparent}
 html[data-palette="songyan"] #paper{filter:saturate(.86) contrast(1.03)}
 html[data-palette="lengjin"] #paper{filter:sepia(.14) saturate(1.05)}
 html[data-palette="yuqing"] #paper{filter:sepia(.06) hue-rotate(14deg) saturate(.9)}
@@ -3246,4 +3258,33 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 @media (max-width:380px){
   .codex-tab{font-size:14px;letter-spacing:.08em}
   .naihe-title{font-size:34px}
+}
+.loop-block{margin-top:16px;padding-top:12px;border-top:1px solid rgba(27,24,20,.12)}
+.loop-stat{font-family:var(--f-head);letter-spacing:.16em;margin:0 0 6px;color:var(--ink)}
+.loop-note,.loop-tut{font-size:13.5px;line-height:1.75;color:var(--ink2);margin:0 0 8px}
+.loop-actions{display:flex;flex-direction:column;gap:8px}
+.zhen-table{width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.55;margin:0 0 10px}
+.zhen-table th,.zhen-table td{border-bottom:1px solid rgba(27,24,20,.1);padding:4px 4px;text-align:left;vertical-align:top}
+.zhen-table th{font-weight:400;letter-spacing:.12em;color:var(--ink3)}
+.page-aside{display:none}
+.page-aside i{font-style:normal}
+@media (min-width:1000px) and (min-height:600px){
+  body[data-screen=main] .page-aside{
+    display:block;position:fixed;z-index:4;top:34%;
+    font-size:15px;line-height:1.35;letter-spacing:.28em;color:var(--ink2);
+    pointer-events:none;
+    writing-mode:vertical-rl;
+    text-orientation:upright;
+  }
+  body[data-screen=main] #margin-l{left:18px;right:auto}
+  body[data-screen=main] #margin-r{right:20px;left:auto}
+  body[data-screen=main] #scenery .m1,
+  body[data-screen=main] #scenery .m2,
+  body[data-screen=main] #scenery .m3,
+  body[data-screen=main] #scenery .m4{opacity:0}
+  /* 栏外远峰：几团洇开的淡墨，下缘化进纸色，不是一块实色。 */
+  body[data-screen=main] #vignette::before{
+    content:"";position:absolute;left:-8%;right:-8%;top:6%;height:42%;pointer-events:none;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 420'><defs><filter id='w' x='-15%25' y='-40%25' width='130%25' height='180%25'><feGaussianBlur stdDeviation='18'/></filter><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23515f68' stop-opacity='.55'/><stop offset='.5' stop-color='%23515f68' stop-opacity='.2'/><stop offset='1' stop-color='%23515f68' stop-opacity='0'/></linearGradient></defs><g filter='url(%23w)' fill='url(%23g)'><ellipse cx='70' cy='250' rx='150' ry='100'/><ellipse cx='250' cy='200' rx='190' ry='140'/><ellipse cx='470' cy='240' rx='160' ry='90'/><ellipse cx='700' cy='180' rx='210' ry='150'/><ellipse cx='940' cy='220' rx='180' ry='110'/><ellipse cx='1160' cy='190' rx='200' ry='145'/><ellipse cx='1360' cy='245' rx='160' ry='95'/></g></svg>") center/100% 100% no-repeat;
+  }
 }

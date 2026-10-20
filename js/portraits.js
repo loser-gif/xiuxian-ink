@@ -76,8 +76,10 @@ const InkPortrait = (() => {
     return '';
   }
 
-  function svg(id) {
+  function svg(id, face) {
     const s = P[id]; if (!s) return '';
+    const mouthK = face && face.mouth ? face.mouth : s.mouth;
+    const browN = face && face.brow != null ? face.brow : s.brow;
     return `<svg class="ink-portrait" viewBox="0 0 88 112" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="44" cy="58" rx="36" ry="48" fill="${INK}" opacity=".045"/>
       <path d="M16 112c2-30 10-44 28-46 18 2 26 16 28 46" fill="${INK}" opacity=".9"/>
@@ -85,10 +87,10 @@ const InkPortrait = (() => {
       <path d="M40 66c1 10 7 12 8 0" fill="${PAPER}"/>
       <ellipse cx="44" cy="50" rx="15" ry="17" fill="${PAPER}" stroke="${INK}" stroke-width="1.35"/>
       ${hairPath(s.hair)}
-      ${brows(s.brow)}
+      ${brows(browN)}
       ${eyes(s.eyes)}
       <path d="M44 50v6" stroke="${INK}" stroke-width=".7" opacity=".35"/>
-      ${mouth(s.mouth)}
+      ${mouth(mouthK)}
       ${prop(s.prop)}
     </svg>`;
   }
@@ -102,7 +104,7 @@ const InkPortrait = (() => {
     sf_tea: 'shifu', sf_test: 'shifu', sf_old: 'shifu',
   };
 
-  function forEvent(ev) {
+  function forEvent(ev, face) {
     if (!ev) return '';
     let id = ev.portrait || BY[ev.id] || '';
     const eid = ev.id || '';
@@ -112,7 +114,7 @@ const InkPortrait = (() => {
     if (!id && eid.startsWith('dx_')) id = 'dx_shi';
     if (!id && eid.startsWith('yy_')) id = 'yy_shi';
     if (!id && eid.startsWith('xj_')) id = 'xj_shi';
-    return P[id] ? svg(id) : '';
+    return P[id] ? svg(id, face) : '';
   }
 
   return { svg, forEvent, ids: () => Object.keys(P) };
