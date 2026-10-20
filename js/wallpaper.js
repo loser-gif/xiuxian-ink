@@ -147,12 +147,32 @@ const Wallpaper = (() => {
   /* ---------- 流雾与云影：固定 1/4 分辨率，放大后才柔，不能按像素比画实 ---------- */
   function mistK() { return 0.25; }
   const A = { layers: [], raf: 0, last: 0, t0: 0, frame: 0 };
-  let fogImg = null, shadowImg = null;
+  let fogImgs = null, shadowImg = null;
   function sprite(rgb, a0) {
     const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d');
     const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
     g.addColorStop(0, `rgba(${rgb},${a0})`); g.addColorStop(.45, `rgba(${rgb},${a0 * .55})`); g.addColorStop(1, `rgba(${rgb},0)`);
     c.fillStyle = g; c.fillRect(0, 0, 64, 64); return cv;
+  }
+  function mistShapes() {
+    const out = [];
+    for (let s = 0; s < 4; s++) {
+      const cv = document.createElement('canvas'); cv.width = 180; cv.height = 72;
+      const c = cv.getContext('2d'); const rnd = Ink.mulberry(90 + s * 19);
+      for (let i = 0; i < 5; i++) {
+        const x = 12 + rnd() * 156, y = 10 + rnd() * 52, rad = 24 + rnd() * 42, a = 0.1 + rnd() * 0.16;
+        const g = c.createRadialGradient(x, y, 0, x, y, rad);
+        g.addColorStop(0, `rgba(246,241,229,${a})`);
+        g.addColorStop(0.6, `rgba(246,241,229,${(a * 0.3).toFixed(3)})`);
+        g.addColorStop(1, 'rgba(246,241,229,0)');
+        c.fillStyle = g; c.fillRect(0, 0, 180, 72);
+      }
+      out.push(cv);
+    }
+    return out;
+  }
+  function fogBit() {
+    return { x: rnd(-.15, 1.15) * innerWidth, y: 0, rw: rnd(260, 640), rh: rnd(36, 90), v: rnd(2, 7) * (R() < .3 ? -1 : 1), a: rnd(.18, .42), ph: rnd(0, 6.28), bob: rnd(4, 12), si: (R() * 4) | 0 };
   }
   function makeLayer(cv, mtnSel, band, nFog, nShadow) {
     const W = cv.clientWidth || innerWidth, H = cv.clientHeight || innerHeight;
@@ -165,7 +185,7 @@ const Wallpaper = (() => {
     const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
     const fogBase = nFog, shBase = nShadow;
     const nF = fogN(fogBase), nS = thinNow() ? 1 : (coarse() ? Math.min(2, shBase) : shBase);
-    const fog = Array.from({ length: nF }, () => ({ x: rnd(-.2, 1.2) * W, y: rnd(band[0], band[1]) * H, rw: rnd(90, 210), rh: rnd(22, 48), v: rnd(3, 9) * (R() < .3 ? -1 : 1), a: rnd(.35, .7), ph: rnd(0, 6.28), bob: rnd(3, 9) }));
+    const fog = Array.from({ length: nF }, () => { const f = fogBit(); f.y = rnd(band[0], band[1]) * H; return f; });
     const sh = Array.from({ length: nS }, (_, i) => ({ x: (i / Math.max(1, nS)) * W * 1.6 - W * .3, y: rnd(.25, .75) * H, rw: rnd(140, 240), rh: rnd(70, 130), v: rnd(4, 7), a: rnd(.5, .8) }));
     return { cv, c: cv.getContext('2d'), sil, tmp, tc: tmp.getContext('2d'), fog, sh, fogBase, shBase, band, w, h, W, H };
   }
@@ -180,15 +200,22 @@ const Wallpaper = (() => {
     }
     tc.globalAlpha = 1; tc.globalCompositeOperation = 'destination-in'; tc.drawImage(L.sil, 0, 0);
     c.clearRect(0, 0, w, h); c.drawImage(L.tmp, 0, 0);
-    // 流雾：在山谷间缓缓穿行，呼吸般浓淡起伏
+    const wash = c.createLinearGradient(0, h * 0.4, 0, h * 0.86);
+    wash.addColorStop(0, 'rgba(246,241,229,0)');
+    wash.addColorStop(0.5, 'rgba(246,241,229,0.07)');
+    wash.addColorStop(1, 'rgba(246,241,229,0)');
+    c.globalAlpha = 1; c.fillStyle = wash; c.fillRect(0, 0, w, h);
+    c.filter = 'blur(10px)';
     for (const f of L.fog) {
       f.x += f.v * dt;
       if (f.v > 0 && f.x - f.rw > W) f.x = -f.rw; if (f.v < 0 && f.x + f.rw < 0) f.x = W + f.rw;
       const y = f.y + Math.sin(t * .13 + f.ph) * f.bob;
-      c.globalAlpha = f.a * (.7 + .3 * Math.sin(t * .21 + f.ph * 2));
+      c.globalAlpha = f.a * (.75 + .25 * Math.sin(t * .21 + f.ph * 2));
       const k = L.w / Math.max(1, L.W);
-      c.drawImage(fogImg, (f.x - f.rw) * k, (y - f.rh) * k, f.rw * 2 * k, f.rh * 2 * k);
+      const img = fogImgs[(f.si | 0) % fogImgs.length];
+      c.drawImage(img, (f.x - f.rw) * k, (y - f.rh) * k, f.rw * 2 * k, f.rh * 2 * k);
     }
+    c.filter = 'none';
     c.globalAlpha = 1;
   }
   function tick(now) {
@@ -213,7 +240,7 @@ const Wallpaper = (() => {
   function refill(L) {
     const W = innerWidth, H = innerHeight;
     const nF = fogN(L.fogBase), nS = thinNow() ? 1 : (coarse() ? Math.min(2, L.shBase) : L.shBase);
-    while (L.fog.length < nF) L.fog.push({ x: rnd(-.2, 1.2) * W, y: rnd(L.band[0], L.band[1]) * H, rw: rnd(90, 210), rh: rnd(22, 48), v: rnd(3, 9), a: rnd(.35, .7), ph: rnd(0, 6.28), bob: rnd(3, 9) });
+    while (L.fog.length < nF) { const f = fogBit(); f.y = rnd(L.band[0], L.band[1]) * H; L.fog.push(f); }
     if (L.fog.length > nF) L.fog.length = nF;
     while (L.sh.length < nS) L.sh.push({ x: rnd(0, W), y: rnd(.25, .75) * H, rw: rnd(140, 240), rh: rnd(70, 130), v: rnd(4, 7), a: rnd(.5, .8) });
     if (L.sh.length > nS) L.sh.length = nS;
@@ -227,7 +254,7 @@ const Wallpaper = (() => {
   }
 
   function build() {
-    fogImg = fogImg || sprite('246,241,229', .95);
+    fogImgs = fogImgs || mistShapes();
     shadowImg = shadowImg || sprite('22,24,30', .26);
     const far = $('.atmo-far'), near = $('.atmo-near');
     A.layers = [makeLayer(far, '.m2', [.5, .64], 7, 3), makeLayer(near, '.m3', [.66, .8], 8, 3)];

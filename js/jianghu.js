@@ -108,18 +108,26 @@ const Jianghu = (() => {
     return Math.max(1, Math.round(baseVal(s, k) * (s.mkt.f[k] || 1)));
   }
   const sellPrice = (s, k) => ITEM_VAL[k] ? Math.max(1, Math.round(baseVal(s, k) * (s.mkt.f[k] || 1) * 0.5)) : 0;
-  function buy(s, k) {
-    const p = price(s, k); if (s.ls < p || !(s.mkt.st[k] > 0)) return null;
-    s.ls -= p; s.mkt.st[k]--; const tags = [{ t: `灵石 −${p}`, c: 'down' }];
-    if (k === 'SCROLL') {
-      const pool = Object.keys(GONGFA).filter(id => GONGFA[id].grade <= Math.min(1, s.realm) && !GONGFA[id].mo && !s.gfs[id] && !['雷', '风', '冰', '五行'].includes(GONGFA[id].el));
-      if (!pool.length || Math.random() < 0.3) return { tags, text: '残卷用油布裹了三层，回到住处展开一看，前半卷是功法，后半卷却是一本春宫。你哭笑不得。', fake: true };
-      const id = pick(pool), o = Core.applyFx(s, { gf: id });
-      return { tags: tags.concat(o.tags), text: `卖残卷的是个瞎眼说书人，摸着灵石笑道：“老朽看不见字，客官自己瞧。”你就着灯火细读——竟是一卷完整的《${GONGFA[id].name}》。` };
+  function buy(s, k, n) {
+    n = Math.max(1, Math.min(9, (n | 0) || 1));
+    if (k === 'SCROLL' || String(k).indexOf('R:') === 0) n = 1;
+    const tags = [];
+    let got = 0;
+    for (let i = 0; i < n; i++) {
+      const p = price(s, k); if (s.ls < p || !(s.mkt.st[k] > 0)) break;
+      s.ls -= p; s.mkt.st[k]--; tags.push({ t: `灵石 −${p}`, c: 'down' });
+      if (k === 'SCROLL') {
+        const pool = Object.keys(GONGFA).filter(id => GONGFA[id].grade <= Math.min(1, s.realm) && !GONGFA[id].mo && !s.gfs[id] && !['雷', '风', '冰', '五行'].includes(GONGFA[id].el));
+        if (!pool.length || Math.random() < 0.3) return { tags, text: '残卷用油布裹了三层，回到住处展开一看，前半卷是功法，后半卷却是一本春宫。你哭笑不得。', fake: true, n: 1 };
+        const id = pick(pool), o = Core.applyFx(s, { gf: id });
+        return { tags: tags.concat(o.tags), text: `卖残卷的是个瞎眼说书人，摸着灵石笑道：“老朽看不见字，客官自己瞧。”你就着灯火细读——竟是一卷完整的《${GONGFA[id].name}》。`, n: 1 };
+      }
+      if (String(k).indexOf('R:') === 0) { learnRecipe(s, k.slice(2), tags); return { tags, text: `你买下一张${RECIPES[k.slice(2)].name}方，纸页焦黄，字迹却清楚。`, n: 1 }; }
+      s.items[k] = (s.items[k] || 0) + 1; got++;
     }
-    if (k.startsWith('R:')) { learnRecipe(s, k.slice(2), tags); return { tags, text: `你买下一张${RECIPES[k.slice(2)].name}方，纸页焦黄，字迹却清楚。` }; }
-    s.items[k] = (s.items[k] || 0) + 1; tags.push({ t: `得${k}`, c: 'up' });
-    return { tags };
+    if (!got) return null;
+    tags.push({ t: got > 1 ? `得${k}×${got}` : `得${k}`, c: 'up' });
+    return { tags, n: got };
   }
   function sell(s, k) {
     if (!(s.items[k] > 0) || !ITEM_VAL[k]) return null;
@@ -449,10 +457,10 @@ const Jianghu = (() => {
     if (f.frag) fxFrag(s, f.frag, tags);
   }
   function useItem(s, k, tags) {
-    if (k === '延寿丹') { const v = Math.round(3 * Core.LIFE_SCALE[s.realm] * 2); s.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); return { text: '丹药入腹，枯槁的经脉里，像是渗进了一场春雨。' }; }
+    if (k === '延寿丹') { const v = Core.pillYears(s, 3); s.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); return { text: '丹药入腹，枯槁的经脉里，像是渗进了一场春雨。' }; }
     if (k === '破障丹') {
       if (Core.bottleneck(s)) { if (s.btBuff >= 0.08) return { err: '药力已足，再服无益' }; s.btBuff = 0.08; tags.push({ t: '下回破境 +8%', c: 'up' }); return { text: '破障丹化作一线锐气，抵在瓶颈之上，蓄势待发。' }; }
-      const ups = Core.addXw(s, Core.req(s) * 0.5, tags); return { text: '药力如凿，一下一下凿开经脉间的壁垒。', ups };
+      const ups = Core.addXw(s, Math.round(Core.req(s) * 0.5), tags); return { text: '药力如凿，一下一下凿开经脉间的壁垒。', ups };
     }
     return null;
   }

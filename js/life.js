@@ -274,23 +274,56 @@ const Life = (() => {
     { id: 'v_di', where: 'any', title: '雾中闻笛', text: '雾厚得看不见路。笛声从雾的另一头来，短短的，像在问路。你用指节在剑鞘上应了两下。笛声便转了个弯，往你这边近了一近，又远了。你们都没有走出雾。' },
     { id: 'v_shu', where: 'cave', title: '晒书', text: '你把受潮的书页摊在石上晒。蚂蚁爬过一行字，你没有赶。字被晒暖了，墨味淡淡地起来。你忽然觉得，这些年赶路赶得太凶，书都还没有真正被太阳看过。' },
     { id: 'v_he', where: 'any', title: '喂鹤', text: '鹤落在洞顶，不叫，只侧头看你。你把吃剩的果核放在石上。鹤不吃果核，却把一只脱落的羽毛留在那里，像交换。你把羽毛夹进书里，跟那两根草作伴。' },
+    { id: 'v_e_yu', where: 'cave', early: 1, title: '檐雨', text: '雨落在石阶上，一级一级，像有人用指节数你的呼吸。你没有去数。数完，这一季就薄了。' },
+    { id: 'v_e_lu', where: 'cave', early: 1, title: '炉边', text: '炭只剩一小块。你把手伸到炉沿上，不烤，只是让冷从指尖退回去。洞里没有别人。这很好。' },
+    { id: 'v_e_pu', where: 'cave', early: 1, title: '旧蒲团', text: '蒲团边磨出了线。你把它翻了个面，又坐下。线头扎了一下膝盖。你忽然觉得，修行若只是把磨坏的一面翻过去，也算一种诚实。' },
+    { id: 'v_e_chong', where: 'cave', early: 1, title: '虫声', text: '洞外虫子叫得很齐。你跟着它们的拍子吐了一口气，又觉得不该跟。于是只听。听到后来，虫子自己乱了，你反而静了。' },
+    { id: 'v_e_deng', where: 'cave', early: 1, title: '灯花', text: '灯花爆了一下。爆完，灯更暗了。你没有挑灯芯。暗一点，字就少看见几个，心也少跟出去几个。' },
+    { id: 'v_e_song', where: 'any', early: 1, title: '松烟', text: '松烟从山下的炊处飘上来，淡，不成片。你吸进一点，又吐掉。吐掉的时候，你分得清哪一口是烟，哪一口是灵气。今天就到这里。' },
+    { id: 'v_e_wu', where: 'tuna', early: 1, title: '晨雾', text: '雾还没散。你在洞口站着，看自己的袖子一点点变潮。吐纳要的是气，雾却只肯给你水。你把这一口算作白得的，不记账。' },
+    { id: 'v_e_quan', where: 'tuna', early: 1, title: '泉眼', text: '泉眼比昨天宽了一指。你蹲下去看，水里有你的下巴，没有你的眼睛——雾把上半张脸借走了。你没有把水搅开。' },
+    { id: 'v_e_jing', where: 'tuna', early: 1, title: '半页', text: '你翻开经，只读了半页。半页里有一个字写歪了。你没有改。歪的那个字，今天比正的那些更像你。' },
+    { id: 'v_e_zhou', where: 'cave', early: 1, title: '一碗粥', text: s => (s.inj | 0) > 0
+      ? '粥是自己煮的，有点糊。你用没受伤的那只手端着，慢慢喝。糊的地方先烫到舌头。疼是真的，暖也是真的。'
+      : '粥是自己煮的，有点糊。你坐在门槛上喝完，把碗扣在石上，听了一会儿山里没有人叫你。' },
+    { id: 'v_e_chuang', where: 'cave', early: 1, title: '窗纸', text: s => (s.xj | 0) < 30
+      ? '窗纸被风顶得一鼓一鼓。你看着它，没有去按。心里也是这样，顶着，又落下。你让它顶着。'
+      : '窗纸被风顶得一鼓一鼓。你用指节按回去，纸上留下一个浅窝。风又来，浅窝还在。' },
+    { id: 'v_e_huan', where: 'cave', early: 1, title: '门外一声', text: s => {
+      let sex = 'm';
+      if (typeof Folio !== 'undefined' && Folio.sex) sex = Folio.sex(s);
+      const call = sex === 'f' ? '师姐' : sex === 'n' ? '同门' : '师兄';
+      return `门外有人唤了一声「${call}」，脚步却没有停。你应到一半，人已经拐过山弯。石阶上留下一点湿，像刚下过很短的雨。`;
+    } },
   ];
-  function pull(s, where) {
+  function vignetteText(v, s) { return typeof v.text === 'function' ? v.text(s) : v.text; }
+  function pull(s, where, early) {
     const life = L(s);
-    const pool = VIGNETTES.filter(v => !life.seenV.includes(v.id) && (v.where === 'any' || v.where === where));
+    const ok = v => !life.seenV.includes(v.id) && (v.where === 'any' || v.where === where);
+    let pool = VIGNETTES.filter(v => ok(v) && (!early || v.early));
+    if (early && !pool.length) pool = VIGNETTES.filter(ok);
     if (!pool.length) return null;
     const v = pool[Math.floor(Math.random() * pool.length)];
     life.seenV.push(v.id);
-    note(s, { t: v.title, d: v.text.slice(0, 28), k: 'breath' });
-    return { title: v.title, text: v.text, id: v.id };
+    const text = vignetteText(v, s);
+    note(s, { t: v.title, d: String(text).slice(0, 28), k: 'breath' });
+    return { title: v.title, text, id: v.id };
   }
   function takeVignette(s, where) {
     if (!s || s.dead) return null;
     const life = L(s);
     if (where === 'biguan') {
       life.bg = (life.bg | 0) + 1;
-      if (life.bg >= 3 && life.bg % 3 === 0) return pull(s, 'cave');
+      const early = (s.realm | 0) === 0 && (s.stage | 0) < 7;
+      if (early) return life.bg % 2 === 0 ? pull(s, 'cave', true) : null;
+      if (life.bg >= 3 && life.bg % 3 === 0) return pull(s, 'cave', false);
       return null;
+    }
+    if (where === 'tuna') {
+      if ((s.realm | 0) !== 0 || (s.stage | 0) >= 5) return null;
+      life.tn = (life.tn | 0) + 1;
+      if (life.tn % 3 !== 0) return null;
+      return pull(s, 'tuna', true);
     }
     if (where === 'road') {
       if ((s.realm | 0) < 1 && (s.age | 0) < 22) return null;

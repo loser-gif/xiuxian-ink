@@ -871,16 +871,45 @@ const Core = (() => {
     if (typeof Jianghu !== 'undefined') return Math.min(5, have, USE_HARD_CAP);
     return 0;
   }
+  /* 聚气丹取吐纳抖动的上沿，不乘功法。说明必须用这两个函数，避免和实得各写各的。 */
+  function juqiAmount(s) { return Math.round(unit(s) * K.tunaGain * 1.1); }
+  function tunaSpan(s) {
+    const spd = gfSpeed(s);
+    const mid = unit(s) * K.tunaGain * spd;
+    return { lo: Math.round(mid * 0.9), hi: Math.round(mid * 1.1), spd };
+  }
+  function pillYears(s, base) { return Math.round(base * (LIFE_SCALE[s.realm] || 1) * 2); }
+  function itemEffect(s, k) {
+    if (!s) return (typeof PILLS !== 'undefined' && PILLS[k] && PILLS[k].desc) || '';
+    if (k === '聚气丹') {
+      const n = juqiAmount(s), t = tunaSpan(s);
+      return `服下修为 +${fmtNum(n)}。丹力不乘功法，不耗光阴。此刻吐纳一季约 ${fmtNum(t.lo)}–${fmtNum(t.hi)}，已含功法 ×${t.spd.toFixed(2)}。瓶颈时无益。`;
+    }
+    if (k === '回春丹') return '伤势尽愈，心境 +2（已满则不加）。身上无伤，服之无益。';
+    if (k === '清心丹') return '心境 +15，至多一百。心境已满，服之无益。';
+    if (k === '延寿果') return `寿元 +${pillYears(s, 5)}年。`;
+    if (k === '延寿丹') return `寿元 +${pillYears(s, 3)}年。同期朱果是 +${pillYears(s, 5)}年。`;
+    if (k === '破障丹') {
+      const half = Math.round(req(s) * 0.5);
+      return `未至瓶颈：修为 +${fmtNum(half)}，即当前一层所需的一半。已至瓶颈：下回破境把握 +8%，不叠加。不随功法增减。`;
+    }
+    if (k === '筑基丹') return '炼气破筑基时服下，把握 +20%（二成）。平时不可服。';
+    if (k === '凝元丹') return '筑基结金丹时服下，把握 +20%（二成）。平时不可服。';
+    if (k === '化婴丹') return '金丹化元婴时服下，把握 +20%（二成）。平时不可服。';
+    if (k === '问神丹') return '元婴问化神时服下，把握 +20%（二成）。平时不可服。';
+    if (k === '渡厄符') return '渡飞升天劫时燃之，把握 +20%（二成）。平时不可服。';
+    return (typeof PILLS !== 'undefined' && PILLS[k] && PILLS[k].desc) || '';
+  }
   function useItemOnce(s, k, tags) {
     let text = '', ups = [];
     if (k === '聚气丹') {
       if (bottleneck(s)) return { err: '瓶颈当前，丹药无益' };
-      ups = addXw(s, unit(s) * 0.35, tags) || []; text = '丹药入腹，化作一股温润灵流，沿经脉缓缓散开。';
+      ups = addXw(s, juqiAmount(s), tags) || []; text = '丹药入腹，化作一股温润灵流，沿经脉缓缓散开。';
     } else if (k === '回春丹') {
       if (s.inj <= 0) return { err: '身无伤患，留待日后' };
       s.inj = 0; s.xj = clamp(s.xj + 2, 0, 100); tags.push({ t: '伤势痊愈', c: 'up' }); text = '回春丹化开，周身暖意融融，旧伤处的隐痛渐渐消散。';
     } else if (k === '延寿果') {
-      const v = Math.round(5 * LIFE_SCALE[s.realm] * 2); s.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); text = '朱果入口即化，一股勃勃生机自丹田升起，鬓边白发竟转青了几根。';
+      const v = pillYears(s, 5); s.lifeBonus += v; tags.push({ t: `寿元 +${v}年`, c: 'up' }); text = '朱果入口即化，一股勃勃生机自丹田升起，鬓边白发竟转青了几根。';
     } else if (k === '清心丹') {
       if (s.xj >= 100) return { err: '心境已满，留待日后' };
       s.xj = clamp(s.xj + 15, 0, 100); s.warned.xjLow = 0; tags.push({ t: '心境 +15', c: 'up' }); text = '清心丹入口微苦，回甘如泉。心头那团乱麻，被一根根理顺了。';
@@ -1587,6 +1616,7 @@ const Core = (() => {
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
     addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
+    juqiAmount, tunaSpan, pillYears, itemEffect,
     btChance, resolveBreak, useItem, useBatchCap, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct, showFoe, glance, oddsWord, rootFace, sectBand,
     org, rankName, caveMul, join, defect, addGx, npcAdd, npcWord, npcLine, npcHelp, canPromote, promote, sectTick,

@@ -118,8 +118,22 @@ function root(id) {
   }
   note('eco', `炼气拍卖抽到聚气丹 ${affordable}/${trials}，开价买得起 ${opening}，穷修能拍下 ${wins}`);
   const s0 = Core.newState('测', root('san'));
-  const pJu = 12 * REALMS[0].lsScale, pPo = 45 * REALMS[0].lsScale;
-  note('eco', `开局灵石 ${s0.ls}；坊市聚气丹 ${pJu}（${s0.ls >= pJu ? '买得起一次' : '买不起'}），破境丹 ${pPo}（仍买不起）`);
+  Jianghu.init(s0);
+  s0.mkt.f['聚气丹'] = 1; s0.mkt.f['筑基丹'] = 1;
+  const pJu = Jianghu.price(s0, '聚气丹'), pPo = Jianghu.price(s0, '筑基丹');
+  note('eco', `开局灵石 ${s0.ls}；坊市聚气丹标价 ${pJu}（${s0.ls >= pJu ? '买得起一次' : '行情平价时买不起'}），筑基丹 ${pPo}（仍买不起）`);
+  s0.wx = 5;
+  const gain = Core.juqiAmount(s0);
+  const desc = Core.itemEffect(s0, '聚气丹');
+  s0.items['聚气丹'] = 1; const x0 = s0.xw;
+  const used = Core.useItem(s0, '聚气丹');
+  if (used.err || s0.xw - x0 !== gain) note('fail', '聚气丹实得 ' + (s0.xw - x0) + ' 与函数 ' + gain + ' 不一致');
+  else if (desc.indexOf('+' + gain) < 0) note('fail', '聚气丹说明没有写上实得 +' + gain + '：' + desc);
+  else note('ok', '聚气丹说明即实得 +' + gain);
+  const years = Core.pillYears(s0, 5);
+  if (Core.itemEffect(s0, '延寿果').indexOf('+' + years + '年') < 0) note('fail', '延寿果说明与年数不符');
+  else note('ok', '延寿果说明即 +' + years + '年');
+  if (Core.itemEffect(s0, '筑基丹').indexOf('20%') < 0) note('fail', '筑基丹说明没有写二成');
 }
 
 /* —— 空选项 / 全禁用 —— */

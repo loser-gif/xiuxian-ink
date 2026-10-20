@@ -99,7 +99,23 @@ function drawMountains(force, opt) {
   finish();
 }
 let wallpaperOn = false;
+function mountPaperField() {
+  const host = document.getElementById('paper'); if (!host || !Ink.paperField) return;
+  let cv = host.querySelector('canvas.xuan');
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.className = 'xuan'; cv.setAttribute('aria-hidden', 'true');
+    host.appendChild(cv);
+  }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = Math.max(host.clientWidth || 0, window.innerWidth || 0, 1);
+  const cssH = Math.max(host.clientHeight || 0, window.innerHeight || 0, 1);
+  const w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
+  if (cv.width === w && cv.height === h) return;
+  cv.width = w; cv.height = h;
+  try { Ink.paperField(cv); } catch (e) { console.warn(e); }
+}
 async function initVisuals() {
+  mountPaperField();
   root.style.setProperty('--brush-img', brushBtnImg(5, '#1b1814', 0.95));
   root.style.setProperty('--brush-img-light', brushBtnImg(12, '#1b1814', 0.14));
   root.style.setProperty('--brush-img-paper', brushBtnImg(19, '#f3ead6', 0.95));
@@ -153,11 +169,6 @@ function fiberTile() {
     c.quadraticCurveTo(x0 + len * 0.4, y + (Math.random() - 0.5) * 3, x0 + len, y + (Math.random() - 0.5) * 2);
     c.stroke();
   }
-  for (let i = 0; i < 40; i++) {
-    const x = Math.random() * s, y = Math.random() * s;
-    c.fillStyle = `rgba(90,70,40,${0.015 + Math.random() * 0.03})`;
-    c.beginPath(); c.ellipse(x, y, 8 + Math.random() * 18, 3 + Math.random() * 6, Math.random() * 0.4, 0, 7); c.fill();
-  }
   return cv.toDataURL();
 }
 let resizeT;
@@ -173,6 +184,7 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeT);
   resizeT = setTimeout(() => {
     drawMountains(false);
+    mountPaperField();
     if (wallpaperOn && typeof Wallpaper !== 'undefined' && Wallpaper.rebuild) Wallpaper.rebuild();
   }, 250);
 });
@@ -695,7 +707,9 @@ async function doTest() {
   fl.className = 'lg-flavor';
   const d = inkWrite(fl, linggenFlavor(roll.lg, roll.els), { immediate: true, step: 16 });
   setTimeout(() => {
-    $('#lg-stats').innerHTML = `<span>资质 <b>${roll.lg.word}</b></span><span>悟性 <b>${cn(roll.wx)}</b> · ${wuxingWord(roll.wx)}</span>`;
+    const marks = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+    const cells = marks.map((ch, i) => `<i class="${i + 1 === roll.wx ? 'on' : ''}">${ch}</i>`).join('');
+    $('#lg-stats').innerHTML = `<span>资质 <b>${roll.lg.word}</b> · 灵根</span><div class="wx-scale"><b>悟性 ${cn(roll.wx)} · ${wuxingWord(roll.wx)}</b><div class="wx-rule">${cells}</div><em>左愚钝 · 右天纵</em></div><p class="wx-note">灵根定资质，悟性另计，二者不互相换算。再测会把这两样重新掷过。</p>`;
     $('#lg-stats').classList.add('bleed-in');
   }, Math.min(d, 1600));
   await sleep(900);
@@ -1006,6 +1020,14 @@ function fitLine(el, max, min) {
   let f = max; el.style.fontSize = f + 'px'; el.style.letterSpacing = '';
   while (el.scrollWidth > el.clientWidth + 0.5 && f > min) { f -= 0.5; el.style.fontSize = f + 'px'; el.style.letterSpacing = '0.02em'; }
 }
+function nextRealmLine() {
+  if (!S || S.ascended) return '已逾凡境';
+  const r = R();
+  const major = (typeof NEXT_REALM_NAME !== 'undefined' && NEXT_REALM_NAME[S.realm]) || '飞升';
+  if (bottleneck()) return `本境已满 · 下一境 ${major} · 卷下可破境`;
+  if (isLast()) return `本层将满 · 下一境 ${major} · 小境自升`;
+  return `下一层 ${r.stages[S.stage + 1]} · 小境自升 · 下一境 ${major}`;
+}
 let shownRealm = null;
 const prev = {};
 const tweens = {};
@@ -1045,7 +1067,8 @@ function render() {
   setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''}${sexMark ? ' · ' + sexMark : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
   renderPathSeals();
   const so = Core.org(S); $('#sect-seal-t').textContent = so ? so.seal : '游';
-  $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok)); fitLine($('#h-sub'), 11.5, 9);
+  $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok));
+  fitLine($('#h-sub'), document.documentElement.dataset.font === 'lg' ? 13 : 12, 11);
   const rq = req(); if (S.xw > rq && isLast()) S.xw = rq; const p = clamp(S.xw / rq, 0, 1);
   const fill = $('#xw-fill'); fill.parentElement.style.setProperty('--p', (p * 100).toFixed(1) + '%');
   fill.classList.toggle('full', bottleneck());
@@ -1054,7 +1077,11 @@ function render() {
   const inc = $('.incense'); inc.style.setProperty('--life', (Math.max(0.02, lifeLeft) * 100).toFixed(1) + '%');
   setText('#life-num', `${S.age} / ${S.lifespan}`);
   const lowLife = S.lifespan - S.age <= Math.max(6, (S.lifespan - 16) * 0.12);
-  $('.bar-life').classList.toggle('low', lowLife);
+  const thinLife = lifeLeft < 1 / 3;
+  $('.bar-life').classList.toggle('low', lowLife || thinLife);
+  $('.bar-life').classList.toggle('thin', thinLife);
+  const nx = $('#next-line');
+  if (nx) nx.textContent = nextRealmLine();
   const season = Math.floor((S.months % 12) / 3);
   setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
   FX.setSeason(season); FX.setGold(S.realm || 0);
@@ -1222,7 +1249,12 @@ function act(kind) {
     // 灵气旋入丹田之后，才落笔记下这一季
     const done = async () => {
       if (!S) return;
-      pushLog({ text: o.text, tags: o.tags }); B.flush(); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd(); maybeWanderNudge(); maybeGuide();
+      pushLog({ text: o.text, tags: o.tags }); B.flush(); Core.afterGain(S, o.ups, pushLog);
+      if (typeof Life !== 'undefined' && Life.takeVignette) {
+        const v = Life.takeVignette(S, 'tuna');
+        if (v) pushLog({ title: v.title, text: v.text, cls: 'breath' });
+      }
+      render(); save(); checkEnd(); maybeWanderNudge(); maybeGuide();
       const bx = $('.bar-xw'); bx.classList.remove('gain'); void bx.offsetWidth; bx.classList.add('gain');
       clearTimeout(act.gt); act.gt = setTimeout(() => bx.classList.remove('gain'), 1500);
       await maybeFabaoCeremony();
@@ -2272,7 +2304,7 @@ function bagPage() {
     const canUse = !!(PILLS[k] && PILLS[k].use) || (k === '延寿丹' || k === '破障丹');
     it.innerHTML = `<div class="item-info"><div class="item-name"></div><div class="item-desc"></div></div><div class="item-acts"></div>`;
     it.querySelector('.item-name').innerHTML = `${k}<em>×${S.items[k]}</em>${isG ? `<em class="gear-k">${GEAR[k].kind}</em>` : ''}`;
-    it.querySelector('.item-desc').textContent = isG ? GEAR[k].desc : (PILLS[k] ? PILLS[k].desc : (k === '延寿丹' ? '延年益寿，略补寿元。' : k === '破障丹' ? '破障开经，助破瓶颈或增益修为。' : ''));
+    it.querySelector('.item-desc').textContent = isG ? GEAR[k].desc : (Core.itemEffect ? Core.itemEffect(S, k) : (PILLS[k] ? PILLS[k].desc : ''));
     const acts = it.querySelector('.item-acts');
     if (canUse) {
       const cap = Core.useBatchCap ? Core.useBatchCap(S, k) : Math.min(5, S.items[k] | 0);
@@ -3373,7 +3405,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=57').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=58').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();

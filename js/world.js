@@ -57,8 +57,8 @@ const EV_LOC = {}; for (const [l, ids] of Object.entries(LOC_EV)) for (const id 
 
 /* ================= 灵草、材料、新丹 ================= */
 Object.assign(PILLS, {
-  '延寿丹': { desc: '龙血藤与雪莲同炉，可续数载寿元，药力逊于朱果。', use: true },
-  '破障丹': { desc: '小境界服之，修为陡进半层；瓶颈时服之，下一回破境多一分把握。', use: true },
+  '延寿丹': { desc: '续寿元年数少于朱果。行囊里写明此刻是多少年。', use: true },
+  '破障丹': { desc: '未至瓶颈，修为增加当前一层所需的一半；已至瓶颈，下回破境把握 +8%。', use: true },
   '青叶草': { desc: '山野随处可见的灵草，聚气、回春皆用得上。', kind: 'herb' },
   '宁神花': { desc: '花开如盏，香气清冷，可入清心丹。', kind: 'herb' },
   '赤阳花': { desc: '生在向阳的石缝里，花心一点赤红，性燥。', kind: 'herb' },
@@ -76,7 +76,7 @@ Object.assign(PILLS, {
 });
 // 物价：base 为灵石，tier 为物品品阶（按 lsScale 折算）；rel 表示随买者境界折算
 const ITEM_VAL = {
-  '聚气丹': { base: 22, rel: 1 }, '回春丹': { base: 34, rel: 1 }, '清心丹': { base: 48, rel: 1 }, '延寿丹': { base: 140, rel: 1 }, '破障丹': { base: 120, rel: 1 }, '延寿果': { base: 180, rel: 1 },
+  '聚气丹': { base: 16, rel: 1 }, '回春丹': { base: 28, rel: 1 }, '清心丹': { base: 36, rel: 1 }, '延寿丹': { base: 140, rel: 1 }, '破障丹': { base: 120, rel: 1 }, '延寿果': { base: 180, rel: 1 },
   '筑基丹': { base: 120, tier: 0 }, '凝元丹': { base: 140, tier: 1 }, '化婴丹': { base: 160, tier: 2 }, '问神丹': { base: 180, tier: 3 }, '渡厄符': { base: 200, tier: 4 },
   '青叶草': { base: 3, tier: 0 }, '宁神花': { base: 5, tier: 0 }, '赤阳花': { base: 6, tier: 0 }, '紫云芝': { base: 6, tier: 1 }, '龙血藤': { base: 7, tier: 2 },
   '血菩提': { base: 8, tier: 2 }, '雪莲': { base: 7, tier: 3 }, '九叶灵芝': { base: 9, tier: 4 },
