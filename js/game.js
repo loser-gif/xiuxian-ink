@@ -61,10 +61,27 @@ function drawMountains(force, opt) {
   const night = document.documentElement.dataset.theme === 'night';
   // 卷首锁在 v35 的峰形：不随境界换色、不加竹。游玩背景仍按境界变。
   const sig = (title ? 1000 : 0) + realm + (night ? 100 : 0);
-  if (!force && Math.abs(w - lastW) < 2 && sig === lastRealmDraw) return;
   lastW = w; lastRealmDraw = sig;
   const sh = (night || title) ? [0, 0, 0] : (REALM_SHIFT[realm] || [0, 0, 0]);
   const els = $$('.mtn');
+  const unlaid = els.some(cv => !cv.clientWidth || !cv.clientHeight);
+  if (unlaid) {
+    drawMountains._n = (drawMountains._n || 0) + 1;
+    if (drawMountains._n < 12) {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(() => drawMountains(true, opt), 80);
+    }
+    return;
+  }
+  drawMountains._n = 0;
+  const stale = els.some(cv => {
+    const s = (typeof Ink !== 'undefined' && Ink.layerScale) ? Ink.layerScale(cv.clientWidth, cv.clientHeight) : 1;
+    return Math.abs(cv.width - Math.round(cv.clientWidth * s)) > 2 || Math.abs(cv.height - Math.round(cv.clientHeight * s)) > 2;
+  });
+  if (!force && !stale && Math.abs(w - lastW) < 2 && sig === lastRealmDraw) {
+    if (wallpaperOn && typeof Wallpaper !== 'undefined' && Wallpaper.needsBuild && Wallpaper.needsBuild()) Wallpaper.rebuild();
+    return;
+  }
   const finish = () => { if (wallpaperOn && typeof Wallpaper !== 'undefined') Wallpaper.rebuild(); };
   if (opt && opt.yield && els.length) {
     const gen = ++mtnGen;
@@ -144,7 +161,21 @@ function fiberTile() {
   return cv.toDataURL();
 }
 let resizeT;
-window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => drawMountains(false), 250); });
+function fitSheetCap() {
+  let z = 1;
+  try { z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1; } catch (e) {}
+  if (!(z > 0)) z = 1;
+  root.style.setProperty('--sheet-cap', Math.max(240, Math.floor(window.innerHeight / z - 24)) + 'px');
+}
+fitSheetCap();
+window.addEventListener('resize', () => {
+  fitSheetCap();
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => {
+    drawMountains(false);
+    if (wallpaperOn && typeof Wallpaper !== 'undefined' && Wallpaper.rebuild) Wallpaper.rebuild();
+  }, 250);
+});
 
 /* 触感：墨晕涟漪 */
 document.addEventListener('pointerdown', e => {
@@ -1495,10 +1526,13 @@ function choose(ev, c, btn, evText, titleText) {
   const close = document.createElement('button'); close.className = 'brush-btn small'; close.style.opacity = 0;
   close.innerHTML = '<span class="bb-ink"></span><span class="bb-text">收卷</span>';
   out.appendChild(close);
+  let rolled = false;
   setTimeout(() => { tg.style.opacity = ''; tg.classList.add('bleed-in'); close.style.opacity = ''; close.classList.add('bleed-in');
     const m = $('.ev-main'); m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); }, Math.min(d, 2200) + 200);
   setTimeout(() => { const m = $('.ev-main'); m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); }, 400);
   close.onclick = async () => {
+    if (rolled) return;
+    rolled = true;
     await closeModal();
     if (S.flags) S.flags.cultRun = 0;
     if (ev.guide) {
@@ -1513,6 +1547,7 @@ function choose(ev, c, btn, evText, titleText) {
     if (res.after && !S.dead) res.after();
     if (res.afterBreak && !S.dead && !S.ascended && bottleneck()) setTimeout(() => { if (!uiBlocked()) openBreak(); }, 280);
   };
+  if (c.skipAll) setTimeout(() => { if (!rolled && close.isConnected) close.click(); }, snappy() ? 40 : 420);
   render(); save();
 }
 
@@ -2280,7 +2315,7 @@ function bagPage() {
     const zhi = document.createElement('div'); zhi.className = 'shenqi-zhi';
     const rows = SHENQI_ZHI.map(z => {
       const known = (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name);
-      return `<div class="sq-row ${known ? 'on' : 'off'}"><span class="sq-seal">${known ? esc(z.seal) : '？'}</span><div><b>${known ? esc(z.name) : '□□□□'}</b><p>${known ? esc(z.blurb) : '机缘未至，名录空阙。'}</p></div></div>`;
+      return `<div class="sq-row ${known ? 'on' : 'off'}"><span class="sq-seal">${known ? esc(z.seal) : '？'}</span><div><b>${known ? esc(z.name) : '——'}</b><p>${known ? esc(z.blurb) : '机缘未至，名录空阙。'}</p></div></div>`;
     }).join('');
     zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}`;
     wrap.appendChild(zhi);
@@ -3199,6 +3234,40 @@ $('#side').onclick = e => {
 };
 addEventListener('resize', () => { if (document.body.dataset.screen === 'main') renderSide(); });
 
+/* 奇遇：收卷可关；必选未落定时只颤一下，不替玩家跳过。宽屏点遮罩同此。 */
+function choiceBoxShake(box) {
+  if (!box) return;
+  box.classList.remove('ink-shake');
+  void box.offsetWidth;
+  box.classList.add('ink-shake');
+}
+function rollVisible(el) {
+  if (!el || !el.isConnected) return false;
+  const s = getComputedStyle(el);
+  if (s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) < 0.45) return false;
+  const r = el.getBoundingClientRect();
+  return r.width > 8 && r.height > 8;
+}
+function dismissEventLayer() {
+  const close = [...modal.querySelectorAll('#ev-result .brush-btn')].find(b => (b.textContent || '').indexOf('收卷') >= 0);
+  if (rollVisible(close)) { close.click(); return; }
+  const box = $('#ev-choices');
+  const pending = box && !box.classList.contains('chosen') && box.querySelector('.choice');
+  const manual = modal.querySelector('.manual-choices');
+  const manualPending = manual && !manual.classList.contains('chosen') && manual.querySelector('.choice');
+  if (pending || manualPending || (box && box.classList.contains('chosen'))) {
+    choiceBoxShake(pending ? box : manual || box);
+    return;
+  }
+  closeModal();
+}
+const modalShade = modal.querySelector('.modal-shade');
+if (modalShade) modalShade.addEventListener('click', () => {
+  if (!window.matchMedia || !matchMedia('(min-width:700px)').matches) return;
+  if (modal.hidden || !modal.classList.contains('open')) return;
+  dismissEventLayer();
+});
+
 /* ================= 键盘：1-4 行动 · Esc 收起 · Enter 确认 · 方向键（地图/斗法） ================= */
 const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled;
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
@@ -3219,6 +3288,7 @@ addEventListener('keydown', e => {
     if (L.id === 'sheet') { e.preventDefault(); return closeSheet(); }
     if (L.id === 'map') return click($('#map-close'));
     if (L.id === 'dan') return click($('#dan-close'));
+    if (L.id === 'modal') { e.preventDefault(); dismissEventLayer(); return; }
     if (L.id === 'path-cer' || L.id === 'baishan' || L.id === 'origin-cer') {
       e.preventDefault();
       const btn = L.id === 'origin-cer' ? $('#origin-confirm') : L.id === 'baishan' ? $('#baishan-confirm') : $('#path-cer-confirm');
@@ -3303,7 +3373,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=56').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=57').then(reg => {
     if (!had) return;
     const ask = () => { const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false; };
     if (reg.waiting) ask();
