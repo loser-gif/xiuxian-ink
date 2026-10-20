@@ -1039,9 +1039,9 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .gf-row .item-use{margin-top:6px}
 
 /* ---------- 终卷诸相 ---------- */
-.end-art{height:96px;margin:-14px -6px 0;pointer-events:none}
+.end-art{flex:none;height:112px;margin:0 0 4px;pointer-events:none;overflow:hidden}
 .end-art:empty{display:none}
-.end-art svg{width:100%;height:100%;display:block;overflow:visible}
+.end-art svg{width:100%;height:100%;display:block;overflow:hidden}
 .end-legacy{color:var(--zhu);letter-spacing:.2em}
 /* 飞升：金光自地平线放出 */
 .end-ascend .end-title{color:#8a6a2a;text-shadow:0 0 18px rgba(214,170,80,.45)}
@@ -3248,6 +3248,7 @@ html[data-theme="night"] .naihe{background-color:#070605}
 .codex-copy em{display:block;font-style:normal;margin-top:2px;font-size:13px;line-height:1.65;color:var(--ink3)}
 .codex-card.sil .codex-copy b{color:var(--ink4);letter-spacing:.22em}
 .sil-ink{display:flex;align-items:center;justify-content:center;width:64px;height:56px;border-radius:0;background:none;box-shadow:none;transform:none;color:rgba(27,24,20,.58)}
+.sil-ink.sil-face{width:46px;height:56px}
 .sil-ink svg{display:block;width:100%;height:100%;overflow:visible}
 .codex-art.sil-art{background:transparent}
 html[data-palette="songyan"] #paper{filter:saturate(.86) contrast(1.03)}
@@ -3271,33 +3272,21 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 .page-aside i{font-style:normal}
 @media (min-width:1000px) and (min-height:600px){
   body[data-screen=main] .page-aside{
-    display:block;position:fixed;z-index:3;top:36%;
-    font-size:13px;line-height:1;letter-spacing:.46em;color:var(--ink3);
+    display:block;position:fixed;z-index:4;top:34%;
+    font-size:15px;line-height:1.35;letter-spacing:.28em;color:var(--ink2);
     pointer-events:none;
     writing-mode:vertical-rl;
     text-orientation:upright;
   }
-  body[data-screen=main] #margin-l{left:16px;right:auto}
-  body[data-screen=main] #margin-r{right:18px;left:auto}
-  body[data-screen=main] #scenery{
-    opacity:.78;transform:none;
-    -webkit-mask-image:none;mask-image:none;
-  }
-  body[data-screen=main] #scenery .m1{
-    opacity:.92;top:2%;height:46%;left:-42%;width:184%;
-  }
-  body[data-screen=main] #scenery .m2{opacity:.22;top:16%;height:40%;left:-30%;width:160%}
+  body[data-screen=main] #margin-l{left:18px;right:auto}
+  body[data-screen=main] #margin-r{right:20px;left:auto}
+  body[data-screen=main] #scenery .m1,
+  body[data-screen=main] #scenery .m2,
   body[data-screen=main] #scenery .m3,
-  body[data-screen=main] #scenery .m4,
-  body[data-screen=main] #scenery .mist,
-  body[data-screen=main] #scenery .lake,
-  body[data-screen=main] #scenery .atmo,
-  body[data-screen=main] #scenery .sun,
-  body[data-screen=main] #scenery .cranes,
-  body[data-screen=main] #scenery .pine{opacity:0}
-  /* 远峰单独铺在栏外。中卷是不透的纸，峰从两侧留白里伸出来。 */
+  body[data-screen=main] #scenery .m4{opacity:0}
+  /* 栏外远峰：几团洇开的淡墨，下缘化进纸色，不是一块实色。 */
   body[data-screen=main] #vignette::before{
-    content:"";position:absolute;left:-6%;right:-6%;top:22%;height:240px;pointer-events:none;
-    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200' preserveAspectRatio='none'><path fill='%2358646c' fill-opacity='.62' d='M0 168L60 96 130 140 200 48 270 128 340 72 430 156 520 28 620 132 710 56 820 148 930 24 1040 116 1130 64 1200 150 1200 200 0 200Z'/></svg>") center/100% 100% no-repeat;
+    content:"";position:absolute;left:-8%;right:-8%;top:6%;height:42%;pointer-events:none;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 420'><defs><filter id='w' x='-15%25' y='-40%25' width='130%25' height='180%25'><feGaussianBlur stdDeviation='18'/></filter><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23515f68' stop-opacity='.55'/><stop offset='.5' stop-color='%23515f68' stop-opacity='.2'/><stop offset='1' stop-color='%23515f68' stop-opacity='0'/></linearGradient></defs><g filter='url(%23w)' fill='url(%23g)'><ellipse cx='70' cy='250' rx='150' ry='100'/><ellipse cx='250' cy='200' rx='190' ry='140'/><ellipse cx='470' cy='240' rx='160' ry='90'/><ellipse cx='700' cy='180' rx='210' ry='150'/><ellipse cx='940' cy='220' rx='180' ry='110'/><ellipse cx='1160' cy='190' rx='200' ry='145'/><ellipse cx='1360' cy='245' rx='160' ry='95'/></g></svg>") center/100% 100% no-repeat;
   }
 }
