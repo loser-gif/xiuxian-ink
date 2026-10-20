@@ -817,203 +817,191 @@ const FX = (() => {
     if (!host) return Promise.resolve();
     const thin = opt.thin != null ? !!opt.thin : cheapFx();
     const broken = !!opt.broken;
-    const dur = opt.dur || 700;
+    const strokeMs = opt.dur || 700;
+    const paperMs = 150;
     const seal = opt.seal || '';
+    const paper = document.createElement('div');
+    paper.className = 'brush-paper';
+    paper.setAttribute('aria-hidden', 'true');
+    host.appendChild(paper);
     const cv = document.createElement('canvas');
     cv.className = 'ink-pass brush-pass';
     cv.setAttribute('aria-hidden', 'true');
     host.appendChild(cv);
     const dpr = thin ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     const W = Math.max(1, innerWidth), H = Math.max(1, innerHeight);
+    const narrow = W < H;
     cv.width = Math.max(2, Math.round(W * dpr));
     cv.height = Math.max(2, Math.round(H * dpr));
     const c = cv.getContext('2d');
     const gate = armSkip();
     host.classList.add('brush-on');
-    const headR = H * 0.074;
-    const x0 = W * 0.11 + headR;
-    const x1 = W * (broken ? 0.6 : 0.90);
-    const limitT = broken ? 0.68 : 1;
+    const nameEl = host.querySelector('.bt-big');
+    if (nameEl) {
+      nameEl.style.position = 'absolute';
+      nameEl.style.left = '0';
+      nameEl.style.right = '0';
+      nameEl.style.top = '12%';
+      nameEl.style.margin = '0 auto';
+      nameEl.style.width = 'max-content';
+      nameEl.style.zIndex = '5';
+      nameEl.style.color = '#1b1814';
+      nameEl.style.textShadow = 'none';
+    }
+    const xA = W * (narrow ? 0.14 : 0.11);
+    const xB = W * (broken ? 0.58 : (narrow ? 0.86 : 0.87));
     const cy = H * 0.5;
-    const strandN = thin ? 8 : 14;
-    const strands = [];
-    for (let i = 0; i < strandN; i++) {
-      const u = (i + 0.5) / strandN;
-      strands.push({
-        u,
-        phase: brushHash(i + 3) * 6.28,
-        freq: 1.1 + brushHash(i + 8) * 1.3,
-        die: Math.min(limitT, 0.66 + 0.34 * brushHash(i + 5)),
-        width: H * (0.0032 + brushHash(i + 2) * 0.0055),
-        amp: 0.1 + brushHash(i + 11) * 0.16,
-        ink: 0.16 + brushHash(i + 6) * 0.22,
+    const lift = H * (narrow ? 0.025 : 0.035);
+    const p0 = [xA, cy];
+    const p1 = [xA + (xB - xA) * 0.33, cy - lift];
+    const p2 = [xA + (xB - xA) * 0.66, cy - lift * 0.85];
+    const p3 = [xB, cy - lift * 0.15];
+    const limitT = broken ? 0.66 : 1;
+    const maxHalf = H * (narrow ? 0.042 : 0.068);
+    const nBrist = thin ? 24 : (narrow ? 36 : 46);
+    const bristles = [];
+    for (let i = 0; i < nBrist; i++) {
+      const g = (i + 0.5) / nBrist;
+      const o = (g - 0.5) * 2;
+      const edge = Math.abs(o);
+      bristles.push({
+        o,
+        life: Math.min(limitT, (0.46 + brushHash(i + 4) * 0.54) * (edge > 0.72 ? 0.7 : 1) * (broken ? 0.7 : 1)),
+        phase: brushHash(i + 9) * 6.28,
+        freq: 1.2 + brushHash(i + 2) * 2.4,
+        rx: 2.4 + brushHash(i + 6) * 2.8,
+        ry: 0.7 + brushHash(i + 8) * 0.9,
+        ink: 0.55 + brushHash(i + 12) * 0.45,
       });
     }
-    const pointAt = t => {
-      const x = x0 + (x1 - x0) * t;
-      const arc = Math.sin(t * Math.PI) * H * 0.02;
-      const drift = Math.sin(t * 2.4 + 0.7) * H * 0.008;
-      return [x, cy - arc + drift];
+    const bez = (t, a, b, c0, d) => {
+      const u = 1 - t;
+      return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c0 + t * t * t * d;
     };
-    const halfW = t => {
-      const belly = 0.86 + 0.14 * Math.exp(-Math.pow((t - 0.26) / 0.34, 2));
-      const taper = t < 0.46 ? 1 : Math.pow(Math.max(0, 1 - (t - 0.46) / 0.54), 1.2);
-      const wob = 1 + 0.045 * Math.sin(t * 5.2 + 0.8) + 0.03 * Math.sin(t * 11.0 + 2.1);
-      return H * 0.078 * belly * Math.max(0.07, taper) * wob;
+    const dbez = (t, a, b, c0, d) => {
+      const u = 1 - t;
+      return 3 * u * u * (b - a) + 6 * u * t * (c0 - b) + 3 * t * t * (d - c0);
     };
-    const normalAt = t => {
-      const a = pointAt(Math.max(0, t - 0.012)), b = pointAt(Math.min(0.999, t + 0.012));
-      let nx = -(b[1] - a[1]), ny = b[0] - a[0];
-      const nl = Math.hypot(nx, ny) || 1;
-      return [nx / nl, ny / nl];
+    const sample = t => {
+      const x = bez(t, p0[0], p1[0], p2[0], p3[0]);
+      const y = bez(t, p0[1], p1[1], p2[1], p3[1]);
+      let dx = dbez(t, p0[0], p1[0], p2[0], p3[0]);
+      let dy = dbez(t, p0[1], p1[1], p2[1], p3[1]);
+      const len = Math.hypot(dx, dy) || 1;
+      dx /= len; dy /= len;
+      return { x, y, tx: dx, ty: dy, nx: -dy, ny: dx };
     };
-    const tangentAt = t => {
-      const n = normalAt(t);
-      return [n[1], -n[0]];
-    };
-    const traceBody = (tEnd, extra) => {
-      const steps = thin ? 28 : 48;
-      const left = [], right = [];
-      const end = Math.max(0.02, Math.min(tEnd, limitT));
-      for (let i = 0; i <= steps; i++) {
-        const t = end * (i / steps);
-        const hw = halfW(t) + extra;
-        const p = pointAt(t), n = normalAt(t);
-        left.push([p[0] + n[0] * hw, p[1] + n[1] * hw]);
-        right.push([p[0] - n[0] * hw, p[1] - n[1] * hw]);
-      }
-      c.beginPath();
-      const head = pointAt(0), n0 = normalAt(0), tg = tangentAt(0);
-      const hr = halfW(0.02) + extra;
-      const ang = Math.atan2(tg[1], tg[0]);
-      c.ellipse(head[0], head[1], hr * 1.08, hr * 0.9, ang, 0, Math.PI * 2);
-      c.moveTo(left[0][0], left[0][1]);
-      for (let i = 1; i < left.length; i++) c.lineTo(left[i][0], left[i][1]);
-      for (let i = right.length - 1; i >= 0; i--) c.lineTo(right[i][0], right[i][1]);
-      c.closePath();
+    const pressure = t => {
+      const u = Math.min(1, t / 0.08);
+      const entry = Math.sin(u * Math.PI * 0.5);
+      const head = 0.16 + 0.84 * entry;
+      const belly = 0.76 + 0.24 * Math.exp(-Math.pow((t - 0.32) / 0.26, 2));
+      const liftP = t < 0.55 ? 1 : Math.max(0.16, Math.pow(Math.max(0, 1 - (t - 0.55) / 0.45), 1.05));
+      return head * belly * liftP;
     };
     const paintSeal = k => {
-      if (broken || !seal || k < 0.8) return;
-      const tip = pointAt(Math.min(limitT, 0.93));
-      const s = H * 0.07;
-      const press = Math.min(1, (k - 0.8) / 0.18);
-      const sc = 1.28 - 0.28 * (1 - Math.pow(1 - press, 2));
-      c.save();
+      if (broken || !seal || k < 0.82) return;
+      const tip = sample(Math.min(limitT, 0.93));
+      const fullW = maxHalf * 2;
+      const s = Math.min(H * 0.07, fullW * 0.9);
+      const press = Math.min(1, (k - 0.82) / 0.16);
+      const sc = 1.22 - 0.22 * (1 - Math.pow(1 - press, 2));
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.filter = 'none';
-      c.translate(tip[0] + s * 0.08, tip[1] + s * 0.12);
-      c.rotate(-0.08);
+      c.save();
+      c.translate(tip.x, tip.y + s * 0.42);
+      c.rotate(-0.07);
       c.scale(sc, sc);
-      c.globalAlpha = Math.min(1, press * 1.4) * 0.95;
+      c.globalAlpha = Math.min(1, press * 1.35);
       c.fillStyle = '#9d342e';
       c.fillRect(-s / 2, -s / 2, s, s);
       c.strokeStyle = 'rgba(243,234,214,0.9)';
-      c.lineWidth = Math.max(1.5, s * 0.04);
+      c.lineWidth = Math.max(1.25, s * 0.045);
       c.strokeRect(-s / 2 + s * 0.08, -s / 2 + s * 0.08, s * 0.84, s * 0.84);
       c.fillStyle = '#f3ead6';
-      c.font = Math.round(s * 0.56) + 'px MoShu, serif';
+      c.font = Math.round(s * 0.52) + 'px MoShu, serif';
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.fillText(seal, 0, s * 0.04);
       c.restore();
     };
+    const dabSprite = (w, h, rx, ry, blur, color) => {
+      const cv2 = document.createElement('canvas');
+      cv2.width = w; cv2.height = h;
+      const g = cv2.getContext('2d');
+      g.filter = 'blur(' + blur + 'px)';
+      g.fillStyle = color;
+      g.beginPath();
+      g.ellipse(w / 2, h / 2, rx, ry, 0, 0, 6.2832);
+      g.fill();
+      return cv2;
+    };
+    const inkDab = dabSprite(16, 8, 5.2, 2.1, 0.8, 'rgba(27,24,20,0.95)');
+    const haloDab = dabSprite(22, 14, 7.2, 4.2, 1.1, 'rgba(150,118,82,0.55)');
     const paint = k => {
-      const reach = Math.min(limitT, Math.max(0.02, k));
+      const reach = Math.min(limitT, Math.max(0, k));
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.clearRect(0, 0, W, H);
       c.globalCompositeOperation = 'source-over';
-      c.lineCap = 'round';
-      c.lineJoin = 'round';
-      c.save();
-      c.filter = 'blur(' + (thin ? 2.2 : 3) + 'px)';
-      c.globalAlpha = 0.42;
-      c.fillStyle = 'rgba(62,44,30,0.55)';
-      traceBody(reach, H * 0.012);
-      c.fill();
-      c.restore();
-      const g = c.createLinearGradient(x0, cy, x1, cy);
-      g.addColorStop(0, 'rgba(198,164,112,0.98)');
-      g.addColorStop(0.22, 'rgba(228,206,168,0.96)');
-      g.addColorStop(0.55, 'rgba(240,226,198,0.9)');
-      g.addColorStop(0.78, 'rgba(246,234,214,0.8)');
-      g.addColorStop(0.92, 'rgba(246,236,220,0.48)');
-      g.addColorStop(1, 'rgba(246,236,220,0.2)');
-      c.save();
-      c.filter = 'blur(' + (thin ? 1.4 : 1.6) + 'px)';
-      c.globalAlpha = 1;
-      c.fillStyle = g;
-      traceBody(reach, 0);
-      c.fill();
-      c.restore();
-      c.save();
-      c.filter = 'blur(2px)';
-      c.globalAlpha = 0.34;
-      c.fillStyle = 'rgba(122,86,48,0.7)';
-      traceBody(Math.min(reach, 0.38), -H * 0.028);
-      c.fill();
-      c.restore();
-      c.save();
-      traceBody(reach, 0);
-      c.clip();
-      c.filter = 'blur(0.8px)';
-      for (let si = 0; si < strands.length; si++) {
-        const b = strands[si];
-        c.beginPath();
-        let pen = false;
-        const steps = thin ? 32 : 52;
-        for (let i = 0; i <= steps; i++) {
-          const t = reach * (i / steps);
-          const tail = Math.max(0, (t - 0.5) / 0.5);
-          const wave = Math.sin(t * b.freq * Math.PI * 2 + b.phase);
-          const gap = tail > 0.12 && wave > (0.35 - tail * 1.05);
-          if (t < 0.06 || t > b.die || gap) { pen = false; continue; }
-          const side = (b.u - 0.5) * 1.15 + wave * (b.amp + tail * 0.22);
-          const p = pointAt(t), n = normalAt(t), hw = halfW(t);
-          const x = p[0] + n[0] * side * hw;
-          const y = p[1] + n[1] * side * hw + Math.sin(t * 8 + b.phase) * H * 0.004;
-          if (!pen) { c.moveTo(x, y); pen = true; }
-          else c.lineTo(x, y);
+      c.filter = 'none';
+      const span = Math.max(1, xB - xA);
+      const steps = Math.max(12, Math.round(span / (thin ? 9 : 5.5)));
+      const last = Math.max(0, Math.round(steps * (reach / limitT)));
+      for (let i = 0; i <= last; i++) {
+        const t = (i / steps) * limitT;
+        if (t > reach) break;
+        const pr = pressure(t / limitT);
+        const hw = maxHalf * pr;
+        const s = sample(t);
+        const ang = Math.atan2(s.ty, s.tx);
+        const cos = Math.cos(ang), sin = Math.sin(ang);
+        for (let bi = 0; bi < bristles.length; bi++) {
+          const b = bristles[bi];
+          if (t > b.life) continue;
+          const fade = t > b.life - 0.05 ? Math.max(0.45, (b.life - t) / 0.05) : 1;
+          const wander = Math.sin(t * b.freq + b.phase) * hw * 0.08;
+          const jit = (brushHash(bi + 1 + i * 0.37) - 0.5) * 2.2;
+          const side = b.o * hw + wander + jit;
+          const x = s.x + s.nx * side;
+          const y = s.y + s.ny * side;
+          const along = (b.rx * (0.9 + (1 - pr) * 0.85)) / 5.2;
+          const across = (b.ry * (0.85 + pr * 0.7)) / 2.1;
+          if (t < b.life * 0.7 && (bi % 3) === 0 && (i & 1) === 0) {
+            c.globalAlpha = 0.09 * fade;
+            c.setTransform(dpr * cos * along * 1.8, dpr * sin * along * 1.8, -dpr * sin * across * 1.7, dpr * cos * across * 1.7, dpr * x, dpr * y);
+            c.drawImage(haloDab, -11, -7);
+          }
+          c.globalAlpha = (0.36 + 0.4 * b.ink) * fade;
+          c.setTransform(dpr * cos * along, dpr * sin * along, -dpr * sin * across, dpr * cos * across, dpr * x, dpr * y);
+          c.drawImage(inkDab, -8, -4);
         }
-        const dry = 0.25 + brushHash(si + 15) * 0.2;
-        c.strokeStyle = 'rgba(74,52,32,' + (b.ink * (1 - dry * 0.35)).toFixed(3) + ')';
-        c.globalAlpha = 0.85;
-        c.lineWidth = b.width * (0.75 + 0.5 * brushHash(si + 19));
-        c.stroke();
       }
-      c.filter = 'none';
-      c.globalAlpha = 0.09;
-      c.strokeStyle = 'rgba(60,42,28,0.8)';
-      c.lineWidth = 1;
-      const specks = thin ? 24 : 64;
-      for (let i = 0; i < specks; i++) {
-        const t = brushHash(i + 21) * reach * 0.96;
-        const p = pointAt(t), n = normalAt(t);
-        const side = (brushHash(i + 70) - 0.5) * halfW(t) * 1.5;
-        const x = p[0] + n[0] * side, y = p[1] + n[1] * side;
-        const len = 5 + brushHash(i + 33) * 16;
-        c.beginPath();
-        c.moveTo(x, y);
-        c.lineTo(x + len, y + (brushHash(i + 44) - 0.5) * 2.4);
-        c.stroke();
-      }
-      c.restore();
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.globalAlpha = 1;
-      c.filter = 'none';
       paintSeal(k);
     };
     const t0 = performance.now();
+    const total = paperMs + strokeMs;
     return new Promise(resolve => {
       const frame = now => {
         const skip = gate.skip;
-        const k = skip ? 1 : Math.min(1, (now - t0) / dur);
-        paint(k);
-        if (k < 1) { requestAnimationFrame(frame); return; }
+        const elapsed = skip ? total : Math.max(0, Math.min(total, now - t0));
+        paper.style.opacity = String(Math.min(1, elapsed / paperMs));
+        const k = Math.min(1, Math.max(0, (elapsed - paperMs) / strokeMs));
+        paint(skip ? 1 : k);
+        if (!skip && elapsed < total) { requestAnimationFrame(frame); return; }
         settle(gate).then(() => {
           gate.off();
-          host.classList.remove('brush-on');
           resolve();
+          paper.style.transition = 'opacity .45s ease';
           cv.style.transition = 'opacity .45s ease';
-          requestAnimationFrame(() => { cv.style.opacity = '0'; });
-          setTimeout(() => { if (cv.parentNode) cv.parentNode.removeChild(cv); }, 480);
+          requestAnimationFrame(() => { paper.style.opacity = '0'; cv.style.opacity = '0'; });
+          setTimeout(() => {
+            host.classList.remove('brush-on');
+            if (nameEl) nameEl.removeAttribute('style');
+            if (paper.parentNode) paper.parentNode.removeChild(paper);
+            if (cv.parentNode) cv.parentNode.removeChild(cv);
+          }, 480);
         });
       };
       requestAnimationFrame(frame);

@@ -530,7 +530,9 @@ html[data-motion="lite"] .bar-life.thin .stick,html[data-fx="thin"] .bar-life.th
 .bt.sweep.reveal .bt-half{animation:bigInk .7s var(--ease-ink) forwards}
 .bt.sweep .bt-big{clip-path:inset(0 100% 0 0)}
 .bt.sweep.reveal .bt-big{animation:brushWipe .7s linear forwards}
-.bt.brush-on .bt-big{color:#2a241c !important;text-shadow:none !important}
+.bt.brush-on .bt-big{position:absolute;left:0;right:0;top:13%;width:max-content;margin:0 auto;z-index:5;color:#1b1814 !important;text-shadow:none !important}
+.brush-paper{position:absolute;top:0;right:0;bottom:0;left:0;inset:0;z-index:2;pointer-events:none;background-color:#efe6d3;background-image:var(--paper-img);background-size:256px;opacity:0}
+.ink-pass.brush-pass{z-index:3}
 @keyframes brushWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 .bt-stage{position:absolute;top:0;right:0;bottom:0;left:0;inset:0;pointer-events:none;z-index:1}
 .bt-ring{position:absolute;left:50%;top:42%;width:58vmin;height:58vmin;margin:-29vmin 0 0 -29vmin;border-radius:50%;border:1px solid rgba(239,230,211,.0);opacity:0}
