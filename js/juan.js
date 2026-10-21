@@ -136,13 +136,56 @@ const Juan = (() => {
     const hot = e.cls === 'gold' || /破境|道侣|秘境|天下|回响|徒|结契|传承|山神|镇魔|传说|渊|岛|洞府|残页/.test(blob);
     if (!hot) return;
     if (s.colophon.some(c => c.t === e.title)) return;
+    const who = inferWho(s, e);
+    const line = coloLine(s, e.title, who);
+    if (s.colophon.length >= 16) s.colophon.shift();
+    const rec = { seal: String(e.seal || e.title).slice(0, 1), line, t: e.title, y: s.age | 0 };
+    if (who) rec.who = who;
+    s.colophon.push(rec);
+    e.colo = line;
+  }
+  function inferWho(s, e) {
+    if (e && e.who) return String(e.who);
+    const title = String((e && e.title) || '');
+    const echo = title.match(/回响\s*[·・]\s*(.+)$/);
+    if (echo && echo[1]) return echo[1].trim();
+    if (/^旧人/.test(title)) return mateName(s);
+    return '';
+  }
+  function coloLine(s, title, who) {
     const place = (typeof LOC !== 'undefined' && s.loc && LOC[s.loc]) ? LOC[s.loc].name : '山中';
     const year = 3721 + Math.max(0, (s.age | 0) - 16);
-    const short = [...String(e.title || '').replace(/^入\s*[·・]\s*/, '').replace(/\s+/g, '')].slice(0, 4).join('') || '一事';
-    const line = `大衍历${year}年，于${place}${short}`;
-    if (s.colophon.length >= 16) s.colophon.shift();
-    s.colophon.push({ seal: String(e.seal || e.title).slice(0, 1), line, t: e.title, y: s.age | 0 });
-    e.colo = line;
+    const name = String(title || '').trim() || '一事';
+    const extra = who && name.indexOf(who) < 0 ? ' · ' + who : '';
+    return `大衍历${year}年，于${place}，${name}${extra}`;
+  }
+  function placeOf(line) {
+    const m = String(line || '').match(/^大衍历\d+年，于(.+)$/);
+    if (!m || typeof LOC === 'undefined') return '';
+    const rest = m[1];
+    const names = [];
+    Object.keys(LOC).forEach(k => { if (LOC[k] && LOC[k].name) names.push(LOC[k].name); });
+    names.sort((a, b) => b.length - a.length);
+    return names.find(n => rest.indexOf(n) === 0) || '';
+  }
+  function coloShown(c) {
+    if (!c) return '';
+    const title = String(c.t || '').trim();
+    const who = c.who && title.indexOf(c.who) < 0 ? ' · ' + c.who : '';
+    const line = String(c.line || '');
+    if (title && line.indexOf(title) >= 0) return line;
+    const m = line.match(/^大衍历(\d+)年，于/);
+    if (!m || !title) return line;
+    const place = placeOf(line);
+    if (place) return `大衍历${m[1]}年，于${place}，${title}${who}`;
+    return `大衍历${m[1]}年，${title}${who}`;
+  }
+  function markLabel(c) {
+    if (!c) return '';
+    const title = String(c.t || '一事');
+    const seal = c.seal || title.slice(0, 1) || '印';
+    const who = c.who && title.indexOf(c.who) < 0 ? ' · ' + c.who : '';
+    return seal + ' · ' + title + who;
   }
   function sealLine(s) {
     ensure(s);
@@ -624,6 +667,6 @@ const Juan = (() => {
 
   return {
     ORIGINS, byId, ensure, boot, originLine, originName, tick, dueEvent,
-    onLog, sealLine, takeDisc, mateName, emptyBond,
+    onLog, sealLine, coloShown, markLabel, takeDisc, mateName, emptyBond,
   };
 })();
