@@ -1188,9 +1188,14 @@ function renderSeals() {
   renderSeals._sig = sig;
   const show = list.slice(-6);
   col.hidden = false;
-  col.innerHTML = show.map((c, i) => `<i class="m-seal${changed && i === show.length - 1 ? ' land' : ''}">${esc(c.seal || '印')}</i>`).join('');
+  col.innerHTML = show.map((c, i) => {
+    const label = (typeof Juan !== 'undefined' && Juan.markLabel) ? Juan.markLabel(c) : ((c.seal || '印') + ' · ' + (c.t || ''));
+    const line = (typeof Juan !== 'undefined' && Juan.coloShown) ? Juan.coloShown(c) : (c.line || '');
+    const land = changed && i === show.length - 1 ? ' land' : '';
+    return `<button type="button" class="m-seal${land}" aria-label="${esc(label)}"><span class="m-ch">${esc(c.seal || '印')}</span><span class="m-tip" role="tooltip"><b>${esc(label)}</b><em>${esc(line)}</em></span></button>`;
+  }).join('');
   if (note) {
-    const line = last.line || '';
+    const line = (typeof Juan !== 'undefined' && Juan.coloShown) ? Juan.coloShown(last) : (last.line || '');
     note.hidden = !line;
     note.textContent = line;
     note.classList.toggle('land', changed && !!line);
@@ -1239,15 +1244,58 @@ function renderSide() {
   const trace = traces.length ? `<ul class="sd-trace">${traces.map(t => `<li><em>${esc(t.st)}</em>${esc(t.name)}${t.hint ? ' · ' + esc(t.hint) : ''}</li>`).join('')}</ul>` : '';
   $('#sd-loc').innerHTML = `<b class="sd-name">${loc ? esc(loc.name) : '山中'}</b><span class="sd-row">${notes.join('<br>') || '暂无风声'}</span>${trace}`;
 }
+function traceSummary(rows, openN, sealN) {
+  const n = { '将至': 0, '伏笔': 0, '已了': 0 };
+  rows.forEach(t => { if (n[t.st] != null) n[t.st]++; });
+  const bits = ['将至', '伏笔', '已了'].filter(k => n[k]).map(k => k + n[k]);
+  if (!bits.length && openN) bits.push('秘境未闭');
+  if (!bits.length && sealN) bits.push('印记' + sealN);
+  return bits.length ? '行迹 · ' + bits.join(' · ') : '';
+}
 function renderTraces() {
   const el = $('#trace-note'); if (!el || !S) return;
   const rows = typeof karmaTraces === 'function' ? karmaTraces(S) : [];
   const open = (typeof Jianghu !== 'undefined' && Jianghu.mjOpenList) ? Jianghu.mjOpenList(S) : [];
-  const mj = open.length ? `<div class="sd-row zhu">秘境未闭 · ${open.map(o => esc(o.name) + (o.left ? '·约' + cnDur(o.left) : '')).join('、')}</div>` : '';
-  if (!rows.length && !open.length) { el.hidden = true; el.classList.remove('on'); el.innerHTML = ''; return; }
+  const seals = (S.colophon || []).slice(-6);
+  const sum = traceSummary(rows, open.length, seals.length);
+  if (!sum) { el.hidden = true; el.classList.remove('on'); el.innerHTML = ''; return; }
   el.hidden = false; el.classList.add('on');
+  el.innerHTML = `<button type="button" class="trace-sum" id="trace-open" aria-haspopup="dialog">${esc(sum)}</button>`;
+}
+function openTraceSheet() {
+  if (!S) return;
+  const rows = typeof karmaTraces === 'function' ? karmaTraces(S) : [];
+  const open = (typeof Jianghu !== 'undefined' && Jianghu.mjOpenList) ? Jianghu.mjOpenList(S) : [];
+  const seals = (S.colophon || []).slice(-6);
+  const marks = seals.map(c => {
+    const label = (typeof Juan !== 'undefined' && Juan.markLabel) ? Juan.markLabel(c) : ((c.seal || '印') + ' · ' + (c.t || ''));
+    const line = (typeof Juan !== 'undefined' && Juan.coloShown) ? Juan.coloShown(c) : (c.line || '');
+    return `<li><button type="button" class="mark-row" aria-expanded="false"><i>${esc(c.seal || '印')}</i><span>${esc(label)}</span></button><p class="mark-colo" hidden>${esc(line)}</p></li>`;
+  }).join('');
   const list = rows.length ? `<ul class="sd-trace">${rows.map(t => `<li><em>${esc(t.st)}</em>${esc(t.name)}${t.hint ? ' · ' + esc(t.hint) : ''}</li>`).join('')}</ul>` : '';
-  el.innerHTML = `<b>行迹</b>${mj}${list}`;
+  const mj = open.length ? `<div class="sd-row zhu">秘境未闭 · ${open.map(o => esc(o.name) + (o.left ? '·约' + cnDur(o.left) : '')).join('、')}</div>` : '';
+  const wrap = document.createElement('div');
+  wrap.className = 'trace-sheet';
+  wrap.innerHTML = `${marks ? `<section class="trace-sec"><h4>此生印记</h4><ul class="mark-list">${marks}</ul></section>` : ''}<section class="trace-sec"><h4>行迹</h4>${list || '<p class="sd-empty">尚无未了的因果</p>'}${mj}</section>`;
+  wrap.addEventListener('click', e => {
+    const btn = e.target.closest('.mark-row');
+    if (!btn || !wrap.contains(btn)) return;
+    const was = btn.getAttribute('aria-expanded') === 'true';
+    wrap.querySelectorAll('.mark-row').forEach(b => {
+      b.setAttribute('aria-expanded', 'false');
+      const p = b.nextElementSibling;
+      if (p && p.classList.contains('mark-colo')) p.hidden = true;
+    });
+    if (!was) {
+      btn.setAttribute('aria-expanded', 'true');
+      const p = btn.nextElementSibling;
+      if (p && p.classList.contains('mark-colo')) p.hidden = false;
+    }
+  });
+  openSheet('行迹', wrap).then(() => {
+    const x = $('#sheet-x');
+    if (x) x.hidden = false;
+  });
 }
 function maybeInjHint() {
   if (!S || S.dead || !(S.inj > 0)) return;
@@ -2241,11 +2289,21 @@ async function playClash(res, d) {
 /* ================= 行囊 / 卷首菜单 ================= */
 const sheet = $('#sheet');
 async function openSheet(title, body) {
+  const x = $('#sheet-x'); if (x) x.hidden = true;
   $('#sheet-title').textContent = title; const sb = $('#sheet-body'); sb.innerHTML = ''; sb.appendChild(body);
   sheet.hidden = false; await sleep(20); sheet.classList.add('open');
 }
-async function closeSheet() { sheet.classList.remove('open'); await sleep(500); sheet.hidden = true; }
+async function closeSheet() {
+  const x = $('#sheet-x'); if (x) x.hidden = true;
+  sheet.classList.remove('open'); await sleep(500); sheet.hidden = true;
+}
 $('.sheet-shade').onclick = closeSheet;
+const sheetX = $('#sheet-x');
+if (sheetX) sheetX.onclick = () => closeSheet();
+const traceNote = $('#trace-note');
+if (traceNote) traceNote.addEventListener('click', e => {
+  if (e.target.closest('#trace-open')) openTraceSheet();
+});
 function refreshOpenPanel() {
   const root = $('#sheet-body') && $('#sheet-body').firstElementChild;
   if (root && typeof root._refresh === 'function') root._refresh();
@@ -3444,7 +3502,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=60').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=61').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
