@@ -22,7 +22,7 @@
 
 另外已有、不要随手改名：`moxian.meta`、`moxian.legacy`、`moxian.audio`。
 
-旧档必须能打开。`js/core.js` 的 `SAVE_V` 现为 13。`migrate` 末尾若 `s.v !== SAVE_V` 会直接丢掉存档。新字段用默认值补上，不要为了加字段去抬 `SAVE_V`。真要抬版本，就写一段 `if (s.v === N)` 的迁移，寿元只增不减，修为倍率没变就不要重算修为。
+旧档必须能打开。`js/core.js` 的 `SAVE_V` 现为 14。`migrate` 末尾若 `s.v !== SAVE_V` 会直接丢掉存档。新字段用默认值补上，不要为了加字段去抬 `SAVE_V`。真要抬版本，就写一段 `if (s.v === N)` 的迁移，寿元只增不减，修为倍率没变就不要重算修为。
 
 ## 兼容
 
@@ -33,10 +33,10 @@
 改了修炼、物价、任务、战斗之后跑：
 
 ```
-node tools/sim.js 200 balanced
+node tools/sim.js 600 balanced
 ```
 
-三灵根 `balanced` 的全体用时中位要落在大约 70–85 分钟。再跑 `node tools/audit_events.js`，违例应为 0。`tools/sim.js` 不加载 `folio.js`、`game.js`、`notices.js`，客卿、此身、公告不进这个中位数。
+三灵根 `balanced` 的全体用时中位要落在大约 80–90 分钟。再跑 `node tools/audit_events.js`，违例应为 0。`tools/sim.js` 不加载 `folio.js`、`game.js`、`notices.js`，客卿、此身、公告不进这个中位数。
 
 凡是新增汉字，跑 `python3 tools/fonts.py audit`。缺字就用 `python3 tools/fonts.py build` 重做子集（源字体在 `FONTSRC`，默认 `/workspace/fontsrc`）。终卷大字若用行书，还要写进 `tools/fonts.py` 的 `CAO_TEXT`。
 

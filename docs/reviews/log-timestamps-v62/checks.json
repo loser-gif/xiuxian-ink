@@ -1,0 +1,307 @@
+{
+  "date": "2026-10-21",
+  "base": "1f2a8ac482c62fa3a8b9bf3aa440d09c753bf72a",
+  "continuedFrom": "bc9600b5f708268069f26a33f4c852f71be6726b",
+  "browser": "155.0.4283.62",
+  "compat": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "before": [
+    {
+      "width": 1440,
+      "theme": "day",
+      "logHeight": 477,
+      "scrollHeight": 628,
+      "times": 6,
+      "visibleEntries": 5,
+      "modal": 0
+    },
+    {
+      "width": 1920,
+      "theme": "day",
+      "logHeight": 641,
+      "scrollHeight": 641,
+      "times": 6,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 390,
+      "theme": "day",
+      "logHeight": 380.609375,
+      "scrollHeight": 725,
+      "times": 6,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 360,
+      "theme": "day",
+      "logHeight": 336.609375,
+      "scrollHeight": 756,
+      "times": 6,
+      "visibleEntries": 2,
+      "modal": 0
+    },
+    {
+      "width": 440,
+      "theme": "day",
+      "logHeight": 478.609375,
+      "scrollHeight": 694,
+      "times": 6,
+      "visibleEntries": 4,
+      "modal": 0
+    },
+    {
+      "width": 375,
+      "theme": "day",
+      "logHeight": 348.609375,
+      "scrollHeight": 725,
+      "times": 6,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 1280,
+      "theme": "day",
+      "logHeight": 377,
+      "scrollHeight": 618,
+      "times": 6,
+      "visibleEntries": 4,
+      "modal": 0
+    },
+    {
+      "width": 1440,
+      "theme": "night",
+      "logHeight": 477,
+      "scrollHeight": 628,
+      "times": 6,
+      "visibleEntries": 5,
+      "modal": 0
+    },
+    {
+      "width": 1920,
+      "theme": "night",
+      "logHeight": 641,
+      "scrollHeight": 641,
+      "times": 6,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 390,
+      "theme": "night",
+      "logHeight": 380.609375,
+      "scrollHeight": 725,
+      "times": 6,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 360,
+      "theme": "night",
+      "logHeight": 336.609375,
+      "scrollHeight": 756,
+      "times": 6,
+      "visibleEntries": 2,
+      "modal": 0
+    },
+    {
+      "width": 440,
+      "theme": "night",
+      "logHeight": 478.609375,
+      "scrollHeight": 694,
+      "times": 6,
+      "visibleEntries": 4,
+      "modal": 0
+    },
+    {
+      "width": 375,
+      "theme": "night",
+      "logHeight": 348.609375,
+      "scrollHeight": 725,
+      "times": 6,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 1280,
+      "theme": "night",
+      "logHeight": 377,
+      "scrollHeight": 618,
+      "times": 6,
+      "visibleEntries": 4,
+      "modal": 0
+    }
+  ],
+  "after": [
+    {
+      "width": 1440,
+      "theme": "day",
+      "logHeight": 477,
+      "scrollHeight": 477,
+      "times": 1,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 1920,
+      "theme": "day",
+      "logHeight": 641,
+      "scrollHeight": 641,
+      "times": 1,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 390,
+      "theme": "day",
+      "logHeight": 380.609375,
+      "scrollHeight": 569,
+      "times": 1,
+      "visibleEntries": 4,
+      "modal": 0
+    },
+    {
+      "width": 360,
+      "theme": "day",
+      "logHeight": 336.609375,
+      "scrollHeight": 600,
+      "times": 1,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 440,
+      "theme": "day",
+      "logHeight": 478.609375,
+      "scrollHeight": 538,
+      "times": 1,
+      "visibleEntries": 5,
+      "modal": 0
+    },
+    {
+      "width": 375,
+      "theme": "day",
+      "logHeight": 348.609375,
+      "scrollHeight": 600,
+      "times": 1,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 1280,
+      "theme": "day",
+      "logHeight": 377,
+      "scrollHeight": 422,
+      "times": 1,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 1440,
+      "theme": "night",
+      "logHeight": 477,
+      "scrollHeight": 477,
+      "times": 1,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 1920,
+      "theme": "night",
+      "logHeight": 641,
+      "scrollHeight": 641,
+      "times": 1,
+      "visibleEntries": 6,
+      "modal": 0
+    },
+    {
+      "width": 390,
+      "theme": "night",
+      "logHeight": 380.609375,
+      "scrollHeight": 569,
+      "times": 1,
+      "visibleEntries": 4,
+      "modal": 0
+    },
+    {
+      "width": 360,
+      "theme": "night",
+      "logHeight": 336.609375,
+      "scrollHeight": 600,
+      "times": 1,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 440,
+      "theme": "night",
+      "logHeight": 478.609375,
+      "scrollHeight": 538,
+      "times": 1,
+      "visibleEntries": 5,
+      "modal": 0
+    },
+    {
+      "width": 375,
+      "theme": "night",
+      "logHeight": 348.609375,
+      "scrollHeight": 600,
+      "times": 1,
+      "visibleEntries": 3,
+      "modal": 0
+    },
+    {
+      "width": 1280,
+      "theme": "night",
+      "logHeight": 377,
+      "scrollHeight": 422,
+      "times": 1,
+      "visibleEntries": 6,
+      "modal": 0
+    }
+  ],
+  "dpr3": [
+    {
+      "theme": "day",
+      "dpr": 3,
+      "width": 440,
+      "scrollWidth": 440,
+      "hiddenDividers": 2,
+      "modal": 0
+    },
+    {
+      "theme": "night",
+      "dpr": 3,
+      "width": 440,
+      "scrollWidth": 440,
+      "hiddenDividers": 2,
+      "modal": 0
+    }
+  ],
+  "liveAction": {
+    "months": 197,
+    "dates": [
+      "十六岁 · 春",
+      "十六岁 · 夏"
+    ],
+    "pageErrors": []
+  }
+}

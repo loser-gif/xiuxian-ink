@@ -1,0 +1,171 @@
+{
+  "base": "b4f3aaeb55240bc4cbeea964e8efabc9b4c18949",
+  "compat": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "metrics": [
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "day",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "night",
+      "dates": [
+        "十六岁 · 春"
+      ],
+      "modal": 0,
+      "overflow": false
+    }
+  ],
+  "dpr3": {
+    "width": 440,
+    "height": 956,
+    "dpr": 3,
+    "modal": 0,
+    "overflow": false
+  }
+}
