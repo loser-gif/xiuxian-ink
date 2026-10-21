@@ -1,0 +1,387 @@
+{
+  "baseCommit": "f4cf3a2f316f2eee3c863fd0e0baf99585fbda1c",
+  "ordinaryV61UiImport": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "oldTrialUiImport": [
+    {
+      "theme": "day",
+      "dpr": 3,
+      "months": 480,
+      "path": {
+        "daoji": "zhen",
+        "danwen": [
+          "shou",
+          "xin"
+        ],
+        "faxiang": null,
+        "wendao": null,
+        "jiewen": null
+      },
+      "overflow": false
+    },
+    {
+      "theme": "night",
+      "dpr": 3,
+      "months": 480,
+      "path": {
+        "daoji": "zhen",
+        "danwen": [
+          "shou",
+          "xin"
+        ],
+        "faxiang": null,
+        "wendao": null,
+        "jiewen": null
+      },
+      "overflow": false
+    }
+  ],
+  "newTrialInitialMonths": 480,
+  "realUiRetreat": {
+    "months": 480,
+    "expected": 38.15424,
+    "label": "三年二月"
+  },
+  "success": {
+    "result": "success",
+    "months": 689.53856,
+    "stage": 1
+  },
+  "timeout": {
+    "result": "timeout",
+    "months": 748.15424
+  },
+  "metaLivesUnchanged": true,
+  "endingAtlasUnchanged": true,
+  "hud": [
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "day",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "night",
+      "splashHidden": true,
+      "overflow": false,
+      "goal": "试炼 · 目标金丹中期 · 余二十年"
+    }
+  ],
+  "end": [
+    {
+      "kind": "success",
+      "width": 1440,
+      "height": 900,
+      "theme": "day",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 1440,
+      "height": 900,
+      "theme": "night",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 1920,
+      "height": 1080,
+      "theme": "day",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 1920,
+      "height": 1080,
+      "theme": "night",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 390,
+      "height": 844,
+      "theme": "day",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 390,
+      "height": 844,
+      "theme": "night",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 360,
+      "height": 800,
+      "theme": "day",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    },
+    {
+      "kind": "success",
+      "width": 360,
+      "height": 800,
+      "theme": "night",
+      "overflow": false,
+      "splashHidden": true,
+      "buttonVisible": true
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "brief-day-440-dpr3.jpg",
+      "bytes": 175291
+    },
+    {
+      "name": "hud-day-1280.jpg",
+      "bytes": 123596
+    },
+    {
+      "name": "hud-day-1440.jpg",
+      "bytes": 141373
+    },
+    {
+      "name": "hud-day-1920.jpg",
+      "bytes": 189855
+    },
+    {
+      "name": "hud-day-360.jpg",
+      "bytes": 50222
+    },
+    {
+      "name": "hud-day-375.jpg",
+      "bytes": 51650
+    },
+    {
+      "name": "hud-day-390.jpg",
+      "bytes": 55903
+    },
+    {
+      "name": "hud-day-440-dpr3.jpg",
+      "bytes": 373597
+    },
+    {
+      "name": "hud-day-440.jpg",
+      "bytes": 70038
+    },
+    {
+      "name": "hud-night-1280.jpg",
+      "bytes": 114217
+    },
+    {
+      "name": "hud-night-1440.jpg",
+      "bytes": 125923
+    },
+    {
+      "name": "hud-night-1920.jpg",
+      "bytes": 162057
+    },
+    {
+      "name": "hud-night-360.jpg",
+      "bytes": 47907
+    },
+    {
+      "name": "hud-night-375.jpg",
+      "bytes": 49404
+    },
+    {
+      "name": "hud-night-390.jpg",
+      "bytes": 52490
+    },
+    {
+      "name": "hud-night-440-dpr3.jpg",
+      "bytes": 341364
+    },
+    {
+      "name": "hud-night-440.jpg",
+      "bytes": 66525
+    },
+    {
+      "name": "path-day-390.jpg",
+      "bytes": 42869
+    },
+    {
+      "name": "success-day-1440.jpg",
+      "bytes": 41862
+    },
+    {
+      "name": "success-day-1920.jpg",
+      "bytes": 47806
+    },
+    {
+      "name": "success-day-360.jpg",
+      "bytes": 23335
+    },
+    {
+      "name": "success-day-390.jpg",
+      "bytes": 24765
+    },
+    {
+      "name": "success-night-1440.jpg",
+      "bytes": 43782
+    },
+    {
+      "name": "success-night-1920.jpg",
+      "bytes": 50903
+    },
+    {
+      "name": "success-night-360.jpg",
+      "bytes": 23681
+    },
+    {
+      "name": "success-night-390.jpg",
+      "bytes": 25120
+    },
+    {
+      "name": "timeout-day-390.jpg",
+      "bytes": 24960
+    },
+    {
+      "name": "timeout-night-1440.jpg",
+      "bytes": 43831
+    }
+  ],
+  "errors": [],
+  "tests": {
+    "playtest": "pass",
+    "trial": "pass: 30 timing cases + boundaries",
+    "logs": "pass",
+    "eventsRegression": 29,
+    "eventSettlements": 106993,
+    "eventViolations": 0,
+    "fontsMissing": 0,
+    "fontsOverlap": 0,
+    "sim600BalancedThreeRootMedianMinutes": 82.8
+  }
+}

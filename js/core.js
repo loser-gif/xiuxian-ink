@@ -387,6 +387,9 @@ const Core = (() => {
   }
   function passTime(s, m, emit) {
     const cfT = typeof courtFriction === 'function' ? courtFriction(s).time : 1;
+    const trial = trialStatus(s);
+    if (trial && trial.left > 0 && m * gt(s, 'time', 1) * cfT > trial.left && emit)
+      emit({ title: '试炼期限', text: '此行越过二十载之期。行动完整结算，超过期限才达标不计成功。', cls: 'warn' });
     s.months += m * gt(s, 'time', 1) * cfT; sync(s);
     const left = s.lifespan - s.age, span = s.lifespan - 16;
     const k = s.realm + ':' + s.lifeBonus;
@@ -448,6 +451,20 @@ const Core = (() => {
     s.acts++;
     return { text: pick(TEXT.tuna).replace('{d}', cnDur(r.T * K.tunaMonths)), tags, ups };
   }
+  function biguanTime(s) {
+    const mul = (gt(s, 'time', 1) || 1) * (typeof courtFriction === 'function' ? courtFriction(s).time : 1);
+    let span = REALMS[s.realm].T * K.biguanMonths;
+    if (s.loop && s.loop.moCut && s.gf !== 'tianmo') span = Math.max(1, Math.round(span * 0.8 * mul)) / mul;
+    return { span, months: span * mul };
+  }
+  function trialStatus(s) {
+    if (!s || !s.flags || !s.flags.trial) return null;
+    const end = (40 + (s.flags.trialYears || 20)) * 12;
+    const reached = s.realm > 2 || (s.realm === 2 && s.stage >= 1);
+    const result = s.flags.trialResult || (reached && s.months <= end && !s.dead ? 'success'
+      : s.months >= end ? 'timeout' : s.dead || s.ascended ? 'ended' : '');
+    return { end, left: Math.max(0, end - s.months), result };
+  }
   function biguan(s, emit) {
     const r = REALMS[s.realm], mul = gainMul(s), tags = [];
     const cfXm = typeof courtFriction === 'function' ? courtFriction(s).xinmo : 1;
@@ -455,18 +472,9 @@ const Core = (() => {
     let pXm = clamp(0.06 + (50 - s.xj) / 400, 0.02, 0.22) * gt(s, 'xinmo', 1) * cfXm;
     if (L && L.moHeart) pXm = 1;
     const pDw = clamp(0.08 + s.luck * 0.006 + (s.wx - 5) * 0.012 + gt(s, 'dunwu', 0), 0.03, 0.4);
-    const cfT = typeof courtFriction === 'function' ? courtFriction(s).time : 1;
-    const timeMul = (gt(s, 'time', 1) || 1) * cfT;
-    let span = r.T * K.biguanMonths;
-    let durLabel = cnDur(r.T * K.biguanMonths);
-    if (L && L.moCut) {
-      if (s.gf !== 'tianmo') {
-        const shown = Math.max(1, Math.round(span * 0.8 * timeMul));
-        span = shown / (timeMul || 1);
-        durLabel = cnDur(shown);
-      }
-      L.moCut = 0;
-    }
+    const timing = biguanTime(s), span = timing.span;
+    const durLabel = cnDur(Math.round(timing.months));
+    if (L && L.moCut) L.moCut = 0;
     const roll = Math.random(); let text = pick(TEXT.biguan).replace(/\{d\}/g, durLabel), cls = '', ups = [];
     passTime(s, span, emit);
     const jingOk = !!(L && L.fu && L.fu.jing > 0 && s.months >= (L.fuJingAt || -99999) + 3);
@@ -1623,7 +1631,7 @@ const Core = (() => {
     scaleLife, scaleLs, tollText, npcAlive, killNpc, saveMateItem, spendSaveItem, missionEvery,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
-    addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, pickEvent, resolveChoice, applyFx,
+    addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, biguanTime, trialStatus, pickEvent, resolveChoice, applyFx,
     juqiAmount, tunaSpan, pillYears, itemEffect,
     btChance, resolveBreak, useItem, useBatchCap, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct, showFoe, glance, oddsWord, rootFace, sectBand,
