@@ -1094,8 +1094,10 @@ const FX = (() => {
     const b = document.createElement('i');
     b.className = 'ink-bloom';
     b.style.left = x + 'px'; b.style.top = y + 'px';
+    const done = () => { if (b.parentNode) b.remove(); };
+    b.addEventListener('animationend', done);
     document.body.appendChild(b);
-    setTimeout(() => b.remove(), 700);
+    setTimeout(done, 700);
   }
   function initPress() {
     document.addEventListener('touchstart', () => {}, { passive: true }); // 让 :active 在 iOS 生效

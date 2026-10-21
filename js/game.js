@@ -195,7 +195,9 @@ document.addEventListener('pointerdown', e => {
   const t = e.target.closest('button'); if (!t || t.disabled) return;
   const r = document.createElement('div'); r.className = 'ripple';
   r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px';
-  document.body.appendChild(r); setTimeout(() => r.remove(), 950);
+  const done = () => { if (r.parentNode) r.remove(); };
+  r.addEventListener('animationend', done);
+  document.body.appendChild(r); setTimeout(done, 950);
 }, { passive: true });
 // 阻止 iOS 捏合缩放（双击缩放已由 touch-action: manipulation 处理）
 document.addEventListener('gesturestart', e => e.preventDefault());
