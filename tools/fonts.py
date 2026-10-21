@@ -95,8 +95,8 @@ def subset(src, out, chars, keep_vertical=False):
                     '--notdef-outline', '--name-IDs=*'] + drop, check=True)
 
 def transplant(dst_path, src_path, cps):
-    """把源字体里才有的符号（间隔号、箭头、方框）按 em 缩放拷进目标子集。
-    马善政 / 志莽行书的官方字库没有这几个符号，不补的话标题中间的「·」会跳回文楷。"""
+    """把源字体里才有的字符按 em 缩放拷进目标子集。
+    马善政官方字库缺少部分符号与「箓」，仅补缺字，已有字形保持不变。"""
     from fontTools.pens.ttGlyphPen import TTGlyphPen
     from fontTools.pens.transformPen import TransformPen
     dst = TTFont(dst_path)
@@ -144,9 +144,9 @@ def build():
     subset(f'{SRC}/wenkai.ttf', F + 'wenkai-extra.woff2', extra)
     subset(f'{SRC}/msz.ttf', F + 'mashanzheng.woff2', game)
     subset(f'{SRC}/zcool.ttf', F + 'cao.woff2', set(CAO_TEXT))
-    # 笔势字库缺的符号，从文楷按 em 补进标题子集（行草大字用不到）
-    symbols = [ord(c) for c in '·↑↓□']
-    copied = transplant(F + 'mashanzheng.woff2', f'{SRC}/wenkai.ttf', symbols)
+    # 马善政全集缺少这些字符；沿用文楷补字，不修改已有标题字形。
+    fallback = [ord(c) for c in '·↑↓□›・箓' if c in game]
+    copied = transplant(F + 'mashanzheng.woff2', f'{SRC}/wenkai.ttf', fallback)
 
     def have(path, want):
         cm = TTFont(path).getBestCmap()

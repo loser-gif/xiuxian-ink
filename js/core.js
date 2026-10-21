@@ -1443,6 +1443,7 @@ const Core = (() => {
       const toll = c.toll ? tollText(s, typeof c.toll === 'function' ? c.toll(s) : c.toll) : '';
       const head = [sub0, toll].filter(Boolean).join(' · ');
       const o = { label: c.label, sub: (head ? head + ' · ' : '') + riskWord(missionRisk(s, m, c)), act: s2 => missionAct(s2, uid, m, c) };
+        if (c.combat && s.evFoe && foeDr(s) >= 1) o.sub += ' · 弱敌不能伤你，差事仍可能失败';
         if ((c.fight || (m.fight && !c.time)) && s.evFoe) o.odds = 1 - missionRisk(s, m, c);
         return o;
       }) };
@@ -1469,6 +1470,13 @@ const Core = (() => {
       if (f.inj) fx.inj = f.inj; if (f.xj) fx.xj = f.xj;
       if (c.failNpc) fx.npc = c.failNpc;
       text = fnv(c.fail, s);
+    }
+    // 差事成败仍按原风险掷一次；失败时遇见弱敌，也不能反过来伤到高境界玩家。
+    // 驱退敌手不等于追回草药或寻到灵鹤，委托报酬与失败后果各按原结果兑现。
+    if (c.combat && !ok) {
+      const f = foe(s), dr = foeDr(s, f), gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
+      if (dr >= 1) { delete fx.inj; text = fnv(c.safeFail, s); }
+      return { text, fx, ok, fight: { dr, gap, foe: foeStr(s, f), tier: dr >= 2 ? 'crush' : dr === 1 ? 'dominant' : 'lose' } };
     }
     return { text, fx, ok, ...(m.fight || c.fight ? { fight: { dr: 0, gap: 0, foe: '同阶', tier: ok ? 'win' : 'lose' } } : {}) };
   }
