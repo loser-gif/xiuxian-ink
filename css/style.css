@@ -3438,3 +3438,8 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 @media (max-width:1679px){
   body[data-screen=main] .page-aside{display:none}
 }
+
+/* v63: consecutive entries share one date without changing saved logs. */
+#log .entry-time[hidden],#log .entry-div[hidden]{display:none}
+#scr-main #log .entry-followed{margin-bottom:6px}
+#log .entry-cont{padding-left:1em}

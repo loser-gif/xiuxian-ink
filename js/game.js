@@ -1004,7 +1004,25 @@ function renderEntry(e, animate) {
     el.appendChild(tg);
   }
   while (log.children.length > 80) log.removeChild(log.firstChild);
+  syncLogTimes();
   syncColo();
+}
+// Group only consecutive dated entries. Recompute after trimming so the first
+// remaining entry always owns its date; old saves keep their original log data.
+function syncLogTimes() {
+  let previous = null, previousTime = '';
+  document.querySelectorAll('#log .entry').forEach(entry => {
+    const time = entry.querySelector('.entry-time');
+    const value = time ? time.textContent : '';
+    const continued = !!(value && previous && value === previousTime);
+    entry.classList.toggle('entry-cont', continued);
+    entry.classList.remove('entry-followed');
+    if (time) time.hidden = continued || !value;
+    const divider = entry.previousElementSibling;
+    if (divider && divider.classList.contains('entry-div')) divider.hidden = continued;
+    if (continued) previous.classList.add('entry-followed');
+    previous = entry; previousTime = value;
+  });
 }
 function syncColo() {
   const last = (S && S.colophon && S.colophon.length) ? S.colophon[S.colophon.length - 1] : null;
@@ -3504,7 +3522,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=62').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=63').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
