@@ -13,6 +13,8 @@ const ENEMY = /劫修|妖|蟒|狼(?!狈)|蛟|魔修|贼|匪|凶兽|山魈|叛徒
 const HAZARD = new Set(['cave', 'thunder', 'fox', 'furnace', 'meteor', 'mirror', 'jianzhong', 'danhui', 'hantan2', 'huoshan', 'wuxingbei', 'tianji', 'jieyun', 'xinmojie', 'su_fire',
   '任务:caiyao', '任务:danfang', '任务:zhenmai', '任务:tanmi', '任务:dx_shouhuo', '任务:dx_caiyao', '任务:dx_jianlu', '任务:yy_yinqi', '任务:xj_qiushi', '任务:xj_tuyan', 'leichi', 'fengyan', 'binghu',
   'xw_mist', 'xh_bones', 'yh_stair', 'shen_gu', 'shen_deng', 'shen_ling', 'shen_pan', 'shen_di', 'shen_yan', 'peak_dx', 'peak_duty_qm', 'peak_duty_dx', 'peak_duty_yy', 'peak_duty_xj', 'peak_duty_sx', 'wei_night', 'tx_dao', 'yg_xiang_fan', 'bond_jie']);
+// 仅豁免灵气逆冲、开炉失控、缝外禁制反噬的具体选项，不豁免整条任务。
+const HAZARD_CHOICES = new Set(['任务:weishou:1', '任务:lianzhi:1', '任务:liexi:0']);
 // 秘境中的禁制、阵法、丹毒、寒气、杀意、暗流：无敌手的折损（秘境:地:节点）
 const MJ_HAZARD = new Set(['秘境:gufu:石门禁制', '秘境:gufu:丹室', '秘境:gufu:书阁与剑池', '秘境:zhanchang:断戟山', '秘境:zhanchang:英灵冢', '秘境:zhanchang:血旗阵', '秘境:longgong:海眼', '秘境:longgong:珊瑚迷阵', '秘境:longgong:宝库',
   '秘境:chenjian:渊口寒雾', '秘境:chenjian:守渊人', '秘境:xiandao:潮信', '秘境:xiandao:仙酿', '秘境:xingyun:星坑']);
@@ -44,7 +46,7 @@ function check(src, label, s, res, ctxText) {
   if (hurt) {
     const txt = ctxText + res.text;
     for (let k = 0; k < s.realm; k++) if (txt.includes(RN[k]) && ENEMY.test(txt)) { flags.push(`[写死弱敌] ${where}：文中“${RN[k]}”而玩家已${RN[s.realm]}：${res.text.slice(0, 40)}`); break; }
-    if (!HAZARD.has(src) && !MJ_HAZARD.has(src)) flags.push(`[未标敌手] ${where}：受伤却无敌我结算（若属天灾禁制，请登记 HAZARD）：${res.text.slice(0, 40)}`);
+    if (!HAZARD.has(src) && !HAZARD_CHOICES.has(src + ':' + label.split(':')[0]) && !MJ_HAZARD.has(src)) flags.push(`[未标敌手] ${where}：受伤却无敌我结算（若属天灾禁制，请登记 HAZARD）：${res.text.slice(0, 40)}`);
   }
 }
 for (const ev of EVENTS) {

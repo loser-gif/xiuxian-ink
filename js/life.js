@@ -605,11 +605,19 @@ const Life = (() => {
         { label: '只记下方位', act: s2 => { takeRescue(s2, RESCUES[3]); return { text: '你把方位记下，人没救。夜里你睡不着，不是因为那座山，是因为袖子上还留着他的力道。', fx: { luck: 1, xj: -5 } }; } },
       ] },
     { id: 'zhuangshang', echo: 0,
-      text: () => '桥洞里有人呻吟，衣裳是好的，伤看起来却太整齐。他见你停下，立刻把一只破碗伸出来，碗底是干的。',
-      choices: () => [
-        { label: '仍把伤当真的治', act: s2 => { takeRescue(s2, RESCUES[4]); return Math.random() < 0.45
-          ? { text: '伤是装的。可你的灵力进去的那一瞬，他脸上的笑停了。他磕了个头，把藏在袖里的一枚灵石推给你，跑了。', fx: { xj: 3, ls: 12 } }
-          : { text: '你蹲下去的时候，他的同伙从桥上跳下来。灵石少了一截，你多了一道口子。桥洞里的呻吟，原来是暗号。', fx: { ls: -Math.max(8, Math.floor(s2.ls * 0.25)), lsRaw: true, inj: 1, xj: -4 } }; } },
+      text: s => { Core.showFoe(s, { realm: 0, stage: 5 }, { name: '桥下伏客', title: '藏身' }); return '桥洞里有人呻吟，衣裳是好的，伤看起来却太整齐。他见你停下，立刻把一只破碗伸出来，碗底是干的。桥上另有脚步，藏着的气息约莫' + Core.foeStr(s) + '。'; },
+      choices: s => [
+        { label: '仍把伤当真的治', sub: s.realm >= 1 ? '弱敌不能伤你，仍可能失财' : '可能负伤失财', act: s2 => {
+          takeRescue(s2, RESCUES[4]);
+          if (Math.random() < 0.45) return { text: '伤是装的。可你的灵力进去的那一瞬，他脸上的笑停了。他磕了个头，把藏在袖里的灵石推给你，跑了。', fx: { xj: 3, ls: 12 } };
+          const f = Core.foe(s2), dr = Core.foeDr(s2, f), gap = Core.lvl(s2.realm, s2.stage) - Core.lvl(f.realm, f.stage);
+          const fx = { ls: -Math.max(8, Math.floor(s2.ls * 0.25)), lsRaw: true, xj: -4 };
+          if (dr < 1) fx.inj = 1;
+          return { text: dr >= 1
+            ? '你俯身施救时，藏在旁边的同伙已摸走一截灵石。桥上又有人跳下，你一抬手便逼退了他们，身上无伤。窃贼却已钻入人群，失财的懊恼仍压在心头。'
+            : '你蹲下去的时候，他的同伙从桥上跳下来。灵石少了一截，你多了一道口子。桥洞里的呻吟，原来是暗号。',
+            fx, fight: { dr, gap, foe: Core.foeStr(s2, f), tier: dr >= 2 ? 'crush' : dr === 1 ? 'dominant' : 'lose' } };
+        } },
         { label: '拆穿他', act: s2 => { takeRescue(s2, RESCUES[4]); return { text: '你说：「碗是干的。」他愣了一下，笑出声，把同伙叫出来，居然向你行了个礼，然后跑了。', fx: { xj: 2, luck: 1 } }; } },
         { label: '绕开桥洞', act: s2 => { takeRescue(s2, RESCUES[4]); return { text: '你从桥上走。下面的呻吟停了一停，又响起来，像在等下一个。', fx: {} }; } },
       ] },
