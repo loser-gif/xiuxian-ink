@@ -598,8 +598,9 @@ function trialBrief() {
         <h3 class="trial-card-title">试炼境</h3>
         <p class="trial-lead">以金丹初期之身入局。</p>
         <p class="trial-rule"><i>起手</i><span>年四十，修为自零起，灵石一百二十。</span></p>
-        <p class="trial-rule"><i>所求</i><span>二十载内，须破一障。</span></p>
-        <p class="trial-rule"><i>卷末</i><span>不入轮回簿。图鉴仍可解锁。</span></p>
+        <p class="trial-rule"><i>所求</i><span>二十载内达到金丹中期。入局先择道基与丹纹。</span></p>
+        <p class="trial-rule"><i>期限</i><span>行动完整结算，恰满二十载仍可达标；超过期限不计成功。</span></p>
+        <p class="trial-rule"><i>卷末</i><span>达标即收卷，不入轮回簿。图鉴仍可解锁。</span></p>
         <p class="trial-rule"><i>此身</i><span>灵根与名分仍随你所测、所拜。</span></p>
         <div class="ask-btns">
           <button class="brush-btn small ask-no" type="button"><span class="bb-ink"></span><span class="bb-text">且慢</span></button>
@@ -653,7 +654,7 @@ function resetCreate() {
   if (ch) ch.textContent = trial ? '试炼境' : '第一卷';
   if (ban) {
     ban.hidden = !trial;
-    ban.textContent = trial ? '今日试炼：以金丹初期之身入局，年四十，灵石一百二十。二十载内须破一障，不入轮回簿。' : '';
+    ban.textContent = trial ? '金丹二十载：年四十，灵石一百二十。先择道基与丹纹，二十载内达到金丹中期，达标即收卷，不入轮回簿。' : '';
   }
   $('#inp-name').value = '';
   $('#lg-name').textContent = ''; $('#lg-stats').textContent = '';
@@ -791,11 +792,10 @@ function newGame(name, r, choice, originId) {
     sectLine = `测得${lgDesc}。山门之内，尘埃落定。`;
   }
   const who = (typeof Juan !== 'undefined' && Juan.originName) ? Juan.originName(S) : '青石镇少年';
-  const rankWord = Core.rankName(S);
   if (trial) {
     pushLog({
       title: '试炼',
-      text: `今日试炼：以金丹${rankWord}之身入局。出身${who}，名${name}，年四十，随身灵石一百二十。二十载内须破一障；此局不入轮回簿，可解锁图鉴。`,
+      text: `今日试炼：以金丹初期之身入局。出身${who}，名${name}，年四十，随身灵石一百二十。先择道基与丹纹，二十载内达到金丹中期，达标即收卷。行动完整结算，超过期限才达标不计成功；此局不入轮回簿，可解锁图鉴。`,
       cls: 'gold',
       tags: [{ t: '金丹初期', c: 'gold' }, { t: '二十载', c: 'gold' }]
     });
@@ -950,8 +950,12 @@ function enterMain(fromSave) {
     logs.forEach((e, i) => renderEntry(e, fromSave ? i >= logs.length - 2 : true));
     if (fromSave) scrollLog();
     else { const l = $('#log'); if (l) l.scrollTop = 0; }
-    if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
-    if (fromSave) setTimeout(() => ensurePendingPath(), 900);
+    if (S.flags && S.flags.trial) {
+      if (!S.dead) ensurePendingPath().then(() => { if (!S.dead && typeof JHUI !== 'undefined') JHUI.resume(); });
+    } else {
+      if (typeof JHUI !== 'undefined') setTimeout(JHUI.resume, 700);
+      if (fromSave) setTimeout(() => ensurePendingPath(), 900);
+    }
     if (fromSave && typeof Folio !== 'undefined' && Folio.needSex(S)) setTimeout(() => openSexSheet(), 1200);
     if (S.flags && S.flags.guide) setTimeout(() => maybeGuide(), fromSave ? 600 : 1100);
   });
@@ -1042,6 +1046,8 @@ function fitLine(el, max, min) {
 }
 function nextRealmLine() {
   if (!S || S.ascended) return '已逾凡境';
+  const trial = Core.trialStatus(S);
+  if (trial) return '试炼 · 目标金丹中期 · ' + (trial.result ? '已收卷' : '余' + cnDur(Math.ceil(trial.left)));
   const r = R();
   const major = (typeof NEXT_REALM_NAME !== 'undefined' && NEXT_REALM_NAME[S.realm]) || '飞升';
   if (bottleneck()) return `本境已满 · 下一境 ${major} · 卷下可破境`;
@@ -1071,6 +1077,8 @@ function setText(sel, v) {
 function render() {
 
   if (!S) return; sync();
+  const trialEnd = Core.trialStatus(S);
+  if (trialEnd && trialEnd.result) checkEnd();
   const r = R();
   setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
   const trialSeal = $('#trial-seal');
@@ -1132,10 +1140,10 @@ function render() {
     if (gn) setText('#c-goal', gn);
   }
   const tm = Core.gt(S, 'time', 1);
-  const cfT = typeof courtFriction === 'function' ? (courtFriction(S).time || 1) : 1;
-  let bgSpan = r.T * K.biguanMonths;
-  if (S.loop && S.loop.moCut && S.gf !== 'tianmo') bgSpan *= 0.8;
-  setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm))); setText('#dur-biguan', cnDur(Math.max(1, Math.round(bgSpan * tm * cfT))));
+  const bgMonths = Core.biguanTime(S).months;
+  const trial = Core.trialStatus(S);
+  setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm)));
+  setText('#dur-biguan', cnDur(Math.round(bgMonths)) + (trial && bgMonths > trial.left ? ' · 越期' : ''));
   stackAside($('#margin-when'), timeLabel());
   const locNow = typeof LOC !== 'undefined' && S.loc && LOC[S.loc] ? LOC[S.loc].name : '山中';
   stackAside($('#margin-where'), locNow);
@@ -1357,11 +1365,7 @@ function act(kind) {
   }   else if (kind === 'biguan') {
     S.flags.cultRun = (S.flags.cultRun | 0) + 1;
     if (typeof Jianghu !== 'undefined' && Jianghu.mjLapseWarn) {
-      const tm = Core.gt(S, 'time', 1);
-      const cfT = typeof courtFriction === 'function' ? (courtFriction(S).time || 1) : 1;
-      let span = R().T * Core.K.biguanMonths;
-      if (S.loop && S.loop.moCut && S.gf !== 'tianmo') span *= 0.8;
-      span = Math.max(1, Math.round(span * tm * cfT));
+      const span = Core.biguanTime(S).months;
       const warn = Jianghu.mjLapseWarn(S, span);
       if (warn) pushLog({ title: '秘境将阖', text: warn, cls: 'warn' });
     }
@@ -1462,12 +1466,13 @@ function maybeWanderNudge() {
 }
 let endT = 0;
 function checkEnd() {
-  if (S && !S.dead && !S.ascended && S.flags && S.flags.trial && S.flags.trialYears) {
-    const startAge = 40;
-    if ((S.age | 0) >= startAge + (S.flags.trialYears | 0)) {
-      S.dead = true; S.ending = S.ending || 'zuohua';
-      pushLog({ title: '试炼终', text: '二十载钟声再响。试炼境收卷——此局不入轮回簿，所见道基／法相／神器已记入图鉴。', cls: 'sys', div: true });
-    }
+  const trial = Core.trialStatus(S);
+  if (trial && trial.result && !S.flags.trialResult) {
+    S.flags.trialResult = trial.result;
+    S.flags.trialEndReason = S.ending || '';
+    S.dead = true; S.ending = 'trial';
+    pushLog({ title: '试炼终', text: trial.result === 'success' ? '二十载内已至金丹中期，试炼达成。此局收卷，不入轮回簿。' : '试炼收卷，目标未达成。此局不入轮回簿。', cls: 'sys', div: true });
+    save();
   }
   if (S && S.dead && !endT) endT = setTimeout(() => { endT = 0; if (S && S.dead) showEnd(S.ending || 'zuohua'); }, 1800);
   else if (S && !S.dead && S.sect && S.sect.dabiDue) setTimeout(dabiInvite, 1400);
@@ -2659,10 +2664,12 @@ function openSlots() {
     const io = w.querySelector('.slot-io');
     const keep = io && !io.hidden ? io.innerHTML : '';
     const keepOn = io && !io.hidden;
+    const selected = box.slots[sel] && box.slots[sel].data;
+    const endedTrial = selected && selected.flags && selected.flags.trial && (selected.dead || selected.ascended);
     w.innerHTML = `<p class="slot-lead">三卷并存。读入即续，存入即覆。导出的码可抄去别处。</p>
       <div class="slot-list">${cards}</div>
       <div class="slot-actions">
-        <button type="button" class="menu-item" data-a="load">读入此卷</button>
+        <button type="button" class="menu-item" data-a="load">${endedTrial ? '查看试炼' : '读入此卷'}</button>
         ${S && !S.dead && !S.ascended ? '<button type="button" class="menu-item" data-a="save">存入此卷</button>' : ''}
         <button type="button" class="menu-item" data-a="export">导出此卷</button>
         <button type="button" class="menu-item" data-a="import">导入存档</button>
@@ -2685,7 +2692,7 @@ function openSlots() {
     if (a === 'load') {
       const data = slotData(sel);
       if (!data) { toast('此卷是空的'); return; }
-      if (data.dead || data.ascended) { toast('此卷已终，可导出，不能续'); return; }
+      if ((data.dead || data.ascended) && !(data.flags && data.flags.trial)) { toast('此卷已终，可导出，不能续'); return; }
       if (S && !S.dead && !(await inkConfirm('转去另一卷？当前卷已随手存好。', '读入'))) return;
       save();
       Slots.setActive(sel);
@@ -2971,6 +2978,9 @@ const END_ART = {
 };
 function showEnd(kind) {
   if (!S) return;
+  if (S.flags && S.flags.trial) return showTrialEnd();
+  $('#btn-scroll').hidden = false;
+  $('#btn-reborn .bb-text').textContent = '再入轮回';
   kind = kind || S.ending || 'zuohua';
   const e = $('#end'); e.hidden = false;
   e.className = 'end end-' + kind;
@@ -3107,6 +3117,40 @@ function showEnd(kind) {
   if (btnScroll) btnScroll.onclick = () => saveScroll(kind, T[0]);
 }
 
+function showTrialEnd() {
+  const trial = Core.trialStatus(S);
+  if (!trial) return;
+  const result = trial.result || 'ended';
+  if (!S.flags.trialResult) S.flags.trialEndReason = S.ending || '';
+  S.flags.trialResult = result; S.dead = true; S.ending = 'trial';
+  const success = result === 'success', end = $('#end');
+  end.hidden = false; end.className = 'end end-trial';
+  const art = end.querySelector('.end-art'); if (art) art.innerHTML = '';
+  $('#end-title').textContent = success ? '试炼达成' : '试炼收卷';
+  $('#end-epitaph').textContent = success ? '二十载内，你已踏入金丹中期。这一障已破，此次试炼达成。'
+    : result === 'timeout' ? '二十载之期已至。行动完整结算，目标未在期限内达成。'
+      : (({ rumo: '心境失守，提前入魔。', guiyin: '主动归隐，提前收卷。', yunluo: '此身身殒，提前离场。', bingjie: '此身兵解，提前离场。', zuohua: '寿元已尽，提前收卷。' })[S.flags.trialEndReason] || '此身提前离场。') + '本次目标未达成。';
+  $('#end-judge').hidden = false;
+  $('#end-judge').textContent = '目标：二十载内达到金丹中期。实际：' + realmStr() + '，用时' + cnDur(Math.round(Math.max(0, S.months - 480))) + '。';
+  $('#end-epitaph-long').hidden = true;
+  $('#end-epitaph-long').textContent = '';
+  $('#end-stats').textContent = '试炼不入轮回簿，不产生前世遗泽。所见定型与神器仍记入仙途志。';
+  $('#btn-scroll').hidden = true;
+  $('#btn-reborn .bb-text').textContent = '再试一卷';
+  $('#btn-reborn').onclick = async () => {
+    if (!(await pickSlotForNew(true))) return;
+    end.hidden = true; S = null; busy = false;
+    window.__trialStart = true;
+    resetCreate(); initTitle(); unrollTo('create');
+  };
+  $('#btn-end-atlas').onclick = () => openAtlasSheet();
+  if (typeof Samsara !== 'undefined') {
+    const meta = Samsara.loadMeta();
+    Samsara.unlockAtlas(meta, S, null);
+    Samsara.saveMeta(meta);
+  }
+  save();
+}
 const END_SEAL = { ascend: '升', zuohua: '化', rumo: '魔', guiyin: '隐', bingjie: '解', yunluo: '殒', renhuang: '皇', quancheng: '摄' };
 async function saveScroll(kind, title) {
   if (!S || typeof ScrollArt === 'undefined') { toast('绘卷未备'); return; }
@@ -3522,7 +3566,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=63').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=64').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

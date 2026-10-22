@@ -3443,3 +3443,6 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 #log .entry-time[hidden],#log .entry-div[hidden]{display:none}
 #scr-main #log .entry-followed{margin-bottom:6px}
 #log .entry-cont{padding-left:1em}
+
+/* v64: trial results use the existing paper, with a readable four-character title. */
+.end-trial .end-title { font-family: 'MoShu', serif; font-size: clamp(32px, 8vw, 56px); letter-spacing: .12em; }
