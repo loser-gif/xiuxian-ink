@@ -1,0 +1,326 @@
+{
+  "baseCommit": "94c7d8209075513be3adf2a13620b3986fb1032a",
+  "v61UiImport": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "visitorResult": [
+    "说是我碰的——你以客人的身份说明经过，留下帮忙修整客院。林照在廊下等你，把一块干净的帕子递过来，什么也没讲。"
+  ],
+  "arrayAction": {
+    "months": 485.25,
+    "loop": {
+      "tut": 1,
+      "jian": 0,
+      "jianAt": -99999,
+      "jianAsk": "",
+      "ti": 0,
+      "tiAt": -99999,
+      "tiAsk": 0,
+      "zhen": "cang",
+      "zhenAt": 485.25,
+      "zhenBan": 0,
+      "zhenAsk": "",
+      "mo": 0,
+      "moAt": -99999,
+      "moQuiet": 0,
+      "moPing": 0,
+      "moCut": 0,
+      "moBt": 0,
+      "moHeart": 0,
+      "lu": 0,
+      "luBoom": 0,
+      "luAt": -99999,
+      "luAsk": "",
+      "qiMem": "",
+      "qiMute": 0,
+      "qiAsk": "",
+      "qiAt": -99999,
+      "fu": {
+        "gui": 0,
+        "jing": 0,
+        "lu": 0,
+        "xian": 0
+      },
+      "fuKnown": 0,
+      "fuJingAt": -99999
+    },
+    "last": [
+      {
+        "title": "布阵 · 克制",
+        "text": "门外是夜巡。此阵正好克制眼前局面。本次只留阵图，没有额外修为、灵石或斗法加成。「藏」阵图已留存。困、藏阵图目前只作留存，没有额外斗法或探索收益。还需五月可再布。",
+        "tags": [
+          {
+            "t": "五月",
+            "c": "down"
+          },
+          {
+            "t": "心境 −1",
+            "c": "down"
+          }
+        ],
+        "cls": "event",
+        "div": true,
+        "time": "四十岁 · 夏"
+      }
+    ],
+    "panel": "罗盘 · 阵图留着「藏」\n\n还需五月可再布。此刻门外是夜巡。\n\n布阵耗五月；完成后按当前境界再等五月可再布，不随春夏秋冬刷新。布成即替换旧图，被克则清空。阵图持续留存，直到再布或洗道基。\n\n困、藏阵图目前只作留存，没有额外斗法或探索收益。\n\n你布的\t克\t被克\n困\t追兵、妖兽围山\t心魔、灵脉暴动\n生\t灵脉、药园、伤患\t劫修火攻\n杀\t清剿、血雾、边境\t同门、京城宴会\n藏\t夜巡、查案、赶路遇伏\t大比、讲经\n困\n五月 · 心境 −1 · 平势 · 留下阵图\n生\n五月 · 心境 −1 · 平势 · 留下阵图\n杀\n五月 · 心境 −1 · 平势 · 留下阵图\n藏\n五月 · 心境 −1 · 克制 · 留下阵图\n这次不布\n去闭关或游历"
+  },
+  "viewports": [
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": false,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": true,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": true,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": true,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": true,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "day",
+      "overflow": false,
+      "panelOverflow": true,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "night",
+      "overflow": false,
+      "panelOverflow": true,
+      "disabled": true,
+      "bodyOverflow": false,
+      "arrayOverflow": false
+    }
+  ],
+  "notes": [
+    "Desktop sheet-panel scrollWidth includes a 7px decorative overhang; sheet-body and loop-host have no horizontal content overflow.",
+    "UI tests use controlled identity/path fixtures and real option clicks; they are not a natural full playthrough."
+  ],
+  "screenshots": [
+    {
+      "name": "array-bottom-night-360.jpg",
+      "bytes": 22609
+    },
+    {
+      "name": "array-day-1280.jpg",
+      "bytes": 47881
+    },
+    {
+      "name": "array-day-1440.jpg",
+      "bytes": 51369
+    },
+    {
+      "name": "array-day-1920.jpg",
+      "bytes": 66305
+    },
+    {
+      "name": "array-day-360.jpg",
+      "bytes": 27712
+    },
+    {
+      "name": "array-day-375.jpg",
+      "bytes": 31763
+    },
+    {
+      "name": "array-day-390.jpg",
+      "bytes": 32253
+    },
+    {
+      "name": "array-day-440-dpr3.jpg",
+      "bytes": 226277
+    },
+    {
+      "name": "array-day-440.jpg",
+      "bytes": 37030
+    },
+    {
+      "name": "array-night-1280.jpg",
+      "bytes": 48359
+    },
+    {
+      "name": "array-night-1440.jpg",
+      "bytes": 51516
+    },
+    {
+      "name": "array-night-1920.jpg",
+      "bytes": 66701
+    },
+    {
+      "name": "array-night-360.jpg",
+      "bytes": 27870
+    },
+    {
+      "name": "array-night-375.jpg",
+      "bytes": 31930
+    },
+    {
+      "name": "array-night-390.jpg",
+      "bytes": 32473
+    },
+    {
+      "name": "array-night-440-dpr3.jpg",
+      "bytes": 227615
+    },
+    {
+      "name": "array-night-440.jpg",
+      "bytes": 37298
+    },
+    {
+      "name": "result-day-390.jpg",
+      "bytes": 49375
+    },
+    {
+      "name": "result-night-1440.jpg",
+      "bytes": 105041
+    },
+    {
+      "name": "visitor-day-390.jpg",
+      "bytes": 31239
+    },
+    {
+      "name": "visitor-night-1440.jpg",
+      "bytes": 44696
+    }
+  ],
+  "pageErrors": [],
+  "tests": {
+    "feedback": "6 identities, 20 echo summaries; cooldown/overwrite/failure/healing/options/save round-trip passed",
+    "playtest": "pass",
+    "eventRegression": 29,
+    "eventAuditSettlements": 106972,
+    "eventAuditViolations": 0,
+    "fontMissing": 0,
+    "fontOverlap": 0
+  }
+}

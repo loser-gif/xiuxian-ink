@@ -83,6 +83,15 @@ const Loop = (() => {
     if (row.bei.indexOf(name) >= 0) return 'bei';
     return 'ping';
   }
+  function zhenWait(s, L, cost) {
+    const left = Math.max((L.zhenAt || -99999) + cost, L.zhenBan || 0) - s.months;
+    return left > 0 ? `还需${dur(Math.ceil(left))}可再布。` : '现在可布阵。';
+  }
+  function zhenUse(form) {
+    if (form === 'sheng') return '持有生阵时，宗门镇脉任务多出「以阵镇脉」，降低该选项的失败风险，仍需亲自接取任务。';
+    if (form === 'sha') return '持有杀阵时，血雾谷坛前多出「走到坛前改阵」，仍需亲自游历遇见。';
+    return '困、藏阵图目前只作留存，没有额外斗法或探索收益。';
+  }
   function carried(s) {
     const f = ensure(s).fu;
     return (f.gui || 0) + (f.jing || 0) + (f.lu || 0) + (f.xian || 0);
@@ -121,7 +130,7 @@ const Loop = (() => {
     const L = ensure(s);
     const bits = [];
     if (!L.tut) {
-      bits.push('<p class="loop-tut">这季可以做一次，不做也没有罚。花费写在按钮上，结算用的就是这个数。不做，就去闭关或游历。</p>');
+      bits.push(s.path.daoji === 'zhen' ? '<p class="loop-tut">布阵花费与等待时间写在下方，按境界计算，不随春夏秋冬刷新。不做，就去闭关或游历。</p>' : '<p class="loop-tut">这季可以做一次，不做也没有罚。花费写在按钮上，结算用的就是这个数。不做，就去闭关或游历。</p>');
     }
     const dj = s.path.daoji;
     if (s.realm >= 1 && dj) bits.push(panel(s, L, dj));
@@ -149,7 +158,11 @@ const Loop = (() => {
       const row = ZHEN[k];
       return `<tr><td>${row.name}</td><td>${row.ke.join('、')}</td><td>${row.bei.join('、')}</td></tr>`;
     }).join('');
-    const forms = Object.keys(ZHEN).map(k => btn('zhen:' + k, ZHEN[k].name, `${dur(cost)} · 心境 −1 · 布错则阵盘碎，下季不能布`, !ready)).join('');
+    const forms = Object.keys(ZHEN).map(k => {
+      const hit = zhenHit(k, name);
+      const result = hit === 'bei' ? '被克 · 阵盘碎，旧图清空' : hit === 'ke' ? '克制 · 留下阵图' : '平势 · 留下阵图';
+      return btn('zhen:' + k, ZHEN[k].name, `${dur(cost)} · 心境 −1 · ${result}`, !ready);
+    }).join('');
     let big = '';
     if (s.realm >= 3 && !L.zhenAsk) {
       big = btn('zhen:sect', '把阵交给本宗', '不加贡献')
@@ -157,10 +170,12 @@ const Loop = (() => {
         + btn('zhen:sit', '自己坐进阵眼', '收束仍是山神或镇魔，不加战力');
     }
     const hold = L.zhen ? `阵图留着「${ZHEN[L.zhen] ? ZHEN[L.zhen].name : L.zhen}」` : '尚未留阵图';
-    const wait = banned ? '阵盘碎了，这一季不能布。' : (ready ? '本季可布一阵。' : '这一季已经布过。');
+    const wait = (banned ? '阵盘待修。' : '') + zhenWait(s, L, cost);
     return `<div class="loop-block"><p class="loop-stat">罗盘 · ${hold}</p><p class="loop-note">${wait}此刻门外是${name}。</p>
+      <p class="loop-note">布阵耗${dur(cost)}；完成后按当前境界再等${dur(cost)}可再布，不随春夏秋冬刷新。布成即替换旧图，被克则清空。阵图持续留存，直到再布或洗道基。</p>
+      ${L.zhen ? `<p class="loop-note">${zhenUse(L.zhen)}</p>` : ''}
       <table class="zhen-table"><tr><th>你布的</th><th>克</th><th>被克</th></tr>${rows}</table>
-      <div class="loop-actions">${forms}${btn('skip', '此季不布', '去闭关或游历')}${big}</div></div>`;
+      <div class="loop-actions">${forms}${btn('skip', '这次不布', '去闭关或游历')}${big}</div></div>`;
   }
   function tiPanel(s, L) {
     const cost = seasonOf(s);
@@ -293,24 +308,26 @@ const Loop = (() => {
       return { title: '寄阵', text: '血雾谷不在脚下。阵意先寄在识海里，到了那里再刻。', tags: [{ t: '阵意寄往血雾谷', c: 'gold' }] };
     }
     const cost = seasonOf(s);
-    if (s.months < (L.zhenBan || 0)) return { err: '阵盘碎了，这一季不能布' };
-    if (!due(L.zhenAt, s, cost)) return { err: '这一季已经布过' };
+    if (s.months < (L.zhenBan || 0) || !due(L.zhenAt, s, cost)) return { err: zhenWait(s, L, cost) };
     if (!ZHEN[sub]) return { err: '没有这一式' };
     const name = door(s);
     const hit = zhenHit(sub, name);
     const shown = spend(s, cost, emit);
     s.xj = Core.clamp(s.xj - 1, 0, 100);
     L.zhenAt = s.months;
+    const previous = L.zhen && ZHEN[L.zhen] ? `原「${ZHEN[L.zhen].name}」阵图已被替换。` : '';
     const tags = [{ t: dur(shown), c: 'down' }, { t: '心境 −1', c: 'down' }];
     if (hit === 'bei') {
       L.zhen = '';
       L.zhenBan = s.months + cost;
-      return { title: '布阵', text: `门外是${name}。${ZHEN[sub].name}阵被克，阵盘碎了。下季不能布。事情按原来的失败收场。`, tags, cls: 'warn' };
+      return { title: '布阵 · 被克', text: `门外是${name}。${ZHEN[sub].name}阵被克，阵盘碎了，所留阵图已清空。${zhenWait(s, L, cost)}`, tags, cls: 'warn' };
     }
     L.zhen = sub;
     let extra = '';
     if (sub === 'sheng' && name === '伤患' && s.inj > 0) { s.inj = Math.max(0, s.inj - 1); extra = '伤松了一分。'; tags.push({ t: '伤势 −1', c: 'up' }); }
-    return { title: '布阵', text: `门外是${name}。${ZHEN[sub].name}阵压住了它。阵纹多了一笔，落在你留下的阵图上。${extra}`, tags };
+    const outcome = hit === 'ke' ? '此阵正好克制眼前局面。' : '此阵与眼前局面无克制关系，平势布成。';
+    const benefit = extra || '本次只留阵图，没有额外修为、灵石或斗法加成。';
+    return { title: hit === 'ke' ? '布阵 · 克制' : '布阵 · 平势', text: `门外是${name}。${outcome}${benefit}${previous}「${ZHEN[sub].name}」阵图已留存。${zhenUse(sub)}${zhenWait(s, L, cost)}`, tags };
   }
   function actTi(s, L, sub, emit) {
     if (sub === 'jie') {

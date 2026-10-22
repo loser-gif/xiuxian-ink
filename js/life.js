@@ -721,6 +721,7 @@ const Life = (() => {
   if (typeof EVENTS === 'undefined') return;
   const early = s => (s.age | 0) < 56 && (s.realm | 0) <= 1;
   const fresh = id => s => early(s) && !Life.deed(s, id);
+  const visiting = s => !s.sect || !s.sect.org || s.sect.org === 'sx';
 
   const specs = [
     { id: 'ahe', title: '崖上', seal: '崖', who: '阿禾',
@@ -760,9 +761,9 @@ const Life = (() => {
         out: '丹很小，温热。狐看着你，一直看到光从眼里灭掉。你把丹收好，手却洗了很久。' } },
     { id: 'linzhao', title: '背锅', seal: '责', who: '林照',
       roleGood: '记你情分的执事', roleBad: '当众揭旧账的徒弟',
-      text: '执事堂里，一个与你同阶的弟子林照跪着。打碎的是长老的壶。他看你一眼，那一眼不是求你，是认了。壶其实是你袖口带倒的。',
+      text: s => (visiting(s) ? '你受托到一处山门送信，暂住客院。' : '') + '执事堂里，一个与你同阶的弟子林照跪着。打碎的是长老的壶。他看你一眼，那一眼不是求你，是认了。壶其实是你袖口带倒的。',
       save: { label: '说是我碰的', line: '你替林照认下了打碎的壶', kind: 'save',
-        out: '你上前说是自己。责罚不重，是一个月的杂役。林照在廊下等你，把一块干净的帕子递过来，什么也没讲。' },
+        out: s => visiting(s) ? '你以客人的身份说明经过，留下帮忙修整客院。林照在廊下等你，把一块干净的帕子递过来，什么也没讲。' : '你上前说是自己。责罚不重，是一个月的杂役。林照在廊下等你，把一块干净的帕子递过来，什么也没讲。' },
       bad: { label: '看着他认', line: '壶是你碰倒的，你看着林照认了', kind: 'wrong',
         out: '你没有出声。林照被罚去挑水。水声在夜里响了很久。你躺着，觉得那声音是冲着你的窗口来的。' } },
     { id: 'beggar', title: '老乞', seal: '乞', who: '老乞',
@@ -804,7 +805,7 @@ const Life = (() => {
         return 5;
       },
       cond: fresh(sp.id),
-      text: () => sp.text,
+      text: s => typeof sp.text === 'function' ? sp.text(s) : sp.text,
       choices: s0 => {
         const toll = sp.save.toll;
         const poor = !!(toll && toll.ls && typeof Core !== 'undefined' && s0.ls < Core.scaleLs(s0, -toll.ls));
@@ -813,7 +814,7 @@ const Life = (() => {
           const ok = Life.plant(s, { id: sp.id, who: sp.who, kind: sp.save.kind, line: sp.save.line, roleGood: sp.roleGood, roleBad: sp.roleBad, years: 22 + Math.floor(Math.random() * 9) });
           const fx = { xj: 4, xw: 0.05 };
           if (sp.save.fx) Object.assign(fx, sp.save.fx);
-          return { text: sp.save.out, fx, tags: ok ? [{ t: '回响已埋', c: 'gold' }] : [] };
+          return { text: typeof sp.save.out === 'function' ? sp.save.out(s) : sp.save.out, fx, tags: ok ? [{ t: '回响已埋', c: 'gold' }] : [] };
         }},
         { label: sp.bad.label, sub: '', act: s => {
           const ok = Life.plant(s, { id: sp.id, who: sp.who, kind: sp.bad.kind, line: sp.bad.line, roleGood: sp.roleGood, roleBad: sp.roleBad, years: 22 + Math.floor(Math.random() * 9) });
