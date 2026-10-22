@@ -1,0 +1,98 @@
+{
+  "exactCssExpansion": true,
+  "tokens": {
+    "--seal-red": "#b3302a",
+    "--seal-paper": "#f3ead6",
+    "--paper-letter": "#f7efe0",
+    "--panel-ink": "#1c1814",
+    "--life-shadow": "#6e221c",
+    "--life-glow": "#d45548"
+  },
+  "computed": [
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "day",
+      "elements": 850,
+      "equal": true
+    },
+    {
+      "width": 440,
+      "height": 956,
+      "theme": "night",
+      "elements": 857,
+      "equal": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "day",
+      "elements": 857,
+      "equal": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "night",
+      "elements": 857,
+      "equal": true
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "day",
+      "elements": 857,
+      "equal": true
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "theme": "night",
+      "elements": 833,
+      "equal": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "day",
+      "elements": 833,
+      "equal": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "night",
+      "elements": 833,
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "day",
+      "elements": 833,
+      "equal": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "night",
+      "elements": 833,
+      "equal": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "day",
+      "elements": 833,
+      "equal": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "night",
+      "elements": 833,
+      "equal": true
+    }
+  ],
+  "pageErrors": []
+}
