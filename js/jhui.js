@@ -123,7 +123,7 @@ function makeJHUI(G) {
   }
   function renderCard() {
     const l = LOC[sel], here = sel === G.S.loc, ok = J.canGo(G.S, sel), card = $('#map-card');
-    const m = J.travelMonths(G.S, sel);
+    const m = Core.timeMonths(G.S, J.travelMonths(G.S, sel));
     const ids = [l.mj, l.mj2].filter(id => id && typeof MIJING !== 'undefined' && MIJING[id]);
     const open = ids.filter(id => J.mjOpen(G.S, id));
     const btns = [];
@@ -438,7 +438,7 @@ function makeJHUI(G) {
       if (!known) { row.innerHTML = `<div class="item-info"><div class="item-name">${r.name}方<em>未得</em></div><div class="item-desc">得自 · ${RECIPE_SRC[id] || '机缘'}</div></div>`; w.appendChild(row); return; }
       const p = J.danChance(G.S, id), ok = J.hasHerbs(G.S, id);
       row.innerHTML = `<div class="item-info"><div class="item-name">${r.name}<em>${chanceWord(p)}</em></div>
-        <div class="dan-need">${Object.entries(r.need).map(([h, n]) => `<span class="${(G.S.items[h] || 0) >= n ? 'ok' : 'no'}">${h} ${cn(G.S.items[h] || 0)}/${cn(n)}</span>`).join('')}<span class="t">耗时${cnDur(J.danMonths(G.S, id))}</span></div>
+        <div class="dan-need">${Object.entries(r.need).map(([h, n]) => `<span class="${(G.S.items[h] || 0) >= n ? 'ok' : 'no'}">${h} ${cn(G.S.items[h] || 0)}/${cn(n)}</span>`).join('')}<span class="t">耗时${cnDur(Core.timeMonths(G.S, J.danMonths(G.S, id)))}</span></div>
         <div class="item-desc">${(PILLS[r.out] && PILLS[r.out].desc) || ''}</div></div>
         <button class="item-use" ${ok ? '' : 'disabled'}>开炉</button>`;
       row.querySelector('button').onclick = async () => { await closeSheet(); runFurnace(id); };
@@ -453,7 +453,7 @@ function makeJHUI(G) {
     G.busy = true;
     const r = RECIPES[id];
     danEl.innerHTML = `<div class="dan-shade"></div>
-      <div class="dan-head2"><span>开炉</span><em>${cnDur(J.danMonths(G.S, id))}</em></div>
+      <div class="dan-head2"><span>开炉</span><em>${cnDur(Core.timeMonths(G.S, J.danMonths(G.S, id)))}</em></div>
       <div class="dan-stage" id="dan-stage"><div class="dan-stamp" id="dan-stamp"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="5" y="5" width="90" height="90" rx="8" fill="#b3302a"/><text x="50" y="70" text-anchor="middle" font-size="56" fill="#f3ead6" class="seal-font" id="dan-stamp-t">成</text></g></svg></div></div>
 
       <div class="dan-name">${r.name}</div><p class="dan-text" id="dan-text"></p><div class="entry-tags dan-tags" id="dan-tags"></div>

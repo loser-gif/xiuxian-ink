@@ -101,7 +101,7 @@ const BtFx = (() => {
     if (lines) lines.innerHTML = '';
     const l1 = document.createElement('div');
     if (lines) lines.appendChild(l1);
-    write(l1, usePill ? ('服下' + realmPill + '，' + m.lines[0]) : m.lines[0]);
+    write(l1, usePill ? ((from === 4 ? '燃起' : '服下') + realmPill + '，' + m.lines[0]) : m.lines[0]);
     await sleep(R() ? 120 : 1000);
     bt.classList.add('charge');
     const l2 = document.createElement('div');

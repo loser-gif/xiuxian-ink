@@ -783,8 +783,8 @@ const Life = (() => {
     { id: 'zhaoheng', title: '路费', seal: '资', who: '赵珩',
       roleGood: '京中为你留名的书生', roleBad: '带着旧恨的门客',
       text: '一个书生在凉亭里数铜钱，数完又数，还是不够。他抬头，很不好意思：「在下赵珩。不是骗子。只是路费真的不够。仙长看人，应当看得出来。」',
-      save: { label: '借他路费', line: '你借了书生赵珩一笔路费', kind: 'save',
-        out: '你把灵石换成他听得懂的银子。他写下借据，字很工整，连你的名字都问了两遍，怕写错。' },
+      save: { label: '借他路费', sub: '凡间铜钱 · 不耗灵石', line: '你借了书生赵珩一笔路费', kind: 'save',
+        out: '你从随身零钱里分出一把凡间铜钱，不动储物袋中的灵石。他写下借据，字很工整，连你的名字都问了两遍，怕写错。' },
       bad: { label: '揭穿，并赶走', line: '你认定赵珩是骗子，当众赶走了他', kind: 'wrong',
         out: '你说他眼会转，不是好人。亭里的人笑起来。赵珩把铜钱收好，走的时候背很直。借据没有写成，恨意倒是写成了。' } },
     { id: 'aman', title: '猎户', seal: '弓', who: '阿蛮',
@@ -810,7 +810,7 @@ const Life = (() => {
         const toll = sp.save.toll;
         const poor = !!(toll && toll.ls && typeof Core !== 'undefined' && s0.ls < Core.scaleLs(s0, -toll.ls));
         return [
-        { label: sp.save.label, sub: '', toll: toll, disabled: poor, act: s => {
+        { label: sp.save.label, sub: sp.save.sub || '', toll: toll, disabled: poor, act: s => {
           const ok = Life.plant(s, { id: sp.id, who: sp.who, kind: sp.save.kind, line: sp.save.line, roleGood: sp.roleGood, roleBad: sp.roleBad, years: 22 + Math.floor(Math.random() * 9) });
           const fx = { xj: 4, xw: 0.05 };
           if (sp.save.fx) Object.assign(fx, sp.save.fx);

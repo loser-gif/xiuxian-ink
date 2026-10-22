@@ -17,6 +17,7 @@ function cn(n) {
   return String(n);
 }
 function cnDur(months) {
+  months = Math.max(0, Math.round(months));
   const y = Math.floor(months / 12), m = months % 12;
   if (y === 0) return m === 3 ? '一季' : m === 6 ? '半载' : cn(m) + '月';
   if (m === 0) return cn(y) + '年';

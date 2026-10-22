@@ -7,7 +7,7 @@ const Ink = (() => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches && Math.min(window.innerWidth, window.innerHeight) < 1000;
     const area = Math.max(1, W * H);
-    if (coarse) return Math.min(dpr, 1.5, Math.max(1, Math.sqrt(2.2e6 / area)));
+    if (coarse) return Math.min(dpr, Math.sqrt(2.2e6 / area));
     return Math.min(dpr, Math.max(1, Math.sqrt(1.2e7 / area)));
   }
 

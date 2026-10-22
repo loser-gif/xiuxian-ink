@@ -217,7 +217,10 @@ const Core = (() => {
     const short = Math.max(0, xw - s.xw);
     const perMonth = unit(s) * K.biguanGain * gfSpeed(s, id || s.gf) / (K.biguanMonths * T);
     const extra = short > 0 ? Math.ceil(short / Math.max(1, perMonth) / T) * T : 0;
-    return { xw, lose: Math.min(xw, Math.max(0, Math.round(s.xw))), xj: 6, months: 6 * T, extra, layer: s.gf && s.gfs[s.gf] && s.gfs[s.gf].lv > 1 ? 1 : 0 };
+    const next = Object.assign({}, s, { gf: id || s.gf, aux: (s.aux || []).filter(x => x !== id) });
+    return { xw, lose: Math.min(xw, Math.max(0, Math.round(s.xw))), xj: 6, months: 6 * T, extra,
+      duration: timeMonths(next, 6 * T + extra), extraDuration: timeMonths(next, extra),
+      layer: s.gf && s.gfs[s.gf] && s.gfs[s.gf].lv > 1 ? 1 : 0 };
   }
   function switchGf(s, id, emit) {
     if (!s.gfs[id] || s.gf === id) return false;
@@ -228,9 +231,9 @@ const Core = (() => {
     s.aux = (s.aux || []).filter(x => x !== id);
     s.bnLogged = false;
     passTime(s, c.months + c.extra, emit);
-    const tags = [...(c.lose ? [{ t: `修为 −${fmtNum(c.lose)}`, c: 'down' }] : []), ...(c.extra ? [{ t: `补足根基 ${cnDur(c.extra)}`, c: 'down' }] : []), { t: `心境 −${c.xj}`, c: 'down' }];
+    const tags = [...(c.lose ? [{ t: `修为 −${fmtNum(c.lose)}`, c: 'down' }] : []), ...(c.extra ? [{ t: `补足根基 ${cnDur(c.extraDuration)}`, c: 'down' }] : []), { t: `心境 −${c.xj}`, c: 'down' }];
     if (old && c.layer) tags.push({ t: `《${GONGFA[old].name}》跌落一层`, c: 'down' });
-    emit && emit({ title: '转修', text: (old ? `你散去《${GONGFA[old].name}》的周天路数，改修《${GONGFA[id].name}》。经脉逆转之痛，如抽丝剥茧，${cnDur(c.months + c.extra)}方定。` : `你改修《${GONGFA[id].name}》。`) + (c.extra ? '修为本就浅薄，散功之后，几乎是从头来过。' : ''),
+    emit && emit({ title: '转修', text: (old ? `你散去《${GONGFA[old].name}》的周天路数，改修《${GONGFA[id].name}》。经脉逆转之痛，如抽丝剥茧，${cnDur(c.duration)}方定。` : `你改修《${GONGFA[id].name}》。`) + (c.extra ? '修为本就浅薄，散功之后，几乎是从头来过。' : ''),
       tags, cls: 'event', div: true });
     checkXj(s, emit);
     // 转主修：本命法宝若系于旧功，祭炼值回落，并记残魂旗（供来世）
@@ -385,12 +388,16 @@ const Core = (() => {
     (ups || []).forEach(r => emit({ text: pick(TEXT.stageUp).replace('{r}', r), cls: 'gold' }));
     if (bottleneck(s) && !s.bnLogged) { s.bnLogged = true; emit({ text: TEXT.bottleneck.replace('{r}', REALMS[s.realm].name + (s.realm === 0 ? '九层' : '圆满')), cls: 'warn' }); }
   }
-  function passTime(s, m, emit) {
+  function timeMonths(s, m) {
     const cfT = typeof courtFriction === 'function' ? courtFriction(s).time : 1;
+    return m * gt(s, 'time', 1) * cfT;
+  }
+  function passTime(s, m, emit) {
+    const months = timeMonths(s, m);
     const trial = trialStatus(s);
-    if (trial && trial.left > 0 && m * gt(s, 'time', 1) * cfT > trial.left && emit)
+    if (trial && trial.left > 0 && months > trial.left && emit)
       emit({ title: '试炼期限', text: '此行越过二十载之期。行动完整结算，超过期限才达标不计成功。', cls: 'warn' });
-    s.months += m * gt(s, 'time', 1) * cfT; sync(s);
+    s.months += months; sync(s);
     const left = s.lifespan - s.age, span = s.lifespan - 16;
     const k = s.realm + ':' + s.lifeBonus;
     if (left <= span * 0.05 && !s.warned['95' + k] && left > 0) { s.warned['95' + k] = 1; emit && emit({ text: TEXT.old95, cls: 'warn' }); }
@@ -444,15 +451,16 @@ const Core = (() => {
     const ups = bottleneck(s) ? (tags.push({ t: '瓶颈难破，修为难进' }), []) : addXw(s, g, tags);
     practice(s, 1, null, emit);
     moTick(s, 0, tags, emit);
+    const months = timeMonths(s, r.T * K.tunaMonths);
     passTime(s, r.T * K.tunaMonths, emit);
     fabaoFeed(s, 1, emit);
     gearTick(s, emit);
     checkXj(s, emit);
     s.acts++;
-    return { text: pick(TEXT.tuna).replace('{d}', cnDur(r.T * K.tunaMonths)), tags, ups };
+    return { text: pick(TEXT.tuna).replace('{d}', cnDur(Math.round(months))), tags, ups };
   }
   function biguanTime(s) {
-    const mul = (gt(s, 'time', 1) || 1) * (typeof courtFriction === 'function' ? courtFriction(s).time : 1);
+    const mul = timeMonths(s, 1) || 1;
     let span = REALMS[s.realm].T * K.biguanMonths;
     if (s.loop && s.loop.moCut && s.gf !== 'tianmo') span = Math.max(1, Math.round(span * 0.8 * mul)) / mul;
     return { span, months: span * mul };
@@ -833,10 +841,11 @@ const Core = (() => {
     }
     const fText = pick(TEXT.btFail);
     s.xw = Math.round(req(s) * (0.6 + Math.random() * 0.15)); s.inj += 3; s.xj = clamp(s.xj - 4, 0, 100); s.fails++; s.bnLogged = false;
+    const recoveryMonths = timeMonths(s, r.T * 6);
     passTime(s, r.T * 6, emit);
     if (gt(s, 'mo', 0) && s.xj < 15 && !s.dead) { s.dead = true; s.ending = 'rumo'; return { ok, from, text: fText + TEXT.rumoBreak, ending: 'rumo' }; }
     checkXj(s, emit);
-    return { ok, from, text: fText + `休养${cnDur(r.T * 6)}，方能再试。`, ending: s.dead ? s.ending : null };
+    return { ok, from, text: fText + `休养${cnDur(recoveryMonths)}，方能再试。`, ending: s.dead ? s.ending : null };
   }
   function finishAscend(s) {
     if (s.ascended) return;
@@ -1440,7 +1449,7 @@ const Core = (() => {
     if (!m) return null;
     const lsMul = o ? o.lsMul : 1;
     return { m, uid: mi.uid, name: (o && o.id === 'sx' && typeof SX_MISSION_NAME !== 'undefined' && SX_MISSION_NAME[m.id]) ? SX_MISSION_NAME[m.id] : m.name, brief: fnv(m.brief, s),
-      months: missionSpan(s, m.m), risk: missionRisk(s, m), riskWord: riskWord(missionRisk(s, m)),
+      months: missionSpan(s, m.m), duration: timeMonths(s, missionSpan(s, m.m)), risk: missionRisk(s, m), riskWord: riskWord(missionRisk(s, m)),
       gx: Math.round(m.gx * GX_SCALE[s.realm]), ls: Math.round(m.ls * REALMS[s.realm].lsScale * lsMul) };
   }
   function missionEvent(s, uid) {
@@ -1633,7 +1642,7 @@ const Core = (() => {
     scaleLife, scaleLs, tollText, npcAlive, killNpc, saveMateItem, spendSaveItem, missionEvery,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
-    addXw, afterGain, passTime, gainMul, checkXj, tuna, biguan, biguanTime, trialStatus, pickEvent, resolveChoice, applyFx,
+    addXw, afterGain, passTime, timeMonths, gainMul, checkXj, tuna, biguan, biguanTime, trialStatus, pickEvent, resolveChoice, applyFx,
     juqiAmount, tunaSpan, pillYears, itemEffect,
     btChance, resolveBreak, useItem, useBatchCap, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct, showFoe, glance, oddsWord, rootFace, sectBand,
