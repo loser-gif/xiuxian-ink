@@ -307,7 +307,7 @@ function makeJHUI(G) {
     const held = G.S.auc && G.S.auc.hold;
     const rows = (J.consignList ? J.consignList(G.S) : []).map(r => `<button type="button" class="shop-row" data-k="${String(r.k).replace(/"/g, '')}">寄拍 ${r.name}<small>落槌随席</small></button>`).join('');
     w.innerHTML = `<div class="ab-lamps"><i></i><i></i><i></i></div><div class="ab-ttl">听雨楼 · 今夜拍卖</div>
-      <p>楼上挂出红灯。席上的宝物待价而沽。你若有余货，也可寄一件上去，价由席上的人争，楼里抽一成二。</p>
+      <p>楼上挂出红灯。席上的宝物待价而沽。你若有余货，也可寄一件上去，价由席上的人争，楼里抽一成八。</p>
       ${held ? `<p class="shop-note">已寄：${held.name}。登楼后随席落槌。</p>` : `<div class="shop-col"><b>寄拍</b>${rows || '<p class="sd-empty">囊中暂无可寄之物</p>'}</div>`}
       <button class="brush-btn small ab-go"><span class="bb-ink"></span><span class="bb-text">登楼</span></button>`;
     w.querySelectorAll('[data-k]').forEach(b => {
@@ -340,7 +340,7 @@ function makeJHUI(G) {
     aucEl.hidden = false; await sleep(20); aucEl.classList.add('open');
     if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('auction');
     const allTags = [], got = [], sold = [];
-    addLine({ t: pick(AUC_OPEN) }, true); await sleep(1200);
+    addLine({ t: pick(AUC_OPEN).replace('共三件', `共${cn(a.lots.length)}件`) }, true); await sleep(1200);
     let l;
     while ((l = J.aucLot(G.S, a))) {
       const won = await runLot(a, l);
@@ -367,7 +367,7 @@ function makeJHUI(G) {
     while (box.children.length > 4) box.firstChild.remove();
   }
   function runLot(a, l) {
-    return new Promise(async resolve => {
+    return new Promise(resolve => {
       $('#auc-no').textContent = `第${cn(a.i + 1)}件 · 共${cn(a.lots.length)}件`;
       $('#auc-name').textContent = J.lotName(l);
       $('#auc-desc').textContent = l.frag ? '一页泛黄的天品功法残页，字迹如刀刻。据说集齐三页，便可悟出整部功法。' : itemDesc(l.k);
@@ -376,22 +376,22 @@ function makeJHUI(G) {
       const upd = () => { $('#auc-price').textContent = fmtNum(a.price); $('#auc-lead').textContent = a.leader ? (a.leader === 'you' ? '你领先' : `${BIDDERS[a.leader].name}领先`) : '尚无人应价'; $('#auc-ls').textContent = fmtNum(G.S.ls); };
       upd(); a.lines.forEach(x => addLine(x));
       const btns = $('#auc-btns');
-      if (l.consign && J.aucPlayConsign) {
-        btns.innerHTML = '';
-        const r = J.aucPlayConsign(G.S, a);
-        (r.lines || []).forEach(x => addLine(x));
-        upd();
-        return finish(r.sold ? r : null, { t: r.line || '落槌。' });
-      }
       const finish = async (won, line) => {
         btns.innerHTML = '';
+        upd(); save();
         if (line) addLine(line);
         if (typeof MoAudio !== 'undefined') MoAudio.play('gavel');
-        $('#auc-stamp-t').textContent = won ? '得' : '落'; await sleep(300); $('#auc-stamp').classList.add('on', won ? 'won' : 'lost');
+        $('#auc-stamp-t').textContent = won && won.returned ? '退' : (won ? '得' : '落'); await sleep(300); $('#auc-stamp').classList.add('on', won ? 'won' : 'lost');
         await sleep(900);
         btns.innerHTML = `<button class="brush-btn small light" id="auc-next"><span class="bb-ink"></span><span class="bb-text">${a.i < a.lots.length - 1 ? '下一件' : '散场'}</span></button>`;
         $('#auc-next').onclick = () => resolve(won);
       };
+      if (l.consign && J.aucPlayConsign) {
+        btns.innerHTML = '';
+        const r = J.aucPlayConsign(G.S, a);
+        (r.lines || []).forEach(x => addLine(x));
+        return finish(r, { t: r.line || '落槌。' });
+      }
       const draw = () => {
         const p1 = Math.max(a.price + 1, Math.round(a.price * 1.1)), p3 = Math.max(a.price + 1, Math.round(a.price * 1.3));
         const poor = p1 > G.S.ls;

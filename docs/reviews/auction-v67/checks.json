@@ -1,0 +1,245 @@
+{
+  "compatibility": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "sold": {
+    "price": "942",
+    "ls": 1112,
+    "savedLs": 1112
+  },
+  "unsold": {
+    "ls": 340,
+    "n": 1
+  },
+  "interrupted": {
+    "ls": 340,
+    "n": 1,
+    "pending": null
+  },
+  "secondReload": true,
+  "views": [
+    {
+      "w": 360,
+      "h": 800,
+      "theme": "day",
+      "met": {
+        "pageWidth": 360,
+        "view": 360,
+        "outside": 0
+      }
+    },
+    {
+      "w": 360,
+      "h": 800,
+      "theme": "night",
+      "met": {
+        "pageWidth": 360,
+        "view": 360,
+        "outside": 0
+      }
+    },
+    {
+      "w": 375,
+      "h": 812,
+      "theme": "day",
+      "met": {
+        "pageWidth": 375,
+        "view": 375,
+        "outside": 0
+      }
+    },
+    {
+      "w": 375,
+      "h": 812,
+      "theme": "night",
+      "met": {
+        "pageWidth": 375,
+        "view": 375,
+        "outside": 0
+      }
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "theme": "day",
+      "met": {
+        "pageWidth": 390,
+        "view": 390,
+        "outside": 0
+      }
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "theme": "night",
+      "met": {
+        "pageWidth": 390,
+        "view": 390,
+        "outside": 0
+      }
+    },
+    {
+      "w": 440,
+      "h": 956,
+      "theme": "day",
+      "met": {
+        "pageWidth": 440,
+        "view": 440,
+        "outside": 0
+      }
+    },
+    {
+      "w": 440,
+      "h": 956,
+      "theme": "night",
+      "met": {
+        "pageWidth": 440,
+        "view": 440,
+        "outside": 0
+      }
+    },
+    {
+      "w": 1280,
+      "h": 800,
+      "theme": "day",
+      "met": {
+        "pageWidth": 1280,
+        "view": 1280,
+        "outside": 0
+      }
+    },
+    {
+      "w": 1280,
+      "h": 800,
+      "theme": "night",
+      "met": {
+        "pageWidth": 1280,
+        "view": 1280,
+        "outside": 0
+      }
+    },
+    {
+      "w": 1440,
+      "h": 900,
+      "theme": "day",
+      "met": {
+        "pageWidth": 1440,
+        "view": 1440,
+        "outside": 0
+      }
+    },
+    {
+      "w": 1440,
+      "h": 900,
+      "theme": "night",
+      "met": {
+        "pageWidth": 1440,
+        "view": 1440,
+        "outside": 0
+      }
+    },
+    {
+      "w": 1920,
+      "h": 1080,
+      "theme": "day",
+      "met": {
+        "pageWidth": 1920,
+        "view": 1920,
+        "outside": 0
+      }
+    },
+    {
+      "w": 1920,
+      "h": 1080,
+      "theme": "night",
+      "met": {
+        "pageWidth": 1920,
+        "view": 1920,
+        "outside": 0
+      }
+    }
+  ],
+  "images": [
+    {
+      "file": "1280-day.jpg",
+      "bytes": 37353
+    },
+    {
+      "file": "1280-night.jpg",
+      "bytes": 38366
+    },
+    {
+      "file": "1440-day.jpg",
+      "bytes": 41607
+    },
+    {
+      "file": "1440-night.jpg",
+      "bytes": 42646
+    },
+    {
+      "file": "1920-day.jpg",
+      "bytes": 54573
+    },
+    {
+      "file": "1920-night.jpg",
+      "bytes": 55643
+    },
+    {
+      "file": "360-day.jpg",
+      "bytes": 21054
+    },
+    {
+      "file": "360-night.jpg",
+      "bytes": 21906
+    },
+    {
+      "file": "375-day.jpg",
+      "bytes": 21556
+    },
+    {
+      "file": "375-night.jpg",
+      "bytes": 22324
+    },
+    {
+      "file": "390-day.jpg",
+      "bytes": 21977
+    },
+    {
+      "file": "390-night.jpg",
+      "bytes": 22816
+    },
+    {
+      "file": "440-day.jpg",
+      "bytes": 23486
+    },
+    {
+      "file": "440-dpr3-day.jpg",
+      "bytes": 178713
+    },
+    {
+      "file": "440-dpr3-night.jpg",
+      "bytes": 178928
+    },
+    {
+      "file": "440-night.jpg",
+      "bytes": 24331
+    }
+  ],
+  "pageErrors": []
+}

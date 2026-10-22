@@ -1125,6 +1125,7 @@ const Core = (() => {
     if (s.npc && typeof NPCS !== 'undefined') {
       for (const id in NPCS) if (!s.npc[id]) s.npc[id] = { a: NPCS[id].a0, met: false };
     }
+    if (typeof Jianghu !== 'undefined' && Jianghu.recoverAuction) Jianghu.recoverAuction(s);
     sync(s); return s;
   }
   function retire(s) { s.dead = true; s.ending = 'guiyin'; }

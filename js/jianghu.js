@@ -46,7 +46,11 @@ const Jianghu = (() => {
     if (s.auc && !s.auc.told && s.months >= s.auc.next && s.months <= s.auc.next + K.aucWin * T(s)) {
       s.auc.told = 1; emit && emit({ text: `云岳坊听雨楼挂出了灯笼：拍卖会将开。（约${cnDur(K.aucWin * T(s))}内，往云岳坊可赴会）`, cls: 'event' });
     }
-    if (s.auc && s.months > s.auc.next + K.aucWin * T(s)) s.auc = { next: s.months + 12 * rint(K.aucEvery[0], K.aucEvery[1]) * Math.max(1, T(s) / 2) };
+    if (s.auc && s.months > s.auc.next + K.aucWin * T(s)) {
+      restoreHold(s, s.auc.hold);
+      recoverAuction(s);
+      s.auc = { next: s.months + 12 * rint(K.aucEvery[0], K.aucEvery[1]) * Math.max(1, T(s) / 2) };
+    }
     shopTick(s, emit);
   }
 
@@ -176,6 +180,7 @@ const Jianghu = (() => {
     }
     if (s.auc && s.auc.hold && s.auc.hold.k) {
       lots.push(Object.assign({ consign: 1 }, s.auc.hold));
+      s.auc.pending = s.auc.hold;
       s.auc.hold = null;
     }
     const ids = ['zhao', 'liu', 'qian', 'hei'].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -238,6 +243,8 @@ const Jianghu = (() => {
   function consign(s, k) {
     if (!(s.items && s.items[k] > 0)) return { err: '行囊中无此物' };
     if (!(s.auc && s.months >= s.auc.next && s.months <= s.auc.next + K.aucWin * T(s))) return { err: '拍卖未开' };
+    if (s.auc.done) return { err: '拍卖已散' };
+    if (s.auc.hold) return { err: '已有寄拍之物' };
     const manual = typeof Core !== 'undefined' && Core.manualId && Core.manualId(k);
     let name = k;
     if (manual && typeof GONGFA !== 'undefined' && GONGFA[manual]) name = '《' + GONGFA[manual].name + '》';
@@ -250,21 +257,31 @@ const Jianghu = (() => {
     if (!l || !l.k) return;
     s.items[l.k] = (s.items[l.k] || 0) + 1;
   }
+  // 拍卖中途关页，未落槌的寄拍物在续卷时退回；已结算的不会再退。
+  function recoverAuction(s) {
+    if (!s.auc || !s.auc.pending) return;
+    restoreHold(s, s.auc.pending);
+    s.auc.pending = null;
+  }
   function aucPlayConsign(s, a) {
     const l = a.lots[a.i];
+    if (l.settlement) return l.settlement;
+    s.auc.pending = null;
     const bids = (a.ids || []).map(id => ({ id, n: a.max[id] | 0 })).filter(x => x.n >= (a.price | 0)).sort((p, q) => q.n - p.n);
     if (!bids.length) {
       restoreHold(s, l);
-      return { consign: 1, returned: 1, tags: [], line: '席上无人举牌。此物仍归你。', lines: [{ t: '无人应价，寄拍之物原样退回。' }] };
+      a.leader = null;
+      return l.settlement = { consign: 1, returned: 1, tags: [], line: '席上无人举牌。此物仍归你。', lines: [{ t: '无人应价，寄拍之物原样退回。' }] };
     }
     const top = bids[0].n, second = bids[1] ? bids[1].n : Math.round(top * (0.72 + Math.random() * 0.16));
     const price = Math.max(a.price | 0, Math.round((top + second) / 2));
     const pay = Math.max(1, Math.round(price * 0.82));
     s.ls += pay;
     const who = bids[0].id;
-    return {
+    a.price = price; a.leader = who;
+    return l.settlement = {
       consign: 1, sold: 1, pay, tags: [{ t: `灵石 +${pay}`, c: 'up' }],
-      line: `${(typeof BIDDERS !== 'undefined' && BIDDERS[who]) ? BIDDERS[who].name : '有人'}以${pay}灵石（已抽成）拍下你的${l.name || l.k}。`,
+      line: `${(typeof BIDDERS !== 'undefined' && BIDDERS[who]) ? BIDDERS[who].name : '有人'}以${price}灵石拍下你的${l.name || l.k}，抽成后入账${pay}。`,
       lines: [{ who, t: '这一件，我要了。' }, { t: `落槌。抽成之后，你入账${pay}灵石。` }],
     };
   }
@@ -516,7 +533,7 @@ const Jianghu = (() => {
 
   return { K, init, tick, canGo, dist, trailSegments, travelMonths, travel, gather, pickAt,
     baseVal, mktRefresh, price, sellPrice, buy, sell,
-    aucOpen, aucNew, aucLot, aucRaise, aucPass, aucPlayConsign, lotName, consignList, consign,
+    aucOpen, aucNew, aucLot, aucRaise, aucPass, aucPlayConsign, recoverAuction, lotName, consignList, consign,
     shopOpen, shopCost, shopBuy, shopPut, shopTake,
     libRecipes, buyRecipe, learnRecipe, hasHerbs, danChance, danMonths, craft, danNeed,
     fxFrag, mjOpen, mjHere, mjEnter, mjNode, mjBase, mjResolve, mjLeave, mjAll, mjOpenList, mjLapseWarn, fx, useItem };
