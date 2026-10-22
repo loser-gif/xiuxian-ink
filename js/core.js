@@ -983,7 +983,7 @@ const Core = (() => {
       inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
       loop: emptyLoop(),
-      seen: {}, recent: [], acts: 0, ending: null, marks: [], played: 0,
+      seen: {}, recent: [], acts: 0, ending: null, marks: [], trail: [], played: 0,
       court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 },
       karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] },
       life: typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, goalChanges: 0, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 } };
@@ -1095,6 +1095,7 @@ const Core = (() => {
     s.karma = s.karma || (typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] });
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
     s.marks = Array.isArray(s.marks) ? s.marks : [];
+    s.trail = Array.isArray(s.trail) ? s.trail : [];
     if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
     if (!s.life || typeof s.life !== 'object') s.life = typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 };
     if (typeof Life !== 'undefined' && Life.ensure) Life.ensure(s);

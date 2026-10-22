@@ -53,6 +53,23 @@ const Jianghu = (() => {
   /* ---------- 行旅 ---------- */
   const canGo = (s, id) => !!(s.found[id] && s.realm >= LOC[id].rm);
   const dist = (a, b) => Math.abs(LOC[a].x - LOC[b].x);
+  // 足迹记实际走过的相邻路段；用地点 id 存储，重走不重复计入。
+  function trailSegments(s) {
+    const ids = LOCS.map(l => l.id), segments = new Set();
+    for (const pair of (Array.isArray(s.trail) ? s.trail : [])) {
+      if (!Array.isArray(pair) || pair.length !== 2) continue;
+      const a = ids.indexOf(pair[0]), b = ids.indexOf(pair[1]);
+      if (a >= 0 && b >= 0 && Math.abs(a - b) === 1) segments.add(Math.min(a, b));
+    }
+    return [...segments].sort((a, b) => a - b);
+  }
+  function recordTrail(s, from, to) {
+    const ids = LOCS.map(l => l.id), a = ids.indexOf(from), b = ids.indexOf(to);
+    if (a < 0 || b < 0 || a === b) return;
+    const segments = new Set(trailSegments(s));
+    for (let i = Math.min(a, b); i < Math.max(a, b); i++) segments.add(i);
+    s.trail = [...segments].sort((x, y) => x - y).map(i => [ids[i], ids[i + 1]]);
+  }
   const travelMonths = (s, to) => {
     let m = to === s.loc ? K.exploreM * T(s) : T(s) * (K.travelBase + Math.round(dist(s.loc, to) * K.travelPer));
     if (typeof Core !== 'undefined' && Core.pathYouliMul) m = Math.max(1, Math.round(m / Core.pathYouliMul(s)));
@@ -68,6 +85,7 @@ const Jianghu = (() => {
     const m = travelMonths(s, to), tags = [], from = s.loc;
     Core.passTime(s, m, emit);
     s.loc = to;
+    if (!s.dead) recordTrail(s, from, to);
     if (typeof Loop !== 'undefined' && Loop.arrive) Loop.arrive(s, emit);
     if (!s.dead) gather(s, to, tags);
     return { months: m, tags, from };
@@ -496,7 +514,7 @@ const Jianghu = (() => {
     return null;
   }
 
-  return { K, init, tick, canGo, dist, travelMonths, travel, gather, pickAt,
+  return { K, init, tick, canGo, dist, trailSegments, travelMonths, travel, gather, pickAt,
     baseVal, mktRefresh, price, sellPrice, buy, sell,
     aucOpen, aucNew, aucLot, aucRaise, aucPass, aucPlayConsign, lotName, consignList, consign,
     shopOpen, shopCost, shopBuy, shopPut, shopTake,
