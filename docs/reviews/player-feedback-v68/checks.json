@@ -1,0 +1,536 @@
+{
+  "compatibility": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "travel": {
+    "before": 3837,
+    "expected": 24.8832,
+    "label": "二年一月",
+    "ui": "路程二年一月",
+    "actual": 24.883200000000215
+  },
+  "transfer": {
+    "duration": 198.72,
+    "actual": 198.7199999999998
+  },
+  "tea": {
+    "label": "替她垫上\n灵石六",
+    "ls": 14,
+    "result": "你把灵石按在账簿上。她把最好的那罐茶给你满上，手很稳。临走只说：「我记性好。」回响已埋修为 +41灵石 −6心境 +4收卷"
+  },
+  "road": {
+    "label": "借他路费\n凡间铜钱 · 不耗灵石",
+    "ls": 14,
+    "result": "你从随身零钱里分出一把凡间铜钱，不动储物袋中的灵石。他写下借据，字很工整，连你的名字都问了两遍，怕写错。回响已埋修为 +41心境 +4收卷"
+  },
+  "fu": "你已至化神圆满，天劫将临。欲渡劫飞升，以你此刻的心境与根骨，把握约莫六成。囊中尚有渡厄符一道，燃符可增二成把握。此境破关，已非儿戏——一旦失手，便有身死道消之虞。",
+  "views": [
+    {
+      "w": 360,
+      "h": 800,
+      "theme": "day",
+      "metrics": {
+        "body": 360,
+        "viewport": 360,
+        "artifact": {
+          "x": 22,
+          "y": 652.75,
+          "width": 306,
+          "height": 119.25,
+          "top": 652.75,
+          "right": 328,
+          "bottom": 772,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 360,
+      "h": 800,
+      "theme": "night",
+      "metrics": {
+        "body": 360,
+        "viewport": 360,
+        "artifact": {
+          "x": 22,
+          "y": 652.75,
+          "width": 306,
+          "height": 119.25,
+          "top": 652.75,
+          "right": 328,
+          "bottom": 772,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 375,
+      "h": 812,
+      "theme": "day",
+      "metrics": {
+        "body": 375,
+        "viewport": 375,
+        "artifact": {
+          "x": 22,
+          "y": 664.75,
+          "width": 321,
+          "height": 119.25,
+          "top": 664.75,
+          "right": 343,
+          "bottom": 784,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 375,
+      "h": 812,
+      "theme": "night",
+      "metrics": {
+        "body": 375,
+        "viewport": 375,
+        "artifact": {
+          "x": 22,
+          "y": 664.75,
+          "width": 321,
+          "height": 119.25,
+          "top": 664.75,
+          "right": 343,
+          "bottom": 784,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "theme": "day",
+      "metrics": {
+        "body": 390,
+        "viewport": 390,
+        "artifact": {
+          "x": 22,
+          "y": 696.75,
+          "width": 336,
+          "height": 119.25,
+          "top": 696.75,
+          "right": 358,
+          "bottom": 816,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 390,
+      "h": 844,
+      "theme": "night",
+      "metrics": {
+        "body": 390,
+        "viewport": 390,
+        "artifact": {
+          "x": 22,
+          "y": 696.75,
+          "width": 336,
+          "height": 119.25,
+          "top": 696.75,
+          "right": 358,
+          "bottom": 816,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 440,
+      "h": 956,
+      "theme": "day",
+      "metrics": {
+        "body": 440,
+        "viewport": 440,
+        "artifact": {
+          "x": 22,
+          "y": 808.75,
+          "width": 386,
+          "height": 119.25,
+          "top": 808.75,
+          "right": 408,
+          "bottom": 928,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 440,
+      "h": 956,
+      "theme": "night",
+      "metrics": {
+        "body": 440,
+        "viewport": 440,
+        "artifact": {
+          "x": 22,
+          "y": 808.75,
+          "width": 386,
+          "height": 119.25,
+          "top": 808.75,
+          "right": 408,
+          "bottom": 928,
+          "left": 22
+        }
+      }
+    },
+    {
+      "w": 1280,
+      "h": 800,
+      "theme": "day",
+      "metrics": {
+        "body": 1280,
+        "viewport": 1280,
+        "artifact": {
+          "x": 312,
+          "y": 437.375,
+          "width": 646,
+          "height": 119.25,
+          "top": 437.375,
+          "right": 958,
+          "bottom": 556.625,
+          "left": 312
+        }
+      }
+    },
+    {
+      "w": 1280,
+      "h": 800,
+      "theme": "night",
+      "metrics": {
+        "body": 1280,
+        "viewport": 1280,
+        "artifact": {
+          "x": 312,
+          "y": 437.375,
+          "width": 646,
+          "height": 119.25,
+          "top": 437.375,
+          "right": 958,
+          "bottom": 556.625,
+          "left": 312
+        }
+      }
+    },
+    {
+      "w": 1440,
+      "h": 900,
+      "theme": "day",
+      "metrics": {
+        "body": 1440,
+        "viewport": 1440,
+        "artifact": {
+          "x": 392,
+          "y": 487.375,
+          "width": 646,
+          "height": 119.25,
+          "top": 487.375,
+          "right": 1038,
+          "bottom": 606.625,
+          "left": 392
+        }
+      }
+    },
+    {
+      "w": 1440,
+      "h": 900,
+      "theme": "night",
+      "metrics": {
+        "body": 1440,
+        "viewport": 1440,
+        "artifact": {
+          "x": 392,
+          "y": 487.375,
+          "width": 646,
+          "height": 119.25,
+          "top": 487.375,
+          "right": 1038,
+          "bottom": 606.625,
+          "left": 392
+        }
+      }
+    },
+    {
+      "w": 1920,
+      "h": 1080,
+      "theme": "day",
+      "metrics": {
+        "body": 1920,
+        "viewport": 1920,
+        "artifact": {
+          "x": 632,
+          "y": 577.375,
+          "width": 646,
+          "height": 119.25,
+          "top": 577.375,
+          "right": 1278,
+          "bottom": 696.625,
+          "left": 632
+        }
+      }
+    },
+    {
+      "w": 1920,
+      "h": 1080,
+      "theme": "night",
+      "metrics": {
+        "body": 1920,
+        "viewport": 1920,
+        "artifact": {
+          "x": 632,
+          "y": 577.375,
+          "width": 646,
+          "height": 119.25,
+          "top": 577.375,
+          "right": 1278,
+          "bottom": 696.625,
+          "left": 632
+        }
+      }
+    }
+  ],
+  "pixels": {
+    "dpr": 3,
+    "coarse": true,
+    "layers": [
+      {
+        "cls": "mtn m1",
+        "w": 1144,
+        "h": 880,
+        "css": [
+          572,
+          440
+        ],
+        "ratio": 1.805342063719102
+      },
+      {
+        "cls": "mtn m2",
+        "w": 1144,
+        "h": 880,
+        "css": [
+          572,
+          440
+        ],
+        "ratio": 1.805342063719102
+      },
+      {
+        "cls": "atmo atmo-far",
+        "w": 110,
+        "h": 239,
+        "css": [
+          440,
+          956
+        ],
+        "ratio": 0.2256677818746789
+      },
+      {
+        "cls": "mtn m3",
+        "w": 1144,
+        "h": 804,
+        "css": [
+          572,
+          402
+        ],
+        "ratio": 1.8053418898297469
+      },
+      {
+        "cls": "atmo atmo-near",
+        "w": 110,
+        "h": 239,
+        "css": [
+          440,
+          956
+        ],
+        "ratio": 0.2256677818746789
+      },
+      {
+        "cls": "lake-refl",
+        "w": 1144,
+        "h": 536,
+        "css": [
+          572,
+          268
+        ],
+        "ratio": 1.8023237040720257
+      },
+      {
+        "cls": "mtn m4",
+        "w": 1144,
+        "h": 650,
+        "css": [
+          572,
+          325
+        ],
+        "ratio": 1.8053422376084904
+      },
+      {
+        "cls": "pine",
+        "w": 414,
+        "h": 708,
+        "css": [
+          207,
+          354
+        ],
+        "ratio": 1.7764824632301137
+      }
+    ],
+    "limit": 0.6055300708194983
+  },
+  "elements": [
+    {
+      "text": "金",
+      "on": true,
+      "width": "7px",
+      "height": "7px",
+      "borderRadius": "0px",
+      "transform": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)",
+      "outline": "solid"
+    },
+    {
+      "text": "木",
+      "on": true,
+      "width": "2px",
+      "height": "7px",
+      "borderRadius": "0px",
+      "transform": "none",
+      "outline": "solid"
+    },
+    {
+      "text": "水",
+      "on": true,
+      "width": "7px",
+      "height": "7px",
+      "borderRadius": "50%",
+      "transform": "none",
+      "outline": "solid"
+    },
+    {
+      "text": "火",
+      "on": true,
+      "width": "8px",
+      "height": "7px",
+      "borderRadius": "0px",
+      "transform": "none",
+      "outline": "solid"
+    },
+    {
+      "text": "土",
+      "on": false,
+      "width": "7px",
+      "height": "7px",
+      "borderRadius": "0px",
+      "transform": "none",
+      "outline": "none"
+    }
+  ],
+  "images": [
+    {
+      "file": "1280-day.jpg",
+      "bytes": 31179
+    },
+    {
+      "file": "1280-night.jpg",
+      "bytes": 31423
+    },
+    {
+      "file": "1440-day.jpg",
+      "bytes": 36288
+    },
+    {
+      "file": "1440-night.jpg",
+      "bytes": 36463
+    },
+    {
+      "file": "1920-day.jpg",
+      "bytes": 48768
+    },
+    {
+      "file": "1920-night.jpg",
+      "bytes": 48765
+    },
+    {
+      "file": "360-day.jpg",
+      "bytes": 15309
+    },
+    {
+      "file": "360-night.jpg",
+      "bytes": 15405
+    },
+    {
+      "file": "375-day.jpg",
+      "bytes": 16533
+    },
+    {
+      "file": "375-night.jpg",
+      "bytes": 16609
+    },
+    {
+      "file": "390-day.jpg",
+      "bytes": 17072
+    },
+    {
+      "file": "390-night.jpg",
+      "bytes": 17162
+    },
+    {
+      "file": "440-day.jpg",
+      "bytes": 18871
+    },
+    {
+      "file": "440-dpr3-day.jpg",
+      "bytes": 329119
+    },
+    {
+      "file": "440-dpr3-night.jpg",
+      "bytes": 334767
+    },
+    {
+      "file": "440-night.jpg",
+      "bytes": 18944
+    },
+    {
+      "file": "artifact-known.jpg",
+      "bytes": 40819
+    },
+    {
+      "file": "elements-grayscale-day.jpg",
+      "bytes": 266375
+    },
+    {
+      "file": "elements-grayscale-night.jpg",
+      "bytes": 204054
+    },
+    {
+      "file": "tea-debit.jpg",
+      "bytes": 55872
+    },
+    {
+      "file": "transfer-preview.jpg",
+      "bytes": 68129
+    },
+    {
+      "file": "travel-preview.jpg",
+      "bytes": 84060
+    }
+  ],
+  "errors": []
+}

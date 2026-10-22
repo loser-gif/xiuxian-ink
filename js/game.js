@@ -1139,7 +1139,7 @@ function render() {
     chipG.hidden = !gn;
     if (gn) setText('#c-goal', gn);
   }
-  const tm = Core.gt(S, 'time', 1);
+  const tm = Core.timeMonths(S, 1);
   const bgMonths = Core.biguanTime(S).months;
   const trial = Core.trialStatus(S);
   setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm)));
@@ -1156,7 +1156,7 @@ function render() {
   let msg = '';
   if (bottleneck()) {
     const pill = r.pill;
-    msg = (S.items[pill] > 0) ? '瓶颈已至 · 囊中有丹，可破境' : '瓶颈已至 · 可破境，坊市或有丹药';
+    msg = (S.items[pill] > 0) ? (S.realm === 4 ? '瓶颈已至 · 囊中有符，可渡劫' : '瓶颈已至 · 囊中有丹，可破境') : (S.realm === 4 ? '瓶颈已至 · 可渡劫，坊市或有渡厄符' : '瓶颈已至 · 可破境，坊市或有丹药');
     st.classList.add('zhu');
   }
   else if (S.inj > 0) { msg = `伤势未愈 · 修炼减半`; st.classList.add('zhu'); }
@@ -1701,13 +1701,13 @@ function openBreak() {
     return;
   }
   openBreak._skip = false;
-  const r = R(), next = NEXT_REALM_NAME[S.realm], pill = r.pill, has = S.items[pill] > 0;
+  const r = R(), next = NEXT_REALM_NAME[S.realm], pill = r.pill, has = S.items[pill] > 0, isFu = S.realm === 4;
   FX.vtext($('#ev-title'), S.realm === 4 ? '渡劫' : '破境');
   $('#ev-seal').textContent = '劫';
   $('#ev-result').innerHTML = '';
   const box = $('#ev-choices'); box.innerHTML = ''; box.className = 'ev-choices';
   let t = `你已至${r.name}${r.stages[r.stages.length - 1]}，${S.realm === 4 ? '天劫将临' : '关隘就在眼前'}。欲${S.realm === 4 ? '渡劫飞升' : '破' + next}，以你此刻的心境与根骨，把握${chanceWord(btChance(false))}。`;
-  if (has) t += `囊中尚有${pill}一枚，服之可增二成把握。`;
+  if (has) t += `囊中尚有${pill}一${isFu ? '道，燃符' : '枚，服之'}可增二成把握。`;
   if (S.inj > 0) t += '你身上伤势未愈，此时破境，凶险倍增。';
   if (S.fails) t += `此前已败${cn(S.fails)}次，屡败屡战，心志愈坚。`;
   const help = Core.npcHelp(S).who.map(id => NPCS[id].name);
@@ -1717,8 +1717,8 @@ function openBreak() {
   openModal();
   const d = inkWrite($('#ev-text'), t, { immediate: true, step: 20, cadence: true });
   const opts = [];
-  if (has) opts.push({ label: `服${pill}，破境`, sub: chanceWord(btChance(true)), go: true, pill: true });
-  opts.push({ label: has ? '不服丹，强行破境' : '凝神静气，破境', sub: chanceWord(btChance(false)), go: true, pill: false });
+  if (has) opts.push({ label: isFu ? `燃${pill}，渡劫` : `服${pill}，破境`, sub: chanceWord(btChance(true)), go: true, pill: true });
+  opts.push({ label: has ? (isFu ? '不燃符，强行渡劫' : '不服丹，强行破境') : (isFu ? '凝神静气，渡劫' : '凝神静气，破境'), sub: chanceWord(btChance(false)), go: true, pill: false });
   opts.push({ label: '暂缓，再积累些时日', sub: '', go: false });
   opts.forEach((o, i) => {
     const b = document.createElement('button'); b.className = 'choice'; b.style.animationDelay = (500 + d * 0.5 + i * 120) + 'ms';
@@ -1749,7 +1749,7 @@ async function runBreak(usePill) {
   if (typeof BtFx !== 'undefined') await BtFx.chargePhase(bt, from, usePill, r.pill);
   else {
     const l1 = document.createElement('div'); lines.appendChild(l1);
-    inkWrite(l1, usePill ? `服下${r.pill}，凝神静气` : '凝神静气，抱元守一', { immediate: true, step: 60 });
+    inkWrite(l1, usePill ? `${from === 4 ? '燃起' : '服下'}${r.pill}，凝神静气` : '凝神静气，抱元守一', { immediate: true, step: 60 });
     await sleep(1100); bt.classList.add('charge');
     const l2 = document.createElement('div'); lines.appendChild(l2);
     inkWrite(l2, from === 4 ? '劫云压顶……' : '引天地灵气，冲击瓶颈……', { immediate: true, step: 70 });
@@ -2102,7 +2102,7 @@ function sectTasks() {
     const info = Core.missionInfo(S, mi);
     const c = document.createElement('div'); c.className = 'task r' + Math.min(3, Math.floor(info.risk / 0.12));
     c.innerHTML = `<span class="task-seal">${info.m.seal}</span><div class="task-info"><div class="task-name">${info.name}</div><p class="task-brief"></p>
-      <div class="task-meta"><span>耗时 ${cnDur(info.months)}</span><span class="risk">${info.riskWord}</span></div>
+      <div class="task-meta"><span>耗时 ${cnDur(info.duration)}</span><span class="risk">${info.riskWord}</span></div>
       <div class="task-pay">酬 · 贡献 ${fmtNum(info.gx)} · 灵石 ${fmtNum(info.ls)}</div></div><button class="item-use">接令</button>`;
     c.querySelector('.task-brief').textContent = info.brief;
     c.querySelector('button').onclick = async () => { await closeSheet(); const ev = Core.missionEvent(S, mi.uid); if (ev) openEvent(ev); };
@@ -2205,7 +2205,7 @@ function dabiInvite() {
       return `${head}这一回签上的对手，是${who}。`;
     },
     choices: () => [
-      { label: '登台', sub: '三战定名次', act: () => ({ text: '你整了整衣袍，一步步走上演武台。台下的喧哗声，忽然都远了。', fx: {}, after: startDabi }) },
+      { label: '登台', sub: '三战定名次', act: () => ({ text: '你整了整衣袍，一步步走上演武台。台下的喧哗声，忽然都远了。', fx: {}, tags: [{ t: '登台候战' }], after: startDabi }) },
       { label: '托病不出', sub: '贡献 · 心境稍减', act: s => { s.sect.dabiDue = false; s._dabiBracket = null; return { text: '你递了一张告假条。那块写着你名字的名牌，被执事默默摘了下来。', fx: { gx: -2, xj: -2 } }; } },
     ] };
   openEvent(ev);
@@ -2463,11 +2463,11 @@ function bagPage() {
   });
   if (typeof SHENQI_ZHI !== 'undefined') {
     const zhi = document.createElement('div'); zhi.className = 'shenqi-zhi';
-    const rows = SHENQI_ZHI.map(z => {
-      const known = (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name);
-      return `<div class="sq-row ${known ? 'on' : 'off'}"><span class="sq-seal">${known ? esc(z.seal) : '？'}</span><div><b>${known ? esc(z.name) : '——'}</b><p>${known ? esc(z.blurb) : '机缘未至，名录空阙。'}</p></div></div>`;
-    }).join('');
-    zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}`;
+    const known = SHENQI_ZHI.filter(z => (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name));
+    const rows = known.map(z => `<div class="sq-row on"><span class="sq-seal">${esc(z.seal)}</span><div><b>${esc(z.name)}</b><p>${esc(z.blurb)}</p></div></div>`).join('');
+    const missing = SHENQI_ZHI.length - known.length;
+    const blank = missing ? `<div class="sq-unseen"><p>尚有${cn(missing)}件机缘未至，名录空阙。</p><div class="sq-blanks" aria-hidden="true">${'<i></i>'.repeat(missing)}</div></div>` : '';
+    zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}${blank}`;
     wrap.appendChild(zhi);
   }
   return wrap;
@@ -2532,7 +2532,7 @@ function gfPage() {
     row.innerHTML = `<span class="gf-seal">${GF_GRADE[g0.grade]}</span>
       <div class="gf-row-info"><div class="gf-row-name">${g0.name}<em>${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
       <div class="gf-row-sub">${e.broken ? '残篇未补 · 转修之后才走这条路 · ' : ''}${gfElWord(id)} · ×${Core.gfSpeed(S, id).toFixed(2)}</div><div class="gf-row-trait">${g0.trait}</div>
-      <div class="gf-cost">${(c => `散功转修：${c.lose ? `修为 −${fmtNum(c.lose)} · ` : ''}心境 −${c.xj} · 耗时${cnDur(c.months + c.extra)}${c.extra ? `（修为不足，以${cnDur(c.extra)}苦功补足）` : ''}${c.layer ? ` · 《${GONGFA[S.gf].name}》跌一层` : ''}`)(Core.switchCost(S, id))}</div></div>
+      <div class="gf-cost">${(c => `散功转修：${c.lose ? `修为 −${fmtNum(c.lose)} · ` : ''}心境 −${c.xj} · 耗时${cnDur(c.duration)}${c.extra ? `（修为不足，以${cnDur(c.extraDuration)}苦功补足）` : ''}${c.layer ? ` · 《${GONGFA[S.gf].name}》跌一层` : ''}`)(Core.switchCost(S, id))}</div></div>
       <div class="gf-acts"></div>`;
     const acts = row.querySelector('.gf-acts');
     const bMain = document.createElement('button'); bMain.className = 'item-use'; bMain.textContent = '转修';
@@ -3566,7 +3566,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=67').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=68').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

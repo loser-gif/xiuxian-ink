@@ -15,11 +15,11 @@ const Wallpaper = (() => {
   const rnd = (a, b) => a + R() * (b - a);
 
   /* ---------- 前景松枝 ---------- */
-  function px() { return Math.min(window.devicePixelRatio || 1, coarse() ? 1.5 : 2); }
+  function px(w, h) { return Ink.layerScale(w, h); }
   function drawPine(cv) {
     if (!cv) return false;
     const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return false;
-    const dpr = px();
+    const dpr = px(w, h);
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
     const r = Ink.mulberry(77), s = w / 250;
@@ -102,7 +102,7 @@ const Wallpaper = (() => {
   function drawLake() {
     const lake = $('.lake'), cv = $('.lake-refl'); if (!lake || !cv) return;
     const lw = lake.offsetWidth, lh = lake.offsetHeight, ltop = lake.offsetTop; if (!lw || !lh) return false;
-    const dpr = px();
+    const dpr = px(lw, lh);
     cv.width = Math.round(lw * dpr); cv.height = Math.round(lh * dpr);
     const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, lw, lh);
     for (const [sel, a] of [['.m2', .45], ['.m3', 1]]) {
@@ -272,7 +272,7 @@ const Wallpaper = (() => {
     const w = cv.clientWidth, h = cv.clientHeight;
     if (!w || !h) return true;
     if (cv.classList.contains('atmo')) return cv.width === 300 && cv.height === 150 && w > 400;
-    const dpr = px();
+    const dpr = px(w, h);
     return Math.abs(cv.width - Math.round(w * dpr)) > 2 || Math.abs(cv.height - Math.round(h * dpr)) > 2;
   }
   function needsBuild() {

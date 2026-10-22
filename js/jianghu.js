@@ -86,13 +86,13 @@ const Jianghu = (() => {
     s.items[h] = (s.items[h] || 0) + n; tags.push({ t: `采得${h}${n > 1 ? '×' + n : ''}`, c: 'up' });
   }
   function travel(s, to, emit) {
-    const m = travelMonths(s, to), tags = [], from = s.loc;
+    const m = travelMonths(s, to), tags = [], from = s.loc, duration = Core.timeMonths(s, m);
     Core.passTime(s, m, emit);
     s.loc = to;
     if (!s.dead) recordTrail(s, from, to);
     if (typeof Loop !== 'undefined' && Loop.arrive) Loop.arrive(s, emit);
     if (!s.dead) gather(s, to, tags);
-    return { months: m, tags, from };
+    return { months: duration, tags, from };
   }
   // 地点的奇遇池：本地者全权，未归处者半权
   function pickAt(s, locId) {
@@ -385,8 +385,8 @@ const Jianghu = (() => {
   function craft(s, id, emit) {
     const r = RECIPES[id]; if (!s.dan.rec.includes(id) || !hasHerbs(s, id)) return null;
     for (const [h, n] of Object.entries(r.need)) { s.items[h] -= n; if (!s.items[h]) delete s.items[h]; }
-    const p = danChance(s, id), tags = [], m = danMonths(s, id);
-    Core.passTime(s, m, emit); s.dan.n++;
+    const p = danChance(s, id), tags = [], span = danMonths(s, id), m = Core.timeMonths(s, span);
+    Core.passTime(s, span, emit); s.dan.n++;
     if (Math.random() < p) {
       const qr = Math.random() + s.dan.lv * 0.04 + (s.wx - 5) * 0.02;
       const q = qr > 1.12 ? 3 : qr > 0.8 ? 2 : qr > 0.38 ? 1 : 0;
@@ -469,12 +469,12 @@ const Jianghu = (() => {
     if (Object.keys(items).length) fx.item = items;
     if (half) { fx.inj = 2; fx.xj = (fx.xj || 0) - 4; }
     const tags = [];
-    const months = T(s) * (K.mjExit + d.node);
+    const span = T(s) * (K.mjExit + d.node), months = Core.timeMonths(s, span);
     s.dive = null; s.mj[d.id] = s.mj[d.id] || { n: 0 }; s.mj[d.id].open = 0; s.mj[d.id].n++;
     const slowLeave = d.id === 'chenjian' || d.id === 'xiandao' || d.id === 'xingyun';
     const spanL = slowLeave ? 1.7 : 1;
     s.mj[d.id].next = s.months + 12 * rint(Math.round(K.mjEvery[0] * spanL), Math.round(K.mjEvery[1] * spanL)) * T(s) / 2;
-    Core.passTime(s, months, emit);
+    Core.passTime(s, span, emit);
     const o = Core.applyFx(s, fx, emit); tags.push(...o.tags);
     if (!half && L.recipe) learnRecipe(s, L.recipe, tags);
     if (!half && L.dan) danXp(s, L.dan, tags);

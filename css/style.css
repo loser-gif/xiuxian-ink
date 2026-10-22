@@ -288,6 +288,14 @@ body.go .title-menu .brush-btn small{animation-delay:calc(var(--ink-d) + .46s),c
 .el-3{transform:translate(calc(var(--st)*-.3),calc(var(--st)*.42))}
 .el-4{transform:translate(calc(var(--st)*-.48),calc(var(--st)*-.155))}
 .el.on{color:var(--c);text-shadow:0 0 12px var(--c)}
+.el::after{content:'';position:absolute;left:50%;top:calc(100% + 4px);width:7px;height:7px;margin-left:-4px;border:1px solid currentColor;opacity:.45;box-sizing:border-box}
+.el-0::after{transform:rotate(45deg)}
+.el-1::after{width:2px;border:0;border-left:1px solid currentColor;border-right:1px solid currentColor;box-shadow:-3px 0 0 currentColor,3px 0 0 currentColor;margin-left:-1px}
+.el-2::after{border-radius:50%}
+.el-3::after{width:0;height:0;border:4px solid transparent;border-top:0;border-bottom:7px solid currentColor}
+.el-4::after{border-top-width:2px;border-bottom-width:2px}
+.el.on::after{opacity:1;background:currentColor;outline:1px solid var(--ink);outline-offset:3px}
+.el-1.on::after,.el-3.on::after{background:transparent}
 .lg-result{width:min(100%,340px);text-align:center;min-height:150px}
 .lg-name{font-family:var(--f-head);font-size:36px;letter-spacing:.2em;padding-left:.2em;min-height:46px;color:var(--ink)}
 .lg-name .lg-el{color:var(--zhu);font-size:.5em;margin-right:.3em;letter-spacing:.06em;vertical-align:.25em}
@@ -2019,6 +2027,10 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 .sq-row.off{opacity:.42}
 .sq-seal{flex:none;width:36px;height:36px;line-height:36px;text-align:center;font-family:var(--f-head);font-size:18px;color:var(--seal-paper);background:#8e2420;border-radius:3px}
 .sq-row.off .sq-seal{background:#6e6457}
+.sq-unseen{padding:12px 4px;color:var(--ink2);font-size:12.5px}
+.sq-unseen p{margin:0 0 8px;line-height:1.7}
+.sq-blanks{display:flex;gap:8px}
+.sq-blanks i{display:block;width:22px;height:22px;border:1px solid currentColor;border-radius:2px;opacity:.25}
 .sq-row b{display:block;font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.12em;margin-bottom:2px}
 .sq-row p{margin:0;font-size:12.5px;line-height:1.7;color:var(--ink2)}
 
