@@ -3448,3 +3448,9 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 
 /* v64: trial results use the existing paper, with a readable four-character title. */
 .end-trial .end-title { font-family: 'MoShu', serif; font-size: clamp(32px, 8vw, 56px); letter-spacing: .12em; }
+
+/* v66: 已知道路仍是虚线，实际行过处留下淡墨实线与墨点。 */
+.road-known{stroke:rgba(27,24,20,.22)}
+.road-trail{stroke:rgba(27,24,20,.5);stroke-width:1.6}
+.map-pt{background:rgba(27,24,20,.2)}
+.map-pt.walked{background:rgba(27,24,20,.55)}

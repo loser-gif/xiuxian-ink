@@ -29,14 +29,14 @@ function makeJHUI(G) {
     sel = G.S.loc;
     mapEl.innerHTML = `
       <div class="map-head">
-        <div class="map-ttl"><b>江湖</b><span id="map-where"></span></div>
+        <div class="map-ttl"><b>江湖</b><span id="map-where"></span><span>淡墨为足迹，朱砂为此身</span></div>
         <button class="map-btn" id="map-rand"><span>随缘</span><small>信步而行</small></button>
         <button class="map-close" id="map-close" aria-label="收卷"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="8" fill="#b3302a"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font">收</text></g></svg></button>
       </div>
       <div class="map-scroll-wrap"><div class="map-roller l"></div>
         <div class="map-scroll" id="map-scroll"><div class="map-canvas" id="map-canvas">
           <img class="map-far" alt=""><img class="map-img" alt="">
-          <svg class="map-road" viewBox="0 0 ${InkMap.MW} ${InkMap.MH}" preserveAspectRatio="none"><path class="road-all" d=""/><path class="road-known" d=""/><path class="road-go" d=""/></svg>
+          <svg class="map-road" viewBox="0 0 ${InkMap.MW} ${InkMap.MH}" preserveAspectRatio="none" aria-hidden="true"><path class="road-all" d=""/><path class="road-known" d=""/><path class="road-trail" d=""/><path class="road-go" d=""/></svg>
           <div class="map-marks"></div>
         </div></div>
         <div class="map-roller r"></div><div class="map-loading">研墨铺纸……</div></div>
@@ -90,7 +90,9 @@ function makeJHUI(G) {
     const idx = LOCS.map(l => !!G.S.found[l.id]); const last = idx.lastIndexOf(true);
     mapEl.querySelector('.road-all').setAttribute('d', InkMap.roadPath(0, LOCS.length - 1));
     mapEl.querySelector('.road-known').setAttribute('d', InkMap.roadPath(0, Math.max(1, last)));
-    LOCS.forEach(l => {
+    const walked = J.trailSegments(G.S);
+    mapEl.querySelector('.road-trail').setAttribute('d', walked.map(i => InkMap.roadPath(i, i + 1)).join(' '));
+    LOCS.forEach((l, i) => {
       const [x, y, ly] = locXY(l.id), found = !!G.S.found[l.id];
       if (!found) {
         const m = document.createElement('div'); m.className = 'map-fog'; m.style.left = x + '%'; m.style.top = '8%'; box.appendChild(m); return;
@@ -101,7 +103,7 @@ function makeJHUI(G) {
       tag.innerHTML = `<span class="tag-slip">${vtext(l.name)}</span><span class="tag-seal">${l.seal}</span>${mjOpenHere ? '<span class="tag-flag">秘境</span>' : ''}${auc ? '<span class="tag-flag gold">拍卖</span>' : ''}`;
       tag.onclick = () => { if (mapBusy) return; sel = l.id; box.querySelectorAll('.map-tag').forEach(t => t.classList.toggle('sel', t.dataset.id === sel)); if (typeof MoAudio !== 'undefined') MoAudio.setPlace(sel); renderCard(); centerOn(sel, true); };
       box.appendChild(tag);
-      const pt = document.createElement('i'); pt.className = 'map-pt'; pt.style.left = x + '%'; pt.style.top = y + '%'; box.appendChild(pt);
+      const pt = document.createElement('i'); pt.className = 'map-pt' + (walked.includes(i) || walked.includes(i - 1) ? ' walked' : ''); pt.style.left = x + '%'; pt.style.top = y + '%'; box.appendChild(pt);
     });
     const [mx, my] = locXY(G.S.loc);
     const mk = document.createElement('div'); mk.className = 'map-me'; mk.id = 'map-me'; mk.style.left = mx + '%'; mk.style.top = my + '%';
