@@ -65,4 +65,27 @@ Loop.resetDaoji(s); assert.equal(s.loop.zhen, '');
 // Legacy missing-loop saves still open without raising SAVE_V.
 s = arrayState(); delete s.loop;
 assert.equal(Core.migrate(s).v, 14); assert.equal(s.loop.zhen, '');
+// Exercise real event lists and mission metadata, rather than synthetic labels only.
+const routes = [['sheng', 'vein', '以生阵养脉'], ['sheng', 'tide_lingku', '以生阵疏脉'], ['kun', 'bandit', '以困阵断后'], ['cang', 'hei_ambush', '藏入巷中月影'], ['cang', 'heifeng', '隐去商队行迹']];
+for (const [form, id, label] of routes) {
+  s = arrayState(); s.loop.zhen = form; s.flags.tideDue = 'lingku'; s.flags.heiGrudge = 1; s.inj = 3;
+  const ev = EVENTS.find(e => e.id === id), choices = ev.choices(s);
+  const c = Loop.dress(choices, ev, s).find(c => c.label === label);
+  assert(c, id); const ls = s.ls, xw = s.xw;
+  r = c.act(s); Core.applyFx(s, r.fx, () => {});
+  assert(!r.fx.ls && !r.fx.xw, id + ' must not pay combat loot');
+  if (id !== 'heifeng') { assert.equal(s.ls, ls); assert.equal(s.xw, xw); }
+  if (id === 'vein') assert.equal(s.inj, 2);
+  if (id === 'tide_lingku') { assert.equal(s.shi.side.lingku, 'share'); assert.notEqual(s.flags.tideDue, 'lingku'); assert(s.flags.shanCi); }
+  if (id === 'hei_ambush') { assert.equal(s.flags.heiGrudge, 2); assert(!ev.cond(s)); }
+  assert.equal(s.loop.zhen, form, 'using a retained diagram does not erase it');
+  for (const other of ['kun', 'sheng', 'sha', 'cang', '']) if (other !== form) {
+    s.loop.zhen = other; assert(!Loop.dress(choices, ev, s).some(c => c.label === label));
+  }
+}
+s = arrayState(); s.loop.zhen = 'sheng'; s.sect.missions = [{id:'zhenmai', uid:1}];
+const mission = Core.missionEvent(s, 1);
+assert(mission && mission._mid.id === 'zhenmai');
+r = Loop.dress(mission.choices(s), mission, s).find(c => c.label === '以阵镇脉').act(s);
+assert(r.text.includes('灵气按回脉里')); assert.equal(s.sect.missions.length, 0);
 console.log('PASS: 6 identity variants; ' + echoes + ' echo summaries; array cooldown boundaries, overwrite, failure, healing, event options and save round-trip');

@@ -2696,7 +2696,9 @@ function openSlots() {
       if (S && !S.dead && !(await inkConfirm('转去另一卷？当前卷已随手存好。', '读入'))) return;
       save();
       Slots.setActive(sel);
-      S = Slots.read(sel);
+      // Read the selected snapshot, not a slot that save() may just have overwritten.
+      S = data;
+      Slots.write(sel, S);
       if (!S) { toast('此卷读不开'); return; }
       playTick = Date.now();
       await closeSheet();
@@ -2750,6 +2752,14 @@ function openSlots() {
         if (box.slots[sel] && !(await inkConfirm(`写入第${cn(sel + 1)}卷，原卷将被盖住。`, '导入', true))) return;
         Slots.write(sel, data);
         toast('已导入 · ' + data.name);
+        // Replacing the active scroll ends the in-memory life too: visibility/unload
+        // autosaves must not write that old life over the imported snapshot.
+        if (S && (box.active | 0) === sel) {
+          S = null;
+          await closeSheet();
+          initTitle(); unrollTo('title');
+          return;
+        }
         paint();
       };
       return;
@@ -3566,7 +3576,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=68').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=69').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

@@ -153,7 +153,7 @@ function preferFu(s, ev, cs) {
     if (good) return good;
   }
   if (mode === 'zhen' || mode === 'always') {
-    const extra = dressed.find(c => c.label === '走到坛前改阵' || c.label === '以阵镇脉');
+    const extra = dressed.find(c => /^(杀|生|困|藏)阵/.test(c.sub || ''));
     if (extra) return extra;
   }
   return null;

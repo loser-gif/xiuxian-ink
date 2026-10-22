@@ -88,9 +88,11 @@ const Loop = (() => {
     return left > 0 ? `还需${dur(Math.ceil(left))}可再布。` : '现在可布阵。';
   }
   function zhenUse(form) {
-    if (form === 'sheng') return '持有生阵时，宗门镇脉任务多出「以阵镇脉」，降低该选项的失败风险，仍需亲自接取任务。';
+    if (form === 'sheng') return '生阵可在宗门镇脉时降低失败风险；遇地底灵脉可养伤，遇灵脉将枯可疏脉分给山下。仍需亲自遇见这些事。';
     if (form === 'sha') return '持有杀阵时，血雾谷坛前多出「走到坛前改阵」，仍需亲自游历遇见。';
-    return '困、藏阵图目前只作留存，没有额外斗法或探索收益。';
+    if (form === 'kun') return '困阵可在劫修拦路时困住追兵脱身，不算击败对手，不得战利。';
+    if (form === 'cang') return '藏阵可在拍卖后的夜路隐去行迹；也可潜过黑风岭护送商队，不领清剿赏格。';
+    return '';
   }
   function carried(s) {
     const f = ensure(s).fu;
@@ -518,6 +520,24 @@ const Loop = (() => {
     if (!s || !ev) return out;
     const L = ensure(s);
     const id = ev.id || '';
+    if (L.zhen === 'sheng' && id === 'vein') out.push({ label: '以生阵养脉', sub: '生阵 · 养伤', act: st => {
+      const healed = Math.min(1, st.inj); st.inj -= healed;
+      return { text: '你将阵眼留在泉边，让地气缓缓流过旧伤。脉眼没有被挖空，草庐也没有留下。', fx: { xj: 3 }, tags: healed ? [{ t: '伤势 −1', c: 'up' }] : [] };
+    } });
+    if (L.zhen === 'sheng' && id === 'tide_lingku') {
+      const share = out.find(c => c.label === '把余脉分给山下');
+      if (share) out.push({ label: '以生阵疏脉', sub: '生阵 · 与山分脉', act: st => {
+        const r = share.act(st);
+        return Object.assign({}, r, { text: '你沿枯脉布下生阵，把尚能流动的灵气引向山下。阵法留不住一座山的老去，却能让最后的水走得远些。' + r.text });
+      } });
+    }
+    if (L.zhen === 'kun' && id === 'bandit') out.push({ label: '以困阵断后', sub: '困阵 · 脱身', act: () => ({ text: '你把阵图落在峡口，山石的影子将岔路叠成一圈。追兵绕回原地时，你已经走远。你没有回头取他们的储物袋。', fx: {}, tags: [{ t: '断后脱身', c: 'gold' }] }) });
+    if (L.zhen === 'cang' && id === 'hei_ambush') out.push({ label: '藏入巷中月影', sub: '藏阵 · 脱身', act: st => {
+      st.flags.heiGrudge = 2;
+      if (typeof karmaPlant === 'function') karmaPlant(st, 'hei_echo', 28);
+      return { text: '阵纹把你的脚步藏进檐下水声。黑袍客追着一团影子转过巷口，你带着拍来的东西从另一端离开。这段梁子还在。', fx: {}, tags: [{ t: '隐迹脱身', c: 'gold' }] };
+    } });
+    if (L.zhen === 'cang' && id === 'heifeng') out.push({ label: '隐去商队行迹', sub: '藏阵 · ' + cnDur(Core.timeMonths(s, 3)), act: () => ({ text: '你沿商队铺开藏阵，车轮声隐在风声里。车夫们平安走出山谷。山寨还在，这一次没有可领的清剿赏格。', fx: { xj: 2, time: 3 }, tags: [{ t: '商队平安', c: 'gold' }] }) });
     if (id === 'xw_altar' && L.zhen === 'sha') {
       out.push({ label: '走到坛前改阵', sub: '杀阵', act: st => { st.flags.zhenAltar = 1; return { text: '杀阵铺到坛前，幽火矮了一寸。你没有捡坛下的灵石。', fx: { xj: 1 } }; } });
     }
