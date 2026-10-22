@@ -1,0 +1,178 @@
+{
+  "oldSave": {
+    "v": true,
+    "name": true,
+    "months": true,
+    "age": true,
+    "realm": true,
+    "stage": true,
+    "xw": true,
+    "ls": true,
+    "wx": true,
+    "xj": true,
+    "items": true,
+    "gf": true,
+    "gfs": true,
+    "path": true,
+    "log": true,
+    "lifespan": true,
+    "lifeBonus": true
+  },
+  "activeImport": {
+    "returnedToTitle": true,
+    "reloadName": "顾清和"
+  },
+  "otherSlotImport": {
+    "name": "顾清和",
+    "slots": [
+      "留守卷",
+      "顾清和",
+      null
+    ]
+  },
+  "titleImport": {
+    "name": "顾清和",
+    "v": 14
+  },
+  "routes": [
+    {
+      "id": "vein",
+      "result": "你将阵眼留在泉边，让地气缓缓流过旧伤。脉眼没有被挖空，草庐也没有留下。\n\n伤势 −1\n收卷",
+      "form": "sheng",
+      "grudge": 1,
+      "tide": "share"
+    },
+    {
+      "id": "tide_lingku",
+      "result": "你沿枯脉布下生阵，把尚能流动的灵气引向山下。阵法留不住一座山的老去，却能让最后的水走得远些。你把禁制松了一寸。泉眼没有立刻满，可山下有人说井水甜了。山记得这种甜。\n\n与山分脉\n收卷",
+      "form": "sheng",
+      "grudge": 1,
+      "tide": "share"
+    },
+    {
+      "id": "bandit",
+      "result": "你把阵图落在峡口，山石的影子将岔路叠成一圈。追兵绕回原地时，你已经走远。你没有回头取他们的储物袋。\n\n断后脱身\n收卷",
+      "form": "kun",
+      "grudge": 1,
+      "tide": "share"
+    },
+    {
+      "id": "hei_ambush",
+      "result": "阵纹把你的脚步藏进檐下水声。黑袍客追着一团影子转过巷口，你带着拍来的东西从另一端离开。这段梁子还在。\n\n隐迹脱身\n收卷",
+      "form": "cang",
+      "grudge": 2,
+      "tide": "share"
+    },
+    {
+      "id": "heifeng",
+      "result": "你沿商队铺开藏阵，车轮声隐在风声里。车夫们平安走出山谷。山寨还在，这一次没有可领的清剿赏格。\n\n无事发生\n收卷",
+      "form": "cang",
+      "grudge": 1,
+      "tide": "share"
+    }
+  ],
+  "viewports": [
+    {
+      "w": 360,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 360,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 375,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 375,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 390,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 390,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 440,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 440,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 1280,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 1280,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 1440,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 1440,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 1920,
+      "theme": "day",
+      "overflow": false,
+      "bootFail": false
+    },
+    {
+      "w": 1920,
+      "theme": "night",
+      "overflow": false,
+      "bootFail": false
+    }
+  ],
+  "browserErrors": [],
+  "sim": {
+    "balancedSan": 82.2,
+    "arraySan": 87.5,
+    "balancedFights": 55334,
+    "arrayFights": 52415,
+    "violations": 0
+  },
+  "audit": {
+    "checks": 106968,
+    "violations": 0
+  },
+  "fontMissing": 0,
+  "resourceErrors": [],
+  "notes": [
+    "早期截图出现一次本地资源启动提示；重载后未复现，最终截图全部核对 bootFail=false。",
+    "定向事件截图等候动效结束后重拍。"
+  ]
+}
