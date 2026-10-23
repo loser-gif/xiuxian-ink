@@ -5,7 +5,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Jianghu, LINGGEN, EVENTS, MISSIONS, REALMS, NPCS, LOCS, LOC, LOC_EV, MIJING } = vm.runInContext('({ Core, Jianghu, LINGGEN, EVENTS, MISSIONS, REALMS, NPCS, LOCS, LOC, LOC_EV, MIJING })', ctx);
 const RN = REALMS.map(r => r.name);
 const ENEMY = /劫修|妖|蟒|狼(?!狈)|蛟|魔修|贼|匪|凶兽|山魈|叛徒|对手|弟子|修士|刺客|血煞|围在/;
@@ -30,11 +30,13 @@ function mkState(realm, stage) {
   Core.sync(s); return s;
 }
 const clone = o => JSON.parse(JSON.stringify(o));
+const combatEvents = new Set();
 function check(src, label, s, res, ctxText) {
   stat.checks++;
   const fx = res.fx || {}, hurt = (fx.inj > 0) || (fx.life < 0) || ((res.hp || 0) + (fx.hp || 0) < 0);
   const where = `${src} · ${label} @${RN[s.realm]}${REALMS[s.realm].stages[s.stage]}`;
   if (res.fight) {
+    combatEvents.add(src);
     stat.fights++;
     if (res.fight.dr >= 1 && hurt) flags.push(`[以强受伤] ${where} 敌${res.fight.foe}：${res.text.slice(0, 40)}`);
     if (res.fight.dr >= 2 && fx.xw > 0.05) flags.push(`[杀鸡得牛] ${where} 敌${res.fight.foe} 修为${fx.xw}`);
@@ -98,7 +100,7 @@ for (const l of LOCS) {
     if (ev.rm && ev.rm[1] < l.rm) flags.push(`[地图境界不合] ${l.name}(需${RN[l.rm]}) 挂了 ${eid}（仅${RN[ev.rm[0]]}–${RN[ev.rm[1]]}）`);
   }
   // 凶地不得只靠“写死弱敌”撑场面：危险度≥3 之处须至少有一桩敌我结算的事件
-  if (l.danger >= 3 && !(LOC_EV[l.id] || []).some(eid => /fightAct/.test(String((EVENTS.find(e => e.id === eid) || {}).choices)))) flags.push(`[凶地无敌] ${l.name}`);
+  if (l.danger >= 3 && !(LOC_EV[l.id] || []).some(eid => combatEvents.has(eid))) flags.push(`[凶地无敌] ${l.name}`);
 }
 if (process.env.LIST) { console.log('—— 无敌手的受伤结局（天灾/禁制/心魔/自损）——'); [...hazards].forEach(h => console.log('  ' + h)); }
 const uniq = [...new Set(flags.map(f => f.replace(/@\S+/, '@').replace(/：.*$/, '')))];

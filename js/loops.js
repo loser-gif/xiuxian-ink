@@ -20,6 +20,7 @@ const Loop = (() => {
       jian: 0, jianAt: -99999, jianAsk: '',
       ti: 0, tiAt: -99999, tiAsk: 0,
       zhen: '', zhenAt: -99999, zhenBan: 0, zhenAsk: '',
+      flow: {}, zhenKeep: 0, moRefusal: 0, qiReply: 0,
       mo: 0, moAt: -99999, moQuiet: 0, moPing: 0, moCut: 0, moBt: 0, moHeart: 0,
       lu: 0, luBoom: 0, luAt: -99999, luAsk: '',
       qiMem: '', qiMute: 0, qiAsk: '', qiAt: -99999,
@@ -36,6 +37,7 @@ const Loop = (() => {
   }
   function resetDaoji(s) {
     const L = ensure(s);
+    L.flow = {}; L.zhenKeep = 0; L.moRefusal = 0; L.qiReply = 0;
     L.jian = 0; L.jianAsk = '';
     L.ti = 0; L.tiAsk = 0;
     L.zhen = ''; L.zhenAsk = ''; L.zhenBan = 0;
@@ -135,6 +137,7 @@ const Loop = (() => {
       bits.push(s.path.daoji === 'zhen' ? '<p class="loop-tut">布阵花费与等待时间写在下方，按境界计算，不随春夏秋冬刷新。不做，就去闭关或游历。</p>' : '<p class="loop-tut">这季可以做一次，不做也没有罚。花费写在按钮上，结算用的就是这个数。不做，就去闭关或游历。</p>');
     }
     const dj = s.path.daoji;
+    if (s.gf && GONGFA[s.gf].style === dj) bits.push('<p class="loop-note">主修与道基同流：每三次日常循环多一笔，不加行功速度。剑意、体魄和求问多一；阵图可免一次被克清空；魔多一次拒绝余音；器多一句回答。</p>');
     if (s.realm >= 1 && dj) bits.push(panel(s, L, dj));
     if (L.fuKnown) bits.push(fuPanel(s, L));
     return bits.join('');
@@ -162,7 +165,7 @@ const Loop = (() => {
     }).join('');
     const forms = Object.keys(ZHEN).map(k => {
       const hit = zhenHit(k, name);
-      const result = hit === 'bei' ? '被克 · 阵盘碎，旧图清空' : hit === 'ke' ? '克制 · 留下阵图' : '平势 · 留下阵图';
+      const result = hit === 'bei' ? (L.zhenKeep && L.zhen ? '被克 · 耗一次同流保留，旧图不失' : '被克 · 阵盘碎，旧图清空') : hit === 'ke' ? '克制 · 留下阵图' : '平势 · 留下阵图';
       return btn('zhen:' + k, ZHEN[k].name, `${dur(cost)} · 心境 −1 · ${result}`, !ready);
     }).join('');
     let big = '';
@@ -174,7 +177,7 @@ const Loop = (() => {
     const hold = L.zhen ? `阵图留着「${ZHEN[L.zhen] ? ZHEN[L.zhen].name : L.zhen}」` : '尚未留阵图';
     const wait = (banned ? '阵盘待修。' : '') + zhenWait(s, L, cost);
     return `<div class="loop-block"><p class="loop-stat">罗盘 · ${hold}</p><p class="loop-note">${wait}此刻门外是${name}。</p>
-      <p class="loop-note">布阵耗${dur(cost)}；完成后按当前境界再等${dur(cost)}可再布，不随春夏秋冬刷新。布成即替换旧图，被克则清空。阵图持续留存，直到再布或洗道基。</p>
+      <p class="loop-note">布阵耗${dur(cost)}；完成后按当前境界再等${dur(cost)}可再布，不随春夏秋冬刷新。布成即替换旧图，被克则清空。${L.zhenKeep ? '尚有一次同流保留，可免旧图被克清空。' : ''}阵图持续留存，直到再布或洗道基。</p>
       ${L.zhen ? `<p class="loop-note">${zhenUse(L.zhen)}</p>` : ''}
       <table class="zhen-table"><tr><th>你布的</th><th>克</th><th>被克</th></tr>${rows}</table>
       <div class="loop-actions">${forms}${btn('skip', '这次不布', '去闭关或游历')}${big}</div></div>`;
@@ -244,6 +247,8 @@ const Loop = (() => {
       ${btn('mo:yue', '应下第二声 · 缩短闭关', `${tianmo ? '天魔在身，月数不减 · ' : '下一回闭关月数 −20% · '}心境 −8`, !open)}
       ${btn('mo:po', '应下第二声 · 破境', '下一回破境把握 +0.03 · 心魔下次必现', !open)}
       ${btn('mo:ju', '拒绝', '心境 +3 · 修为不补偿', !open)}
+      ${L.moRefusal ? btn('mo:yuyin', '以拒绝余音止声', '耗一次余音 · 第二声安静一年', !open) : ''}
+      ${s.gf === 'buken' ? btn('mo:huijie', '把捷径还回去', '取消尚未用的闭关捷径 · 魔诺 −1 · 心境 +2', !L.moCut) : ''}
       ${btn('skip', '此季不听', '去闭关或游历')}
       ${big}</div></div>`;
   }
@@ -285,14 +290,25 @@ const Loop = (() => {
     L.tut = 1;
     const kind = id.split(':')[0];
     const sub = id.split(':')[1];
-    if (kind === 'zhen') return actZhen(s, L, sub, emit);
-    if (kind === 'ti') return actTi(s, L, sub, emit);
-    if (kind === 'jian') return actJian(s, L, sub, emit);
-    if (kind === 'dan') return actDan(s, L, sub, emit);
-    if (kind === 'mo') return actMo(s, L, sub, emit);
-    if (kind === 'qi') return actQi(s, L, sub, emit);
     if (kind === 'fu') return actFu(s, L, sub, emit);
-    return { err: '没有这一笔' };
+    const handler = { zhen: actZhen, ti: actTi, jian: actJian, dan: actDan, mo: actMo, qi: actQi }[kind];
+    if (!handler) return { err: '没有这一笔' };
+    const r = handler(s, L, sub, emit);
+    const daily = { zhen: ['kun', 'sheng', 'sha', 'cang'], ti: ['shi', 'shui', 'huo'], jian: ['yue'], dan: ['cheng', 'wen', 'wenwen'], mo: ['ju', 'yue', 'po'], qi: ['shi', 'wu', 'ting'] };
+    if (!r.err && s.gf && GONGFA[s.gf].style === kind && s.path.daoji === kind && daily[kind].includes(sub)) {
+      L.flow[kind] = (L.flow[kind] || 0) + 1;
+      if (L.flow[kind] % 3 === 0) {
+        let note = '';
+        if (kind === 'jian') { const n = Math.min(1, 9 - L.jian); L.jian += n; note = n ? '同流 · 剑意再添一笔' : '同流 · 剑意已满'; }
+        if (kind === 'ti') { const n = Math.min(1, 6 - L.ti); L.ti += n; note = n ? '同流 · 体魄再厚一层' : '同流 · 体魄已满'; }
+        if (kind === 'dan') { L.lu++; note = '同流 · 求问多记一笔'; }
+        if (kind === 'zhen') { L.zhenKeep = 1; note = '同流 · 下次被克可留住旧图'; }
+        if (kind === 'mo') { L.moRefusal = Math.min(1, L.moRefusal + 1); note = '同流 · 留下一次拒绝余音'; }
+        if (kind === 'qi') { L.qiReply++; note = '同流 · 器答：“你每一次回来，我都记得。”'; }
+        r.text += note + '。'; r.tags = (r.tags || []).concat([{ t: note, c: 'gold' }]);
+      }
+    }
+    return r;
   }
 
   function actZhen(s, L, sub, emit) {
@@ -320,6 +336,10 @@ const Loop = (() => {
     const previous = L.zhen && ZHEN[L.zhen] ? `原「${ZHEN[L.zhen].name}」阵图已被替换。` : '';
     const tags = [{ t: dur(shown), c: 'down' }, { t: '心境 −1', c: 'down' }];
     if (hit === 'bei') {
+      if (L.zhenKeep && L.zhen) {
+        L.zhenKeep = 0; L.zhenBan = s.months + cost;
+        return { title: '布阵 · 旧图未失', text: `新阵被克，你凭同流留下的余意护住了「${ZHEN[L.zhen].name}」旧图。保留机会已用去。${zhenWait(s, L, cost)}`, tags };
+      }
       L.zhen = '';
       L.zhenBan = s.months + cost;
       return { title: '布阵 · 被克', text: `门外是${name}。${ZHEN[sub].name}阵被克，阵盘碎了，所留阵图已清空。${zhenWait(s, L, cost)}`, tags, cls: 'warn' };
@@ -424,6 +444,11 @@ const Loop = (() => {
     return { title: '守炉', text: '你没有要这炉丹。香气停在识海里，材料退回一半，不足一株的不退。', tags: [{ t: dur(shown), c: 'down' }, { t: '心境 +4', c: 'up' }, { t: '求问 +1', c: 'gold' }] };
   }
   function actMo(s, L, sub, emit) {
+    if (sub === 'huijie') {
+      if (s.gf !== 'buken' || !L.moCut) return { err: '没有尚未走的捷径' };
+      L.moCut = 0; L.mo = Math.max(0, L.mo - 1); s.xj = Core.clamp(s.xj + 2, 0, 100);
+      return { title: '第二声', text: '你把不肯经合上，将尚未走的捷径还回去。路恢复原来的长短，那一诺也不再欠着。', tags: [{ t: '捷径已还' }, { t: '魔诺 −1' }, { t: '心境 +2', c: 'up' }] };
+    }
     if (sub === 'huan') {
       if (!(L.mo > 0 && L.mo < 3)) return { err: '此刻无可还' };
       const y = lifeCost(s, 12);
@@ -446,6 +471,11 @@ const Loop = (() => {
     if (sub === 'ju') {
       s.xj = Core.clamp(s.xj + 3, 0, 100);
       return { title: '第二声', text: '你没有应。心境回了三分，修为一点没补。', tags: [{ t: '心境 +3', c: 'up' }] };
+    }
+    if (sub === 'yuyin') {
+      if (!L.moRefusal) return { err: '没有留下的拒绝余音' };
+      L.moRefusal--; L.moQuiet = s.months + 12;
+      return { title: '第二声', text: '你把先前未散的拒绝又说了一遍。第二声安静一年，没有补给你修为。', tags: [{ t: '余音已用 · 静一年' }] };
     }
     if (L.mo < 3) L.mo++;
     if (sub === 'yue') {
@@ -631,10 +661,11 @@ const Loop = (() => {
         text: s => {
           const n = FAXIANG[s.path.faxiang] ? FAXIANG[s.path.faxiang].name : '法相';
           const same = s.path.daoji === 'jian' && s.path.faxiang === 'jian' ? '它与剑基是同一笔，句子更清楚，斗法倍率不再乘一次。' : '';
-          return `识海里的${n}回了一下头。${same}`;
+          const scene = { jian: '剑影没有出鞘，却在识海里划开一道旧痕。', huo: '火照见你最不肯承认的那一念，烧的不是别人。', shui: '水相盛着一张旧脸，水动时，那张脸也跟着老去。', lei: '雷光停在落下之前，等你说清这一击为何而发。', kong: '空处没有影子。你却知道，那里正有人等一个名字。' }[s.path.faxiang] || '';
+          return `识海里的${n}回了一下头。${scene}${same}`;
         },
-        choices: () => [
-          { label: '与它对视', sub: '心境 +2', act: () => ({ text: '你看着它。它没有给你第二套招式。', fx: { xj: 2, flag: 'mark_faxiang' } }) },
+        choices: s => [
+          { label: { jian: '沿旧痕收剑', huo: '认下烧着的那一念', shui: '看清水中的旧脸', lei: '说出出手的缘由', kong: '把名字留在空处' }[s.path.faxiang] || '与它对视', sub: '心境 +2', act: st => ({ text: { jian: '剑影与你一同收回，旧痕没有再添一道。', huo: '你认了。火仍在，却不再把那一念藏到别人身上。', shui: '水面慢慢平了。旧脸没有年轻，你也没有移开眼。', lei: '理由说完，雷落在该落的地方，识海里终于安静。', kong: '名字留了下来。空处仍空，你却知道自己站在哪里。' }[st.path.faxiang] || '你看着它。', fx: { xj: 2, flag: 'mark_faxiang' } }) },
           { label: '闭上眼', sub: '心境 −1', act: () => ({ text: '你闭上眼。法相还在，只是这季不说话。', fx: { xj: -1, flag: 'mark_faxiang' } }) },
         ] },
       { id: 'mark_wendao', title: '一问未完', seal: '问', w: 4, once: true, rm: [4, 4],

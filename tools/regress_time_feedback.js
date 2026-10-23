@@ -3,7 +3,7 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 const math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts'])
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, J, EVENTS, LINGGEN, cnDur } = vm.runInContext('({Core, J:Jianghu, EVENTS, LINGGEN, cnDur})', ctx);
 vm.runInContext("TEXT.tuna = TEXT.tuna.filter(t => t.includes('{d}'))", ctx);

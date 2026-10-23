@@ -283,6 +283,16 @@ function makeJHUI(G) {
         else pushLog({ text: `你在云岳坊购得${got}。`, tags: r.tags, cls: 'sys' });
         render(); save(); toast(r.fake ? '上当了' : `得${got}`); refresh();
       };
+      if (k === 'SCROLL' && G.S.gf === 'wuxing' && G.S.lgEls.length >= 3) {
+        const roots = document.createElement('button'); roots.className = 'item-use light';
+        roots.textContent = '以杂根相生 · ' + cn(p0) + '灵石'; roots.disabled = G.S.ls < p0;
+        roots.onclick = () => {
+          if (roots.dataset.arm !== '1') { roots.dataset.arm = '1'; roots.textContent = '确认对读 · 不学新法'; return; }
+          const r = J.buy(G.S, 'SCROLL', 1, true); if (!r) return toast('灵石不足');
+          pushLog({ title: '残卷对读', text: r.text, tags: r.tags, cls: 'event' }); render(); save(); refresh();
+        };
+        row.querySelector('.mkt-buy').appendChild(roots);
+      }
       w.appendChild(row);
     });
     const f = document.createElement('div'); f.className = 'sect-note center'; f.textContent = `坊中货色，约${cn(Math.max(1, Math.round(J.K.mktEvery * REALMS[G.S.realm].T / 12)))}年一换；价随行情起落`; w.appendChild(f);
