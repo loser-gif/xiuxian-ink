@@ -3478,3 +3478,15 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 .shop-ledger p+p{padding-top:9px;border-top:1px solid var(--line)}
 .shop-prices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .shop-prices .menu-item{padding:8px 4px;font-size:16px}
+
+/* v75：矮桌面窗口里行藏写满时，在笺内滚动。修持在上，行迹在下，都还能翻到。 */
+@media (min-width:1280px) and (min-height:600px){
+  #scr-main .side{
+    max-height:calc(100% - 40px);
+    min-height:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  #scr-main .sd-name,#scr-main .sd-row{overflow-wrap:anywhere}
+}
