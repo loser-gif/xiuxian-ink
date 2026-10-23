@@ -3,7 +3,7 @@ const assert = require('assert'), fs = require('fs'), path = require('path'), vm
 const root = path.join(__dirname, '..'), math = Object.create(Math); math.random = () => 0.5;
 const storage = new Map(), localStorage = {getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,String(v)),removeItem:k=>storage.delete(k)};
 const ctx = vm.createContext({console,Math:math,localStorage,TextEncoder,TextDecoder,Uint8Array,btoa,atob});
-for(const f of ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','core','loops','codec','slots','samsara','jianghu','folio','arts','people','portraits'])
+for(const f of ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','core','loops','codec','slots','samsara','jianghu', 'redworld','folio','arts','people','portraits'])
   vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),ctx,{filename:f});
 const {Core,People,Folio,Life,Samsara,Codec,NPCS,EVENTS,MIJING,LINGGEN,Jianghu,karmaTraces,InkPortrait} = vm.runInContext('({Core,People,Folio,Life,Samsara,Codec,NPCS,EVENTS,MIJING,LINGGEN,Jianghu,karmaTraces,InkPortrait})',ctx);
 const fresh=()=>Core.newState('人间客',{lg:LINGGEN.find(l=>l.id==='san'),els:['木','水','金'],wx:6,luck:1,org:'qm'});
@@ -14,7 +14,7 @@ for(const id of Object.keys(People.newcomers)) assert(InkPortrait.svg(id).includ
 let s=fresh();const oldXw=s.xw,oldLife=s.lifespan,oldBooks=Object.keys(s.gfs).length;
 s.v=14;for(const id of Object.keys(People.newcomers))delete s.npc[id];for(const n of Object.values(s.npc))delete n.life;
 s.npc.su.a=57;const old=Core.migrate(Codec.decode(Codec.encode(s)).data);
-assert.equal(old.v,15);assert.equal(Object.keys(old.npc).length,31);assert.equal(old.npc.su.a,57);assert.equal(old.npc.su.life.beat,0);assert.equal(old.xw,oldXw);assert(old.lifespan>=oldLife);assert.equal(Object.keys(old.gfs).length,oldBooks);
+assert.equal(old.v,16);assert.equal(Object.keys(old.npc).length,31);assert.equal(old.npc.su.a,57);assert.equal(old.npc.su.life.beat,0);assert.equal(old.xw,oldXw);assert(old.lifespan>=oldLife);assert.equal(Object.keys(old.gfs).length,oldBooks);
 s=fresh();s.npc.su.met=true;const at=s.months;s.months=at+23;People.tick(s);assert.equal(s.npc.su.life.beat,0);
 s.months++;People.tick(s);assert.equal(s.npc.su.life.beat,1);People.tick(s);assert.equal(s.npc.su.life.beat,1);
 Core.npcAdd(s,'su',1);s.months+=23;People.tick(s);assert.equal(s.npc.su.life.beat,1);s.months+=240;People.tick(s);assert.equal(s.npc.su.life.beat,2,'large time jump advances only one beat');

@@ -4,7 +4,7 @@ const Core = (() => {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const LIFE_SCALE = [1, 1.5, 2.5, 4, 6];
-  const SAVE_V = 15;
+  const SAVE_V = 16;
   // 调参入口（模拟器会改写这里）
   const K = {
     tunaGain: 0.42, biguanGain: 1.42, tunaMonths: 2.5, biguanMonths: 10, youliMonths: 3,
@@ -357,7 +357,7 @@ const Core = (() => {
       if (loss) { s.xj = clamp(s.xj - loss, 0, 100); }
     }
     if (g.curse.risk && Math.random() < g.curse.risk) {
-      s.inj += 1;
+      s.inj += incenseInj(s, 1);
       if (emit) emit({ text: `${s.eq.weapon}忽然反噬，一股阴寒倒灌识海。你咬牙压下，额上已冷汗淋漓。`, cls: 'warn' });
     }
   }
@@ -417,6 +417,10 @@ const Core = (() => {
   function soakInj(s, n) {
     if (!(n > 0)) return 0;
     if (s.loop && s.loop.ti > 0) return Math.max(0, n - 1);
+    return incenseInj(s, n);
+  }
+  function incenseInj(s, n) {
+    if (n > 0 && n <= 1 && s.shop && s.shop.shield) { s.shop.shield = 0; return 0; }
     return n;
   }
   // 心境：跌至谷底即走火入魔
@@ -1103,7 +1107,9 @@ const Core = (() => {
     }
     const oldLife15 = s.v === 14 ? s.lifespan : 0;
     if (s.v === 14) s.v = 15; // 新人物从第零拍起；不补发新功法，不换算修为。
+    if (s.v === 15) s.v = 16; // 红尘字段补零，旧铺与货架由 Redworld.ensure 原样迁入。
     if (s.v !== SAVE_V) return null;
+    if (typeof Redworld !== 'undefined') Redworld.ensure(s);
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.aux = s.aux.filter(id => id !== 'tianmo' && id !== s.gf && GONGFA[id] && s.gfs[id] && !(s.gf === 'tianmo' && id === 'buken'));
     s.path = s.path || { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null };
@@ -1360,7 +1366,11 @@ const Core = (() => {
     else if (tags && first) tags.push({ t: `结识${NPCS[id].name}`, c: 'up' });
   }
   const npcWord = a => a <= -40 ? '仇怨' : a <= -10 ? '嫌隙' : a < 20 ? '泛泛' : a < 50 ? '相善' : a < 80 ? '交厚' : '莫逆';
-  const npcLine = (s, id) => NPC_LINE[id][s.npc[id].a < 0 ? 0 : s.npc[id].a < 45 ? 1 : 2];
+  const npcLine = (s, id) => {
+    const line = NPC_LINE[id][s.npc[id].a < 0 ? 0 : s.npc[id].a < 45 ? 1 : 2];
+    if (!s.shop || !npcAlive(s, id)) return line;
+    return (s.shop.moral <= -20 ? '“坊间说你手段很重。”' : s.shop.moral >= 20 ? '“听说你在人间留了些好事。”' : '') + line;
+  };
   function npcHelp(s) {
     const n = s.npc || {}, who = []; let bt = 0;
     const near = id => npcAlive(s, id) && !n[id].absolute && (typeof People === 'undefined' || People.canFight(s, id));
@@ -1657,7 +1667,7 @@ const Core = (() => {
     scaleLife, scaleLs, tollText, npcAlive, killNpc, saveMateItem, spendSaveItem, missionEvery,
     fabaoAwaken, fabaoFeed, fabaoOnDeath, fabaoSyncStage, equip, unequip, gearTick,
     choosePath, pendingPath, pathAtBreak, pathSummary, finishAscend, emptyPath, pathYouliMul, pathWashCost, washPath,
-    addXw, afterGain, passTime, timeMonths, gainMul, checkXj, tuna, biguan, biguanTime, trialStatus, pickEvent, resolveChoice, applyFx,
+    addXw, afterGain, passTime, timeMonths, incenseInj, gainMul, checkXj, tuna, biguan, biguanTime, trialStatus, pickEvent, resolveChoice, applyFx,
     juqiAmount, tunaSpan, pillYears, itemEffect,
     btChance, resolveBreak, useItem, useBatchCap, newState, migrate, retire, canRetire,
     lvl, shiftLv, rollFoe, foe, foeStr, foeDr, fightAct, showFoe, glance, oddsWord, rootFace, sectBand,

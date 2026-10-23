@@ -3,7 +3,7 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..'), math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math, TextEncoder, TextDecoder, Uint8Array, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec', 'arts', 'people'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'redworld', 'loops', 'codec', 'arts', 'people'])
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Jianghu: J, Codec, LINGGEN, LOCS } = vm.runInContext('({Core, Jianghu, Codec, LINGGEN, LOCS})', ctx);
 const json = x => JSON.parse(JSON.stringify(x));
@@ -13,7 +13,7 @@ let s = fresh(); assert.deepStrictEqual(json(s.trail), []);
 delete s.trail; const before = json(s); s = Core.migrate(json(s));
 assert.deepStrictEqual(json(s.trail), []);
 for (const key of ['v', 'months', 'age', 'realm', 'stage', 'xw', 'ls', 'wx', 'xj', 'items', 'gf', 'gfs', 'path', 'log', 'lifespan', 'lifeBonus']) assert.deepStrictEqual(json(s[key]), before[key], key);
-assert.equal(s.v, 15);
+assert.equal(s.v, 16);
 J.tick(s); assert.deepStrictEqual(json(s.trail), []);
 let months = s.months, cost = J.travelMonths(s, 'shanmen');
 J.travel(s, 'shanmen'); assert.equal(s.months - months, cost);

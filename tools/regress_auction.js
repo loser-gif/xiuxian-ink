@@ -3,7 +3,7 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 const math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'people'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'redworld', 'loops', 'arts', 'people'])
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, J, LINGGEN } = vm.runInContext('({Core, J:Jianghu, LINGGEN})', ctx);
 const json = s => JSON.parse(JSON.stringify(s));
@@ -21,7 +21,7 @@ function lastLot(s) {
 // A second deposit cannot overwrite the first, including repeated UI clicks.
 let s = held(); assert(J.consign(s, '聚气丹').err); assert.equal(s.items.聚气丹, 2);
 // A save made before entry retains the deposit rather than returning it early.
-let loaded = Core.migrate(json(s)); assert(loaded.auc.hold); assert(!loaded.items.凝元丹); assert.equal(loaded.v, 15);
+let loaded = Core.migrate(json(s)); assert(loaded.auc.hold); assert(!loaded.items.凝元丹); assert.equal(loaded.v, 16);
 // Reload while bidding on the other lots must return the still-unsettled deposit once.
 let a = lastLot(s); loaded = Core.migrate(json(s)); assert.equal(loaded.items.凝元丹, 1); assert(!loaded.auc.pending);
 loaded = Core.migrate(json(loaded)); assert.equal(loaded.items.凝元丹, 1); assert.equal(loaded.ls, 340);

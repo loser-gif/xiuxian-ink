@@ -4,7 +4,7 @@ const Samsara = (() => {
   const META_KEY = 'moxian.meta';
   const LEGACY_KEY = 'moxian.legacy';
   const META_V = 1;
-  const END_IDS = ['ascend', 'zuohua', 'rumo', 'guiyin', 'bingjie', 'yunluo', 'renhuang', 'quancheng', 'huashen', 'zhenmo', 'chuanshuo'];
+  const END_IDS = ['ascend', 'hongchen', 'zuohua', 'rumo', 'guiyin', 'bingjie', 'yunluo', 'renhuang', 'quancheng', 'huashen', 'zhenmo', 'chuanshuo'];
   const PERSON_IDS = Object.keys(NPCS);
   const ELS = ['金', '木', '水', '火', '土'];
 
@@ -260,6 +260,7 @@ const Samsara = (() => {
     lines.push('');
     const seals = {
       ascend: '',
+      hongchen: '入世修行，终得正果。世人称红尘仙。',
       zuohua: '山风过石门，案上笔未干。',
       rumo: '墨落成血，不可复洗。',
       guiyin: '空船自横，钓丝无饵。',

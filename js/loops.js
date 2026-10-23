@@ -363,8 +363,10 @@ const Loop = (() => {
     if (sub === 'shi') {
       if (L.ti >= 6) return { err: '体魄已满' };
       const shown = spend(s, cost, emit);
-      L.tiAt = s.months; L.ti++; s.inj += 1;
-      return { title: '淬身', text: '石头硌进肩胛。体魄厚了一层，也留下一块青。', tags: [{ t: dur(shown), c: 'down' }, { t: '体魄 +1', c: 'up' }, { t: '轻伤', c: 'down' }] };
+      L.tiAt = s.months; L.ti++;
+      const protectedByIncense = !!(s.shop && s.shop.shield);
+      s.inj += Core.incenseInj(s, 1);
+      return { title: '淬身', text: protectedByIncense ? '石头硌进肩胛。体魄厚了一层，香火挡下这一点轻伤。' : '石头硌进肩胛。体魄厚了一层，也留下一块青。', tags: [{ t: dur(shown), c: 'down' }, { t: '体魄 +1', c: 'up' }, { t: protectedByIncense ? '香火护身' : '轻伤', c: protectedByIncense ? '' : 'down' }] };
     }
     if (sub === 'shui') {
       if (s.inj <= 0) return { err: '身无伤患' };

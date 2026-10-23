@@ -5,7 +5,7 @@ const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 function load() {
   const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String, process });
-  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'people']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'redworld', 'loops', 'arts', 'people']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
   return vm.runInContext('({ Core, Jianghu, LINGGEN, ELEMENTS, EVENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, PATH_KIND, DAOJI, Loop })', ctx);
 }
 const G = load(), { Core, Jianghu, LINGGEN, ELEMENTS, GONGFA, REALMS, LOCS, LOC, MIJING, RECIPES, ITEM_VAL, PATH_TABLE, Loop } = G;

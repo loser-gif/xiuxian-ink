@@ -5,7 +5,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'people']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'redworld', 'loops', 'arts', 'people']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Jianghu, LINGGEN, EVENTS, MISSIONS, REALMS, NPCS, LOCS, LOC, LOC_EV, MIJING } = vm.runInContext('({ Core, Jianghu, LINGGEN, EVENTS, MISSIONS, REALMS, NPCS, LOCS, LOC, LOC_EV, MIJING })', ctx);
 const RN = REALMS.map(r => r.name);
 const ENEMY = /劫修|妖|蟒|狼(?!狈)|蛟|魔修|贼|匪|凶兽|山魈|叛徒|对手|弟子|修士|刺客|血煞|围在/;
