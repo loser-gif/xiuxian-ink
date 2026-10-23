@@ -4,7 +4,7 @@ const assert = require('assert'), fs = require('fs'), path = require('path'), vm
 const root = path.join(__dirname, '..');
 const math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, Map, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec', 'arts'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec', 'arts', 'people'])
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Loop, Codec, Life, LINGGEN, EVENTS, cnDur } = vm.runInContext('({Core, Loop, Codec, Life, LINGGEN, EVENTS, cnDur})', ctx);
 const fresh = org => Core.newState('过路客', { lg: LINGGEN.find(x => x.id === 'san'), els: ['木', '水', '火'], wx: 6, luck: 1, org });

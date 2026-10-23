@@ -254,7 +254,8 @@ const Jianghu = (() => {
     const manual = typeof Core !== 'undefined' && Core.manualId && Core.manualId(k);
     let name = k;
     if (manual && typeof GONGFA !== 'undefined' && GONGFA[manual]) name = '《' + GONGFA[manual].name + '》';
-    const v = Math.max(2, Math.round(lotWorth(s, k) * (1.15 + Math.random() * 0.7)));
+    const pressure = s.flags && s.flags.wenPressure && Core.npcAlive(s, 'wen') ? 0.9 : 1;
+    const v = Math.max(2, Math.round(lotWorth(s, k) * (1.15 + Math.random() * 0.7) * pressure));
     s.items[k]--; if (!s.items[k]) delete s.items[k];
     s.auc.hold = { k, name, v, consign: 1 };
     return { name, v };

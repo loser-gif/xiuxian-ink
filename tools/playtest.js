@@ -19,7 +19,7 @@ function boot() {
     TextEncoder, TextDecoder, Uint8Array, btoa, atob,
     localStorage: makeLS(),
   });
-  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'loops', 'codec', 'samsara', 'jianghu', 'arts', 'slots']) {
+  for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'loops', 'codec', 'samsara', 'jianghu', 'arts', 'people', 'slots']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
   }
   return ctx;

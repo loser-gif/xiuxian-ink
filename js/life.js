@@ -92,6 +92,7 @@ const Life = (() => {
     life.deeds.push({
       id: spec.id, who: spec.who || '那人', kind: spec.kind || 'save',
       line: spec.line || '', year: s.age | 0, due: (s.months | 0) + years * 12,
+      from: s.loc || '',
       roleGood: spec.roleGood || '', roleBad: spec.roleBad || '', done: 0,
     });
     tint(s, goodKind(spec.kind) ? 10 : -12);

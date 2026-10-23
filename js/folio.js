@@ -44,7 +44,7 @@ const Folio = (() => {
   function mateSex(s) {
     if (s && s.bond && (s.bond.mateSex === 'm' || s.bond.mateSex === 'f')) return s.bond.mateSex;
     const id = s && s.karma && s.karma.mate;
-    const fixed = { xie: 'f', su: 'f', bai: 'm', lu: 'm', wen: 'm', shi: 'm' };
+    const fixed = { xie: 'f', su: 'f', bai: 'm', lu: 'm', wen: 'm', shi: 'm', tang: 'f', liu: 'f' };
     if (id && fixed[id]) return fixed[id];
     const pref = s && s.who && s.who.mate;
     if (pref === 'm' || pref === 'f') return pref;
@@ -157,7 +157,7 @@ const Folio = (() => {
     return '';
   }
   function sexOf(id, name) {
-    const fixed = { xie: 'f', su: 'f', bai: 'm', lu: 'm', wen: 'm', shi: 'm', shifu: 'm' };
+    const fixed = { xie: 'f', su: 'f', bai: 'm', lu: 'm', wen: 'm', shi: 'm', shifu: 'm', tang: 'f', liu: 'f' };
     if (id && fixed[id]) return fixed[id];
     if (name === '苏晚晴' || name === '谢疏影') return 'f';
     if (name === '江疏白' || name === '陆沉舟' || name === '温庭玉' || name === '石小满' || name === '玄微真人') return 'm';
@@ -189,7 +189,7 @@ const Folio = (() => {
 
   function install() {
     if (typeof EVENTS === 'undefined' || EVENTS.some(e => e && e.id === 'bond_meet_he')) return;
-    const mateOk = s => aliveMate(s);
+    const mateOk = s => aliveMate(s) && (typeof People === 'undefined' || People.present(s, s.karma.mate));
     EVENTS.push(
       { id: 'bond_meet_he', title: '疏白', seal: '白', w: 6, once: true, rm: [1, 3], portrait: 'lu',
         cond: s => !(s.karma && s.karma.mate) && (s.realm | 0) >= 1 && !(s.bond && s.bond.lost) && wantMate(s, 'm'),
@@ -338,6 +338,8 @@ const Folio = (() => {
         cond: s => {
           if (s.flags && s.flags.trial) return false;
           if ((s.age | 0) < 17 || !pastMate(s).name) return false;
+          const person = pastMate(s).id;
+          if (person && s.npc && s.npc[person] && s.npc[person].dead) return false;
           const carried = s.flags && s.flags.karmaCarry && s.flags.karmaCarry.role === 'mate';
           return carried || (livesOf(s) >= 2 && hasHook(s, 'mate'));
         },
@@ -351,7 +353,7 @@ const Folio = (() => {
           const p = pastMate(s);
           const g = sexOf(p.id, p.name);
           const ta = taOf(g);
-          const allow = !!(p.id && g && wantMate(s, g));
+          const allow = !!(p.id && g && wantMate(s, g)) && (typeof People === 'undefined' || People.eligible(s, p.id));
           const opts = [];
           if (allow) {
             opts.push({ label: '再走一程', act: s2 => {
@@ -369,6 +371,8 @@ const Folio = (() => {
         cond: s => {
           if (s.flags && s.flags.trial) return false;
           if ((s.age | 0) < 17 || !pastFoe(s).name) return false;
+          const person = pastFoe(s).id;
+          if (person && s.npc && s.npc[person] && s.npc[person].dead) return false;
           const carried = s.flags && s.flags.karmaCarry && s.flags.karmaCarry.role === 'foe';
           return carried || (livesOf(s) >= 2 && hasHook(s, 'foe'));
         },
@@ -392,11 +396,14 @@ const Folio = (() => {
       { id: 'echo_grace', title: '旧恩', seal: '恩', w: 5, once: true, rm: [0, 4],
         cond: s => {
           const c = s.flags && s.flags.karmaCarry;
+          if (c && c.id && s.npc && s.npc[c.id] && s.npc[c.id].dead) return false;
           return !!(c && c.role === 'en' && c.name) && !(s.flags && s.flags.trial) && (s.age | 0) >= 17;
         },
         text: s => {
           const c = s.flags.karmaCarry;
           const ta = taOf(sexOf(c.id, c.name));
+          if (c.id === 'ahe') return '桥边遇见的孩子已经长大。他说仍叫阿禾，见你时先伸出手，像认得很久以前崖边那只手。';
+          if (c.id === 'shengu') return '沈孤在集上支起了新药摊。这一世没有旧伤，他却认得你拿药的手势：“我们是不是见过？”';
           return `集上有人叫住你。是${c.name}。${ta}看了你很久，才说：「上一世你帮过我。这一世我还没想好怎么还，先把你认出来。」`;
         },
         choices: s => {
@@ -405,9 +412,9 @@ const Folio = (() => {
             { label: '也认出对方', act: s2 => {
               if (s2.npc && c.id && s2.npc[c.id]) { s2.npc[c.id].met = true; s2.npc[c.id].a = Math.min(100, (s2.npc[c.id].a | 0) + 10); }
               if (typeof Life !== 'undefined' && Life.meet) Life.meet(s2, c.name, '旧恩再遇');
-              return { text: '你们没有把那件事再讲一遍。点过头，就像把一笔很轻的账，从上一世挪到了这一世的袖里。', fx: { xj: 3 }, tags: [{ t: '旧恩 · ' + c.name, c: 'gold' }] };
+              return { text: '你们没有把那件事再讲一遍。点过头，就像把一笔很轻的账，从上一世挪到了这一世的袖里。', fx: ['ahe', 'shengu'].includes(c.id) ? {} : { xj: 3 }, tags: [{ t: '旧恩 · ' + c.name, c: 'gold' }] };
             } },
-            { label: '说自己不记得', act: () => ({ text: `${c.name}也不勉强。「不记得也好。恩情若要人记住，就重了。」人没入集里。你站了一会儿。`, fx: { xj: 1 } }) },
+            { label: '说自己不记得', act: () => ({ text: `${c.name}也不勉强。「不记得也好。恩情若要人记住，就重了。」人没入集里。你站了一会儿。`, fx: ['ahe', 'shengu'].includes(c.id) ? {} : { xj: 1 } }) },
           ];
         } },
       { id: 'echo_cave_mem', title: '忆洞', seal: '忆', w: 5, once: true, rm: [0, 4],

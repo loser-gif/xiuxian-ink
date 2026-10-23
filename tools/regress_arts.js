@@ -2,7 +2,7 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..'), math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({console, Math:math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, btoa, atob});
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'codec'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'people', 'codec'])
   vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),ctx,{filename:f});
 const {Core,Loop,Arts,Jianghu,GONGFA,GEAR,LINGGEN,EVENTS,MIJING,LOC,LIB_POOL_ORG,Codec,GF_GRADE_MUL} = vm.runInContext('({Core,Loop,Arts,Jianghu,GONGFA,GEAR,LINGGEN,EVENTS,MIJING,LOC,LIB_POOL_ORG,Codec,GF_GRADE_MUL})',ctx);
 const fresh = () => Core.newState('验法', {lg:LINGGEN.find(x=>x.id==='san'),els:['金','木','水'],wx:6,luck:1,org:'qm'});

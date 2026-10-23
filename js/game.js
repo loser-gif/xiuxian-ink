@@ -1292,7 +1292,7 @@ function renderTraces() {
 }
 function openTraceSheet() {
   if (!S) return;
-  const rows = typeof karmaTraces === 'function' ? karmaTraces(S) : [];
+  const rows = typeof karmaTraces === 'function' ? karmaTraces(S, 0) : [];
   const open = (typeof Jianghu !== 'undefined' && Jianghu.mjOpenList) ? Jianghu.mjOpenList(S) : [];
   const seals = (S.colophon || []).slice(-6);
   const marks = seals.map(c => {
@@ -1300,7 +1300,7 @@ function openTraceSheet() {
     const line = (typeof Juan !== 'undefined' && Juan.coloShown) ? Juan.coloShown(c) : (c.line || '');
     return `<li><button type="button" class="mark-row" aria-expanded="false"><i>${esc(c.seal || '印')}</i><span>${esc(label)}</span></button><p class="mark-colo" hidden>${esc(line)}</p></li>`;
   }).join('');
-  const list = rows.length ? `<ul class="sd-trace">${rows.map(t => `<li><em>${esc(t.st)}</em>${esc(t.name)}${t.hint ? ' · ' + esc(t.hint) : ''}</li>`).join('')}</ul>` : '';
+  const list = rows.length ? `<ul class="sd-trace">${rows.map(t => `<li><em>${esc(t.st)}</em>${esc(t.name)}${t.hint ? ' · ' + esc(t.hint) : ''}${t.detail ? '<p>' + esc(t.detail) + '</p>' : ''}</li>`).join('')}</ul>` : '';
   const mj = open.length ? `<div class="sd-row zhu">秘境未闭 · ${open.map(o => esc(o.name) + (o.left ? '·约' + cnDur(o.left) : '')).join('、')}</div>` : '';
   const wrap = document.createElement('div');
   wrap.className = 'trace-sheet';
@@ -1499,12 +1499,14 @@ async function closeModal() {
 }
 function soberFace(ev) {
   if (!ev) return null;
+  if (ev.id === 'people_tang_market' || ev.id === 'people_lu_hunt' || (ev.id === 'people_bond_tang' && S.flags.tangRuined)) return { mouth: 'flat', brow: 1 };
   if (ev.id === 'echo_meet' || ev.id === 'echo_hunt' || ev.id === 'bond_part') return { mouth: 'flat', brow: 1 };
   return null;
 }
 function portraitHtml(ev) {
   if (typeof InkPortrait === 'undefined' || !ev) return '';
   const face = soberFace(ev);
+  if (ev.id === 'jc_bing' && S.npc && S.npc.helan && !S.npc.helan.dead) return InkPortrait.svg('helan', face);
   if ((ev.id === 'bond_dual' || ev.id === 'bond_jie' || ev.id === 'bond_part') && S && S.karma && S.karma.mate) {
     const svg = InkPortrait.svg(S.karma.mate, face);
     if (svg) return svg;
@@ -2137,6 +2139,7 @@ function sectLib() {
   return w;
 }
 function sectNpc() {
+  if (typeof People !== 'undefined') People.ensure(S);
   const w = document.createElement('div'); w.className = 'npcs';
   Object.keys(NPCS).forEach(id => {
     const n = NPCS[id], st = S.npc[id], c = document.createElement('div');
@@ -2151,7 +2154,34 @@ function sectNpc() {
         <div class="npc-title">${n.title}</div><div class="npc-trait">${n.trait}</div>
         <div class="npc-aff"><i style="left:${Math.min(50, pct)}%;width:${Math.abs(pct - 50)}%" class="${st.a < 0 ? 'neg' : ''}"></i><b></b></div>
         <p class="npc-line"></p></div>`;
-      c.querySelector('.npc-line').textContent = voice(Core.npcLine(S, id));
+      c.querySelector('.npc-line').textContent = (st.dead ? '旧言：' : '') + voice(Core.npcLine(S, id));
+      if (typeof People !== 'undefined') {
+        const details = document.createElement('p'); details.className = 'npc-line';
+        details.textContent = People.summary(S, id); c.querySelector('.npc-info').appendChild(details);
+        if (People.present(S, id) && !st.absolute) {
+          const actions = document.createElement('div'); actions.className = 'loop-actions';
+          const mate = S.karma && S.karma.mate === id && !(S.bond && S.bond.lost);
+          const kinds = [['talk', '叙话', 1]].concat(mate ? [['gift', '赠清心丹', 1], ['sit', '共修', 3], ['past', '问往事', 1], ['promise', '约一年内共修', 0]] : []);
+          kinds.forEach(([kind, name, months]) => {
+            const b = document.createElement('button'); b.className = 'path-wash-btn'; b.type = 'button';
+            b.textContent = name + (months ? ' · ' + cnDur(Core.timeMonths(S, months)) : '');
+            b.disabled = S.months < (st.life.nextAct || 0) || (kind === 'gift' && !(S.items['清心丹'] > 0)) || (kind === 'promise' && !!(S.bond && S.bond.promiseDue));
+            b.onclick = () => {
+              const r = People.interact(S, id, kind, pushLog);
+              if (r.err) { toast(r.err); return; }
+              pushLog({ title: r.title, text: voice(r.text), tags: r.tags, cls: 'event' });
+              Core.checkXj(S, pushLog); save(); render();
+              if (S.dead) { closeSheet(); checkEnd(); return; }
+              w.replaceWith(sectNpc());
+            };
+            actions.appendChild(b);
+          });
+          if (mate && S.bond && S.bond.promiseDue) {
+            const due = document.createElement('p'); due.className = 'loop-note'; due.textContent = '共修之约 · 还余' + cnDur(Math.max(0, S.bond.promiseDue - S.months)); actions.appendChild(due);
+          }
+          c.querySelector('.npc-info').appendChild(actions);
+        }
+      }
     }
     w.appendChild(c);
   });
@@ -2851,7 +2881,7 @@ function openNaihe(done) {
   }
   if (opts) {
     opts.innerHTML = '';
-    const add = (kind, seal, title, prose) => {
+    const add = (kind, seal, title, prose, personId) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'naihe-opt';
@@ -2860,7 +2890,7 @@ function openNaihe(done) {
       btn.querySelector('b').textContent = title;
       btn.querySelector('em').textContent = prose;
       btn.onclick = () => {
-        if (Samsara.chooseNaihe) Samsara.chooseNaihe(kind);
+        if (Samsara.chooseNaihe) Samsara.chooseNaihe(kind, personId);
         box.hidden = true;
         if (done) done();
       };
@@ -2873,6 +2903,7 @@ function openNaihe(done) {
       const role = b.bond.role === 'mate' ? '道侣' : b.bond.role === 'foe' ? '仇人' : '恩人';
       add('bond', '缘', '一段因果', role + '「' + b.bond.name + '」。下世若还有缘，会再遇见这个人。');
     }
+    (b.roadBonds || []).forEach(p => add('bond', '缘', '记住' + p.name, '一段路上因果。下世仍认这个名字，只重逢，不带修为与属性。', p.id));
     add('none', '空', '什么都不带', '把这一世放下。桥下的水不记名字。');
   }
   box.hidden = false;
@@ -2925,7 +2956,8 @@ function openAtlasSheet(startTab) {
     if (tab === 'person') {
       const ids = (Samsara.PERSON_IDS || Object.keys(PERSON_BOOK));
       return ids.map((id, i) => {
-        const book = PERSON_BOOK[id] || { name: id, hint: '有一个人，你还没记住。', note: '名字已经落下。' };
+        const npc = typeof NPCS !== 'undefined' ? NPCS[id] : null;
+        const book = PERSON_BOOK[id] || { name: npc ? npc.name : id, hint: npc ? npc.title : '有一个人，你还没记住。', note: npc ? npc.bio : '名字已经落下。' };
         const on = !!(a.person && a.person[id]);
         const name = (typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].name) || book.name;
         let pic = '';
@@ -3585,7 +3617,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=70').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=71').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
