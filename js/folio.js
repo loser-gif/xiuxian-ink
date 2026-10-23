@@ -256,7 +256,7 @@ const Folio = (() => {
             const ok = Math.random() < 0.62 + Math.min(0.2, (s2.realm | 0) * 0.05);
             if (ok) return { text: '你在阵前站了一夜。刀光没有爬上城墙。天亮时，将军给你鞠了一躬，没有问你的宗门。', fx: { xj: 2, time: 3, ls: 8 }, tags: [{ t: '应召', c: 'up' }] };
             s2.keq.fail = (s2.keq.fail | 0) + 1;
-            return { text: '夜太长，你没能把那一阵压住。城还在，人少了一排。供奉的人后来说话，声音轻了很多。', fx: { xj: -3, time: 3 } };
+            return { text: '阵线太长，你终未能凭一人之力逆转败势。城池虽守住，折损却惨烈。事后再见供奉主事，对方目光闪烁，言语间客套而疏离。', fx: { xj: -3, time: 3 } };
           } },
           { label: '推说在闭关', act: s2 => { s2.keq.fail = (s2.keq.fail | 0) + 1; s2.keq.next = (s2.months | 0) + 8; return { text: '你没有去。帖子在案上放了三天，自己黄了。下一季的供奉，会薄一截。', fx: { xj: -1 } }; } },
         ] },
@@ -264,7 +264,7 @@ const Folio = (() => {
         cond: s => keqOn(s) && (s.keq.fail | 0) < 3 && (s.months | 0) >= ((s.keq.next || 0) + 4) && (s.flags.keqYao | 0) < 2,
         text: () => '乡人堵在洞口，说后山的兽开始吃人。他们不求你收徒，只求你去看一眼。看完可以回来继续修。',
         choices: () => [
-          { label: '去看一眼', act: s2 => { s2.flags.keqYao = (s2.flags.keqYao | 0) + 1; s2.keq.next = (s2.months | 0) + 6; return { text: '兽不厉害，厉害的是乡人的眼睛。你把事情做完，他们把一筐干果放在洞口，没有留名。', fx: { xj: 3, time: 2, item: { '青叶草': 1 } } }; } },
+          { label: '去看一眼', act: s2 => { s2.flags.keqYao = (s2.flags.keqYao | 0) + 1; s2.keq.next = (s2.months | 0) + 6; return { text: '凶兽算不得强悍，难平的是凡人惶恐之心。你下山除患归来，次日清晨，洞口只悄悄放了一筐带露干果，未留名姓。', fx: { xj: 3, time: 2, item: { '青叶草': 1 } } }; } },
           { label: '让他们另请高明', act: s2 => { s2.keq.fail = (s2.keq.fail | 0) + 1; s2.flags.keqYao = (s2.flags.keqYao | 0) + 1; return { text: '人散了。散的时候没有骂你。不骂，有时候比骂更让供奉的人心里有数。', fx: { xj: -2 } }; } },
         ] },
       { id: 'keq_rain', title: '祈雨', seal: '雨', w: 4, rm: [1, 4],
@@ -282,7 +282,7 @@ const Folio = (() => {
             s2.flags.keqJia = 1;
             if (Math.random() < 0.72) { s2.keq.rank = 1; return { text: '三日无事。轿子进了城，你停在城外。回山时，供奉的封条上多了两个字：国师。宗门的名册还是只有你原来的位置。', fx: { xj: 2, time: 3, ls: 20 }, tags: [{ t: '国师', c: 'gold' }] }; }
             s2.keq.fail = (s2.keq.fail | 0) + 1;
-            return { text: '路上还是动了手。人是保住了，面子没有。国师两个字，这一次没有写上。', fx: { xj: -2, time: 3, inj: 1 } };
+            return { text: '归途遇伏，虽护得轿中人无恙，队伍却溃不成军、狼狈入城。回山之后，封条上的“国师”虚衔，终究未能添上。', fx: { xj: -2, time: 3, inj: 1 } };
           } },
           { label: '三日太长', act: s2 => { s2.flags.keqJia = 1; s2.keq.fail = (s2.keq.fail | 0) + 1; return { text: '轿子调头走了。山还是你的山。供奉的人会记得，你有一次没有来。', fx: { xj: 1 } }; } },
         ] },
@@ -332,7 +332,7 @@ const Folio = (() => {
       { id: 'echo_boat', title: '空船', seal: '舟', w: 2, once: true, rm: [1, 4],
         cond: s => hasHook(s, 'boat'),
         text: s => { const h = hook(s, 'boat'); return `江心有一条空船，缆绳系在没有人的桩上。船头刻着「${h.name}」，刻得很浅，像主人离开时特意没有带走名字。`; },
-        choices: () => [{ label: '看一眼，不上船', act: () => ({ text: '你看了一眼。船自己微微一晃，又稳住。稳住的意思是：这一世，你可以不重复上一次的离开。', fx: { xj: 3 } }) }] },
+        choices: () => [{ label: '看一眼，不上船', act: () => ({ text: '你看了一眼。江心空船随浪微微一晃，缆绳系在木桩上，静水深流。这一世，你不必急着离岸。', fx: { xj: 3 } }) }] },
 
       { id: 'echo_meet', title: '重逢', seal: '逢', w: 5, once: true, rm: [0, 4],
         cond: s => {

@@ -150,7 +150,7 @@ EVENTS.push(
       }},
       { label: '上疏死谏，请皇开仓', act: s => {
         const tags = [];
-        if (Math.random() < 0.55 + (s.luck || 0) * 0.03) { courtAdd(s, { min: 8, dao: 5 }, tags); if (s.court.rank < 5) courtPromote(s, s.court.rank + 1, tags); return { text: '你把乌纱摘了搁在殿上。三日后，仓开了。有人说你傻，有人说你像个人。', tags }; }
+        if (Math.random() < 0.55 + (s.luck || 0) * 0.03) { courtAdd(s, { min: 8, dao: 5 }, tags); if (s.court.rank < 5) courtPromote(s, s.court.rank + 1, tags); return { text: '你解下乌纱掷于玉阶之上，伏阙死谏。三日后，皇仓终于旨准大开。同僚私下叹你迂痴自绝前程，饥民却在官道旁焚香长跪，称万民生佛。', tags }; }
         courtAdd(s, { min: 3, dao: 2 }, tags); return { text: '你被罚俸三月。仓终于还是开了——不是因你，是因另一道折子。你仍不后悔。', tags, fx: { xj: 3 } };
       }},
       { label: '袖手', act: s => { const tags = []; courtAdd(s, { min: -10, dao: -3 }, tags); return { text: '你没有出声。后来路过城门，看见饿殍，你把脸转向了别处。', tags, fx: { xj: -8 } }; } },

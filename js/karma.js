@@ -168,7 +168,7 @@ EVENTS.push(
       { label: '受丹，请她护法', act: s => {
         karmaTake(s, 'su_aid');
         s.btBuff = (s.btBuff || 0) + 0.08;
-        return { text: '药香入腹，心境定了半分。她在洞外坐下，像一棵不移的药树。', fx: { item: { '清心丹': 2 }, xj: 6, npc: { su: 6 } }, tags: [{ t: '破境把握暂增', c: 'up' }] };
+        return { text: '药香入腹，灵台重归清宁。她在洞外静静倚石护法，青衫纤弱，风雨不移。', fx: { item: { '清心丹': 2 }, xj: 6, npc: { su: 6 } }, tags: [{ t: '破境把握暂增', c: 'up' }] };
       }},
       { label: '道谢，独自闭关', act: s => {
         karmaTake(s, 'su_aid');
@@ -244,7 +244,7 @@ EVENTS.push(
       { label: '点头，赠他一式', act: s => {
         karmaTake(s, 'tu_return');
         s.btBuff = (s.btBuff || 0) + 0.03;
-        return { text: '你把一式心得写入他掌心。他哭了，又笑了。下山时，背影已是独当一面的修士。', fx: { xj: 6, wx: Math.random() < 0.2 ? 1 : 0 } };
+        return { text: '你将一式运剑心得点入他掌心。他眼眶泛红，深深顿首再拜。下山离去时大步流星，背影已沉稳如山，独当一面。', fx: { xj: 6, wx: Math.random() < 0.2 ? 1 : 0 } };
       }},
     ] },
 

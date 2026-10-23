@@ -201,7 +201,7 @@ MISSIONS.push(
     brief: '花三娘处有江湖消息出售。',
     text: () => '花三娘敲着算盘：「消息，三等价钱。你要听哪等？」',
     choices: s => [
-      { label: '买一等消息', toll: { ls: -8 }, fee: 8, risk: -0.05, gxm: 0.8, ...mt('她收了灵石，告诉你一处将开的秘境方位。你记在心里。', '消息是旧的。她赔你一笑：「江湖就是这样。」灵石却不退。') },
+      { label: '买一等消息', toll: { ls: -8 }, fee: 8, risk: -0.05, gxm: 0.8, ...mt('她收了灵石，告诉你一处将开的秘境方位。你记在心里。', '消息早已过气。花三娘慢悠悠拨了拨算盘珠子：“市集规矩，买定离手。江湖路远，下回请早。”灵石自是半颗没退。') },
       { label: '只听免费的', risk: 0, gxm: 0.5, ...mt('免费的是：「近期别去血雾谷。」你谢了。', '免费的是天气。') },
       ...(met(s, 'sx_hua') && aff(s, 'sx_hua') >= 20 ? [{ label: '凭交情要实讯', sub: '花三娘', risk: -0.05, gxm: 1.1, npc: { sx_hua: 3 }, ...mt('她压低声音说了一处拍卖冷门。', '她白你一眼：「交情不能当饭吃。」') }] : []),
     ] },
@@ -249,7 +249,7 @@ EVENTS.push(
     choices: () => [
       { label: '细校至合', act: () => ({ text: '齿轮咬合那一声，干净。整楼像松了口气。', fx: { flag: 'peak_ask', xj: 6, wx: 1 } }) },
       { label: '大胆改一齿', sub: '险', act: () => Math.random() < 0.5
-        ? { text: '改齿后效率竟升。弟子们说楼走起路来都轻了。', fx: { flag: 'peak_ask', xj: 4 } }
+        ? { text: '微调之后，整楼机括转动轻捷如飞，推演大畅。弟子们惊喜相传，只道连楼道走起来都顺畅了三分。', fx: { flag: 'peak_ask', xj: 4 } }
         : { text: '别扭的响声持续了三个月。你每晚都在听。', fx: { flag: 'peak_ask', xj: -3 } } },
     ] },
   { id: 'peak_sx', title: '盟主席', seal: '盟', w: 5, once: true, rm: [4, 4],
@@ -267,7 +267,7 @@ EVENTS.push(
     choices: () => [
       { label: '亲审，不为偏袒', act: () => ({ text: '你把案卷翻到天明，判得不漂亮，却让两边都无话可说。下山时，外门弟子朝你拱手。', fx: { flag: 'peak_duty', xj: 6, gx: 40 } }) },
       { label: '交给执事堂，自去闭关', act: () => ({ text: '你把金令一推：「你们裁。」闭关三月，出关时山门已贴了新榜——你的名字小了一寸，心倒静了。', fx: { flag: 'peak_duty', xj: 3, gx: -20 } }) },
-      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案角。堂上寂静。此后无人敢再在峰会上阴阳怪气——只是有人背后说：掌门锋利，山门也薄了。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
+      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案一角。堂上噤若寒蝉。此后峰会之上，再无人敢虚与委蛇、暗藏机锋——只是有人背后私语：掌门锋芒太盛，山门未免冷薄了些。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
     ] },
   { id: 'peak_duty_dx', title: '药谷冬疫', seal: '疫', w: 4.5, once: true, rm: [4, 4],
     cond: s => s.sect && s.sect.org === 'dx' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
@@ -285,9 +285,9 @@ EVENTS.push(
     ] },
   { id: 'peak_duty_xj', title: '楼约重修', seal: '约', w: 4.5, once: true, rm: [4, 4],
     cond: s => s.sect && s.sect.org === 'xj' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
-    text: () => '楼约百年一修。弟子们为「效率」与「人情」吵翻——齿轮不认情，人却认。',
+    text: () => '楼约百年一修。门下为「死理」与「人情」争执不休——机枢严丝合缝，肉体凡胎却要喘息。',
     choices: () => [
-      { label: '约以效率为齿，情为油', act: () => ({ text: '你写：「齿不合则换，人疲则歇。」楼约贴出，吵声小了，机声顺了。', fx: { flag: 'peak_duty', xj: 6, wx: 1, gx: 25 } }) },
+      { label: '立约：严循规制，兼恤人情', act: () => ({ text: '你提笔定约：「机枢有定矩，劳役有缓急。」新规张榜，喧闹渐息，楼内齿轮运转反倒更显齐整。', fx: { flag: 'peak_duty', xj: 6, wx: 1, gx: 25 } }) },
       { label: '只改齿，不改人', act: () => ({ text: '你连夜校准。楼跑得更快，弟子眼底的青却更深。', fx: { flag: 'peak_duty', xj: -2, gx: 40 } }) },
     ] },
   { id: 'peak_duty_sx', title: '铁令风波', seal: '令', w: 4.5, once: true, rm: [4, 4],
