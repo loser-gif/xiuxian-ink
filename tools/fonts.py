@@ -9,7 +9,7 @@
   msz.ttf     马善政楷书（OFL，Google Fonts）
   zcool.ttf   志莽行书（OFL，Google Fonts）
 """
-import os, re, sys, subprocess
+import os, re, sys, subprocess, tempfile
 from fontTools.ttLib import TTFont
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -87,12 +87,14 @@ def ranges(s):
     return ','.join(out)
 
 def subset(src, out, chars, keep_vertical=False):
-    tf = '/tmp/_sub.txt'
-    open(tf, 'w', encoding='utf8').write(''.join(sorted(chars)))
     drop = [] if keep_vertical else ['--drop-tables+=vhea,vmtx,VORG']
-    subprocess.run(['pyftsubset', src, f'--text-file={tf}', '--flavor=woff2', f'--output-file={out}',
-                    '--layout-features=kern,liga,calt,ccmp,locl,fwid,hwid,pwid,palt', '--no-hinting',
-                    '--notdef-outline', '--name-IDs=*'] + drop, check=True)
+    with tempfile.TemporaryDirectory(prefix='font-', dir=BASE) as temp:
+        tf = os.path.join(temp, 'chars.txt')
+        with open(tf, 'w', encoding='utf8') as f:
+            f.write(''.join(sorted(chars)))
+        subprocess.run([sys.executable, '-m', 'fontTools.subset', src, f'--text-file={tf}', '--flavor=woff2', f'--output-file={out}',
+                        '--layout-features=kern,liga,calt,ccmp,locl,fwid,hwid,pwid,palt', '--no-hinting',
+                        '--notdef-outline', '--name-IDs=*'] + drop, check=True)
 
 def transplant(dst_path, src_path, cps):
     """把源字体里才有的字符按 em 缩放拷进目标子集。

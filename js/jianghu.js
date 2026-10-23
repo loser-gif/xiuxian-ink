@@ -130,7 +130,7 @@ const Jianghu = (() => {
     return Math.max(1, Math.round(baseVal(s, k) * (s.mkt.f[k] || 1)));
   }
   const sellPrice = (s, k) => ITEM_VAL[k] ? Math.max(1, Math.round(baseVal(s, k) * (s.mkt.f[k] || 1) * 0.5)) : 0;
-  function buy(s, k, n) {
+  function buy(s, k, n, readRoots) {
     n = Math.max(1, Math.min(9, (n | 0) || 1));
     if (k === 'SCROLL' || String(k).indexOf('R:') === 0) n = 1;
     const tags = [];
@@ -139,6 +139,10 @@ const Jianghu = (() => {
       const p = price(s, k); if (s.ls < p || !(s.mkt.st[k] > 0)) break;
       s.ls -= p; s.mkt.st[k]--; tags.push({ t: `灵石 −${p}`, c: 'down' });
       if (k === 'SCROLL') {
+        if (readRoots && s.gf === 'wuxing' && s.lgEls.length >= 3) {
+          Core.practice(s, 2, tags);
+          return { tags: tags.concat([{ t: '杂根相生 · 功法精进' }]), text: '你买下残卷，以杂根相生对读。不同的行功段落在五行归一里接了起来。没有学得新法，这一卷只补进自己的注里。', n: 1 };
+        }
         const pool = Object.keys(GONGFA).filter(id => GONGFA[id].grade <= Math.min(1, s.realm) && !GONGFA[id].mo && !s.gfs[id] && !['雷', '风', '冰', '五行'].includes(GONGFA[id].el));
         if (!pool.length || Math.random() < 0.3) return { tags, text: '残卷用油布裹了三层，回到住处展开一看，前半卷是功法，后半卷却是一本春宫。你哭笑不得。', fake: true, n: 1 };
         const id = pick(pool), o = Core.applyFx(s, { gf: id });
@@ -172,6 +176,7 @@ const Jianghu = (() => {
       { k: 'R:ningyuan', v: 140 * L, w: s.realm >= 1 && !s.dan.rec.includes('ningyuan') ? 1.2 : 0 },
       { k: 'R:huaying', v: 200 * L, w: s.realm >= 2 && !s.dan.rec.includes('huaying') ? 1.2 : 0 },
       { k: '龙鳞', v: 60 * L, w: 1 },
+      { k: '问锋录', v: 170 * L, w: s.realm >= 1 && !s.gfs.wenfeng ? 1.2 : 0, gf: 'wenfeng' },
     ];
     while (lots.length < 3) {
       const c = pool.filter(p => p.w > 0 && !lots.find(l => l.k === p.k)); let tot = c.reduce((a, b) => a + b.w, 0), x = Math.random() * tot;
@@ -218,6 +223,7 @@ const Jianghu = (() => {
     const l = a.lots[a.i], tags = [{ t: `灵石 −${a.price}`, c: 'down' }];
     s.ls -= a.price;
     if (l.frag) fxFrag(s, 1, tags);
+    else if (l.gf) Core.learn(s, l.gf, tags);
     else if (l.k.startsWith('R:')) learnRecipe(s, l.k.slice(2), tags);
     else { s.items[l.k] = (s.items[l.k] || 0) + 1; tags.push({ t: `得${l.k}`, c: 'up' }); }
     if (a.beat.includes('hei')) s.flags.heiGrudge = 1;
@@ -412,7 +418,7 @@ const Jianghu = (() => {
   /* ---------- 天品残页 ---------- */
   function fxFrag(s, n, tags) {
     if (!s.frag.id || s.gfs[s.frag.id]) {
-      const pool = Object.keys(GONGFA).filter(id => GONGFA[id].grade === 3 && !s.gfs[id]);
+      const pool = Object.keys(GONGFA).filter(id => GONGFA[id].grade === 3 && !GONGFA[id].uniqueSource && !s.gfs[id]);
       const own = pool.filter(id => s.lgEls.includes(GONGFA[id].el) || !GONGFA[id].el);
       s.frag = { id: (own.length ? pick(own) : pool.length ? pick(pool) : null), n: 0 };
     }
@@ -479,6 +485,7 @@ const Jianghu = (() => {
     if (!half && L.recipe) learnRecipe(s, L.recipe, tags);
     if (!half && L.dan) danXp(s, L.dan, tags);
     if (!half && L.frag) fxFrag(s, L.frag, tags);
+    if (how === 'clear' && d.id === 'chenjian' && !s.gfs.chenjian) Core.learn(s, 'chenjian', tags, emit);
     const text = how === 'clear' ? `你走出${m.name}时，身后的入口缓缓合拢。${cnDur(months)}光阴，恍如一梦。`
       : how === 'forced' ? `你被逐出${m.name}，囊中所得散落了一半。` : `你见好就收，退出了${m.name}。`;
     return { text, tags, ups: o.ups, months, how };

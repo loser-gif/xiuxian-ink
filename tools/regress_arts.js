@@ -1,0 +1,63 @@
+'use strict';
+const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
+const root = path.join(__dirname, '..'), math = Object.create(Math); math.random = () => 0.5;
+const ctx = vm.createContext({console, Math:math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, btoa, atob});
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'codec'])
+  vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),ctx,{filename:f});
+const {Core,Loop,Arts,Jianghu,GONGFA,GEAR,LINGGEN,EVENTS,MIJING,LOC,LIB_POOL_ORG,Codec,GF_GRADE_MUL} = vm.runInContext('({Core,Loop,Arts,Jianghu,GONGFA,GEAR,LINGGEN,EVENTS,MIJING,LOC,LIB_POOL_ORG,Codec,GF_GRADE_MUL})',ctx);
+const fresh = () => Core.newState('验法', {lg:LINGGEN.find(x=>x.id==='san'),els:['金','木','水'],wx:6,luck:1,org:'qm'});
+const close = (a,b) => assert(Math.abs(a-b)<1e-9, a+' != '+b);
+const learn = (s,id) => {s.gfs[id]={lv:3,xp:0};s.gf=id;};
+assert.equal(Object.keys(GONGFA).length,52);
+assert.equal(Object.values(GONGFA).filter(g=>g.uniqueSource).length,5);
+assert.equal(Object.values(GONGFA).filter(g=>!g.style).length,1);
+for(const [,loc] of Arts.routes) assert(!loc || LOC[loc], 'unreachable book location: '+loc);
+const sources = new Set(Arts.routes.map(x=>x[0]).concat(Object.values(Arts.libraries).flat(),['chenjian','lenglu','wenfeng','wanmu']));
+const old = ['qingming','gengjin','qingteng','hantan','yanyang','houtu','baihong','changchun','guicang','lihuo','kunyuan','xiaoyao','taibai','yimu','jiuyou','chixiao','houtuzy','tianmo','wangqing','zixiao','yufeng','taiyin','wuxing'];
+for(const id of Object.keys(GONGFA)) assert(old.includes(id)||sources.has(id),'no acquisition: '+id);
+let s=fresh();learn(s,'wuxing');s.eq.weapon='验法器';GEAR.验法器={t:{spd:10}};
+close(Core.gfExtra(s),1.4);
+const base=GF_GRADE_MUL[3]*Core.gfMatch(s,'wuxing')*Core.layerMul(3);
+close(Core.gfSpeed(s),base*1.4);assert(Core.gfSpeed(s)>1.6,'heaven grade/root benefits survive cap');
+let before=s.xw;const speed=Core.gfSpeed(s);Core.tuna(s,()=>{});
+assert(Math.abs(s.xw-before-Core.unit(s)*Core.K.tunaGain*speed)<1,'actual cultivation must use displayed capped speed');
+learn(s,'tianmo');close(Core.gfExtra(s),1.75);close(Core.gfSpeed(s),1.38*Core.layerMul(3)*1.75);
+delete GEAR.验法器;s.eq.weapon=null;
+s=fresh();learn(s,'gengjin');s.path.daoji='mo';close(Core.gfExtra(s),1.1);
+s.path.faxiang='huo';close(Core.gfExtra(s),1.1*1.06);
+close(Core.gfExtra(s),Core.gt(s,'spd',1));
+s=fresh();learn(s,'gengjin');s.gfs.yanyang={lv:9,xp:0};s.aux=['yanyang'];
+assert.equal(Core.auxRelation(s,'yanyang'),'ke');close(Core.gfExtra(s),1);close(Core.gt(s,'spd',1),1);
+learn(s,'lihuo');s.gfs.changchun={lv:9,xp:0};s.aux=['changchun'];
+assert.equal(Core.auxRelation(s,'changchun'),'sheng');close(Core.gt(s,'heal',0),0.55/3*1.5);
+s.gfs.changchun.broken=true;close(Core.gt(s,'heal',0),0);
+s.gfs.tianmo={lv:9,xp:0};assert(Core.setAux(s,'tianmo').err);
+learn(s,'tianmo');s.gfs.buken={lv:3,xp:0};assert(Core.setAux(s,'buken').err);
+s.aux=['buken'];Core.switchGf(s,'buken',()=>{});Core.switchGf(s,'tianmo',()=>{});assert(!s.aux.includes('buken'));
+s=fresh();s.v=14;s.lifespan=999;s.gfs.tianmo={lv:3,xp:0};s.aux=['tianmo'];before=s.xw;
+let migrated=Core.migrate(Codec.decode(Codec.encode(s)).data);assert.equal(migrated.v,15);assert.equal(migrated.xw,before);assert(migrated.lifespan>=999);assert(!migrated.aux.includes('tianmo'));
+assert.equal(Object.keys(migrated.gfs).length,Object.keys(s.gfs).length);
+for(const [id,mid,label] of [['yicun','caiyao','辨这味药'],['bamen','shoushan','先看阵']]){
+  s=fresh();learn(s,id);s.sect.missions=[{id:mid,uid:1}];let ev=Core.missionEvent(s,1);assert(ev.choices(s).some(c=>c.label===label));
+  ev.choices(s).find(c=>c.label===label).act(s);assert.equal(s.sect.missions.length,0);
+}
+s=fresh();learn(s,'bamen');assert(MIJING.gufu.nodes[0].choices(s).some(c=>c.label==='先看阵'));
+learn(s,'chenjian');assert(MIJING.chenjian.nodes[1].choices(s).some(c=>c.label==='以谱问剑'));
+learn(s,'bailian');math.random=()=>0.99;let ev=EVENTS.find(e=>e.id==='huoshan');let r=ev.choices(s).find(c=>c.label==='硬挨这一记').act(s);assert.equal(r.fx.inj,3);math.random=()=>0.5;
+learn(s,'wangqing');before=s.npc.su.a;ev=EVENTS.find(e=>e.id==='yg_su_vow');r=ev.choices(s).find(c=>c.label==='不问').act(s);Core.applyFx(s,r.fx);assert.equal(s.npc.su.a,before);
+learn(s,'shanmenjiuli');ev=EVENTS.find(e=>e.id==='jc_gate');ev.choices(s).find(c=>c.label==='据旧例说明来处').act(s);assert.equal(s.court.rank,0);
+learn(s,'wenfeng');s.fabao={stage:0,bond:0};let d=Core.duelNew(s,{q:1,style:'gang',rel:0,name:'试剑人'});assert(d.askWeapon);d.weaponAsked=true;let tell=Core.duelTell(d);assert.equal(tell.tell,d.next);assert(tell.line.includes('第一招是'));
+learn(s,'buken');s.path.daoji='mo';s.loop.mo=2;s.loop.moCut=1;assert(!Loop.act(s,'mo:huijie',()=>{}).err);assert.equal(s.loop.mo,1);assert.equal(s.loop.moCut,0);assert(Loop.act(s,'mo:huijie',()=>{}).err);
+s=fresh();s.realm=1;s.path.daoji='jian';learn(s,'zhefeng');
+for(let i=0;i<3;i++){s.months+=120;assert(!Loop.act(s,'jian:yue',()=>{}).err);}assert.equal(s.loop.jian,4);
+s.path.daoji='zhen';learn(s,'bamen');s.loc='qingshi';
+for(let i=0;i<3;i++){s.months+=120;s.sect.dabiDue=false;assert(!Loop.act(s,'zhen:cang',()=>{}).err);}assert.equal(s.loop.zhenKeep,1);
+s.months+=120;s.xj=30;Loop.act(s,'zhen:kun',()=>{});assert.equal(s.loop.zhen,'cang');assert.equal(s.loop.zhenKeep,0);
+Loop.resetDaoji(s);assert.equal(Object.keys(s.loop.flow).length,0);
+// New heaven manuals have one source and cannot leak into the old fragment pool.
+s=fresh();s.realm=3;s.loc='beihai';
+for(let i=0;i<80;i++){s.frag={id:null,n:0};const tags=[];Jianghu.fxFrag(s,1,tags);assert(!GONGFA[s.frag.id].uniqueSource);}
+const island=MIJING.xiandao.nodes.find(n=>n.t==='岛上桃');const book=island.choices(s).find(c=>c.label==='听古木同根之息');assert(book);book.act(s);assert(s.gfs.wanmu);assert(s.flags.wanmuOffered);assert(!island.choices(s).some(c=>c.label==='听古木同根之息'));
+s=fresh();s.realm=2;s.loc='yunyue';s.ls=99999;s.gf='wuxing';s.gfs.wuxing={lv:1,xp:0};s.mkt.st.SCROLL=1;
+r=Jianghu.buy(s,'SCROLL',1,true);assert(r.text.includes('对读'));assert.equal(s.gfs.wuxing.xp,2);assert.equal(s.mkt.st.SCROLL,0);
+console.log('PASS: 52 books and acquisition coverage; extra caps preserve grade/roots; actual gain; auxiliary relations and exclusion; v14 migration; nine styles; loop synergy; unique heaven sources');

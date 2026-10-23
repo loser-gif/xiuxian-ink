@@ -4,7 +4,7 @@ const assert = require('assert'), fs = require('fs'), path = require('path'), vm
 const root = path.join(__dirname, '..');
 const math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, Map, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'codec'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'codec', 'loops', 'arts'])
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Codec, LINGGEN, cnDur, GONGFA } = vm.runInContext('({Core, Codec, LINGGEN, cnDur, GONGFA})', ctx);
 vm.runInContext("TEXT.biguan = TEXT.biguan.filter(t => t.includes('{d}'))", ctx);
@@ -37,7 +37,7 @@ assert.equal(Core.trialStatus(fresh(false)), null);
 s = fresh(); delete s.flags.trialYears;
 assert.equal(Core.trialStatus(s).left, 240, 'legacy trial defaults to twenty years');
 const old = JSON.stringify(s);
-assert.equal(Core.migrate(JSON.parse(old)).v, 14);
+assert.equal(Core.migrate(JSON.parse(old)).v, 15);
 assert.equal(s.flags.trialResult, undefined, 'status reads do not modify saves');
 // Time preview, prose and actual advancement must agree for stacked modifiers,
 // court friction, single-use moCut, and the tianmo exclusion.

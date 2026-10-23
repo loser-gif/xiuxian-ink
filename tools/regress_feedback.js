@@ -4,7 +4,7 @@ const assert = require('assert'), fs = require('fs'), path = require('path'), vm
 const root = path.join(__dirname, '..');
 const math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, Map, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec', 'arts'])
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Loop, Codec, Life, LINGGEN, EVENTS, cnDur } = vm.runInContext('({Core, Loop, Codec, Life, LINGGEN, EVENTS, cnDur})', ctx);
 const fresh = org => Core.newState('过路客', { lg: LINGGEN.find(x => x.id === 'san'), els: ['木', '水', '火'], wx: 6, luck: 1, org });
@@ -64,7 +64,7 @@ assert.equal(Core.migrate(Codec.decode(Codec.encode(s)).data).loop.zhen, 'sha');
 Loop.resetDaoji(s); assert.equal(s.loop.zhen, '');
 // Legacy missing-loop saves still open without raising SAVE_V.
 s = arrayState(); delete s.loop;
-assert.equal(Core.migrate(s).v, 14); assert.equal(s.loop.zhen, '');
+assert.equal(Core.migrate(s).v, 15); assert.equal(s.loop.zhen, '');
 // Exercise real event lists and mission metadata, rather than synthetic labels only.
 const routes = [['sheng', 'vein', '以生阵养脉'], ['sheng', 'tide_lingku', '以生阵疏脉'], ['kun', 'bandit', '以困阵断后'], ['cang', 'hei_ambush', '藏入巷中月影'], ['cang', 'heifeng', '隐去商队行迹']];
 for (const [form, id, label] of routes) {

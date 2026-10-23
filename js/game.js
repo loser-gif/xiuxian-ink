@@ -2249,6 +2249,14 @@ function runDuel(t, r, o = {}) {
     const moves = $('#duel-moves');
     moves.innerHTML = DUEL_MOVES.map(m => `<button class="dmove" data-m="${m.id}"><span class="dm-ink"></span><b>${m.ch}</b><small>${m.hint}</small></button>`).join('');
     moves.classList.remove('on');
+    if (d.askWeapon) {
+      const ask = document.createElement('button'); ask.className = 'dmove'; ask.textContent = '问本命一句';
+      const quiet = document.createElement('button'); quiet.className = 'dmove'; quiet.textContent = '此战自己看';
+      moves.appendChild(ask); moves.appendChild(quiet);
+      moves.querySelectorAll('[data-m]').forEach(b => { b.hidden = true; }); moves.classList.add('on');
+      await new Promise(done => { ask.onclick = () => { d.weaponAsked = true; done(); }; quiet.onclick = done; });
+      ask.remove(); quiet.remove(); moves.querySelectorAll('[data-m]').forEach(b => { b.hidden = false; }); moves.classList.remove('on');
+    }
     const intro = o.intro || (opp.npc ? DUEL_INTRO[opp.npc] : pick(DUEL_INTRO._).replace('对手', opp.name.replace(/^.* · /, '')));
     await sleep(r === 0 ? 900 : 300);
     const di = inkWrite($('#duel-tell'), intro, { immediate: true, step: 22 });
@@ -2474,7 +2482,7 @@ function bagPage() {
 }
 
 const layerDots = lv => Array.from({ length: GF_LAYERS }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
-const gfElWord = (id) => { const g = GONGFA[id]; return (g.el ? (g.el === '五行' ? '五行' : g.el + '行') : '无属') + ' · ' + Core.gfMatchWord(S, id); };
+const gfElWord = (id) => { const g = GONGFA[id]; return (g.el ? (g.el === '五行' ? '五行' : g.el + '行') : '无属') + ' · ' + (g.style ? GF_STYLE[g.style] + '流 · ' : '') + Core.gfMatchWord(S, id); };
 function gfPage() {
   const wrap = document.createElement('div'); wrap.className = 'gf-page';
   // 主修
@@ -2493,6 +2501,7 @@ function gfPage() {
         <div class="gf-meta"><span class="gf-seal">${GF_GRADE[g0.grade]}</span><span class="gf-el">${gfElWord(S.gf)}</span><span class="gf-role">主修</span></div>
         <div class="gf-layers">${layerDots(e.lv)}<em>${e.lv >= GF_LAYERS ? '大成' : '第' + cn(e.lv) + '层'}</em></div>
         <div class="gf-speed">行功之速 <b>×${Core.gfSpeed(S).toFixed(2)}</b></div>
+        <div class="gf-deep">额外加成 ×${Core.gfExtra(S).toFixed(2)}，上限 ${S.gf === 'tianmo' ? '1.75' : '1.40'}；品阶、层数与灵根另计。</div>
         ${e.lv > 1 ? `<div class="gf-deep">第${cn(e.lv)}层。层数愈高，每一层加进行功的分量愈淡。</div>` : ''}
         <div class="gf-trait">${g0.trait}</div>
         <p class="gf-desc"></p>
@@ -2513,7 +2522,7 @@ function gfPage() {
     const row = document.createElement('div'); row.className = 'gf-row aux g' + g0.grade;
     row.innerHTML = `<span class="gf-seal">${GF_GRADE[g0.grade]}</span>
       <div class="gf-row-info"><div class="gf-row-name">${g0.name}<em>辅 · ${e.lv >= GF_LAYERS ? '大成' : cn(e.lv) + '层'}</em></div>
-      <div class="gf-row-sub">${gfElWord(id)} · ${g0.trait}</div></div>
+      <div class="gf-row-sub">${gfElWord(id)} · ${g0.trait}${Core.auxRelation(S, id) === 'ke' ? ' · 与主修相悖：正面速度不生效' : Core.auxRelation(S, id) === 'sheng' ? ' · 相生：伤愈、养心多取一半，无额外速度' : ''}${e.broken ? ' · 残篇不生效' : ''}</div></div>
       <button class="item-use">卸下</button>`;
     row.querySelector('button').onclick = () => {
       const r = Core.clearAux(S, id);
@@ -2542,7 +2551,7 @@ function gfPage() {
       Core.switchGf(S, id, pushLog); render(); save(); checkEnd();
     };
     acts.appendChild(bMain);
-    if (!isAux && aux.length < (typeof AUX_MAX !== 'undefined' ? AUX_MAX : 2)) {
+    if (!isAux && id !== 'tianmo' && !(id === 'buken' && S.gf === 'tianmo') && aux.length < (typeof AUX_MAX !== 'undefined' ? AUX_MAX : 2)) {
       const bAux = document.createElement('button'); bAux.className = 'item-use light'; bAux.textContent = '辅修';
       bAux.onclick = () => {
         const r = Core.setAux(S, id); if (r.err) return toast(r.err);
@@ -3576,7 +3585,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=69').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=70').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

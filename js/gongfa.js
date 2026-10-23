@@ -79,6 +79,44 @@ const GONGFA = {
     desc: '世人皆以杂灵根为废，此经独以为宝：五行相生，周而复始，根越杂，转得越圆。',
     t: { spd: 1.0 }, trait: '五行相生 · 灵根愈杂愈强' },
 };
+// 流只决定故事入口；旧本的品阶、五行和 t 原样保留。
+const GF_STYLE = { jian: '剑', dan: '丹', ti: '体', zhen: '阵', qi: '器', mo: '魔', yin: '隐', chao: '朝', zheng: '正' };
+Object.entries({
+  jian: ['gengjin', 'baihong', 'taibai', 'zixiao'], ti: ['qingteng', 'changchun', 'yimu', 'houtu'],
+  yin: ['hantan', 'guicang', 'jiuyou', 'xiaoyao', 'wangqing', 'yufeng', 'taiyin'],
+  dan: ['yanyang', 'lihuo', 'chixiao'], zheng: ['kunyuan', 'houtuzy', 'wuxing'], mo: ['tianmo'],
+}).forEach(([style, ids]) => ids.forEach(id => { GONGFA[id].style = style; }));
+Object.assign(GONGFA, {
+  zhefeng: { name: '折锋十三式', el: '金', grade: 1, style: 'jian', src: '青冥藏经阁', t: { bt: 0.03, qiyu: 0.06 }, trait: '破境略增 · 游历机缘略增', desc: '十三式里有十二式收锋。末式不画，留给持剑的人。' },
+  tingsong: { name: '听松剑诀', el: '木', grade: 1, style: 'jian', src: '桃花溪松下', t: { xinmo: 0.85, bt: 0.02 }, trait: '心魔略减 · 破境略增', desc: '松涛停时才落剑。写诀的人没有署名，只在卷角压了一枚松针。' },
+  chenjian: { name: '沉剑谱', el: '金', grade: 2, style: 'jian', src: '沉剑渊通关', t: { bt: 0.06, btXj: 2 }, trait: '破境增 · 破境多耗心境二分 · 沉剑渊可问剑', desc: '每一页都有一道沉下去的剑影。它不替你赢，只肯听你问。' },
+  yicun: { name: '一寸丹经', el: '火', grade: 1, style: 'dan', src: '丹霞藏经阁或苏晚晴', t: { dunwu: 0.04 }, trait: '顿悟略增 · 采药丹房可辨药', desc: '火候只差一寸，药性便过一生。页间有苏晚晴试过又划去的批注。' },
+  lenglu: { name: '冷炉残篇', el: '水', grade: 2, style: 'dan', src: '古修洞府丹室', t: { xinmo: 0.7, spd: 0.96 }, trait: '心魔减 · 行功略慢', desc: '丹炉已经冷了，纸上的药名却没有散。失去的是末页，不是行功的路。' },
+  bailian: { name: '百炼体书', el: '土', grade: 1, style: 'ti', src: '石小满或小满仓', t: { life: 0.08, heal: 1 }, trait: '寿元略增 · 伤势易愈 · 险境可硬挨', desc: '小满把书塞进衣襟，说骨头没有书上写得那么硬，但总得先站稳。' },
+  shixin: { name: '石心篇', el: '土', grade: 2, style: 'ti', src: '黑风岭石窟', t: { xinmo: 0.8, time: 0.9 }, trait: '心魔略减 · 光阴略缓', desc: '石窟中只有半面字。另一半，被一代代靠墙坐下的人磨平了。' },
+  bamen: { name: '八门步引', el: '土', grade: 1, style: 'zhen', src: '玄机藏经阁', t: { qiyu: 0.08, time: 0.95 }, trait: '机缘略增 · 光阴略缓 · 夜巡石门可先看阵', desc: '八道门，不必每道都开。先看脚下，再问去处。' },
+  duanwen: { name: '断纹谱', el: '金', grade: 2, style: 'zhen', src: '血雾谷改阵之后', t: { bt: 0.03, qiyu: 0.05 }, trait: '破境略增 · 机缘略增', desc: '断掉的阵纹不是废笔。有些缺口，是留给活人出去的。' },
+  yangbing: { name: '养兵诀', el: '金', grade: 1, style: 'qi', src: '器阿末', t: {}, trait: '主修时每次喂养法宝额外祭炼 +0.05', desc: '器阿末写下的第一句是：别催。最后一句，也是别催。' },
+  wenfeng: { name: '问锋录', el: null, grade: 2, style: 'qi', src: '听雨楼拍卖', t: { bt: 0.04 }, trait: '破境略增 · 主修斗法 ×1.02 · 法宝可明示首招', desc: '锋不是嘴，也会回答。交手前问它一句，听清了再落手。' },
+  yezhi: { name: '夜织经', el: '水', grade: 1, style: 'mo', src: '幽荧藏经阁', t: { spd: 1.06, xinmo: 1.12 }, trait: '行功略快 · 心魔略增', desc: '灯下织的是影子。每织一寸，灯芯便短一分。' },
+  buken: { name: '不肯经', el: null, grade: 2, style: 'mo', src: '魔诺二重时的第二声', t: { spd: 1.08, xinmo: 1.25 }, trait: '行功略快 · 心魔增 · 可还回捷径 · 不与天魔同修', desc: '第二声把这本经递给你。第一页只写“不肯”，后面全是你要自己写的字。' },
+  shanmenjiuli: { name: '山门旧例', el: null, grade: 0, style: 'chao', src: '落第书生或京城贡院', t: { xinmo: 0.9 }, trait: '心魔略减 · 京城验牌可据旧例陈说', desc: '旧例不教人赢官司，只教人把自己的来处讲清楚。' },
+  heqing: { name: '河清册', el: '水', grade: 1, style: 'chao', src: '京城部堂', t: { qiyu: 0.05, time: 0.94 }, trait: '机缘略增 · 光阴略缓', desc: '一册河道与田亩，夹着无人认领的请愿。读到末尾，呼吸也学会了转弯。' },
+  tiejian: { name: '铁剑旧抄', el: '金', grade: 0, style: 'jian', src: '青冥藏经阁', t: { bt: 0.01 }, trait: '破境微增', desc: '没有剑图，只有握剑的人留下的指印。' },
+  songyan: { name: '松烟小诀', el: '木', grade: 0, style: 'zheng', src: '散修盟藏经阁', t: { xjGain: 0.5 }, trait: '闭关略养心', desc: '抄书人把松烟磨进呼吸里，字没有更黑，心安了一些。' },
+  langtao: { name: '听潮息', el: '水', grade: 0, style: 'yin', src: '幽荧藏经阁', t: { xinmo: 0.9 }, trait: '心魔略减', desc: '不逐浪，不问海底。潮来时坐着，潮去时也坐着。' },
+  zhuhuo: { name: '烛火小经', el: '火', grade: 0, style: 'dan', src: '丹霞藏经阁', t: { dunwu: 0.02 }, trait: '顿悟微增', desc: '一灯照一页，读到灯尽就停。' },
+  shiqu: { name: '石渠步', el: '土', grade: 0, style: 'zhen', src: '玄机藏经阁', t: { qiyu: 0.03 }, trait: '游历机缘微增', desc: '水从石渠里走，人从渠旁走。绕路的人也有自己的次序。' },
+  tingfeng: { name: '留风帖', el: null, grade: 1, style: 'yin', src: '桃花溪旧舟', t: { qiyu: 0.08, xjGain: 0.5 }, trait: '游历略增 · 闭关略养心', desc: '船主说风留不住。你把帖子卷好，觉得他说得对。' },
+  yuci: { name: '余辞录', el: null, grade: 1, style: 'chao', src: '京城贡院', t: { xinmo: 0.85, xjGain: 0.5 }, trait: '心魔略减 · 闭关略养心', desc: '试卷背面有许多没能交出去的话，句子比正面更长。' },
+  shouque: { name: '守阙经', el: '土', grade: 2, style: 'zheng', src: '玄机藏经阁', t: { life: 0.1, bt: 0.03 }, trait: '寿元略增 · 破境略增', desc: '守住一道空门，也算修行。纸上没有门后的宝物。' },
+  zhaoying: { name: '照影篇', el: '水', grade: 2, style: 'yin', src: '幽荧藏经阁', t: { xinmo: 0.65, xjGain: 1 }, trait: '心魔减 · 闭关养心', desc: '水中有影，影外有人。读完这篇，经常先看见人。' },
+  gengjinwendao: { name: '庚金问剑经', el: '金', grade: 3, style: 'jian', src: '云海断剑碑', t: { bt: 0.08 }, trait: '破境把握大增', desc: '剑碑上没有招式，只有一问。你带着问下山，剑才有了方向。', uniqueSource: true },
+  wanmu: { name: '万木同根经', el: '木', grade: 3, style: 'ti', src: '海外仙岛古木', t: { life: 0.3, heal: 1 }, trait: '寿元大增 · 伤势易愈', desc: '万木的根在地下相逢，树冠却各自向着天。', uniqueSource: true },
+  guixu: { name: '归墟真解', el: '水', grade: 3, style: 'yin', src: '北海归潮处', t: { xinmo: 0.3, xjGain: 1 }, trait: '心魔大减 · 闭关养心', desc: '潮落到最后，有一线不肯退的水。经文便刻在那里。', uniqueSource: true },
+  nanming: { name: '南明丹卷', el: '火', grade: 3, style: 'dan', src: '血雾谷无烟炉', t: { dunwu: 0.08, xinmo: 1.15 }, trait: '顿悟增 · 心火稍燥', desc: '炉中没有丹，只有一团不肯伤人的火。', uniqueSource: true },
+  sheji: { name: '社稷山河篇', el: '土', grade: 3, style: 'zheng', src: '云海山河石', t: { time: 0.78, heal: 1 }, trait: '光阴大缓 · 伤势易愈', desc: '石上刻的是山河，没有谁的国号。读罢，脚下的路也慢了一分。', uniqueSource: true },
+});
 // 宗门赐法：筑基时按首个灵根赐灵品功法；金丹时内门弟子再赐地品
 const GF_SECT = { 1: { 金: 'baihong', 木: 'changchun', 水: 'guicang', 火: 'lihuo', 土: 'kunyuan' },
                   2: { 金: 'taibai', 木: 'yimu', 水: 'jiuyou', 火: 'chixiao', 土: 'houtuzy' } };
