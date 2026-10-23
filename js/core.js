@@ -776,8 +776,11 @@ const Core = (() => {
       const n = (FAXIANG[s.path.faxiang] && FAXIANG[s.path.faxiang].name) || '法相';
       s.path.faxiang = null;
       if (s.flags) delete s.flags.xiang_wash_half;
+      const gone = typeof settleXiang === 'function' && settleXiang(s);
       text = `你运转洗相秘法，识海中「${n}」如墨遇水，一寸寸淡开。元婴空明一阵，痛，却干净。法相既洗，须待机缘再凝。`;
+      if (gone) text += '相裂尚未上门，裂痕随法相一起散了。行迹里那条将至，标作已消。';
       tags.unshift({ t: '法相已洗', c: 'gold' });
+      if (gone) tags.splice(1, 0, { t: '相裂已消', c: 'gold' });
       title = '洗相';
     } else if (kind === 'wendao') {
       const n = (WENDAO[s.path.wendao] && WENDAO[s.path.wendao].name) || '问道';
@@ -1128,6 +1131,7 @@ const Core = (() => {
     if (typeof Loop !== 'undefined' && Loop.ensure) Loop.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;
     if (typeof People !== 'undefined') People.ensure(s);
+    if (typeof settleXiang === 'function') settleXiang(s);
     if (!(s.flags && s.flags.trial) && s.flags.lives == null && typeof Samsara !== 'undefined' && Samsara.loadMeta) {
       s.flags.lives = Samsara.loadMeta().lives | 0;
     }

@@ -634,6 +634,7 @@ const Loop = (() => {
 
   function mountEvents() {
     if (typeof EVENTS === 'undefined') return;
+    const xiangSeed = st => (typeof karmaSeed === 'function' ? karmaSeed(st, 'xiang_fan') : null);
     EVENTS.push(
       { id: 'fu_learn', title: '纸上画符', seal: '符', w: 5, once: true, rm: [0, 4],
         cond: s => s.loc === 'yunyue' && !(s.loop && s.loop.fuKnown),
@@ -665,11 +666,16 @@ const Loop = (() => {
           const n = FAXIANG[s.path.faxiang] ? FAXIANG[s.path.faxiang].name : '法相';
           const same = s.path.daoji === 'jian' && s.path.faxiang === 'jian' ? '它与剑基是同一笔，句子更清楚，斗法倍率不再乘一次。' : '';
           const scene = { jian: '剑影没有出鞘，却在识海里划开一道旧痕。', huo: '火照见你最不肯承认的那一念，烧的不是别人。', shui: '水相盛着一张旧脸，水动时，那张脸也跟着老去。', lei: '雷光停在落下之前，等你说清这一击为何而发。', kong: '空处没有影子。你却知道，那里正有人等一个名字。' }[s.path.faxiang] || '';
-          return `识海里的${n}回了一下头。${scene}${same}`;
+          return `识海里的${n}回了一下头。${scene}${same}这一回头只是功课，不是定相时种下的相裂。`;
         },
         choices: s => [
-          { label: { jian: '沿旧痕收剑', huo: '认下烧着的那一念', shui: '看清水中的旧脸', lei: '说出出手的缘由', kong: '把名字留在空处' }[s.path.faxiang] || '与它对视', sub: '心境 +2', act: st => ({ text: { jian: '剑影与你一同收回，旧痕没有再添一道。', huo: '你认了。火仍在，却不再把那一念藏到别人身上。', shui: '水面慢慢平了。旧脸没有年轻，你也没有移开眼。', lei: '理由说完，雷落在该落的地方，识海里终于安静。', kong: '名字留了下来。空处仍空，你却知道自己站在哪里。' }[st.path.faxiang] || '你看着它。', fx: { xj: 2, flag: 'mark_faxiang' } }) },
-          { label: '闭上眼', sub: '心境 −1', act: () => ({ text: '你闭上眼。法相还在，只是这季不说话。', fx: { xj: -1, flag: 'mark_faxiang' } }) },
+          { label: { jian: '沿旧痕收剑', huo: '认下烧着的那一念', shui: '看清水中的旧脸', lei: '说出出手的缘由', kong: '把名字留在空处' }[s.path.faxiang] || '与它对视', sub: '心境 +2', act: st => {
+            const base = { jian: '剑影与你一同收回，旧痕没有再添一道。', huo: '你认了。火仍在，却不再把那一念藏到别人身上。', shui: '水面慢慢平了。旧脸没有年轻，你也没有移开眼。', lei: '理由说完，雷落在该落的地方，识海里终于安静。', kong: '名字留了下来。空处仍空，你却知道自己站在哪里。' }[st.path.faxiang] || '你看着它。';
+            const k = xiangSeed(st);
+            const tail = k ? (st.months >= k.due ? '相裂的因果还在，时机已到，去云海天阶、古修洞府或青冥山门。' : '相裂的因果还在，尚未到裂开的时候。') : '';
+            return { text: base + tail, fx: { xj: 2, flag: 'mark_faxiang' } };
+          } },
+          { label: '闭上眼', sub: '心境 −1', act: st => ({ text: '你闭上眼。法相还在，只是这季不说话。' + (xiangSeed(st) ? '相裂的因果没有因此了结。' : ''), fx: { xj: -1, flag: 'mark_faxiang' } }) },
         ] },
       { id: 'mark_wendao', title: '一问未完', seal: '问', w: 4, once: true, rm: [4, 4],
         cond: s => s.path && s.path.wendao && !s.flags.mark_wendao,

@@ -1609,8 +1609,9 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
    ===================================================================== */
 .side{display:none}
 .sd-trace{list-style:none;margin:6px 0 0;padding:0}
-.sd-trace li{font-size:12.5px;line-height:1.65;color:var(--ink2)}
+.sd-trace li{font-size:12.5px;line-height:1.65;color:var(--ink2);cursor:pointer}
 .sd-trace em{font-style:normal;font-family:var(--f-head);color:var(--zhu);margin-right:6px;letter-spacing:.12em}
+.sd-trace p{margin:2px 0 8px;font-size:12.5px;line-height:1.7;color:var(--ink3)}
 .trace-note{display:none;margin:0 4px 4px;padding:0;font-size:13px;line-height:1.45;color:var(--ink2)}
 .trace-note.on{display:block}
 .trace-sum{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 10px;border:1px solid rgba(27,24,20,.16);background:transparent;color:var(--ink2);font:inherit;letter-spacing:.06em;text-align:left;white-space:nowrap;overflow:hidden}

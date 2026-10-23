@@ -1,0 +1,29 @@
+{
+  "cache": "moxian-v73",
+  "saveV": 16,
+  "codec": "MX1",
+  "sim": {
+    "command": "node tools/sim.js 600 balanced",
+    "sanMedianMin": 82.1,
+    "sanAscendMedianMin": 82.7,
+    "strongHurt": 0,
+    "fights": 54954
+  },
+  "audit": "0 violations; 224 events",
+  "fonts": "0 missing",
+  "regressXiang": "ok",
+  "screens": [
+    "440-day-main.jpg",
+    "440-day-huishou.jpg",
+    "440-day-huishou-result.jpg",
+    "440-day-trace-due.jpg",
+    "440-day-trace-done.jpg",
+    "440-night-trace-gone.jpg",
+    "1440-day-side.jpg",
+    "1440-day-trace-due.jpg",
+    "768-night-side-gone.jpg",
+    "768-night-trace-gone.jpg"
+  ],
+  "overflow": false,
+  "pageErrors": 0
+}

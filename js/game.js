@@ -1273,9 +1273,9 @@ function renderSide() {
   $('#sd-loc').innerHTML = `<b class="sd-name">${loc ? esc(loc.name) : '山中'}</b><span class="sd-row">${notes.join('<br>') || '暂无风声'}</span>${trace}`;
 }
 function traceSummary(rows, openN, sealN) {
-  const n = { '将至': 0, '伏笔': 0, '已了': 0 };
+  const n = { '将至': 0, '伏笔': 0, '已了': 0, '已消': 0 };
   rows.forEach(t => { if (n[t.st] != null) n[t.st]++; });
-  const bits = ['将至', '伏笔', '已了'].filter(k => n[k]).map(k => k + n[k]);
+  const bits = ['将至', '伏笔', '已消', '已了'].filter(k => n[k]).map(k => k + n[k]);
   if (!bits.length && openN) bits.push('秘境未闭');
   if (!bits.length && sealN) bits.push('印记' + sealN);
   return bits.length ? '行迹 · ' + bits.join(' · ') : '';
@@ -1887,11 +1887,14 @@ function pathPage() {
     bits.push(`<button type="button" class="path-wash-btn danger" data-w="jiewen">磨去劫纹<small>灵石 ${fmtNum(c.ls)} · 寿 −${c.life} · 心境 −${c.xj} · 飞升前可另择</small></button>`);
   }
   if (bits.length) {
-    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。法相／问道／劫纹（飞升前）皆可洗；若逢「相裂」，洗相代价略减。</p>${bits.join('')}`;
+    const xiangLive = S.karma && (S.karma.seeds || []).some(k => k.id === 'xiang_fan') && !(S.flags && S.flags.karma_done_xiang_fan);
+    const xiangNote = xiangLive ? '尚未裂开的相裂还挂在行迹上，洗去法相后标作已消。' : '';
+    washBox.innerHTML = `<p class="path-wash-note">定型可洗，代价极重。洗后须重新择定。法相／问道／劫纹（飞升前）皆可洗；若逢「相裂」，洗相代价略减。${xiangNote}</p>${bits.join('')}`;
     washBox.onclick = async e => {
       const b = e.target.closest('[data-w]'); if (!b) return;
       const kind = b.dataset.w;
-      const title = ({ danwen: '洗去丹纹？纹成难易，此举耗寿伤神。', faxiang: '洗去法相？识海空明一阵，须待机缘再凝。', wendao: '洗去问道？天地之间那一问将被拔出，须得再问。', jiewen: '磨去劫纹？雷痕将淡，渡劫飞升前尚可另择一纹。', daoji: '震散道基？百年倾向尽废，寻常修士视为自毁。' })[kind];
+      let title = ({ danwen: '洗去丹纹？纹成难易，此举耗寿伤神。', faxiang: '洗去法相？识海空明一阵，须待机缘再凝。', wendao: '洗去问道？天地之间那一问将被拔出，须得再问。', jiewen: '磨去劫纹？雷痕将淡，渡劫飞升前尚可另择一纹。', daoji: '震散道基？百年倾向尽废，寻常修士视为自毁。' })[kind];
+      if (kind === 'faxiang' && S.karma && (S.karma.seeds || []).some(k => k.id === 'xiang_fan') && !(S.flags && S.flags.karma_done_xiang_fan)) title += '行迹里尚未上门的相裂，会一并标作已消。';
       const conf = ({ danwen: '洗纹', faxiang: '洗相', wendao: '洗问', jiewen: '洗劫', daoji: '易基' })[kind];
       if (!(await inkConfirm(title, conf, true))) return;
       const r = Core.washPath(S, kind, pushLog);
@@ -3510,6 +3513,10 @@ if (typeof MoAudio !== 'undefined') {
   }, true);
 }
 $('#side').onclick = e => {
+  if (e.target.closest('.sd-trace li')) {
+    if (!busy && S && !S.dead && !S.ascended) openTraceSheet();
+    return;
+  }
   const c = e.target.closest('.side-card'); if (!c || busy || !S || S.dead || S.ascended) return;
   const k = c.dataset.open; if (k === 'gf') openCult('gf'); else if (k === 'fabao') openCult('fabao'); else if (k === 'path') openCult('path'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else if (k === 'cult') openCult(); else act('youli');
 };
@@ -3654,7 +3661,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=72').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=73').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
