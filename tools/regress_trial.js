@@ -4,7 +4,7 @@ const assert = require('assert'), fs = require('fs'), path = require('path'), vm
 const root = path.join(__dirname, '..');
 const math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, Map, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'codec', 'loops', 'arts'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'codec', 'loops', 'arts', 'people'])
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Codec, LINGGEN, cnDur, GONGFA } = vm.runInContext('({Core, Codec, LINGGEN, cnDur, GONGFA})', ctx);
 vm.runInContext("TEXT.biguan = TEXT.biguan.filter(t => t.includes('{d}'))", ctx);

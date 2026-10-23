@@ -294,6 +294,7 @@ const Loop = (() => {
     const handler = { zhen: actZhen, ti: actTi, jian: actJian, dan: actDan, mo: actMo, qi: actQi }[kind];
     if (!handler) return { err: '没有这一笔' };
     const r = handler(s, L, sub, emit);
+    if (r && !r.err && typeof People !== 'undefined') People.afterLoop(s, kind, sub, r);
     const daily = { zhen: ['kun', 'sheng', 'sha', 'cang'], ti: ['shi', 'shui', 'huo'], jian: ['yue'], dan: ['cheng', 'wen', 'wenwen'], mo: ['ju', 'yue', 'po'], qi: ['shi', 'wu', 'ting'] };
     if (!r.err && s.gf && GONGFA[s.gf].style === kind && s.path.daoji === kind && daily[kind].includes(sub)) {
       L.flow[kind] = (L.flow[kind] || 0) + 1;
@@ -421,7 +422,7 @@ const Loop = (() => {
         if (L.luBoom >= 3) { s.xj = Core.clamp(s.xj - 6, 0, 100); res.tags.push({ t: '丹毒 · 心境 −6', c: 'down' }); res.text += '炸炉已是第三次。丹毒沉下来，境界还在，心境少了六分。'; }
       }
       res.tags.unshift({ t: dur(shown), c: 'down' });
-      return { title: '守炉', text: res.text, tags: res.tags, cls: res.boom ? 'warn' : '' };
+      return { title: '守炉', text: res.text, tags: res.tags, boom: !!res.boom, cls: res.boom ? 'warn' : '' };
     }
     Object.keys(r.need).forEach(h => {
       const n = r.need[h];

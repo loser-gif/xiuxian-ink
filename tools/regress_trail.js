@@ -3,7 +3,7 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..'), math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({ console, Math: math, TextEncoder, TextDecoder, Uint8Array, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec', 'arts'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'codec', 'arts', 'people'])
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 const { Core, Jianghu: J, Codec, LINGGEN, LOCS } = vm.runInContext('({Core, Jianghu, Codec, LINGGEN, LOCS})', ctx);
 const json = x => JSON.parse(JSON.stringify(x));

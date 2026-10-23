@@ -395,6 +395,7 @@ const Core = (() => {
     if (trial && trial.left > 0 && months > trial.left && emit)
       emit({ title: '试炼期限', text: '此行越过二十载之期。行动完整结算，超过期限才达标不计成功。', cls: 'warn' });
     s.months += months; sync(s);
+    if (!s.dead && typeof People !== 'undefined') People.tick(s, emit);
     const left = s.lifespan - s.age, span = s.lifespan - 16;
     const k = s.realm + ':' + s.lifeBonus;
     if (left <= span * 0.05 && !s.warned['95' + k] && left > 0) { s.warned['95' + k] = 1; emit && emit({ text: TEXT.old95, cls: 'warn' }); }
@@ -585,7 +586,11 @@ const Core = (() => {
   }
   function killNpc(s, id) {
     if (!s || !id) return;
-    if (s.npc && s.npc[id]) s.npc[id].dead = 1;
+    if (s.npc && s.npc[id]) {
+      s.npc[id].dead = 1;
+      if (s.npc[id].life) { s.npc[id].life.state = '身死'; s.npc[id].life.deathAt = s.months; }
+      s._dabiBracket = null;
+    }
     if (s.karma && s.karma.mate === id) {
       s.bond = s.bond || {};
       s.bond.lost = 1;
@@ -1018,6 +1023,7 @@ const Core = (() => {
     if (typeof Jianghu !== 'undefined') Jianghu.init(s);
     if (typeof Juan !== 'undefined' && Juan.boot) Juan.boot(s, r);
     if (s.origin === 'shusheng') learn(s, 'shanmenjiuli', legacyTags);
+    if (typeof People !== 'undefined') People.ensure(s);
     // 试炼局：缩短寿元窗口感——不改公式，只记目标年
     if (s.flags.trial) s.flags.trialYears = 20;
     sync(s);
@@ -1096,7 +1102,7 @@ const Core = (() => {
       if (!s.loop) s.loop = emptyLoop();
     }
     const oldLife15 = s.v === 14 ? s.lifespan : 0;
-    if (s.v === 14) s.v = 15; // 补同流计数；不补发新功法，不换算修为。
+    if (s.v === 14) s.v = 15; // 新人物从第零拍起；不补发新功法，不换算修为。
     if (s.v !== SAVE_V) return null;
     s.gfs = s.gfs || {}; s.aux = s.aux || []; s.eq = s.eq || { weapon: null };
     s.aux = s.aux.filter(id => id !== 'tianmo' && id !== s.gf && GONGFA[id] && s.gfs[id] && !(s.gf === 'tianmo' && id === 'buken'));
@@ -1115,6 +1121,7 @@ const Core = (() => {
     if (!s.loop) s.loop = emptyLoop();
     if (typeof Loop !== 'undefined' && Loop.ensure) Loop.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;
+    if (typeof People !== 'undefined') People.ensure(s);
     if (!(s.flags && s.flags.trial) && s.flags.lives == null && typeof Samsara !== 'undefined' && Samsara.loadMeta) {
       s.flags.lives = Samsara.loadMeta().lives | 0;
     }
@@ -1343,8 +1350,10 @@ const Core = (() => {
     return v;
   }
   function npcAdd(s, id, d, tags) {
-    const n = s.npc[id]; if (!n) return;
+    const n = s.npc[id]; if (!n || n.dead) return;
     const first = !n.met; n.met = true;
+    if (typeof People !== 'undefined') People.touch(s, id);
+    if (n.absolute) { n.a = -100; return; }
     n.a = clamp(n.a + d, -100, 100);
     if (first && typeof Life !== 'undefined' && Life.meet) Life.meet(s, NPCS[id].name, '初见');
     if (tags && d) tags.push({ t: `${NPCS[id].name} ${d > 0 ? '情谊 +' + d : '情谊 −' + (-d)}`, c: d > 0 ? 'up' : 'down' });
@@ -1354,11 +1363,12 @@ const Core = (() => {
   const npcLine = (s, id) => NPC_LINE[id][s.npc[id].a < 0 ? 0 : s.npc[id].a < 45 ? 1 : 2];
   function npcHelp(s) {
     const n = s.npc || {}, who = []; let bt = 0;
-    if (s.sect && s.sect.master && n.shifu && n.shifu.a >= 50) { bt += 0.05; who.push('shifu'); }
-    if (npcAlive(s, 'su') && n.su.a >= 50) { bt += 0.03; who.push('su'); }
-    if (npcAlive(s, 'shi') && n.shi.a >= 60) { bt += 0.02; who.push('shi'); }
-    if (npcAlive(s, 'lu') && n.lu.a >= 70) { bt += 0.02; who.push('lu'); }
-    if (s.karma && s.karma.mate === 'su' && npcAlive(s, 'su')) { bt += 0.04; if (!who.includes('su')) who.push('su'); }
+    const near = id => npcAlive(s, id) && !n[id].absolute && (typeof People === 'undefined' || People.canFight(s, id));
+    if (s.sect && s.sect.master && near('shifu') && n.shifu.a >= 50) { bt += 0.05; who.push('shifu'); }
+    if (near('su') && n.su.a >= 50) { bt += 0.03; who.push('su'); }
+    if (near('shi') && !n.shi.crippled && n.shi.a >= 60) { bt += 0.02; who.push('shi'); }
+    if (near('lu') && n.lu.a >= 70) { bt += 0.02; who.push('lu'); }
+    if (s.karma && s.karma.mate === 'su' && near('su')) { bt += 0.04; if (!who.includes('su')) who.push('su'); }
     return { bt, who };
   }
   function canPromote(s) {
@@ -1547,7 +1557,7 @@ const Core = (() => {
     return '与你相仿';
   }
   function buildDabi(s) {
-    const metIds = ['shi', 'su', 'wen', 'lu'].filter(id => npcAlive(s, id) && s.sect.org === 'qm');
+    const metIds = ['shi', 'su', 'wen', 'lu', 'pei'].filter(id => npcAlive(s, id) && !s.npc[id].crippled && s.sect.org === 'qm' && (typeof People === 'undefined' || People.canFight(s, id)));
     const gen = (q) => ({ name: dabiTag(s) + ' · ' + pick(NAMES_XING) + pick(NAMES_MING), npc: null, style: pick(['gang', 'wen', 'gui']), rel: 0.7, q });
     const fromNpc = (id, q) => {
       const n = NPCS[id]; let qq = q;
@@ -1557,7 +1567,8 @@ const Core = (() => {
       return { name: n.name, npc: id, style: n.style, rel: n.rel, q: qq };
     };
     const lift = s.sect.rank >= 3 ? 0.05 : 0, jit = () => 0.95 + Math.random() * 0.1;
-    const r0 = metIds.includes('shi') && Math.random() < 0.4 ? fromNpc('shi', 0.85) : gen(0.84 * jit() + lift);
+    const early = metIds.filter(id => id === 'shi' || id === 'pei');
+    const r0 = early.length && Math.random() < 0.4 ? fromNpc(pick(early), 0.85) : gen(0.84 * jit() + lift);
     const mid = metIds.filter(id => id === 'su' || id === 'wen');
     const r1 = mid.length && Math.random() < 0.7 ? fromNpc(pick(mid), 0.99 * jit() + lift) : gen(0.99 * jit() + lift);
     const r2 = metIds.includes('lu') ? fromNpc('lu', 1.1 * jit() + lift) : gen(1.12 * jit() + lift);

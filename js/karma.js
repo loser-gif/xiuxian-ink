@@ -28,6 +28,8 @@ function karmaSeed(s, id) {
   return s.karma && (s.karma.seeds || []).find(x => x.id === id);
 }
 function setMate(s, id, tags) {
+  if (typeof People !== 'undefined' && !People.eligible(s, id)) return false;
+  if (s.npc && s.npc[id] && s.npc[id].dead) return false;
   if (!s.karma) s.karma = emptyKarma();
   s.karma.mate = id;
   const nm = (NPCS[id] && NPCS[id].name) || id;
@@ -48,31 +50,40 @@ const KARMA_HINT = {
   court_echo: '朝中有人抄录旧案，案卷上是你的名字。',
   court_grace: '京畿百姓唱起一支无名小调，调子里有你当年开仓的影子。',
   xiang_fan: '识海中法相忽然不稳，像一面镜子裂了纹。',
+  shen_lamp: '有个夜行人来借一盏灯，你想起沈无灯托付的那一程。',
 };
 const KARMA_NAME = {
   su_vow: '灯约', su_aid: '道侣之约', lu_foe: '同辈剑意', wen_foe: '折扇旧怨',
   hei_echo: '夜路血煞', tu_return: '弟子归来', court_echo: '朝案', court_grace: '开仓', xiang_fan: '法相',
+  shen_lamp: '传灯之约',
 };
 const DEED_HINT = {
   ahe: '崖边', shengu: '伤药', qingzhen: '镇疫', zhouwan: '茶债', fox: '伤狐',
   linzhao: '碎壶', beggar: '一口饭', qiuniang: '渡口', zhaoheng: '路费', aman: '猎户',
 };
-function karmaTraces(s) {
+function karmaTraces(s, limit = 6) {
   if (!s) return [];
   const months = s.months | 0;
   const rows = [];
   const deeds = (s.life && s.life.deeds) || [];
   for (const d of deeds) {
     const st = d.done ? '已了' : (months >= (d.due | 0) ? '将至' : '伏笔');
-    rows.push({ st, name: d.who || '旧事', hint: DEED_HINT[d.id] || '回响' });
+    const from = d.from && typeof LOC !== 'undefined' && LOC[d.from] ? LOC[d.from].name : '旧日行路';
+    const wait = d.done ? '旧事已了' : months >= d.due ? '已到重逢之时' : '约' + cnDur(d.due - months) + '后';
+    rows.push({ st, name: d.who || '旧事', hint: DEED_HINT[d.id] || '回响', detail: `来自${from} · ${d.line || '旧事未忘'}。各地游历可重逢 · ${wait} · 无失效期限。` });
   }
   const seeds = (s.karma && s.karma.seeds) || [];
   const seen = {};
   for (const k of seeds) {
     seen[k.id] = 1;
-    const done = s.flags && s.flags['karma_done_' + k.id];
+    const personId = { su_vow: 'su', su_aid: s.karma && s.karma.mate, lu_foe: 'lu', wen_foe: 'wen' }[k.id];
+    const lost = !!(personId && s.npc && s.npc[personId] && s.npc[personId].dead);
+    const done = lost || (s.flags && s.flags['karma_done_' + k.id]);
     const st = done ? '已了' : (months >= (k.due | 0) ? '将至' : '伏笔');
-    rows.push({ st, name: KARMA_NAME[k.id] || '因果', hint: '因果' });
+    const ev = EVENTS.find(e => e.id === 'yg_' + k.id), locs = ev && typeof EV_LOC !== 'undefined' ? EV_LOC[ev.id] || [] : [];
+    const where = locs.length ? locs.map(id => LOC[id] ? LOC[id].name : id).join('、') : '各地游历';
+    const who = { su_vow: '苏晚晴', su_aid: '道侣', lu_foe: '陆沉舟', wen_foe: '温庭玉' }[k.id] || KARMA_NAME[k.id] || '旧日因果';
+    rows.push({ st, name: KARMA_NAME[k.id] || '因果', hint: lost ? '故人已逝' : '因果', detail: lost ? `${who}已经不在，此约无法再赴。` : `${who}留下的事 · 去${where}。${done ? '已了' : months >= k.due ? '时机已到' : '约' + cnDur(k.due - months) + '后'} · 无失效期限。` });
   }
   if (s.flags) {
     Object.keys(KARMA_NAME).forEach(id => {
@@ -84,7 +95,8 @@ function karmaTraces(s) {
   rows.sort((a, b) => rank[a.st] - rank[b.st]);
   const open = rows.filter(r => r.st !== '已了');
   const done = rows.filter(r => r.st === '已了').slice(0, 2);
-  return open.concat(done).slice(0, 6);
+  if (s.bond && s.bond.promiseDue && s.karma && Core.npcAlive(s, s.karma.mate)) open.unshift({ st: '将至', name: NPCS[s.karma.mate].name + '的共修之约', hint: '人物页 · 共修', detail: '还余' + cnDur(Math.max(0, s.bond.promiseDue - months)) + '。期限内完成一季共修；失约会伤情谊。' });
+  return limit ? open.concat(done).slice(0, limit) : open.concat(done);
 }
 function karmaTick(s, emit) {
   if (!s.karma || !(s.karma.seeds || []).length) return;

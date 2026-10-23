@@ -5,7 +5,7 @@ const Samsara = (() => {
   const LEGACY_KEY = 'moxian.legacy';
   const META_V = 1;
   const END_IDS = ['ascend', 'zuohua', 'rumo', 'guiyin', 'bingjie', 'yunluo', 'renhuang', 'quancheng', 'huashen', 'zhenmo', 'chuanshuo'];
-  const PERSON_IDS = ['shifu', 'lu', 'su', 'wen', 'shi', 'bai', 'xie'];
+  const PERSON_IDS = Object.keys(NPCS);
   const ELS = ['金', '木', '水', '火', '土'];
 
   function emptyAtlas() {
@@ -375,8 +375,10 @@ const Samsara = (() => {
       }
       if (best) bond = { role: 'en', id: best, name: NPCS[best].name };
     }
+    const roadBonds = ((s && s.life && s.life.deeds) || []).filter(d => ['ahe', 'shengu'].includes(d.id) && (d.kind === 'save' || d.kind === 'spare'))
+      .map(d => ({ role: 'en', id: d.id, name: d.who }));
     return {
-      open: 1, name: (s && s.name) || '', ending: ending || '',
+      open: 1, name: (s && s.name) || '', ending: ending || '', roadBonds,
       mem, page, bond, lives: lives | 0,
     };
   }
@@ -391,15 +393,15 @@ const Samsara = (() => {
     m.bridge = Object.assign({}, m.bridge, { open: 0, chosen: 'ascend' });
     saveMeta(m);
   }
-  function chooseNaihe(kind) {
+  function chooseNaihe(kind, personId) {
     const m = loadMeta();
     const b = m.bridge || {};
     const leg = { v: 2, naihe: 1, kind: 'none' };
     if (kind === 'mem') { leg.kind = 'mem'; leg.wx = 1; leg.el = (b.mem && b.mem.el) || ''; }
     else if (kind === 'page' && b.page && b.page.id) { leg.kind = 'page'; leg.page = b.page.id; }
-    else if (kind === 'bond' && b.bond && b.bond.id) {
-      leg.kind = 'bond';
-      leg.bond = { role: b.bond.role || 'en', id: b.bond.id, name: b.bond.name || '' };
+    else if (kind === 'bond') {
+      const person = personId ? (b.roadBonds || []).find(p => p.id === personId) : b.bond;
+      if (person && person.id) { leg.kind = 'bond'; leg.bond = { role: person.role || 'en', id: person.id, name: person.name || '' }; }
     }
     writeLegacy(leg);
     m.bridge = Object.assign({}, b, { open: 0, chosen: leg.kind });
