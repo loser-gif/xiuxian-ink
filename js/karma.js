@@ -11,6 +11,7 @@ function karmaPlant(s, id, years, data) {
   if (!s.karma) s.karma = emptyKarma();
   if (s.flags && s.flags['karma_done_' + id]) return false;
   if ((s.karma.seeds || []).some(x => x.id === id)) return false;
+  if (s.flags && s.flags['karma_gone_' + id]) delete s.flags['karma_gone_' + id];
   s.karma.seeds.push({ id, due: s.months + karmaYears(s, years == null ? 20 : years), data: data || {} });
   return true;
 }
@@ -26,6 +27,17 @@ function karmaTake(s, id) {
 }
 function karmaSeed(s, id) {
   return s.karma && (s.karma.seeds || []).find(x => x.id === id);
+}
+// 不再持相时，相裂无处可落。已面对过的仍算已了；没上门的标已消，并允许日后重新定相再种。
+function settleXiang(s) {
+  if (!s || (s.path && s.path.faxiang)) return false;
+  const seeds = (s.karma && s.karma.seeds) || [];
+  if (!seeds.some(x => x.id === 'xiang_fan')) return false;
+  s.flags = s.flags || {};
+  s.karma.seeds = seeds.filter(x => x.id !== 'xiang_fan');
+  if (s.flags.karma_done_xiang_fan) return false;
+  s.flags.karma_gone_xiang_fan = 1;
+  return true;
 }
 function setMate(s, id, tags) {
   if (typeof People !== 'undefined' && !People.eligible(s, id)) return false;
@@ -49,12 +61,12 @@ const KARMA_HINT = {
   tu_return: '山门外有人唤师父。那声音，比记忆里粗了许多。',
   court_echo: '朝中有人抄录旧案，案卷上是你的名字。',
   court_grace: '京畿百姓唱起一支无名小调，调子里有你当年开仓的影子。',
-  xiang_fan: '识海中法相忽然不稳，像一面镜子裂了纹。',
+  xiang_fan: '识海中法相忽然不稳，像一面镜子裂了纹。这不是回首，是相裂将至。',
   shen_lamp: '有个夜行人来借一盏灯，你想起沈无灯托付的那一程。',
 };
 const KARMA_NAME = {
   su_vow: '灯约', su_aid: '道侣之约', lu_foe: '同辈剑意', wen_foe: '折扇旧怨',
-  hei_echo: '夜路血煞', tu_return: '弟子归来', court_echo: '朝案', court_grace: '开仓', xiang_fan: '法相',
+  hei_echo: '夜路血煞', tu_return: '弟子归来', court_echo: '朝案', court_grace: '开仓', xiang_fan: '相裂',
   shen_lamp: '传灯之约',
 };
 const DEED_HINT = {
@@ -83,18 +95,36 @@ function karmaTraces(s, limit = 6) {
     const ev = EVENTS.find(e => e.id === 'yg_' + k.id), locs = ev && typeof EV_LOC !== 'undefined' ? EV_LOC[ev.id] || [] : [];
     const where = locs.length ? locs.map(id => LOC[id] ? LOC[id].name : id).join('、') : '各地游历';
     const who = { su_vow: '苏晚晴', su_aid: '道侣', lu_foe: '陆沉舟', wen_foe: '温庭玉' }[k.id] || KARMA_NAME[k.id] || '旧日因果';
-    rows.push({ st, name: KARMA_NAME[k.id] || '因果', hint: lost ? '故人已逝' : '因果', detail: lost ? `${who}已经不在，此约无法再赴。` : `${who}留下的事 · 去${where}。${done ? '已了' : months >= k.due ? '时机已到' : '约' + cnDur(k.due - months) + '后'} · 无失效期限。` });
+    let detail;
+    if (lost) detail = `${who}已经不在，此约无法再赴。`;
+    else if (k.id === 'xiang_fan') {
+      const wait = done ? '已了' : months >= k.due ? '时机已到' : '约' + cnDur(k.due - months) + '后';
+      detail = `定法相时种下的裂痕，与法相回首不是同一件事。去${where}等候相裂。${wait}。未裂之前洗去法相，这条将至会消。`;
+    } else detail = `${who}留下的事 · 去${where}。${done ? '已了' : months >= k.due ? '时机已到' : '约' + cnDur(k.due - months) + '后'} · 无失效期限。`;
+    rows.push({ st, name: KARMA_NAME[k.id] || '因果', hint: lost ? '故人已逝' : '因果', detail });
   }
   if (s.flags) {
     Object.keys(KARMA_NAME).forEach(id => {
-      if (seen[id] || !s.flags['karma_done_' + id]) return;
-      rows.push({ st: '已了', name: KARMA_NAME[id], hint: '因果' });
+      if (seen[id]) return;
+      if (s.flags['karma_done_' + id]) {
+        if (id === 'xiang_fan') rows.push({ st: '已了', name: '相裂', hint: '因果', detail: '你已面对识海中的裂痕：或洗去法相，或压下裂痕继续持相。法相回首不算这一笔。' });
+        else rows.push({ st: '已了', name: KARMA_NAME[id], hint: '因果' });
+        return;
+      }
+      if (s.flags['karma_gone_' + id]) {
+        rows.push({
+          st: '已消', name: KARMA_NAME[id], hint: '因果', pin: true,
+          detail: id === 'xiang_fan' ? '法相已不在，裂痕无处可落。这条将至就此消了，不是法相回首了结的。' : '因由已不在，此因果自消。',
+        });
+      }
     });
   }
-  const rank = { '将至': 0, '伏笔': 1, '已了': 2 };
-  rows.sort((a, b) => rank[a.st] - rank[b.st]);
-  const open = rows.filter(r => r.st !== '已了');
-  const done = rows.filter(r => r.st === '已了').slice(0, 2);
+  const rank = { '将至': 0, '伏笔': 1, '已了': 2, '已消': 2 };
+  rows.sort((a, b) => (rank[a.st] == null ? 9 : rank[a.st]) - (rank[b.st] == null ? 9 : rank[b.st]));
+  const open = rows.filter(r => r.st !== '已了' && r.st !== '已消');
+  const doneAll = rows.filter(r => r.st === '已了' || r.st === '已消');
+  const pinned = doneAll.filter(r => r.pin);
+  const done = pinned.concat(doneAll.filter(r => !r.pin)).slice(0, Math.max(2, pinned.length));
   if (s.bond && s.bond.promiseDue && s.karma && Core.npcAlive(s, s.karma.mate)) open.unshift({ st: '将至', name: NPCS[s.karma.mate].name + '的共修之约', hint: '人物页 · 共修', detail: '还余' + cnDur(Math.max(0, s.bond.promiseDue - months)) + '。期限内完成一季共修；失约会伤情谊。' });
   return limit ? open.concat(done).slice(0, limit) : open.concat(done);
 }
