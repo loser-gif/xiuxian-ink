@@ -1,0 +1,452 @@
+{
+  "screens": [
+    {
+      "file": "440-day-dpr3-main.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "440-night-dpr3-main.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "360-day-main.jpg",
+      "width": 360,
+      "height": 800,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "360-night-main.jpg",
+      "width": 360,
+      "height": 800,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "390-day-main.jpg",
+      "width": 390,
+      "height": 844,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "390-night-main.jpg",
+      "width": 390,
+      "height": 844,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "440-day-main.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "440-night-main.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "768-day-main.jpg",
+      "width": 768,
+      "height": 1024,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "768-night-main.jpg",
+      "width": 768,
+      "height": 1024,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "1024-day-main.jpg",
+      "width": 1024,
+      "height": 768,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "1024-night-main.jpg",
+      "width": 1024,
+      "height": 768,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "1440-day-main.jpg",
+      "width": 1440,
+      "height": 900,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "1440-night-main.jpg",
+      "width": 1440,
+      "height": 900,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "1920-day-main.jpg",
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "1920-night-main.jpg",
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    },
+    {
+      "file": "440-day-dpr3-shop-start.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": true
+    },
+    {
+      "file": "440-day-dpr3-ledger.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "day",
+      "overflow": false,
+      "modal": false,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-old-shop.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-bankrupt.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-incense.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-ruined-shrine.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "360-day-dpr3-quote.jpg",
+      "width": 360,
+      "height": 800,
+      "dpr": 3,
+      "theme": "day",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "360-night-dpr3-quote.jpg",
+      "width": 360,
+      "height": 800,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-day-dpr3-quote.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "day",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-quote.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-three-shops.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-crafted-stock.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": true
+    },
+    {
+      "file": "440-night-dpr3-final-fork.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": true,
+      "sheet": false
+    },
+    {
+      "file": "440-night-dpr3-hongchen.jpg",
+      "width": 440,
+      "height": 956,
+      "dpr": 3,
+      "theme": "night",
+      "overflow": false,
+      "modal": false,
+      "sheet": false
+    }
+  ],
+  "errors": [],
+  "oldSave": {
+    "fromBuild": 61,
+    "from": 14,
+    "to": 16,
+    "unchanged": {
+      "name": true,
+      "realm": true,
+      "stage": true,
+      "xw": true,
+      "ls": true,
+      "months": true,
+      "lifespan": true,
+      "lifeBonus": true,
+      "lg": true,
+      "lgEls": true,
+      "wx": true,
+      "luck": true,
+      "gf": true,
+      "gfs": true,
+      "aux": true,
+      "items": true,
+      "eq": true
+    }
+  },
+  "season": {
+    "before": {
+      "ls": 999,
+      "months": 192,
+      "q": {
+        "mode": "honest",
+        "count": 1,
+        "ceiling": 16,
+        "rent": 0,
+        "dues": [
+          0
+        ],
+        "span": 3,
+        "months": 3,
+        "sales": [
+          {
+            "key": "聚气丹",
+            "n": 1,
+            "unit": 16
+          }
+        ],
+        "blocked": [],
+        "service": "",
+        "risk": [],
+        "low": 4,
+        "high": 8,
+        "gross": 16
+      }
+    },
+    "after": {
+      "ls": 1007,
+      "months": 195,
+      "fruit": 1,
+      "rep": 6
+    },
+    "line": {
+      "at": 192,
+      "text": "季末",
+      "income": 8,
+      "expense": 0,
+      "detail": "聚气丹×1 · 定价16。实收8，租金0，本季现金净额8灵石。赊免8灵石，不再追收。"
+    }
+  },
+  "oldShop": {
+    "v": 16,
+    "shop": {
+      "rev": 1,
+      "stock": {
+        "聚气丹": 3,
+        "筑基丹": 2
+      },
+      "stores": [
+        {
+          "spot": "alley",
+          "own": 1,
+          "paidUntil": 0
+        }
+      ],
+      "price": "fair",
+      "rep": 0,
+      "moral": 0,
+      "fruit": 0,
+      "goods": {
+        "medicine": 0,
+        "shelter": 0,
+        "plague": 0
+      },
+      "shrine": 0,
+      "incenseAt": 0,
+      "shield": 0,
+      "debt": 0,
+      "recovery": 0,
+      "honest": 0,
+      "fraud": 0,
+      "guarantor": 0,
+      "rescue": 0,
+      "pending": "",
+      "shrineSteps": 0,
+      "trouble": 0,
+      "ledger": [],
+      "income": 0,
+      "expense": 0,
+      "haul": 0
+    }
+  },
+  "bankrupt": {
+    "ls": 0,
+    "debt": 3,
+    "stores": [],
+    "stock": {},
+    "items": {
+      "聚气丹": 14,
+      "回春丹": 8,
+      "清心丹": 8,
+      "青叶草": 10,
+      "筑基丹": 2
+    }
+  },
+  "blessing": {
+    "xj": 52,
+    "at": 348,
+    "months": 204,
+    "shield": 0,
+    "shieldButtonDisabled": true
+  },
+  "rebuild": {
+    "shrine": 1,
+    "at": 348,
+    "fruit": 7
+  },
+  "ending": {
+    "ending": "hongchen",
+    "book": 1,
+    "title": "红尘仙"
+  },
+  "quoteLayout": [],
+  "craft": {
+    "at": 194,
+    "text": "自炼入架",
+    "income": 0,
+    "expense": 0,
+    "detail": "聚气丹 · 自炼下品×1"
+  }
+}

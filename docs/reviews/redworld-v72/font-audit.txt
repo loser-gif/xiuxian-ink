@@ -1,0 +1,8 @@
+built: game=2574 extra=4324 cao=66 transplanted=7
+扫描 38 个文件；字符总数 2574，其中汉字 2440
+MoWen  (文楷 game+extra): 缺 0 
+MoWen  子集重叠: 0 
+MoShu  (马善政): 汉字缺 0 
+MoShu  符号缺 0 
+MoCao  (行草): 缺 0 
+审计结果: 通过

@@ -3466,3 +3466,14 @@ html[data-theme="night"][data-palette="yuqing"] #paper{filter:contrast(1.16) bri
 .road-trail{stroke:rgba(27,24,20,.5);stroke-width:1.6}
 .map-pt{background:rgba(27,24,20,.2)}
 .map-pt.walked{background:rgba(27,24,20,.55)}
+
+/* 红尘仍用原纸卷，账目按行展开，长风险与报价在窄屏内换行。 */
+.shop-sheet .menu-item{display:block;width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.55;text-align:left;letter-spacing:.06em}
+.shop-sheet .menu-item small{white-space:normal;display:block;line-height:1.5}
+.shop-sheet .menu-item:disabled{opacity:.45;cursor:default}
+.shop-sheet .shop-col{margin:18px 0;padding-top:12px;border-top:1px solid var(--line)}
+.shop-sheet p{line-height:1.8;overflow-wrap:anywhere}
+.shop-sheet summary{cursor:pointer;font-family:'MoShu',serif;line-height:1.8}
+.shop-ledger p+p{padding-top:9px;border-top:1px solid var(--line)}
+.shop-prices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.shop-prices .menu-item{padding:8px 4px;font-size:16px}

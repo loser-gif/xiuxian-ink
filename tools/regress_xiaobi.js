@@ -5,7 +5,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, Map, btoa, atob });
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'codec', 'loops', 'arts', 'people']) {
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'redworld', 'codec', 'loops', 'arts', 'people']) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f });
 }
 const G = vm.runInContext('({ Core, Codec, LINGGEN, EVENTS, GONGFA, GF_LAYERS })', ctx);
@@ -88,7 +88,7 @@ if (!dec.ok) fail('MX1 解不开：' + dec.err);
 if (dec.data.name !== '江问心' || dec.data.gfs[id].lv !== G.GF_LAYERS) fail('解出来的层数不对');
 const legacyState = JSON.parse(JSON.stringify(s)); legacyState.v = 13;
 const legacy = Codec.decode(Codec.encode(legacyState));
-if (!legacy.ok || legacy.data.v !== 13 || Core.migrate(legacy.data).v !== 15) fail('v13 旧格式解档迁移失败');
+if (!legacy.ok || legacy.data.v !== 13 || Core.migrate(legacy.data).v !== 16) fail('v13 旧格式解档迁移失败');
 
 // 试炼开局是固定预设：金丹初期、四十岁、灵石一百二十。日缘不会改境界。
 const wei = LINGGEN.find(l => l.id === 'wei');

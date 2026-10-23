@@ -8,10 +8,10 @@ const ScrollArt = (() => {
   const ZHU = '#9a332c';
   const PAPER = '#efe6d3';
   const URL = 'https://loser-gif.github.io/xiuxian-ink/';
-  const SEAL_CH = { ascend: '升', zuohua: '化', rumo: '魔', guiyin: '隐', bingjie: '解', yunluo: '殒', renhuang: '皇', quancheng: '摄', huashen: '山', zhenmo: '镇', chuanshuo: '传' };
+  const SEAL_CH = { ascend: '升', hongchen: '尘', zuohua: '化', rumo: '魔', guiyin: '隐', bingjie: '解', yunluo: '殒', renhuang: '皇', quancheng: '摄', huashen: '山', zhenmo: '镇', chuanshuo: '传' };
 
   function heartOf(s, kind) {
-    if (kind === 'huashen') return 'shrine';
+    if (kind === 'huashen' || kind === 'hongchen') return 'shrine';
     if (kind === 'zhenmo') return 'sealcrack';
     if (kind === 'chuanshuo') return 'stele';
     const g = s && s.life && s.life.goal;

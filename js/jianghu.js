@@ -51,7 +51,7 @@ const Jianghu = (() => {
       recoverAuction(s);
       s.auc = { next: s.months + 12 * rint(K.aucEvery[0], K.aucEvery[1]) * Math.max(1, T(s) / 2) };
     }
-    shopTick(s, emit);
+    // 红尘铺子只由玩家主动开季结算。
   }
 
   /* ---------- 行旅 ---------- */
@@ -292,73 +292,11 @@ const Jianghu = (() => {
       lines: [{ who, t: '这一件，我要了。' }, { t: `落槌。抽成之后，你入账${pay}灵石。` }],
     };
   }
-  function shopOpen(s) {
-    const sh = s.shop;
-    return !!(sh && (sh.own || (sh.rentUntil | 0) >= (s.months | 0)));
-  }
-  function shopCost(s, mode) {
-    const L = REALMS[s.realm].lsScale;
-    return mode === 'own' ? Math.round(90 * L) : Math.round(16 * L);
-  }
-  function shopBuy(s, mode) {
-    if (mode === 'own' && s.shop && s.shop.own) return { err: '铺面已是你的' };
-    const cost = shopCost(s, mode);
-    if ((s.ls | 0) < cost) return { err: '灵石不足' };
-    s.shop = s.shop || { stock: {} };
-    s.shop.stock = s.shop.stock || {};
-    s.ls -= cost;
-    if (mode === 'own') { s.shop.own = 1; s.shop.rentUntil = 0; }
-    else s.shop.rentUntil = (s.months | 0) + 12;
-    s.shop.next = (s.months | 0) + 3;
-    const text = mode === 'own'
-      ? `你买下一间临街的铺面，契纸上只写你的名字。从此架上的货，会在你闭关的日子里自己慢慢走。`
-      : `你租下一间铺面，租约一年。一年里，货可以上架；一年后，若不再续，铺子就还给别人。`;
-    return { text, tags: [{ t: `灵石 −${cost}`, c: 'down' }], cost };
-  }
-  function shopPut(s, k) {
-    if (!shopOpen(s)) return { err: '还没有铺面' };
-    if (!(s.items && s.items[k] > 0)) return { err: '行囊中无此物' };
-    s.items[k]--; if (!s.items[k]) delete s.items[k];
-    s.shop.stock[k] = (s.shop.stock[k] || 0) + 1;
-    return { text: `你把${k.indexOf('卷:') === 0 ? '一卷功法' : k}搁上架子。这一季若有人来，它会自己换成灵石。` };
-  }
-  function shopTake(s, k) {
-    if (!(s.shop && s.shop.stock && s.shop.stock[k] > 0)) return { err: '架上没有' };
-    s.shop.stock[k]--; if (!s.shop.stock[k]) delete s.shop.stock[k];
-    s.items[k] = (s.items[k] || 0) + 1;
-    return { text: '你把东西从架上取回来，重新放进行囊。' };
-  }
-  function shopTick(s, emit) {
-    const sh = s.shop; if (!sh || !shopOpen(s)) return;
-    if ((s.months | 0) < (sh.next | 0)) return;
-    sh.next = (s.months | 0) + 3;
-    const keys = Object.keys(sh.stock || {}).filter(k => sh.stock[k] > 0);
-    if (!keys.length) return;
-    const k = keys[Math.floor(Math.random() * keys.length)];
-    const unit = Math.max(1, lotWorth(s, k));
-    let gain = Math.max(1, Math.round(unit * (0.22 + Math.random() * 0.28)));
-    const roll = Math.random();
-    let text = '';
-    if (roll < 0.1) {
-      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
-      gain = 0;
-      text = '夜里铺门被撬开一缝。天亮时，架上少了一件东西，柜上没有多一文。';
-    } else if (roll < 0.2) {
-      gain = Math.max(1, Math.round(gain * 0.45));
-      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
-      text = '对门新开了一家，把客人都引走了半日。货还是出去了，价却被压得很低。';
-    } else if (roll < 0.34) {
-      gain = Math.round(gain * 1.55);
-      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
-      text = '老主顾又来了，看也没多看，放下灵石就走。';
-    } else {
-      sh.stock[k]--; if (!sh.stock[k]) delete sh.stock[k];
-      text = '这一季铺子很安静。货出去一件，灵石自己进了柜。';
-    }
-    if (gain) { s.ls += gain; text += `入账灵石${gain}。`; }
-    sh.note = text;
-    emit && emit({ title: '铺子', text, cls: gain ? 'sys' : 'event' });
-  }
+  const shopOpen = s => Redworld.open(s);
+  const shopCost = (s, spot) => Redworld.rent(s, spot || 'alley');
+  const shopBuy = (s, spot) => Redworld.lease(s, spot || 'alley');
+  const shopPut = (s, k) => Redworld.put(s, k);
+  const shopTake = (s, k) => Redworld.take(s, k);
   function aucPass(s, a) {
     if (a.leader === 'you') {
       const won = aucWin(s, a);
@@ -404,7 +342,7 @@ const Jianghu = (() => {
     }
     const boom = Math.random() < 0.25 + 0.06 * r.diff;
     danXp(s, 1, tags);
-    if (boom) { s.inj += 1; tags.push({ t: '炸炉 · 负伤', c: 'down' }); return { ok: false, boom: true, months: m, tags, text: pick(DAN_TEXT.boom) }; }
+    if (boom) { const hit = Core.incenseInj(s, 1); s.inj += hit; tags.push({ t: hit ? '炸炉 · 负伤' : '炸炉 · 轻伤被挡下', c: hit ? 'down' : '' }); return { ok: false, boom: true, months: m, tags, text: pick(DAN_TEXT.boom) }; }
     tags.push({ t: '废丹', c: 'down' });
     return { ok: false, months: m, tags, text: pick(DAN_TEXT.waste) };
   }

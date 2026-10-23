@@ -95,6 +95,7 @@ const Life = (() => {
       from: s.loc || '',
       roleGood: spec.roleGood || '', roleBad: spec.roleBad || '', done: 0,
     });
+    if (typeof Redworld !== 'undefined') Redworld.civilian(s, spec.kind);
     tint(s, goodKind(spec.kind) ? 10 : -12);
     meet(s, spec.who, spec.line);
     return true;
@@ -519,6 +520,9 @@ const Life = (() => {
     } else if (kind === 'quancheng') {
       text = `${name}摄政多年，印玺温热。夜里独处时，仍会想起${quote}。权柄没有把这件事磨平。`;
       thread = `来世若再握印，先问自己还记不记得那一句。`;
+    } else if (kind === 'hongchen') {
+      text = `${name}停在天门前，听见人间有人唤旧名。入世修行，终得正果。世人称红尘仙。`;
+      thread = '来世若经过那盏灯，只当有人替你留过门。道果仍从这一世重新长起。';
     } else if (kind === 'huashen') {
       text = `${name}于${age}岁不再赶路。名字刻进山石，浅处会自己长深。此后过路的人在祠前放一枚干果，风会替你点头。`;
       thread = `来世若在山神祠前歇脚，不必报名。山还认得你的脚步。`;

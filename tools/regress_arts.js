@@ -2,7 +2,7 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.join(__dirname, '..'), math = Object.create(Math); math.random = () => 0.5;
 const ctx = vm.createContext({console, Math:math, JSON, Object, Array, Number, String, TextEncoder, TextDecoder, Uint8Array, btoa, atob});
-for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'loops', 'arts', 'people', 'codec'])
+for (const f of ['data', 'gongfa', 'gear', 'path', 'story', 'sect', 'baijia', 'world', 'tianxia', 'karma', 'life', 'juan', 'core', 'jianghu', 'redworld', 'loops', 'arts', 'people', 'codec'])
   vm.runInContext(fs.readFileSync(path.join(root,'js',f+'.js'),'utf8'),ctx,{filename:f});
 const {Core,Loop,Arts,Jianghu,GONGFA,GEAR,LINGGEN,EVENTS,MIJING,LOC,LIB_POOL_ORG,Codec,GF_GRADE_MUL} = vm.runInContext('({Core,Loop,Arts,Jianghu,GONGFA,GEAR,LINGGEN,EVENTS,MIJING,LOC,LIB_POOL_ORG,Codec,GF_GRADE_MUL})',ctx);
 const fresh = () => Core.newState('验法', {lg:LINGGEN.find(x=>x.id==='san'),els:['金','木','水'],wx:6,luck:1,org:'qm'});
@@ -35,7 +35,7 @@ s.gfs.tianmo={lv:9,xp:0};assert(Core.setAux(s,'tianmo').err);
 learn(s,'tianmo');s.gfs.buken={lv:3,xp:0};assert(Core.setAux(s,'buken').err);
 s.aux=['buken'];Core.switchGf(s,'buken',()=>{});Core.switchGf(s,'tianmo',()=>{});assert(!s.aux.includes('buken'));
 s=fresh();s.v=14;s.lifespan=999;s.gfs.tianmo={lv:3,xp:0};s.aux=['tianmo'];before=s.xw;
-let migrated=Core.migrate(Codec.decode(Codec.encode(s)).data);assert.equal(migrated.v,15);assert.equal(migrated.xw,before);assert(migrated.lifespan>=999);assert(!migrated.aux.includes('tianmo'));
+let migrated=Core.migrate(Codec.decode(Codec.encode(s)).data);assert.equal(migrated.v,16);assert.equal(migrated.xw,before);assert(migrated.lifespan>=999);assert(!migrated.aux.includes('tianmo'));
 assert.equal(Object.keys(migrated.gfs).length,Object.keys(s.gfs).length);
 for(const [id,mid,label] of [['yicun','caiyao','辨这味药'],['bamen','shoushan','先看阵']]){
   s=fresh();learn(s,id);s.sect.missions=[{id:mid,uid:1}];let ev=Core.missionEvent(s,1);assert(ev.choices(s).some(c=>c.label===label));
