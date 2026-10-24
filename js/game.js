@@ -1013,15 +1013,31 @@ function renderEntry(e, animate) {
 }
 // Group only consecutive dated entries. Recompute after trimming so the first
 // remaining entry always owns its date; old saves keep their original log data.
+function logYear(value) {
+  const i = value.indexOf(' · ');
+  return i > 0 ? value.slice(0, i) : '';
+}
+function logSeason(value) {
+  const i = value.indexOf(' · ');
+  return i > 0 ? value.slice(i + 3) : '';
+}
 function syncLogTimes() {
   let previous = null, previousTime = '';
   document.querySelectorAll('#log .entry').forEach(entry => {
     const time = entry.querySelector('.entry-time');
-    const value = time ? time.textContent : '';
+    const value = time ? (time._full || time.textContent || '') : '';
+    if (time && value) time._full = value;
     const continued = !!(value && previous && value === previousTime);
+    const year = logYear(value);
+    const season = logSeason(value);
+    const sameYear = !!(season && year && year === logYear(previousTime) && !continued);
     entry.classList.toggle('entry-cont', continued);
+    entry.classList.toggle('entry-year', sameYear);
     entry.classList.remove('entry-followed');
-    if (time) time.hidden = continued || !value;
+    if (time) {
+      time.hidden = continued || !value;
+      time.textContent = sameYear ? season : value;
+    }
     const divider = entry.previousElementSibling;
     if (divider && divider.classList.contains('entry-div')) divider.hidden = continued;
     if (continued) previous.classList.add('entry-followed');
@@ -1106,8 +1122,8 @@ function render() {
   setText('#life-num', `${S.age} / ${S.lifespan}`);
   const lowLife = S.lifespan - S.age <= Math.max(6, (S.lifespan - 16) * 0.12);
   const thinLife = lifeLeft < 1 / 3;
-  $('.bar-life').classList.toggle('low', lowLife || thinLife);
-  $('.bar-life').classList.toggle('thin', thinLife);
+  $('.bar-life').classList.toggle('low', lowLife);
+  $('.bar-life').classList.toggle('thin', thinLife && !lowLife);
   const nx = $('#next-line');
   if (nx) nx.textContent = nextRealmLine();
   const season = Math.floor((S.months % 12) / 3);
@@ -1257,7 +1273,7 @@ function renderSide() {
   const items = Object.entries(S.items).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
   const eqLine = S.eq && S.eq.weapon ? `<span class="sd-row">佩 · ${esc(S.eq.weapon)}</span>` : '';
   $('#sd-bag').innerHTML = (eqLine || items.length) ? `${eqLine}${items.length ? `<ul class="sd-list">${items.slice(0, 4).map(([k, n]) => `<li><span>${esc(k)}</span><i>${cn(n)}</i></li>`).join('')}</ul>` : ''}${items.length > 4 ? `<span class="sd-more">另有${cn(items.length - 4)}种</span>` : ''}`
-    : '<span class="sd-empty">囊中空空</span>';
+    : '<span class="sd-empty">行囊空空</span>';
   const loc = typeof LOCS !== 'undefined' && LOCS.find(l => l.id === S.loc);
   const notes = [];
   if (S.court && S.court.rank >= 0) notes.push(`朝 · ${courtRankName(S)}　兵${cn(S.court.bing)} 民${cn(S.court.min)} 道${cn(S.court.dao)}`);
@@ -2206,7 +2222,7 @@ function sectNpc() {
     const rest = unknownIds.length - (masterWait ? 1 : 0);
     const bits = [];
     if (masterWait) bits.push('师父尚在峰上。晋内门弟子，方可拜见。');
-    if (rest > 0) bits.push('尚有' + cn(rest) + '人未曾相识。');
+    if (rest > 0) bits.push(knownIds.length ? '其余' + cn(rest) + '人，尚未遇见。' : '人物尚未遇见。');
     note.textContent = bits.join('');
     w.appendChild(note);
   }
@@ -2453,7 +2469,7 @@ function bagPage() {
   }
   const keys = Object.keys(S.items).filter(k => S.items[k] > 0);
   if (!keys.length && !(S.eq && S.eq.weapon)) {
-    wrap.insertAdjacentHTML('beforeend', '<div class="empty">行囊空空，唯有清风两袖</div>');
+    wrap.insertAdjacentHTML('beforeend', '<div class="empty bag-empty"><b>行囊空空</b><span>唯有清风两袖</span></div>');
   }
   keys.forEach(k => {
     const it = document.createElement('div'); it.className = 'item';
@@ -2529,7 +2545,7 @@ function bagPage() {
     const known = SHENQI_ZHI.filter(z => (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name));
     const rows = known.map(z => `<div class="sq-row on"><span class="sq-seal">${esc(z.seal)}</span><div><b>${esc(z.name)}</b><p>${esc(z.blurb)}</p></div></div>`).join('');
     const missing = SHENQI_ZHI.length - known.length;
-    const blank = missing ? `<p class="sq-unseen">尚有${cn(missing)}件机缘未至，名录空阙。</p>` : '';
+    const blank = missing ? `<p class="sq-unseen">${known.length ? '其余' + cn(missing) + '件，机缘未至。' : '神器尚未遇见，名录空着。'}</p>` : '';
     zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}${blank}`;
     wrap.appendChild(zhi);
   }
@@ -2958,7 +2974,7 @@ function openAtlasSheet(startTab) {
     const on = [], off = [];
     parts.forEach(p => (p.on ? on : off).push(p));
     let html = on.map(p => card(true, p.art, p.title, p.line)).join('');
-    if (off.length) html += `<p class="codex-unseen">尚有${cn(off.length)}处未录，机缘未至。</p>`;
+    if (off.length) html += `<p class="codex-unseen">${on.length ? '其余' + cn(off.length) + '处，尚未录入。' : '此处尚未录入。'}</p>`;
     return html;
   };
   function entries(m, tab) {
@@ -3688,7 +3704,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=78').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=79').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

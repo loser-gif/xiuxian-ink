@@ -62,4 +62,14 @@ entries().slice(1).forEach(el => {
 render({time:'B',text:'later',div:true}); render({time:'A',text:'return'});
 assert.deepStrictEqual(visible().slice(-2), [true,true]);
 assert.strictEqual(entries()[entries().length - 2].previousElementSibling.hidden, false, 'changed date retains divider');
+log.children = [];
+['十六岁 · 春', '十六岁 · 春', '十六岁 · 夏', '十七岁 · 春'].forEach(time => render({ time, text: time }));
+assert.deepStrictEqual(visible(), [true, false, true, true]);
+assert.strictEqual(entries()[0].querySelector('.entry-time').textContent, '十六岁 · 春');
+assert.strictEqual(entries()[2].querySelector('.entry-time').textContent, '夏');
+assert.strictEqual(entries()[2].querySelector('.entry-time')._full, '十六岁 · 夏');
+assert.strictEqual(entries()[3].querySelector('.entry-time').textContent, '十七岁 · 春');
+assert(entries()[2].classList.contains('entry-year'));
+assert(!entries()[3].classList.contains('entry-year'));
+assert.strictEqual(entries()[2].previousElementSibling.hidden, false, 'a new season keeps its divider');
 console.log('PASS: consecutive grouping, unknown/changed dates, old-save immutability, reload, dividers and 80-node pruning');
