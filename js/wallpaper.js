@@ -205,7 +205,7 @@ const Wallpaper = (() => {
     wash.addColorStop(0.5, 'rgba(246,241,229,0.07)');
     wash.addColorStop(1, 'rgba(246,241,229,0)');
     c.globalAlpha = 1; c.fillStyle = wash; c.fillRect(0, 0, w, h);
-    c.filter = 'blur(10px)';
+    if (!coarse()) c.filter = 'blur(10px)';
     for (const f of L.fog) {
       f.x += f.v * dt;
       if (f.v > 0 && f.x - f.rw > W) f.x = -f.rw; if (f.v < 0 && f.x + f.rw < 0) f.x = W + f.rw;
@@ -218,21 +218,30 @@ const Wallpaper = (() => {
     c.filter = 'none';
     c.globalAlpha = 1;
   }
+  function stopLoop() {
+    if (A.raf) cancelAnimationFrame(A.raf);
+    A.raf = 0;
+    if (A.timer) { clearTimeout(A.timer); A.timer = 0; }
+  }
+  function schedule() {
+    if (A.raf || A.timer) return;
+    if (coarse()) A.timer = setTimeout(() => { A.timer = 0; A.raf = requestAnimationFrame(tick); }, 90);
+    else A.raf = requestAnimationFrame(tick);
+  }
   function tick(now) {
     A.raf = 0;
-    if (document.hidden || document.body.dataset.screen !== 'title') return;
-    if (reduced() || document.documentElement.dataset.motion === 'lite') return;
-    A.raf = requestAnimationFrame(tick);
-    if (++A.frame % 2) return;                 // 30fps 足够：雾很慢，且画布被放大柔化
+    if (document.hidden || document.body.dataset.screen !== 'title' || thinNow()) { stopLoop(); return; }
+    schedule();
+    if (!coarse() && (++A.frame % 2)) return;  // 桌面约 30fps；手机由定时器收到大约 11fps
     const dt = A.last ? Math.min(.1, (now - A.last) / 1000) : .033; A.last = now;
     const t = now / 1000;
     for (const L of A.layers) drawLayer(L, t, dt);
   }
   function start() {
-    if (reduced() || document.documentElement.dataset.motion === 'lite') return;
+    if (thinNow()) return;
     if (!document.body.classList.contains('go') || document.body.classList.contains('hold')) return;
     if (document.body.dataset.screen !== 'title') return;
-    if (!A.raf && A.layers.length) { A.last = 0; A.raf = requestAnimationFrame(tick); }
+    if (!A.raf && !A.timer && A.layers.length) { A.last = 0; schedule(); }
   }
   function kick(ms) {
     setTimeout(start, ms || 0);
@@ -246,11 +255,10 @@ const Wallpaper = (() => {
     if (L.sh.length > nS) L.sh.length = nS;
   }
   function syncMotion() {
-    if (A.raf) cancelAnimationFrame(A.raf);
-    A.raf = 0;
-    if (reduced()) return;
+    stopLoop();
+    if (thinNow()) return;
     for (const L of A.layers) refill(L);
-    if (document.documentElement.dataset.motion !== 'lite') start();
+    start();
   }
 
   function build() {
@@ -284,6 +292,7 @@ const Wallpaper = (() => {
     new MutationObserver(() => {
       if (document.body.dataset.screen === 'title') start();
     }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
+    if (document.body.classList.contains('go') && !document.body.classList.contains('hold')) kick(240);
   }
   return { init, rebuild: build, syncMotion, kick, needsBuild };
 })();

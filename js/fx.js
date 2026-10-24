@@ -32,7 +32,8 @@ const FX = (() => {
     let sx = 0, sy = 0, touching = false;
     window.addEventListener('touchstart', e => { if (PX.gyro) return; const t = e.touches[0]; sx = t.clientX; sy = t.clientY; touching = true; }, { passive: true });
     window.addEventListener('touchmove', e => {
-      if (PX.gyro || !touching) return; const t = e.touches[0];
+      // 手机上滑动日志也会冒泡到这里。视差每帧改十多层，长局会一直发热。
+      if (coarsePhone() || PX.gyro || !touching) return; const t = e.touches[0];
       setTarget((t.clientX - sx) / (innerWidth * 0.5), (t.clientY - sy) / (innerHeight * 0.5));
     }, { passive: true });
     const end = () => { touching = false; if (!PX.gyro) setTarget(0, 0); };
@@ -61,7 +62,7 @@ const FX = (() => {
   }
   // 必须在用户手势（点击“开卷”）里同步调用
   function requestTilt() {
-    if (reduced() || PX.gyro || PX.asked) return; PX.asked = true;
+    if (reduced() || coarsePhone() || PX.gyro || PX.asked) return; PX.asked = true;
     const D = window.DeviceOrientationEvent; if (!D) return;
     const on = () => { PX.gyro = true; window.addEventListener('deviceorientation', onOrient); };
     if (typeof D.requestPermission === 'function') D.requestPermission().then(r => { if (r === 'granted') on(); }).catch(() => {});
@@ -96,7 +97,8 @@ const FX = (() => {
     if (!W.cv) return; W.w = innerWidth; W.h = innerHeight;
     // 落花雨雪是小粒子，1.25 倍像素已足；全屏 2× 画布要 5MB，此处仅 2MB
     // 大窗口再限总像素（约 2.6MP），4K 屏也不至于整屏高倍
-    const k = Math.min(DPR, 1.25, Math.sqrt(2.6e6 / (W.w * W.h))); W.k = k;
+    const cap = coarsePhone() ? 1 : 1.25;
+    const k = Math.min(DPR, cap, Math.sqrt(2.6e6 / (W.w * W.h))); W.k = k;
     W.cv.width = Math.round(W.w * k); W.cv.height = Math.round(W.h * k); W.c.setTransform(k, 0, 0, k, 0, 0);
     if (W.parts && W.season >= 0) fitParts();
   }
@@ -104,7 +106,7 @@ const FX = (() => {
   // 手机与「简」再收一截，少画少合成。
   function partMul() {
     let m = 1;
-    if (coarsePhone()) m *= 0.72;
+    if (coarsePhone()) m *= 0.5;
     if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.34;
     return m;
   }
@@ -168,21 +170,27 @@ const FX = (() => {
     else { p.vy = rnd(10, 18) * p.z; p.vx = rnd(4, 10); p.size = rnd(5.4, 7.6) * p.z; }
     if (document.body.dataset.screen === 'title') p.size *= 0.62;
   }
+  function scheduleWeather() {
+    if (W.raf || W.timer) return;
+    if (coarsePhone()) W.timer = setTimeout(() => { W.timer = 0; W.raf = requestAnimationFrame(wTick); }, 50);
+    else W.raf = requestAnimationFrame(wTick);
+  }
   function haltWeather() {
     if (W.raf) cancelAnimationFrame(W.raf);
-    W.raf = 0; W.parts = []; W.gold = [];
+    W.raf = 0;
+    if (W.timer) { clearTimeout(W.timer); W.timer = 0; }
+    W.parts = []; W.gold = [];
     if (W.c && W.w) { W.c.setTransform(1, 0, 0, 1, 0, 0); W.c.clearRect(0, 0, W.cv.width, W.cv.height); }
   }
   function setSeason(s) {
     if (thinNow()) { haltWeather(); return; }
-    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !thinNow() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
-    armFps();
+    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !thinNow() && !W.raf && !W.timer && W.season >= 0) { W.last = 0; scheduleWeather(); } }); }
     let n = partN(s);
     if (document.body.dataset.screen === 'title') n = Math.min(n, 4);
     if (s === W.season && W.parts.length === n) return;
     W.season = s;
     W.parts = Array.from({ length: n }, () => { const p = {}; spawn(p, true); return p; });
-    if (!W.raf) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
+    if (!W.raf && !W.timer) { W.last = 0; scheduleWeather(); }
   }
   function setGold(realm) {
     if (reduced() || !W.cv) return;
@@ -200,12 +208,13 @@ const FX = (() => {
     return performance.now() - goSeen < 900;
   }
   function wTick(t) {
+    W.raf = 0;
     if (thinNow()) { haltWeather(); return; }
-    if (document.hidden) { W.raf = 0; return; }
-    W.raf = requestAnimationFrame(wTick);
-    if (introBusy()) return;
+    if (document.hidden) return;
+    if (introBusy()) { scheduleWeather(); return; }
+    scheduleWeather();
+    const t0 = performance.now();
     W.frame = (W.frame || 0) + 1;
-    if (thinNow() && (W.frame & 1)) return;
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 8 + Math.sin(time * 0.071) * 5;
@@ -238,43 +247,29 @@ const FX = (() => {
       c.beginPath(); c.moveTo(-1, -.6); c.lineTo(.9, -.9); c.lineTo(.7, .8); c.lineTo(-.8, .7); c.closePath(); c.fill();
     }
     if (W.gold && W.gold.length) { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
+    noteCost(performance.now() - t0);
   }
 
-  /* 低帧率连续两段即把动效收薄；「全」可在纸墨里再打开 */
-  let fpsLast = 0, fpsN = 0, fpsBad = 0, fpsArmed = false;
-  function fpsTick(t) {
-    if (!fpsArmed) return;
-    requestAnimationFrame(fpsTick);
-    if (document.hidden) { fpsLast = 0; fpsN = 0; return; }
-    if (!fpsLast) { fpsLast = t; return; }
-    fpsN++;
-    const span = t - fpsLast;
-    if (span < 1600) return;
-    const fps = fpsN * 1000 / span;
-    fpsLast = t; fpsN = 0;
+  /* 落花这一帧若画太久，就把动效收薄。不再另开一条永远醒着的 rAF。 */
+  let costBad = 0;
+  function noteCost(ms) {
     const root = document.documentElement;
-    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) { fpsBad = 0; return; }
-    if (fps < 40) {
-      fpsBad++;
-      if (fpsBad >= 2) {
+    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) { costBad = 0; return; }
+    if (ms > 26) {
+      costBad++;
+      if (costBad >= 4) {
         root.dataset.fx = 'thin';
         syncMotion();
         if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
       }
-    } else fpsBad = 0;
-  }
-  function armFps() {
-    if (fpsArmed || reduced()) return;
-    fpsArmed = true;
-    requestAnimationFrame(fpsTick);
+    } else costBad = 0;
   }
   function syncMotion() {
     if (thinNow()) { haltWeather(); return; }
-    armFps();
     if (W.season >= 0 && W.cv) {
       fitParts();
       if (W.gold && thinNow()) W.gold.length = Math.min(W.gold.length, 3);
-      if (!W.raf && !document.hidden) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
+      if (!W.raf && !W.timer && !document.hidden) { W.last = 0; scheduleWeather(); }
     }
   }
 
@@ -799,7 +794,7 @@ const FX = (() => {
     }
   }
   function titleDrop() {
-    if (reduced() || document.body.classList.contains('intro-done')) return;
+    if (reduced() || coarsePhone() || document.body.classList.contains('intro-done')) return;
     setTimeout(() => {
       if (washBusy || reduced() || document.body.classList.contains('intro-done')) return;
       const host = $('#intro'); if (!host) return;

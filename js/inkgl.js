@@ -360,7 +360,7 @@ const InkGL = (() => {
   const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 
   /* ================= 活墨按钮 ================= */
-  const B = { gl: null, P: null, list: [], raf: 0, frame: 0, ok: false, t0: performance.now() };
+  const B = { gl: null, P: null, list: [], raf: 0, frame: 0, ok: false, t0: performance.now(), wake: 0 };
   function initBlots() {
     try {
       const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
@@ -395,9 +395,10 @@ const InkGL = (() => {
   }
   // 隐藏屏幕上的墨团：把画布缩成 1×1，释放后备存储；重新可见时 renderBlot 会按尺寸重建
   function release() {
+    if (B.frame & 7) return;
     for (const b of B.list) {
       if (b.host.closest('.title-menu')) continue; // 卷首笔触预先画好，回来时不再重铺
-      if (b.w > 1 && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; }
+      if (b.w > 1 && (b.host.closest('[hidden]') || !b.host.offsetParent)) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; }
     }
   }
   let titleClock = 0;
@@ -421,10 +422,12 @@ const InkGL = (() => {
     start();
   }
   function visible(b) {
-    if (!b.host.offsetParent) return false;
+    if (!b.host.isConnected || b.host.closest('[hidden]')) return false;
+    if (b.rect && b.drawn && (B.frame & 3)) return b.rect.width >= 2 && b.rect.bottom >= 0 && b.rect.top <= innerHeight;
     const r = b.cv.getBoundingClientRect();
+    b.rect = r;
     if (r.bottom < 0 || r.top > innerHeight || r.width < 2) return false;
-    b.rect = r; return true;
+    return true;
   }
   function renderBlot(b, t) {
     const gl = B.gl, P = B.P;
@@ -463,28 +466,45 @@ const InkGL = (() => {
     } else livelyOk = true;
     return livelyOk;
   }
+  function wake(ms) {
+    if (B.raf || B.wake) return;
+    B.wake = setTimeout(() => { B.wake = 0; start(); }, ms || 420);
+  }
   function tick(now) {
     B.raf = 0;
     if (document.hidden) return;
     const root = document.documentElement;
     if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return;
     const prewarm = needsTitlePrewarm();
-    if (!prewarm && (titleQuiet() || !lively())) { B.raf = requestAnimationFrame(tick); return; }
+    if (!prewarm && (titleQuiet() || !lively())) { wake(titleQuiet() ? 640 : 420); return; }
     release();
     const vis = B.list.filter(visible);
-    if (!vis.length) { B.raf = requestAnimationFrame(tick); return; }
-    B.raf = requestAnimationFrame(tick);
+    if (!vis.length) {
+      if (B.list.some(b => b.host.isConnected && !b.drawn)) wake(360);
+      return;
+    }
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
-    const stride = matchMedia('(pointer: coarse)').matches ? 6 : 3;
+    const phone = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+    // 手机上活墨画定就停。桌面仍按时间轻轻呼吸。
+    if (phone && !prewarm && !surging && vis.every(b => b.drawn && b.w > 1)) return;
+    const stride = phone ? 8 : 3;
+    B.raf = requestAnimationFrame(tick);
     if (!prewarm && !surging && (++B.frame % stride)) return;
     const t = (now - B.t0) / 1000;
     for (const b of vis) {
       b.surge += (b.surgeT - b.surge) * (b.surgeT > b.surge ? .22 : .07);
-      if (reduced() && b.drawn && !surging) continue;
-      renderBlot(b, reduced() ? 0 : t);
+      if ((reduced() || (phone && !prewarm)) && b.drawn && !surging) continue;
+      renderBlot(b, (reduced() || phone) ? 0 : t);
     }
   }
-  function start() { if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick); }
+  function start() {
+    if (B.wake) { clearTimeout(B.wake); B.wake = 0; }
+    if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick);
+  }
+  function redraw() {
+    for (const b of B.list) b.drawn = false;
+    start();
+  }
   function press(btn, on) {
     const host = btn && btn.querySelector('.live'); if (!host || !host.__live) return;
     host.__live.surgeT = on ? 1 : 0; start();
@@ -651,5 +671,5 @@ const InkGL = (() => {
     }
     initSpread();
   }
-  return { init, scan, spread, hide, setPaper, qi, furnace, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
+  return { init, scan, spread, hide, setPaper, qi, furnace, redraw, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
 })();
