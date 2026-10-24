@@ -335,9 +335,30 @@ function makeJHUI(G) {
 
   /* ================= 拍卖会 ================= */
   const aucEl = $('#auc');
+  // leave：落槌后 Esc 等价散场。bid：未落槌时离席，不买当前件。wake：打断开场或落槌停顿。
+  const aucEsc = { leave: false, bid: false, wake: null };
+  function aucNap(ms) {
+    return new Promise(res => {
+      const t = setTimeout(() => { aucEsc.wake = null; res(); }, ms);
+      aucEsc.wake = () => { clearTimeout(t); aucEsc.wake = null; res(); };
+    });
+  }
+  function aucEscNow() {
+    if (!aucEl || aucEl.hidden) return false;
+    const next = document.getElementById('auc-next');
+    if (next) { aucEsc.leave = true; next.click(); return true; }
+    const btns = document.getElementById('auc-btns');
+    if (btns && btns.classList.contains('wait')) { toast('这一口价还没落定'); return true; }
+    aucEsc.leave = true;
+    aucEsc.bid = true;
+    if (aucEsc.wake) aucEsc.wake();
+    if (aucEsc.onBid) aucEsc.onBid();
+    return true;
+  }
   async function startAuction() {
     if (!aucWindow()) return toast('拍卖已散');
     G.busy = true;
+    aucEsc.leave = false; aucEsc.bid = false; aucEsc.wake = null;
     const a = J.aucNew(G.S); save();
     aucEl.innerHTML = `<div class="auc-shade"></div><div class="auc-lamps"><i></i><i></i><i></i><i></i></div>
       <div class="auc-head"><span>听雨楼</span><em id="auc-no"></em></div>
@@ -350,20 +371,29 @@ function makeJHUI(G) {
     aucEl.hidden = false; await sleep(20); aucEl.classList.add('open');
     if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('auction');
     const allTags = [], got = [], sold = [];
-    addLine({ t: pick(AUC_OPEN).replace('共三件', `共${cn(a.lots.length)}件`) }, true); await sleep(1200);
+    const nLots = a.lots.length;
+    addLine({ t: (typeof aucOpenLine === 'function' ? aucOpenLine(nLots) : ('今夜共' + cn(nLots) + '件，价高者得。')) }, true);
+    await aucNap(1200);
     let l;
-    while ((l = J.aucLot(G.S, a))) {
+    if (!aucEsc.leave) while ((l = J.aucLot(G.S, a))) {
       const won = await runLot(a, l);
+      if (won && won.abandoned) break;
       if (won && won.consign) { allTags.push(...(won.tags || [])); if (won.sold) sold.push(l.name || J.lotName(l)); }
-      else if (won) { allTags.push(...won.tags); got.push(J.lotName(l)); }
-      await sleep(300);
+      else if (won) { allTags.push(...(won.tags || [])); got.push(J.lotName(l)); }
+      if (aucEsc.leave) break;
+      await aucNap(300);
+      if (aucEsc.leave) break;
     }
+    const pendingBack = !!(G.S.auc && G.S.auc.pending);
+    if (pendingBack && J.recoverAuction) J.recoverAuction(G.S);
+    aucEsc.leave = false; aucEsc.bid = false; aucEsc.wake = null;
     aucEl.classList.remove('open'); await sleep(500); aucEl.hidden = true; aucEl.innerHTML = '';
     if (typeof MoAudio !== 'undefined') MoAudio.startAmbient('main');
     G.busy = false;
     const bits = [];
     if (got.length) bits.push(`你拍得${got.join('、')}`);
     if (sold.length) bits.push(`你寄出的${sold.join('、')}也落了槌`);
+    if (pendingBack) bits.push('尚未落槌的寄拍退回囊中');
     pushLog({ title: '听雨楼拍卖', text: bits.length ? `${bits.join('。')}。下楼时，夜风里还飘着檀香。` : '今夜各有所归，你两手空空地下了楼。有些东西，原本就不是灵石能争来的。', tags: allTags, cls: (got.length || sold.length) ? 'gold' : 'event', div: true });
     render(); save(); checkEnd();
     if (G.S.flags.heiGrudge === 1 && !G.S.dead) setTimeout(() => openEvent(EVENTS.find(e => e.id === 'hei_ambush')), 900);
@@ -378,6 +408,15 @@ function makeJHUI(G) {
   }
   function runLot(a, l) {
     return new Promise(resolve => {
+      let settled = false;
+      const abandon = () => {
+        if (settled) return;
+        settled = true;
+        aucEsc.onBid = null;
+        resolve({ abandoned: 1 });
+      };
+      aucEsc.onBid = l.consign ? null : abandon;
+      if (aucEsc.bid && !l.consign) { abandon(); return; }
       $('#auc-no').textContent = `第${cn(a.i + 1)}件 · 共${cn(a.lots.length)}件`;
       $('#auc-name').textContent = J.lotName(l);
       $('#auc-desc').textContent = l.frag ? '一页泛黄的天品功法残页，字迹如刀刻。据说集齐三页，便可悟出整部功法。' : itemDesc(l.k);
@@ -387,12 +426,20 @@ function makeJHUI(G) {
       upd(); a.lines.forEach(x => addLine(x));
       const btns = $('#auc-btns');
       const finish = async (won, line) => {
+        if (settled) return;
+        settled = true;
+        aucEsc.onBid = null;
         btns.innerHTML = '';
         upd(); save();
         if (line) addLine(line);
+        if (aucEsc.leave) { resolve(won); return; }
         if (typeof MoAudio !== 'undefined') MoAudio.play('gavel');
-        $('#auc-stamp-t').textContent = won && won.returned ? '退' : (won ? '得' : '落'); await sleep(300); $('#auc-stamp').classList.add('on', won ? 'won' : 'lost');
-        await sleep(900);
+        $('#auc-stamp-t').textContent = won && won.returned ? '退' : (won ? '得' : '落');
+        await aucNap(300);
+        if (aucEsc.leave) { resolve(won); return; }
+        $('#auc-stamp').classList.add('on', won ? 'won' : 'lost');
+        await aucNap(900);
+        if (aucEsc.leave) { resolve(won); return; }
         btns.innerHTML = `<button class="brush-btn small light" id="auc-next"><span class="bb-ink"></span><span class="bb-text">${a.i < a.lots.length - 1 ? '下一件' : '散场'}</span></button>`;
         $('#auc-next').onclick = () => resolve(won);
       };
@@ -637,5 +684,5 @@ function makeJHUI(G) {
 
   function resume() { if (G.S && G.S.dive && !G.S.dead) showMj(false); }
   function youliSub() { const l = G.S && G.S.loc && LOC[G.S.loc]; return l ? l.name : '寻机缘'; }
-  return { openMap, closeMap, openMarket, startAuction, danPage, runFurnace, enterMj, resume, youliSub, aucWindow, mapKey, furnaceCtl: () => G.furnace };
+  return { openMap, closeMap, openMarket, startAuction, danPage, runFurnace, enterMj, resume, youliSub, aucWindow, mapKey, furnaceCtl: () => G.furnace, aucEsc: aucEscNow };
 }

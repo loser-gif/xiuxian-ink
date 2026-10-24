@@ -1667,12 +1667,12 @@ function choose(ev, c, btn, evText, titleText) {
   const shown = voice(res.text);
   const d = inkWrite(p, shown, { immediate: true, step: 20, cadence: true });
   const tg = document.createElement('div'); tg.className = 'entry-tags'; tg.style.opacity = 0;
-  tg.innerHTML = resultChip(tags, shown);
+  tg.innerHTML = res.prelude ? '<span>斗法将起</span>' : resultChip(tags, shown);
   out.appendChild(tg);
   const extra = { text: '' };
   if (fxR.manual) appendManualOffer(out, fxR.manual, extra);
   const close = document.createElement('button'); close.className = 'brush-btn small'; close.style.opacity = 0;
-  close.innerHTML = '<span class="bb-ink"></span><span class="bb-text">收卷</span>';
+  close.innerHTML = '<span class="bb-ink"></span><span class="bb-text">' + (res.prelude ? '入场' : '收卷') + '</span>';
   out.appendChild(close);
   let rolled = false;
   setTimeout(() => { tg.style.opacity = ''; tg.classList.add('bleed-in'); close.style.opacity = ''; close.classList.add('bleed-in');
@@ -1696,6 +1696,7 @@ function choose(ev, c, btn, evText, titleText) {
     if (res.afterBreak && !S.dead && !S.ascended && bottleneck()) setTimeout(() => { if (!uiBlocked()) openBreak(); }, 280);
   };
   if (c.skipAll) setTimeout(() => { if (!rolled && close.isConnected) close.click(); }, snappy() ? 40 : 420);
+  if (res.prelude) setTimeout(() => { if (!rolled && close.isConnected) close.click(); }, Math.min(d, 1400) + (snappy() ? 160 : 780));
   render(); save();
 }
 
@@ -2154,50 +2155,61 @@ function sectLib() {
 function sectNpc() {
   if (typeof People !== 'undefined') People.ensure(S);
   const w = document.createElement('div'); w.className = 'npcs';
-  Object.keys(NPCS).forEach(id => {
+  const ids = Object.keys(NPCS);
+  const knownIds = [], unknownIds = [];
+  ids.forEach(id => {
+    const st = S.npc[id] || { met: false, a: 0 };
+    const seen = st.met && (id !== 'shifu' || (S.sect && S.sect.master));
+    (seen ? knownIds : unknownIds).push(id);
+  });
+  knownIds.forEach(id => {
     const n = NPCS[id], st = S.npc[id], c = document.createElement('div');
-    const isMaster = id === 'shifu';
-    const known = st.met && (!isMaster || S.sect.master);
-    c.className = 'npc' + (known ? '' : ' unmet') + (st.a < -10 ? ' foe' : st.a >= 50 ? ' close' : '');
-    if (!known) {
-      c.innerHTML = `<span class="npc-seal">？</span><div class="npc-info"><div class="npc-name">${isMaster && S.sect.org === 'qm' ? '师父' : '未曾相识'}</div><div class="npc-title">${isMaster && S.sect.org === 'qm' ? '晋内门弟子，方可拜师' : '萍水未逢'}</div></div>`;
-    } else {
-      const pct = (st.a + 100) / 2;
-      c.innerHTML = `<span class="npc-seal">${n.seal}</span><div class="npc-info"><div class="npc-name">${n.name}<em>${Core.npcWord(st.a)}</em></div>
-        <div class="npc-title">${n.title}</div><div class="npc-trait">${n.trait}</div>
-        <div class="npc-aff"><i style="left:${Math.min(50, pct)}%;width:${Math.abs(pct - 50)}%" class="${st.a < 0 ? 'neg' : ''}"></i><b></b></div>
-        <p class="npc-line"></p></div>`;
-      c.querySelector('.npc-line').textContent = (st.dead ? '旧言：' : '') + voice(Core.npcLine(S, id));
-      if (typeof People !== 'undefined') {
-        const details = document.createElement('p'); details.className = 'npc-line';
-        details.textContent = People.summary(S, id); c.querySelector('.npc-info').appendChild(details);
-        if (People.present(S, id) && !st.absolute) {
-          const actions = document.createElement('div'); actions.className = 'loop-actions';
-          const mate = S.karma && S.karma.mate === id && !(S.bond && S.bond.lost);
-          const kinds = [['talk', '叙话', 1]].concat(mate ? [['gift', '赠清心丹', 1], ['sit', '共修', 3], ['past', '问往事', 1], ['promise', '约一年内共修', 0]] : []);
-          kinds.forEach(([kind, name, months]) => {
-            const b = document.createElement('button'); b.className = 'path-wash-btn'; b.type = 'button';
-            b.textContent = name + (months ? ' · ' + cnDur(Core.timeMonths(S, months)) : '');
-            b.disabled = S.months < (st.life.nextAct || 0) || (kind === 'gift' && !(S.items['清心丹'] > 0)) || (kind === 'promise' && !!(S.bond && S.bond.promiseDue));
-            b.onclick = () => {
-              const r = People.interact(S, id, kind, pushLog);
-              if (r.err) { toast(r.err); return; }
-              pushLog({ title: r.title, text: voice(r.text), tags: r.tags, cls: 'event' });
-              Core.checkXj(S, pushLog); save(); render();
-              if (S.dead) { closeSheet(); checkEnd(); return; }
-              w.replaceWith(sectNpc());
-            };
-            actions.appendChild(b);
-          });
-          if (mate && S.bond && S.bond.promiseDue) {
-            const due = document.createElement('p'); due.className = 'loop-note'; due.textContent = '共修之约 · 还余' + cnDur(Math.max(0, S.bond.promiseDue - S.months)); actions.appendChild(due);
-          }
-          c.querySelector('.npc-info').appendChild(actions);
+    c.className = 'npc' + (st.a < -10 ? ' foe' : st.a >= 50 ? ' close' : '');
+    const pct = (st.a + 100) / 2;
+    c.innerHTML = `<span class="npc-seal">${n.seal}</span><div class="npc-info"><div class="npc-name">${n.name}<em>${Core.npcWord(st.a)}</em></div>
+      <div class="npc-title">${n.title}</div><div class="npc-trait">${n.trait}</div>
+      <div class="npc-aff"><i style="left:${Math.min(50, pct)}%;width:${Math.abs(pct - 50)}%" class="${st.a < 0 ? 'neg' : ''}"></i><b></b></div>
+      <p class="npc-line"></p></div>`;
+    c.querySelector('.npc-line').textContent = (st.dead ? '旧言：' : '') + voice(Core.npcLine(S, id));
+    if (typeof People !== 'undefined') {
+      const details = document.createElement('p'); details.className = 'npc-line';
+      details.textContent = People.summary(S, id); c.querySelector('.npc-info').appendChild(details);
+      if (People.present(S, id) && !st.absolute) {
+        const actions = document.createElement('div'); actions.className = 'loop-actions';
+        const mate = S.karma && S.karma.mate === id && !(S.bond && S.bond.lost);
+        const kinds = [['talk', '叙话', 1]].concat(mate ? [['gift', '赠清心丹', 1], ['sit', '共修', 3], ['past', '问往事', 1], ['promise', '约一年内共修', 0]] : []);
+        kinds.forEach(([kind, name, months]) => {
+          const b = document.createElement('button'); b.className = 'path-wash-btn'; b.type = 'button';
+          b.textContent = name + (months ? ' · ' + cnDur(Core.timeMonths(S, months)) : '');
+          b.disabled = S.months < (st.life.nextAct || 0) || (kind === 'gift' && !(S.items['清心丹'] > 0)) || (kind === 'promise' && !!(S.bond && S.bond.promiseDue));
+          b.onclick = () => {
+            const r = People.interact(S, id, kind, pushLog);
+            if (r.err) { toast(r.err); return; }
+            pushLog({ title: r.title, text: voice(r.text), tags: r.tags, cls: 'event' });
+            Core.checkXj(S, pushLog); save(); render();
+            if (S.dead) { closeSheet(); checkEnd(); return; }
+            w.replaceWith(sectNpc());
+          };
+          actions.appendChild(b);
+        });
+        if (mate && S.bond && S.bond.promiseDue) {
+          const due = document.createElement('p'); due.className = 'loop-note'; due.textContent = '共修之约 · 还余' + cnDur(Math.max(0, S.bond.promiseDue - S.months)); actions.appendChild(due);
         }
+        c.querySelector('.npc-info').appendChild(actions);
       }
     }
     w.appendChild(c);
   });
+  if (unknownIds.length) {
+    const note = document.createElement('p'); note.className = 'npc-unseen';
+    const masterWait = unknownIds.indexOf('shifu') >= 0 && S.sect && S.sect.org === 'qm' && !S.sect.master;
+    const rest = unknownIds.length - (masterWait ? 1 : 0);
+    const bits = [];
+    if (masterWait) bits.push('师父尚在峰上。晋内门弟子，方可拜见。');
+    if (rest > 0) bits.push('尚有' + cn(rest) + '人未曾相识。');
+    note.textContent = bits.join('');
+    w.appendChild(note);
+  }
   return w;
 }
 /* 晋升：令牌显现 */
@@ -2248,7 +2260,7 @@ function dabiInvite() {
       return `${head}这一回签上的对手，是${who}。`;
     },
     choices: () => [
-      { label: '登台', sub: '三战定名次', act: () => ({ text: '你整了整衣袍，一步步走上演武台。台下的喧哗声，忽然都远了。', fx: {}, tags: [{ t: '登台候战' }], after: startDabi }) },
+      { label: '登台', sub: '三战定名次', act: () => ({ text: '你整了整衣袍，一步步走上演武台。台下喧哗忽然远了。斗法将起。', fx: {}, tags: [{ t: '斗法将起' }], prelude: 1, after: startDabi }) },
       { label: '托病不出', sub: '贡献 · 心境稍减', act: s => { s.sect.dabiDue = false; s._dabiBracket = null; return { text: '你递了一张告假条。那块写着你名字的名牌，被执事默默摘了下来。', fx: { gx: -2, xj: -2 } }; } },
     ] };
   openEvent(ev);
@@ -2517,7 +2529,7 @@ function bagPage() {
     const known = SHENQI_ZHI.filter(z => (S.flags && S.flags[z.flag]) || (S.items && S.items[z.name]) || (S.eq && S.eq.weapon === z.name));
     const rows = known.map(z => `<div class="sq-row on"><span class="sq-seal">${esc(z.seal)}</span><div><b>${esc(z.name)}</b><p>${esc(z.blurb)}</p></div></div>`).join('');
     const missing = SHENQI_ZHI.length - known.length;
-    const blank = missing ? `<div class="sq-unseen"><p>尚有${cn(missing)}件机缘未至，名录空阙。</p><div class="sq-blanks" aria-hidden="true">${'<i></i>'.repeat(missing)}</div></div>` : '';
+    const blank = missing ? `<p class="sq-unseen">尚有${cn(missing)}件机缘未至，名录空阙。</p>` : '';
     zhi.innerHTML = `<div class="sq-h"><span>神器志</span><em>奇遇见过或持有后解锁</em></div>${rows}${blank}`;
     wrap.appendChild(zhi);
   }
@@ -2942,6 +2954,13 @@ function openAtlasSheet(startTab) {
   };
   const sil = kind => `<span class="sil-ink sil-${kind}">${SIL_SVG[kind] || ''}</span>`;
   const card = (on, art, title, line) => `<article class="codex-card${on ? ' on' : ' sil'}">${art}<div class="codex-copy"><b>${esc(on ? title : '未录')}</b><em>${esc(line)}</em></div></article>`;
+  const seenFirst = parts => {
+    const on = [], off = [];
+    parts.forEach(p => (p.on ? on : off).push(p));
+    let html = on.map(p => card(true, p.art, p.title, p.line)).join('');
+    if (off.length) html += `<p class="codex-unseen">尚有${cn(off.length)}处未录，机缘未至。</p>`;
+    return html;
+  };
   function entries(m, tab) {
     const a = m.atlas || {};
     if (tab === 'ending') {
@@ -2961,24 +2980,23 @@ function openAtlasSheet(startTab) {
       }).join('');
     }
     if (tab === 'fabao' && typeof SHENQI_ZHI !== 'undefined') {
-      return SHENQI_ZHI.map((z, i) => {
+      return seenFirst(SHENQI_ZHI.map(z => {
         const on = !!(a.shenqi && a.shenqi[z.name]);
-        const art = on ? `<div class="codex-art seal-art"><b>${esc(z.seal || '器')}</b></div>` : `<div class="codex-art sil-art">${sil('qi')}</div>`;
-        return card(on, art, z.name, on ? (z.blurb || '此器已入志。') : (FB_HINT[z.name] || '有一件还没现身的器物。'));
-      }).join('');
+        return { on, art: `<div class="codex-art seal-art"><b>${esc(z.seal || '器')}</b></div>`, title: z.name, line: z.blurb || '此器已入志。' };
+      }));
     }
     if (tab === 'person') {
       const ids = (Samsara.PERSON_IDS || Object.keys(PERSON_BOOK));
-      return ids.map((id, i) => {
+      return seenFirst(ids.map(id => {
         const npc = typeof NPCS !== 'undefined' ? NPCS[id] : null;
         const book = PERSON_BOOK[id] || { name: npc ? npc.name : id, hint: npc ? npc.title : '有一个人，你还没记住。', note: npc ? npc.bio : '名字已经落下。' };
         const on = !!(a.person && a.person[id]);
         const name = (typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].name) || book.name;
         let pic = '';
         if (on && typeof InkPortrait !== 'undefined' && InkPortrait.svg) pic = InkPortrait.svg(id) || '';
-        const art = pic ? `<div class="codex-art portrait">${pic}</div>` : `<div class="codex-art sil-art">${on ? '<b class="seal-face">' + esc((typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].seal) || name.slice(0, 1)) + '</b>' : sil('face')}</div>`;
-        return card(on, art, name, on ? book.note : book.hint);
-      }).join('');
+        const art = pic ? `<div class="codex-art portrait">${pic}</div>` : `<div class="codex-art sil-art"><b class="seal-face">${esc((typeof NPCS !== 'undefined' && NPCS[id] && NPCS[id].seal) || name.slice(0, 1))}</b></div>`;
+        return { on, art, title: name, line: book.note };
+      }));
     }
     const enc = Samsara.encounterCatalog();
     return enc.map((e, i) => {
@@ -3545,7 +3563,7 @@ function rollVisible(el) {
   return r.width > 8 && r.height > 8;
 }
 function dismissEventLayer() {
-  const close = [...modal.querySelectorAll('#ev-result .brush-btn')].find(b => (b.textContent || '').indexOf('收卷') >= 0);
+  const close = [...modal.querySelectorAll('#ev-result .brush-btn')].find(b => { const t = b.textContent || ''; return t.indexOf('收卷') >= 0 || t.indexOf('入场') >= 0; });
   if (rollVisible(close)) { close.click(); return; }
   const box = $('#ev-choices');
   const pending = box && !box.classList.contains('chosen') && box.querySelector('.choice');
@@ -3584,6 +3602,7 @@ addEventListener('keydown', e => {
     if (L.id === 'sheet') { e.preventDefault(); return closeSheet(); }
     if (L.id === 'map') return click($('#map-close'));
     if (L.id === 'dan') return click($('#dan-close'));
+    if (L.id === 'auc') { e.preventDefault(); if (typeof JHUI !== 'undefined' && JHUI.aucEsc) JHUI.aucEsc(); return; }
     if (L.id === 'modal') { e.preventDefault(); dismissEventLayer(); return; }
     if (L.id === 'path-cer' || L.id === 'baishan' || L.id === 'origin-cer') {
       e.preventDefault();
@@ -3669,7 +3688,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=77').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=78').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
