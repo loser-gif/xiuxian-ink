@@ -923,7 +923,7 @@ const Core = (() => {
     if (k === '凝元丹') return '筑基结金丹时服下，把握 +20%（二成）。平时不可服。';
     if (k === '化婴丹') return '金丹化元婴时服下，把握 +20%（二成）。平时不可服。';
     if (k === '问神丹') return '元婴问化神时服下，把握 +20%（二成）。平时不可服。';
-    if (k === '渡厄符') return '渡飞升天劫时燃之，把握 +20%（二成）。平时不可服。';
+    if (k === '渡厄符') return '渡飞升天劫时燃之，把握 +20%（二成）。平时持于囊中，不必燃。';
     return (typeof PILLS !== 'undefined' && PILLS[k] && PILLS[k].desc) || '';
   }
   function useItemOnce(s, k, tags) {
@@ -949,6 +949,7 @@ const Core = (() => {
     return { text, tags, ups };
   }
   function useItem(s, k, n) {
+    if (k === '渡厄符') return { err: '此符不入腹，渡劫时再燃' };
     if (manualId(k)) return { err: '此卷不入腹，可参悟或售出' };
     if (!(s.items[k] > 0)) return { err: '无此物' };
     n = Math.max(1, (n | 0) || 1);

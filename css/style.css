@@ -2028,8 +2028,8 @@ body[data-screen=title] #audio-dock{bottom:max(18px,env(safe-area-inset-bottom))
 .sq-row.off{opacity:.42}
 .sq-seal{flex:none;width:36px;height:36px;line-height:36px;text-align:center;font-family:var(--f-head);font-size:18px;color:var(--seal-paper);background:#8e2420;border-radius:3px}
 .sq-row.off .sq-seal{background:#6e6457}
-.sq-unseen{padding:12px 4px;color:var(--ink2);font-size:12.5px}
-.sq-unseen p{margin:0 0 8px;line-height:1.7}
+.sq-unseen{margin:12px 4px 0;padding:0;color:var(--ink4);font-size:12.5px;line-height:1.7;letter-spacing:.06em}
+.npc-unseen,.codex-unseen{margin:14px 2px 8px;font-size:13px;line-height:1.75;letter-spacing:.08em;color:var(--ink4)}
 .sq-blanks{display:flex;gap:8px}
 .sq-blanks i{display:block;width:22px;height:22px;border:1px solid currentColor;border-radius:2px;opacity:.25}
 .sq-row b{display:block;font-family:var(--f-head);font-weight:400;font-size:16px;letter-spacing:.12em;margin-bottom:2px}

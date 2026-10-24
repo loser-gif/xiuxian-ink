@@ -169,8 +169,9 @@ function foxGift(s) {
     } },
     { w: 14, go: () => {
       const pill = REALMS[s.realm].pill;
-      if (capped || (s.items[pill] || 0) >= 2) return { text: '白狐没有给你丹药。她说：「丹你已不缺。我给你的是那临门一脚的势。」话落，集市散了，你鬓边添了白。', fx: { btBuff: 0.05 } };
-      return { text: `白狐托出一只小小的玉瓶。瓶中是一枚${pill}，丹香压过了满街的灯油。「寿元我收了。这枚，你留着过关。」`, fx: { item: { [pill]: 1 } } };
+      const fu = pill && pill.slice(-1) === '符';
+      if (capped || (s.items[pill] || 0) >= 2) return { text: fu ? '白狐没有再给你符。她说：「符你已持着。我给你的是那临门一脚的势。」话落，集市散了，你鬓边添了白。' : '白狐没有给你丹药。她说：「丹你已不缺。我给你的是那临门一脚的势。」话落，集市散了，你鬓边添了白。', fx: { btBuff: 0.05 } };
+      return { text: fu ? `白狐递来一道${pill}，纸边还温着。「寿元我收了。渡劫时再燃。」` : `白狐托出一只小小的玉瓶。瓶中是一枚${pill}，丹香压过了满街的灯油。「寿元我收了。这枚，你留着过关。」`, fx: { item: { [pill]: 1 } } };
     } },
     { w: 6, go: () => ({ text: (s.life && s.life.goal) ? '白狐忽然正经起来：「你求的那件事，路上会有人拦。拦你的不一定是敌人。」她在你掌心画了一道印，像一条尚未走完的路。印热的时候，寿元已经短了一截。' : '白狐说：「有的人修了一辈子，才知道自己要什么。」她留下一句没头没尾的话，像一扇以后才会打开的门。门未开，白发先来了。', fx: { btBuff: 0.03, flag: 'fox_dao' } }) },
     { w: 8, go: () => ({ text: '白狐没有灌你法诀。她讲了一个很老的故事，讲到一半自己也忘了后半。故事不能把寿元还你，可你把那半截记住了。夜风里，心境竟比进集市时稳。', fx: { xj: 8, luck: 1 } }) },
@@ -205,7 +206,7 @@ const EVENTS = [
       return [
         { label: `购聚气丹`, sub: `灵石${cn(p1)}`, disabled: s.ls < p1, act: s => ({ text: '摊主是个独眼老妪，接过灵石，从陶罐里倒出一粒丹药，丹香清冽。', fx: { ls: -p1, lsRaw: true, item: { '聚气丹': 1 } } }) },
         { label: `购回春丹`, sub: `灵石${cn(p2)}`, disabled: s.ls < p2, act: s => ({ text: '药铺掌柜慢条斯理地包好丹药，系上一道红绳：“伤筋动骨，莫要逞强。”', fx: { ls: -p2, lsRaw: true, item: { '回春丹': 1 } } }) },
-        { label: `购${R.pill}`, sub: `灵石${cn(p3)}`, disabled: s.ls < p3, act: s => ({ text: `垂帘之后伸出一只苍白的手，将一只玉瓶推到你面前。瓶中${R.pill}光华流转，你几乎倾尽所有。`, fx: { ls: -p3, lsRaw: true, item: { [R.pill]: 1 } } }) },
+        { label: `购${R.pill}`, sub: `灵石${cn(p3)}`, disabled: s.ls < p3, act: s => ({ text: (R.pill && R.pill.slice(-1) === '符') ? `垂帘之后递出一道${R.pill}，边角还温着。你几乎倾尽所有。` : `垂帘之后伸出一只苍白的手，将一只玉瓶推到你面前。瓶中${R.pill}光华流转，你几乎倾尽所有。`, fx: { ls: -p3, lsRaw: true, item: { [R.pill]: 1 } } }) },
         { label: '只看不买', sub: '', act: s => ({ text: '你在坊市里转了一圈，听了些闲话，便趁着雾色离开了。', fx: {} }) },
       ];
     },
@@ -312,7 +313,7 @@ const EVENTS = [
     choices: s => [
       { label: '试炼一炉', sub: '可能炸炉', act: s => { const r = Math.random(); return r < 0.35
           ? { text: '炉火七日不熄。开炉之时，异香满室，三粒丹药滚落掌心，圆润如珠。', fx: { item: { '聚气丹': 2, '回春丹': 1 }, time: 1 } }
-          : r < 0.55 ? { text: '炉中丹气冲霄，竟凝成一粒破境灵丹！你自己都不敢相信。', fx: { item: { [REALMS[s.realm].pill]: 1 }, time: 1 } }
+          : r < 0.55 ? { text: (REALMS[s.realm].pill && REALMS[s.realm].pill.slice(-1) === '符') ? '炉火敛尽时，炉壁上凝出一道符纹。你揭下来，收进囊中。' : '炉中丹气冲霄，竟凝成一粒破境灵丹！你自己都不敢相信。', fx: { item: { [REALMS[s.realm].pill]: 1 }, time: 1 } }
           : { text: '“轰”的一声，丹炉炸裂，你被掀出三丈开外，眉毛烧去一半。', fx: { inj: 2, time: 1 } }; } },
       { label: '变卖铜炉', sub: '', act: s => ({ text: '你将丹炉扛到镇上，卖给了一个识货的掌柜。', fx: { ls: 35 } }) },
     ],
@@ -393,7 +394,7 @@ const EVENTS = [
     text: () => '东海之上，海市蜃楼中浮现一座仙宫，据说是上古大能的秘境，百年一开。各路修士蜂拥而至，剑光遮天蔽日。',
     choices: s => [
       { label: '入秘境争夺', sub: '大凶大吉', act: s => { const r = Math.random() + s.luck * 0.02; return r > 0.6
-          ? { text: '你于仙宫深处寻得一处丹房，玉瓶中的丹药虽已失了大半药力，仍是世间难求的珍品。出秘境时，你回头望了一眼，仙宫正缓缓沉入海底。', fx: { xw: 1.5, item: { [REALMS[s.realm].pill]: 1, '聚气丹': 1 }, time: 3 } }
+          ? { text: (REALMS[s.realm].pill && REALMS[s.realm].pill.slice(-1) === '符') ? '你于仙宫深处寻得一处静室，案上压着一道符，边角未冷。出秘境时，你回头望了一眼，仙宫正缓缓沉入海底。' : '你于仙宫深处寻得一处丹房，玉瓶中的丹药虽已失了大半药力，仍是世间难求的珍品。出秘境时，你回头望了一眼，仙宫正缓缓沉入海底。', fx: { xw: 1.5, item: { [REALMS[s.realm].pill]: 1, '聚气丹': 1 }, time: 3 } }
           : r > 0.3 ? { text: '秘境中杀机四伏，你只在外围拾得几块灵石，便被人潮挤了出来。', fx: { ls: 40, time: 3 } }
           : { text: `你被卷入一场混战，几名${Core.foeStr(s, Core.shiftLv(s, 1))}的修士联手围攻，护体灵光碎裂，重伤遁出。`, fx: { inj: 4, life: -5, time: 3 }, fight: { dr: 0, gap: -0.25, foe: '同阶群修', tier: 'lose' } }; } },
       { label: '隔岸观火', sub: '', act: s => ({ text: '你站在礁石上，看着剑光如雨坠落海中。那一夜，死去的修士不知凡几。', fx: { xj: 4 } }) },

@@ -108,7 +108,8 @@ const Loop = (() => {
   }
   function pillKey(s) {
     const names = ['回春丹', '聚气丹', '清心丹', '破障丹', '延寿丹'];
-    if (REALMS[s.realm] && s.items[REALMS[s.realm].pill] > 0) return REALMS[s.realm].pill;
+    const realmPill = REALMS[s.realm] && REALMS[s.realm].pill;
+    if (realmPill && realmPill.slice(-1) !== '符' && s.items[realmPill] > 0) return realmPill;
     for (let i = 0; i < names.length; i++) if (s.items[names[i]] > 0) return names[i];
     return '';
   }
@@ -121,7 +122,7 @@ const Loop = (() => {
     return '';
   }
   function junkKey(s) {
-    const skip = { '筑基丹': 1, '凝元丹': 1, '化婴丹': 1, '渡劫丹': 1, '飞升丹': 1, '回春丹': 1, '聚气丹': 1, '清心丹': 1, '破障丹': 1, '延寿丹': 1, '兵解玉符': 1 };
+    const skip = { '筑基丹': 1, '凝元丹': 1, '化婴丹': 1, '渡劫丹': 1, '飞升丹': 1, '回春丹': 1, '聚气丹': 1, '清心丹': 1, '破障丹': 1, '延寿丹': 1, '兵解玉符': 1, '渡厄符': 1 };
     const keys = Object.keys(s.items || {});
     for (let i = 0; i < keys.length; i++) if (s.items[keys[i]] > 0 && !skip[keys[i]]) return keys[i];
     return '';
