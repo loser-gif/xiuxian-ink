@@ -161,12 +161,7 @@ async function initVisuals() {
   paintBrushImgs();
   mountPaperField();
   drawMountains(true);
-  if (phone) {
-    const rest = () => { paintTiles().catch(e => console.warn(e)); };
-    if (window.requestIdleCallback) requestIdleCallback(rest, { timeout: 900 });
-    else setTimeout(rest, 60);
-    return;
-  }
+  // 手机先让题字画出来，再铺与桌面同一套宣纸、颗粒、笔触。不缩小、不省素材。
   await paintTiles();
 }
 function grainTile() {

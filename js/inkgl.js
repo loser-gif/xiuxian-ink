@@ -395,10 +395,9 @@ const InkGL = (() => {
   }
   // 隐藏屏幕上的墨团：把画布缩成 1×1，释放后备存储；重新可见时 renderBlot 会按尺寸重建
   function release() {
-    if (B.frame & 7) return;
     for (const b of B.list) {
       if (b.host.closest('.title-menu')) continue; // 卷首笔触预先画好，回来时不再重铺
-      if (b.w > 1 && (b.host.closest('[hidden]') || !b.host.offsetParent)) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; }
+      if (b.w > 1 && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; }
     }
   }
   let titleClock = 0;
@@ -422,12 +421,10 @@ const InkGL = (() => {
     start();
   }
   function visible(b) {
-    if (!b.host.isConnected || b.host.closest('[hidden]')) return false;
-    if (b.rect && b.drawn && (B.frame & 3)) return b.rect.width >= 2 && b.rect.bottom >= 0 && b.rect.top <= innerHeight;
+    if (!b.host.offsetParent) return false;
     const r = b.cv.getBoundingClientRect();
-    b.rect = r;
     if (r.bottom < 0 || r.top > innerHeight || r.width < 2) return false;
-    return true;
+    b.rect = r; return true;
   }
   function renderBlot(b, t) {
     const gl = B.gl, P = B.P;
@@ -470,31 +467,44 @@ const InkGL = (() => {
     if (B.raf || B.wake) return;
     B.wake = setTimeout(() => { B.wake = 0; start(); }, ms || 420);
   }
+  function phoneInk() {
+    try {
+      return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+    } catch (e) { return false; }
+  }
   function tick(now) {
     B.raf = 0;
     if (document.hidden) return;
     const root = document.documentElement;
     if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return;
     const prewarm = needsTitlePrewarm();
-    if (!prewarm && (titleQuiet() || !lively())) { wake(titleQuiet() ? 640 : 420); return; }
+    const phone = phoneInk();
+    if (!prewarm && (titleQuiet() || !lively())) {
+      if (phone) wake(480);
+      else B.raf = requestAnimationFrame(tick);
+      return;
+    }
     release();
     const vis = B.list.filter(visible);
     if (!vis.length) {
-      if (B.list.some(b => b.host.isConnected && !b.drawn)) wake(360);
+      if (phone) {
+        if (B.list.some(b => b.host.isConnected && !b.drawn)) wake(480);
+        return;
+      }
+      B.raf = requestAnimationFrame(tick);
       return;
     }
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
-    const phone = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-    // 手机上活墨画定就停。桌面仍按时间轻轻呼吸。
+    // 手机：同一笔墨画完、按下的涌势也停了，就不再每帧重画。桌面仍按时间呼吸。
     if (phone && !prewarm && !surging && vis.every(b => b.drawn && b.w > 1)) return;
-    const stride = phone ? 8 : 3;
     B.raf = requestAnimationFrame(tick);
+    const stride = phone ? 6 : 3;
     if (!prewarm && !surging && (++B.frame % stride)) return;
     const t = (now - B.t0) / 1000;
     for (const b of vis) {
       b.surge += (b.surgeT - b.surge) * (b.surgeT > b.surge ? .22 : .07);
-      if ((reduced() || (phone && !prewarm)) && b.drawn && !surging) continue;
-      renderBlot(b, (reduced() || phone) ? 0 : t);
+      if (reduced() && b.drawn && !surging) continue;
+      renderBlot(b, reduced() ? 0 : t);
     }
   }
   function start() {
