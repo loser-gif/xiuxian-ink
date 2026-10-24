@@ -1,12 +1,12 @@
 /* 墨仙录 · 离线壳。网络优先；坏响应不入库、也不当作样式或脚本交出去。版本不符则自愈。 */
 'use strict';
-var CACHE = 'moxian-v81';
+var CACHE = 'moxian-v80';
 var PRECACHE = [
   './',
   './index.html',
-  './css/style.css?v=81',
-  './css/fonts.css?v=81',
-  './manifest.webmanifest?v=81',
+  './css/style.css?v=80',
+  './css/fonts.css?v=80',
+  './manifest.webmanifest?v=80',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
@@ -92,30 +92,10 @@ self.addEventListener('activate', function (event) {
   }).then(function () { return self.clients.claim(); }));
 });
 
-function versioned(url) {
-  return /[?&]v=\d+/.test(url.search);
-}
-
-function cacheFirst(req, url) {
-  var kind = kindOf(url, req);
-  return caches.open(CACHE).then(function (cache) {
-    return fromCache(cache, req).then(function (hit) {
-      if (hit) return hit;
-      return fetch(req).then(function (fresh) {
-        return acceptable(fresh, kind).then(function (ok) {
-          if (ok && req.method === 'GET') cache.put(req, fresh.clone());
-          if (ok) return fresh;
-          return new Response('', { status: 504, statusText: 'bad payload' });
-        });
-      });
-    });
-  });
-}
-
 function networkFirst(req, url) {
   var kind = kindOf(url, req);
   return caches.open(CACHE).then(function (cache) {
-    var net = fetch(req).then(function (fresh) {
+    return fetch(req).then(function (fresh) {
       return acceptable(fresh, kind).then(function (ok) {
         if (ok) {
           var stored = req.method === 'GET' ? cache.put(req, fresh.clone()) : Promise.resolve();
@@ -134,14 +114,6 @@ function networkFirst(req, url) {
         throw err;
       });
     });
-    if (kind !== 'html') return net;
-    return fromCache(cache, req).then(function (hit) {
-      if (!hit) return net;
-      return Promise.race([
-        net,
-        new Promise(function (resolve) { setTimeout(function () { resolve(hit); }, 1800); }),
-      ]);
-    });
   });
 }
 
@@ -152,7 +124,5 @@ self.addEventListener('fetch', function (event) {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;
   if (/\/sw\.js$/i.test(url.pathname)) return;
-  // 带版本号的样式、脚本、字体命中缓存就直接用。页面本身仍先问网络，慢了才回旧页。
-  if (versioned(url)) event.respondWith(cacheFirst(req, url));
-  else event.respondWith(networkFirst(req, url));
+  event.respondWith(networkFirst(req, url));
 });
