@@ -3541,3 +3541,7 @@ html[data-theme="night"] .goal-cer .path-cer-panel{
     padding-right:32px;
   }
 }
+
+/* v80：祠前有人未应时，禁用原因要能读出来。 */
+.shop-sheet .menu-item.is-wait:disabled{opacity:.92}
+.shop-sheet .menu-item.is-wait small{color:var(--zhu);letter-spacing:.14em}

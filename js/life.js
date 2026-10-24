@@ -58,16 +58,39 @@ const Life = (() => {
     return '杀伐';
   }
 
+  function sameChronicle(a, b) {
+    if (!a || !b) return false;
+    if ((a.y | 0) !== (b.y | 0)) return false;
+    if ((a.t || '') !== (b.t || '')) return false;
+    const x = a.d || '', y = b.d || '';
+    if (!x || !y || x === y) return true;
+    return x.indexOf(y) >= 0 || y.indexOf(x) >= 0;
+  }
+  // 截短的那条若停在句号前，只留到句号，不再把后半句残字也摆出来。
+  function preferDetail(a, b) {
+    const x = a || '', y = b || '';
+    const long = x.length >= y.length ? x : y;
+    const i = long.search(/[。！？]/);
+    if (i >= 6 && i < long.length - 1) return long.slice(0, i);
+    return long;
+  }
+  function absorbAnnals(list, y, item) {
+    const row = { y: y | 0, t: item.t || '', d: item.d || '', k: item.k || item.c || '' };
+    if (!row.t && !row.d) return;
+    for (let i = 0; i < list.length; i++) {
+      const o = list[i];
+      if (!sameChronicle(o, row)) continue;
+      if ((row.d || '').length > (o.d || '').length && row.k) o.k = row.k;
+      o.d = preferDetail(o.d, row.d);
+      return;
+    }
+    list.push(row);
+  }
   function note(s, rec) {
     if (!s || !rec) return;
     const life = L(s);
     const y = rec.y != null ? (rec.y | 0) : (s.age | 0);
-    const t = rec.t || '';
-    const d = rec.d || '';
-    if (!t && !d) return;
-    const last = life.annals[life.annals.length - 1];
-    if (last && last.t === t && last.y === y && last.d === d) return;
-    life.annals.push({ y, t, d, k: rec.k || '' });
+    absorbAnnals(life.annals, y, rec);
     if (life.annals.length > 120) life.annals.splice(0, life.annals.length - 120);
   }
   function meet(s, name, line) {
@@ -347,7 +370,7 @@ const Life = (() => {
     const v = pool[Math.floor(Math.random() * pool.length)];
     life.seenV.push(v.id);
     const text = vignetteText(v, s);
-    note(s, { t: v.title, d: String(text).slice(0, 28), k: 'breath' });
+    // 全文交给随后的日志。这里再截一笔，平生会把同一件事记成一长一短两行。
     return { title: v.title, text, id: v.id };
   }
   function takeVignette(s, where) {
@@ -556,16 +579,16 @@ const Life = (() => {
 
   function chronicle(s) {
     const life = s ? L(s) : empty();
-    const years = {};
-    const add = (y, item) => {
-      const k = String(y | 0);
-      (years[k] = years[k] || []).push(item);
-    };
-    (life.annals || []).forEach(a => add(a.y, { t: a.t, d: a.d, k: a.k || '' }));
+    const items = [];
+    (life.annals || []).forEach(a => absorbAnnals(items, a.y, a));
     (s && s.marks || []).forEach(m => {
       if (!m) return;
-      const dup = (life.annals || []).some(a => a.t === m.t && (a.y | 0) === (m.y | 0));
-      if (!dup) add(m.y, { t: m.t, d: m.d || '', k: m.c || '' });
+      absorbAnnals(items, m.y, { t: m.t, d: m.d || '', k: m.c || '' });
+    });
+    const years = {};
+    items.forEach(a => {
+      const k = String(a.y | 0);
+      (years[k] = years[k] || []).push({ t: a.t, d: a.d, k: a.k || '' });
     });
     const ys = Object.keys(years).map(n => n | 0).sort((a, b) => a - b);
     return {

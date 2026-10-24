@@ -351,6 +351,7 @@ function makeJHUI(G) {
     if (btns && btns.classList.contains('wait')) { toast('这一口价还没落定'); return true; }
     aucEsc.leave = true;
     aucEsc.bid = true;
+    if (aucEsc.onBid) toast('放弃本件');
     if (aucEsc.wake) aucEsc.wake();
     if (aucEsc.onBid) aucEsc.onBid();
     return true;
@@ -453,10 +454,13 @@ function makeJHUI(G) {
         const p1 = Math.max(a.price + 1, Math.round(a.price * 1.1)), p3 = Math.max(a.price + 1, Math.round(a.price * 1.3));
         const poor = p1 > G.S.ls;
         const leading = a.leader === 'you';
+        const escHint = leading
+          ? '按 Esc 放弃本件，并提前离场。'
+          : (poor ? '囊中羞涩。点「罢手」只跳过本件；按 Esc 放弃本件，并提前离场。' : '点「罢手」只跳过本件。按 Esc 放弃本件，并提前离场。');
         btns.innerHTML = `<button class="ab" data-k=".1" ${poor ? 'disabled' : ''}><b>加一成</b><small>${fmtNum(p1)}</small></button>
           <button class="ab" data-k=".3" ${p3 > G.S.ls ? 'disabled' : ''}><b>加三成</b><small>${fmtNum(p3)}</small></button>
           <button class="ab pass" data-k="0"><b>${leading ? '成交' : '罢手'}</b><small>${leading ? '落槌' : (poor ? '囊中不足' : '不争')}</small></button>`
-          + (poor && !leading ? '<p class="auc-hint">囊中羞涩，可罢手离场。不必硬争。</p>' : '');
+          + `<p class="auc-hint">${escHint}</p>`;
         btns.onclick = async e => {
           const b = e.target.closest('.ab'); if (!b || b.disabled || btns.classList.contains('wait')) return;
           btns.classList.add('wait');
