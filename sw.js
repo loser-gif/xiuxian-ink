@@ -1,12 +1,12 @@
 /* 墨仙录 · 离线壳。网络优先；坏响应不入库、也不当作样式或脚本交出去。版本不符则自愈。 */
 'use strict';
-var CACHE = 'moxian-v78';
+var CACHE = 'moxian-v79';
 var PRECACHE = [
   './',
   './index.html',
-  './css/style.css?v=78',
-  './css/fonts.css?v=78',
-  './manifest.webmanifest?v=78',
+  './css/style.css?v=79',
+  './css/fonts.css?v=79',
+  './manifest.webmanifest?v=79',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
