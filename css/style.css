@@ -3545,18 +3545,3 @@ html[data-theme="night"] .goal-cer .path-cer-panel{
 /* v80：祠前有人未应时，禁用原因要能读出来。 */
 .shop-sheet .menu-item.is-wait:disabled{opacity:.92}
 .shop-sheet .menu-item.is-wait small{color:var(--zhu);letter-spacing:.14em}
-
-/* v81：手机题字先落到落定后的样子，不盖整页开场卷。颗粒、寿元、境界光晕仍按原来的画法动。 */
-@media (hover:none) and (pointer:coarse) and (max-width:900px),
-       (hover:none) and (pointer:coarse) and (max-height:900px){
-  .tch b{opacity:1}
-  .tch::after{opacity:.35;transform:scale(1.25)}
-  body.go .tch b{animation:none!important;-webkit-mask-image:none;mask-image:none;opacity:1;transform:none}
-  .title-sub,.title-poem{opacity:1}
-  .seal-title{opacity:.93}
-  body.go .title-sub,body.go .title-poem,body.go .seal-title,body.go .seal-halo{animation:none!important}
-  .title-menu{opacity:1}
-  body.go .title-menu .bb-ink{animation:none!important;-webkit-mask-image:none;mask-image:none;opacity:var(--ink-a,1)}
-  body.go .title-menu .bb-text{opacity:1;animation:textBreath 6s var(--ease-breath) infinite}
-  body.go .title-menu small{opacity:.7;animation:textBreath 6s var(--ease-breath) infinite}
-}

@@ -114,12 +114,8 @@ function mountPaperField() {
   cv.width = w; cv.height = h;
   try { Ink.paperField(cv); } catch (e) { console.warn(e); }
 }
-function phoneNow() {
-  try {
-    return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(window.innerWidth, window.innerHeight) < 900);
-  } catch (e) { return false; }
-}
-function paintBrushImgs() {
+async function initVisuals() {
+  mountPaperField();
   root.style.setProperty('--brush-img', brushBtnImg(5, '#1b1814', 0.95));
   root.style.setProperty('--brush-img-light', brushBtnImg(12, '#1b1814', 0.14));
   root.style.setProperty('--brush-img-paper', brushBtnImg(19, '#f3ead6', 0.95));
@@ -130,8 +126,7 @@ function paintBrushImgs() {
   root.style.setProperty('--brush-line', brushImg(400, 12, 3, '#1b1814'));
   root.style.setProperty('--brush-bar', brushImg(400, 26, 8, '#1b1814'));
   root.style.setProperty('--brush-bar-zhu', brushImg(400, 26, 8, '#b3302a'));
-}
-async function paintTiles() {
+  drawMountains(true);
   try { root.style.setProperty('--juan-mask', `url("${juanWashMask()}")`); } catch (e) { console.warn(e); }
   const [paper, mist, b1, b2, b3, b4, stone, big, scene] = await Promise.all([
     Ink.paperTile(512), Ink.mistSprite(),
@@ -154,15 +149,6 @@ async function paintTiles() {
   root.style.setProperty('--grain-img', `url(${grainTile()})`);
   root.style.setProperty('--fiber-img', `url(${fiberTile()})`);
   try { InkGL.init(); InkGL.setPaper(paper); } catch (e) { console.warn(e); }
-}
-async function initVisuals() {
-  const phone = phoneNow();
-  if (phone) await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  paintBrushImgs();
-  mountPaperField();
-  drawMountains(true);
-  // 手机先让题字画出来，再铺与桌面同一套宣纸、颗粒、笔触。不缩小、不省素材。
-  await paintTiles();
 }
 function grainTile() {
   const s = 180, cv = document.createElement('canvas'); cv.width = cv.height = s; const c = cv.getContext('2d');
@@ -3360,10 +3346,7 @@ function applyLook(partial) {
   if (typeof FX !== 'undefined' && FX.syncMotion) FX.syncMotion();
   if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
   // 开卷前山与壁纸已经画过。主题没变就不要在墨滴落地的同一帧整页重绘。
-  if (prevTheme !== nextTheme) {
-    drawMountains(true, { yield: prevTheme !== '' });
-    if (typeof InkGL !== 'undefined' && InkGL.redraw) InkGL.redraw();
-  }
+  if (prevTheme !== nextTheme) drawMountains(true, { yield: prevTheme !== '' });
 }
 function openLook() {
   const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, readLook());
@@ -3728,14 +3711,11 @@ function splashWait() {
   const el = document.getElementById('splash');
   if (!el) return Promise.resolve();
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // 手机和减弱动效不再用整页宣纸盖住已经能读的卷首。
-  if (reduce || phoneNow()) {
-    el.classList.add('skip', 'gone');
-    el.hidden = true;
-    document.body.classList.add('go');
-    return Promise.resolve();
-  }
   el.hidden = false;
+  if (reduce) {
+    el.classList.add('skip');
+    return sleep(160).then(() => el.classList.add('gone'));
+  }
   requestAnimationFrame(() => el.classList.add('play'));
   requestAnimationFrame(() => requestAnimationFrame(() => {
     document.body.classList.add('go', 'hold');
@@ -3746,7 +3726,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=81').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=80').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -3789,11 +3769,10 @@ function retireIntro() {
   if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 1200 });
   else setTimeout(warm, 400);
 }
-// 桌面仍等字体与墨材，避免开场换字。手机只等很短一截，题字先落纸。
-const fontCap = phoneNow() ? 320 : 2500;
+// 视觉素材与字体都就绪后再开卷，避免字体替换造成的半截状态
 Promise.all([
   initVisuals(),
-  Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(fontCap)]),
+  Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
 ]).catch(() => {}).then(() => splashWait()).then(() => {
   applyLook();
   // 动画层已在卷首遮罩下建好（go+hold）。这里只放开播放。
