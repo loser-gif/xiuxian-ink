@@ -284,6 +284,7 @@ const Wallpaper = (() => {
     new MutationObserver(() => {
       if (document.body.dataset.screen === 'title') start();
     }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
+    if (document.body.classList.contains('go') && !document.body.classList.contains('hold')) kick(240);
   }
   return { init, rebuild: build, syncMotion, kick, needsBuild };
 })();

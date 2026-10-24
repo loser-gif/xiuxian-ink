@@ -32,7 +32,8 @@ const FX = (() => {
     let sx = 0, sy = 0, touching = false;
     window.addEventListener('touchstart', e => { if (PX.gyro) return; const t = e.touches[0]; sx = t.clientX; sy = t.clientY; touching = true; }, { passive: true });
     window.addEventListener('touchmove', e => {
-      if (PX.gyro || !touching) return; const t = e.touches[0];
+      // 手机上滑动日志也会冒泡到这里。视差每帧改十多层，长局会一直发热。
+      if (coarsePhone() || PX.gyro || !touching) return; const t = e.touches[0];
       setTarget((t.clientX - sx) / (innerWidth * 0.5), (t.clientY - sy) / (innerHeight * 0.5));
     }, { passive: true });
     const end = () => { touching = false; if (!PX.gyro) setTarget(0, 0); };
@@ -61,7 +62,7 @@ const FX = (() => {
   }
   // 必须在用户手势（点击“开卷”）里同步调用
   function requestTilt() {
-    if (reduced() || PX.gyro || PX.asked) return; PX.asked = true;
+    if (reduced() || coarsePhone() || PX.gyro || PX.asked) return; PX.asked = true;
     const D = window.DeviceOrientationEvent; if (!D) return;
     const on = () => { PX.gyro = true; window.addEventListener('deviceorientation', onOrient); };
     if (typeof D.requestPermission === 'function') D.requestPermission().then(r => { if (r === 'granted') on(); }).catch(() => {});
@@ -176,7 +177,6 @@ const FX = (() => {
   function setSeason(s) {
     if (thinNow()) { haltWeather(); return; }
     if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !thinNow() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
-    armFps();
     let n = partN(s);
     if (document.body.dataset.screen === 'title') n = Math.min(n, 4);
     if (s === W.season && W.parts.length === n) return;
@@ -238,13 +238,12 @@ const FX = (() => {
       c.beginPath(); c.moveTo(-1, -.6); c.lineTo(.9, -.9); c.lineTo(.7, .8); c.lineTo(-.8, .7); c.closePath(); c.fill();
     }
     if (W.gold && W.gold.length) { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
+    noteFps(t);
   }
 
-  /* 低帧率连续两段即把动效收薄；「全」可在纸墨里再打开 */
-  let fpsLast = 0, fpsN = 0, fpsBad = 0, fpsArmed = false;
-  function fpsTick(t) {
-    if (!fpsArmed) return;
-    requestAnimationFrame(fpsTick);
+  /* 低帧率连续两段即把动效收薄。记在落花这一帧上，不再另开一条永远醒着的 rAF。门槛与原先相同。 */
+  let fpsLast = 0, fpsN = 0, fpsBad = 0;
+  function noteFps(t) {
     if (document.hidden) { fpsLast = 0; fpsN = 0; return; }
     if (!fpsLast) { fpsLast = t; return; }
     fpsN++;
@@ -263,14 +262,8 @@ const FX = (() => {
       }
     } else fpsBad = 0;
   }
-  function armFps() {
-    if (fpsArmed || reduced()) return;
-    fpsArmed = true;
-    requestAnimationFrame(fpsTick);
-  }
   function syncMotion() {
     if (thinNow()) { haltWeather(); return; }
-    armFps();
     if (W.season >= 0 && W.cv) {
       fitParts();
       if (W.gold && thinNow()) W.gold.length = Math.min(W.gold.length, 3);

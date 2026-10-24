@@ -360,7 +360,7 @@ const InkGL = (() => {
   const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 
   /* ================= 活墨按钮 ================= */
-  const B = { gl: null, P: null, list: [], raf: 0, frame: 0, ok: false, t0: performance.now() };
+  const B = { gl: null, P: null, list: [], raf: 0, frame: 0, ok: false, t0: performance.now(), wake: 0 };
   function initBlots() {
     try {
       const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
@@ -463,19 +463,42 @@ const InkGL = (() => {
     } else livelyOk = true;
     return livelyOk;
   }
+  function wake(ms) {
+    if (B.raf || B.wake) return;
+    B.wake = setTimeout(() => { B.wake = 0; start(); }, ms || 420);
+  }
+  function phoneInk() {
+    try {
+      return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+    } catch (e) { return false; }
+  }
   function tick(now) {
     B.raf = 0;
     if (document.hidden) return;
     const root = document.documentElement;
     if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return;
     const prewarm = needsTitlePrewarm();
-    if (!prewarm && (titleQuiet() || !lively())) { B.raf = requestAnimationFrame(tick); return; }
+    const phone = phoneInk();
+    if (!prewarm && (titleQuiet() || !lively())) {
+      if (phone) wake(480);
+      else B.raf = requestAnimationFrame(tick);
+      return;
+    }
     release();
     const vis = B.list.filter(visible);
-    if (!vis.length) { B.raf = requestAnimationFrame(tick); return; }
-    B.raf = requestAnimationFrame(tick);
+    if (!vis.length) {
+      if (phone) {
+        if (B.list.some(b => b.host.isConnected && !b.drawn)) wake(480);
+        return;
+      }
+      B.raf = requestAnimationFrame(tick);
+      return;
+    }
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
-    const stride = matchMedia('(pointer: coarse)').matches ? 6 : 3;
+    // 手机：同一笔墨画完、按下的涌势也停了，就不再每帧重画。桌面仍按时间呼吸。
+    if (phone && !prewarm && !surging && vis.every(b => b.drawn && b.w > 1)) return;
+    B.raf = requestAnimationFrame(tick);
+    const stride = phone ? 6 : 3;
     if (!prewarm && !surging && (++B.frame % stride)) return;
     const t = (now - B.t0) / 1000;
     for (const b of vis) {
@@ -484,7 +507,14 @@ const InkGL = (() => {
       renderBlot(b, reduced() ? 0 : t);
     }
   }
-  function start() { if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick); }
+  function start() {
+    if (B.wake) { clearTimeout(B.wake); B.wake = 0; }
+    if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick);
+  }
+  function redraw() {
+    for (const b of B.list) b.drawn = false;
+    start();
+  }
   function press(btn, on) {
     const host = btn && btn.querySelector('.live'); if (!host || !host.__live) return;
     host.__live.surgeT = on ? 1 : 0; start();
@@ -651,5 +681,5 @@ const InkGL = (() => {
     }
     initSpread();
   }
-  return { init, scan, spread, hide, setPaper, qi, furnace, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
+  return { init, scan, spread, hide, setPaper, qi, furnace, redraw, get ok() { return B.ok; }, get spreadOk() { return S.ok; }, kick: start };
 })();
