@@ -1648,6 +1648,13 @@ function appendManualOffer(out, id, extra) {
   mk('售予坊市', `灵石${cn(o.price)}`, false, b => done(b, Core.sellManual(S, id)));
   out.appendChild(box);
 }
+// 数值标签为空时：正文还在，就不要写成「无事发生」。
+function resultChip(tags, text) {
+  const html = (tags || []).map(x => `<span class="${x.c || ''}">${esc(x.t)}</span>`).join('');
+  if (html) return html;
+  const body = String(text || '').replace(/\s/g, '');
+  return body ? '<span>有所感</span>' : '<span>无事发生</span>';
+}
 function choose(ev, c, btn, evText, titleText) {
   const box = $('#ev-choices'); if (box.classList.contains('chosen')) return;
   btn.classList.add('picked'); box.classList.add('chosen');
@@ -1657,9 +1664,10 @@ function choose(ev, c, btn, evText, titleText) {
   if (res.fx && res.fx.gf) FX.goldMotes && setTimeout(() => { const t = $('#ev-result').getBoundingClientRect(); FX.goldMotes(t.left + t.width / 2, t.top + 20); }, 900);
   const out = $('#ev-result');
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
-  const d = inkWrite(p, voice(res.text), { immediate: true, step: 20, cadence: true });
+  const shown = voice(res.text);
+  const d = inkWrite(p, shown, { immediate: true, step: 20, cadence: true });
   const tg = document.createElement('div'); tg.className = 'entry-tags'; tg.style.opacity = 0;
-  tg.innerHTML = tags.map(x => `<span class="${x.c || ''}">${esc(x.t)}</span>`).join('') || '<span>无事发生</span>';
+  tg.innerHTML = resultChip(tags, shown);
   out.appendChild(tg);
   const extra = { text: '' };
   if (fxR.manual) appendManualOffer(out, fxR.manual, extra);
@@ -3661,7 +3669,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=76').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=77').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
