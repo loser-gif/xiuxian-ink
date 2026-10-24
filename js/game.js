@@ -1434,10 +1434,16 @@ const GUIDES = [
     text: '腰侧那枚黑印，刻着一个「修」字。点开它，便是功法、本命与日后的定型。主修一门，辅修至多两门。路还长，不必今夜都懂。',
     ok: '知道了', okText: '你按了按那枚印。它凉，像一块刚落定的墨。' },
 ];
+function guideBody(g) {
+  if (!g || g.id !== 'g1' || !S) return g ? g.text : '';
+  const late = (S.acts | 0) > 0 || (S.age | 0) > 16 || (S.months | 0) > 16 * 12;
+  if (!late) return g.text;
+  return '这课来得晚了些。你已经在山里走动过。吐纳，是一季的呼吸；闭关，是一年的灯火。修为走到头时，卷上会浮出一枚朱红的「破境」。';
+}
 function guideEvent(g) {
   return {
     id: g.id, guide: true, title: g.title, seal: g.seal,
-    text: () => g.text,
+    text: () => guideBody(g),
     choices: () => [
       { label: g.ok, sub: '', act: () => ({ text: g.okText, fx: { xj: 1 } }) },
       { label: '这些我已知', sub: '不再提示', skipAll: true, act: () => ({ text: '你拱了拱手。后头没说完的话，山风替你吹散了。', fx: {} }) },
@@ -1460,10 +1466,15 @@ function finishGuide() {
   m.guide = 1;
   Samsara.saveMeta(m);
 }
-function maybeGuide() {
+function maybeGuide(fromRetry) {
   if (!S || S.dead || S.ascended || !S.flags || !S.flags.guide || S.flags.trial) return;
+  if (!fromRetry) { maybeGuide._gen = (maybeGuide._gen | 0) + 1; maybeGuide._n = 0; }
+  const gen = maybeGuide._gen | 0;
   if (uiBlocked()) {
-    if ((maybeGuide._n | 0) < 16) { maybeGuide._n = (maybeGuide._n | 0) + 1; setTimeout(maybeGuide, 500); }
+    if ((maybeGuide._n | 0) < 24) {
+      maybeGuide._n = (maybeGuide._n | 0) + 1;
+      setTimeout(() => { if ((maybeGuide._gen | 0) === gen) maybeGuide(true); }, 500);
+    }
     return;
   }
   maybeGuide._n = 0;
@@ -2416,7 +2427,7 @@ function openBag(tab = 'bag') {
   // 行囊：只装消耗品与佩器；功法／法宝／定型／丹炉改走「修」印 openCult
   if (tab && tab !== 'bag') return openCult(tab);
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
-  const shopBit = Redworld.open(S) ? '铺子开着' : '尚未开铺';
+  const shopBit = (typeof Redworld !== 'undefined' && Redworld.open(S)) ? '已有铺面 · 休市中' : '尚未开铺';
   wrap.innerHTML = `<div class="bag-lead">丹药 · 佩器 · 杂物<span>服用后不关卷</span></div><button type="button" class="bag-shop">${shopBit} · 去铺子</button><div class="tab-body bag-body"></div>`;
   const shopBtn = wrap.querySelector('.bag-shop');
   if (shopBtn) shopBtn.onclick = async () => { await closeSheet(); openShop(); };
@@ -3390,8 +3401,13 @@ function stockName(k) {
 function openShop() {
   if (!S || typeof Redworld === 'undefined') return;
   const w = document.createElement('div'); w.className = 'shop-sheet';
-  const button = (a, k, label, sub, disabled) => `<button type="button" class="menu-item" data-a="${a}" data-k="${esc(k || '')}"${disabled ? ' disabled' : ''}>${esc(label)}<small>${esc(sub || '')}</small></button>`;
+  const button = (a, k, label, sub, disabled) => `<button type="button" class="menu-item${sub === '先回应来人' ? ' is-wait' : ''}" data-a="${a}" data-k="${esc(k || '')}"${disabled ? ' disabled' : ''}>${esc(label)}<small>${esc(sub || '')}</small></button>`;
+  let keepShelf = false;
   const paint = () => {
+    const opened = [];
+    w.querySelectorAll('details').forEach(d => opened.push(d.open));
+    const forceShelf = keepShelf;
+    keepShelf = false;
     const h = Redworld.ensure(S), at = S.loc === 'yunyue', dur = cnDur(Redworld.months(S));
     const q = Redworld.quote(S, 'normal'), cash = fmtNum(S.ls), inventory = Object.keys(S.items).filter(k => S.items[k] > 0 && Redworld.sellable(k));
     const pendingText = { victim: '苦主拿着掺假的药上门。', inspect: '执法堂来查铺，旧客站在门外。', foe: '仇家翻出你少秤的那一笔。', petition: '祠前来人求情，要你替他撑过这一季。', attack: '邪修来砸祠，香火正被风吹得摇晃。' }[h.pending];
@@ -3403,7 +3419,8 @@ function openShop() {
     };
     const shelves = Object.keys(h.stock).filter(k => h.stock[k] > 0);
     const stores = h.stores.map((t,i) => `<p>${i ? '分店' + i : '主店'} · ${Redworld.SPOTS[t.spot][0]} · ${t.own ? '旧契买断，免租' : t.paidUntil > S.months ? '租约余' + cnDur(t.paidUntil-S.months) : '租约已到，下次开季先续'}${!t.own ? ' · 续季 ' + Redworld.rent(S,t.spot) + ' 灵石' : ''}</p>`).join('');
-    w.innerHTML = `<p class="look-lead">${h.stores.length ? '铺门等你回来。' : '云岳坊有一扇空门。'}开铺、经营须在云岳坊。休市不卖货，不自动欠租；一季${dur}，与游历同耗时。</p>
+    const lead = h.stores.length ? '已有铺面，此刻休市。点开季才是本季营业；不点则不卖货、不扣租。' : '尚未开铺。';
+    w.innerHTML = `<p class="look-lead">${lead}开铺、经营须在云岳坊。耗时${dur}，与游历相同。</p>
       <p class="shop-note">灵石 ${cash} · 口碑 ${h.rep} · 正邪 ${h.moral}<br>红尘道果 ${h.fruit} · ${h.shrine === -1 ? '祠毁，暂不增长' : '诚实开季、行善与凡人因果积累'}<br>化神末门：道果至少 24，正邪至少 20，方能选择留在人间。</p>
       ${pending}
       <section class="shop-col"><b>铺面 · ${h.stores.length}/3</b>${stores}${h.recovery ? `<p>人情债 ${h.debt} · 东山再起：连续诚实 ${h.honest}/3 季，或还清欠账。</p>${button('repay','','还清人情债','灵石 −'+h.debt, !h.debt || S.ls<h.debt)}` : ''}
@@ -3422,22 +3439,26 @@ function openShop() {
       </section>` : ''}
       <details class="shop-col"><summary>货架与进货 · ${shelves.length} 类</summary><p>自备货不记现金成本；进货按坊市实价扣款。器基可卖现成普通法器，本命法宝与神器不入架。</p>
       ${shelves.map(k=>button('take',k,Redworld.name(k)+' ×'+h.stock[k],'取回 · 入架参考价 '+Redworld.reference(S,k),!at)).join('') || '<p>空架</p>'}
-      ${h.stores.length ? inventory.map(k=>button('put',k,'上架 '+k+' ×'+S.items[k],'自备 · 市价参考 '+Redworld.reference(S,k),!at)).join('') : ''}
+      ${h.stores.length ? inventory.map(k=>button('put',k,'上架一件（持有'+S.items[k]+'）',k+' · 自备 · 市价参考 '+Redworld.reference(S,k),!at)).join('') : ''}
       ${h.stores.length ? Object.keys(S.mkt.st).filter(k=>S.mkt.st[k]>0 && ITEM_VAL[k]).map(k=>button('purchase',k,'进货 '+k+' 一件','灵石 −'+Jianghu.price(S,k),!at || S.ls<Jianghu.price(S,k))).join('') : ''}
       ${h.stores.length && S.path.daoji==='dan' ? S.dan.rec.map(id=>button('craft',id,'自炼入架 · '+RECIPES[id].out,cnDur(Core.timeMonths(S,Jianghu.danMonths(S,id)))+' · 耗丹方药材 · 可能炸炉',!at || !Jianghu.hasHerbs(S,id))).join('') : ''}</details>
       <section class="shop-col"><b>人间灯火</b><p>施药 ${h.goods.medicine} · 留夜 ${h.goods.shelter} · 疫镇 ${h.goods.plague}<br>${['未立祠','乡人立祠','金身已塑'][h.shrine] || '祠毁待修'}。三次善事立祠，六次塑像，不加属性。</p>
-      ${button('help','medicine','施药',dur+' · 回春丹 −1',!(S.items['回春丹']>0)||!!h.pending)}
-      ${button('help','shelter','留夜',dur+' · 灵石 −'+Math.max(1,Math.floor(Redworld.cap(S)*.2)),S.ls<Math.max(1,Math.floor(Redworld.cap(S)*.2))||!!h.pending)}
-      ${button('help','plague','不绕开疫镇',dur+' · 清心丹 −1',!(S.items['清心丹']>0)||!!h.pending)}
+      ${button('help','medicine','施药',h.pending?'先回应来人':dur+' · 回春丹 −1',!(S.items['回春丹']>0)||!!h.pending)}
+      ${button('help','shelter','留夜',h.pending?'先回应来人':dur+' · 灵石 −'+Math.max(1,Math.floor(Redworld.cap(S)*.2)),S.ls<Math.max(1,Math.floor(Redworld.cap(S)*.2))||!!h.pending)}
+      ${button('help','plague','不绕开疫镇',h.pending?'先回应来人':dur+' · 清心丹 −1',!(S.items['清心丹']>0)||!!h.pending)}
       <p>行善须在青石镇、云岳坊或京城。香火每十二个实际年仅一次：心境或免轻伤二选一。${h.incenseAt>S.months?'距下次 '+cnDur(h.incenseAt-S.months):''}${h.shield?' · 免轻伤庇佑尚在':''}</p>
-      ${h.shrine>0?button('blessing','heart','领香火 · 心境 +2','不耗光阴',S.months<h.incenseAt||!!h.pending)+button('blessing','shield','领香火 · 免一次轻伤','不免重伤，不叠层',!!h.shield||S.months<h.incenseAt||!!h.pending):''}
+      ${h.shrine>0?button('blessing','heart','领香火 · 心境 +2',h.pending?'先回应来人':'不耗光阴',S.months<h.incenseAt||!!h.pending)+button('blessing','shield','领香火 · 免一次轻伤',h.pending?'先回应来人':'不免重伤，不叠层',!!h.shield||S.months<h.incenseAt||!!h.pending):''}
       ${h.shrine===-1?button('rebuild','','重修祠堂',dur+' · 灵石 −'+Redworld.troubleCost(S),S.ls<Redworld.troubleCost(S)):''}</section>
       <details class="shop-col shop-ledger"><summary>铺子账本 · 最近四十笔</summary><p>累计现金收入 ${h.income} · 支出 ${h.expense} · 净额 ${h.income-h.expense}<br>自备货只记参考价，不视作现金支出；未收的赊免款不计收入。</p>${h.ledger.slice().reverse().map(x=>`<p><b>${Math.floor(x.at/12)}岁 · ${esc(x.text)}</b><br>收 ${x.income} ／支 ${x.expense} ／净 ${x.income-x.expense}<br>${esc(x.detail)}</p>`).join('') || '<p>这一页尚空。</p>'}</details>`;
+    w.querySelectorAll('details').forEach((d, i) => {
+      if (opened[i] || (forceShelf && d.classList.contains('shop-col') && !d.classList.contains('shop-ledger'))) d.open = true;
+    });
     w.querySelectorAll('[data-a]').forEach(b => { b.onclick = async () => {
       if (busy) return;
       const a=b.dataset.a,k=b.dataset.k,B=buffer(); let r;
       if(a==='skip'){await closeSheet();return;}
       if(a==='price'){h.price=k;save();paint();return;}
+      if(a==='put'||a==='take'||a==='purchase'||a==='craft') keepShelf = true;
       if(a==='lease'||a==='move')r=Redworld.lease(S,k,a==='move');
       else if(a==='put')r=Redworld.put(S,k);
       else if(a==='take')r=Redworld.take(S,k);
@@ -3450,7 +3471,7 @@ function openShop() {
       else if(a==='blessing')r=Redworld.blessing(S,k);
       else if(a==='respond')r=Redworld.respond(S,k,B.emit);
       else if(a==='rebuild')r=Redworld.rebuild(S,B.emit);
-      if(!r)return;if(r.err){toast(r.err);return;}
+      if(!r){keepShelf=false;return;}if(r.err){keepShelf=false;toast(r.err);return;}
       if(r.text)pushLog({title:'红尘',text:r.text,tags:r.tags,cls:'sys'});
       B.flush();render();save();
       if(S.dead){await closeSheet();checkEnd();return;}paint();
@@ -3500,6 +3521,7 @@ function openGoalPicker() {
       if (g) pushLog({ title: '此生所求', text: `你在心里写下一行很小的字：${g.name}。${g.hint}`, cls: 'gold' });
       render(); save();
       resolve(g);
+      maybeGuide();
     };
   });
 }
@@ -3704,7 +3726,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=79').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=80').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
