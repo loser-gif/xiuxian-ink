@@ -3707,26 +3707,64 @@ if (scrollClose) scrollClose.onclick = () => closeScrollView();
 const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
+function preloadSplash() {
+  const urls = ['img/open-land.png?v=82', 'img/open-cloud.png?v=82', 'img/open-ink.png?v=82', 'img/open-sub.png?v=82', 'img/open-seal.png?v=82'];
+  const jobs = urls.map(u => new Promise(res => {
+    const im = new Image();
+    im.onload = im.onerror = () => res();
+    im.src = u;
+  }));
+  return Promise.race([Promise.all(jobs), sleep(1400)]);
+}
 function splashWait() {
   const el = document.getElementById('splash');
   if (!el) return Promise.resolve();
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   el.hidden = false;
-  if (reduce) {
-    el.classList.add('skip');
-    return sleep(160).then(() => el.classList.add('gone'));
-  }
-  requestAnimationFrame(() => el.classList.add('play'));
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.body.classList.add('go', 'hold');
-  }));
-  return sleep(1280).then(() => { el.classList.add('gone'); return sleep(380); });
+  el.setAttribute('aria-hidden', 'false');
+  return new Promise(resolve => {
+    let settled = false;
+    const swallowClick = ev => { ev.preventDefault(); ev.stopPropagation(); };
+    const go = () => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('pointerdown', onSkip, true);
+      window.removeEventListener('keydown', onSkip, true);
+      document.addEventListener('click', swallowClick, true);
+      setTimeout(() => document.removeEventListener('click', swallowClick, true), 560);
+      el.classList.add('gone');
+      sleep(420).then(resolve);
+    };
+    const onSkip = ev => {
+      if (ev && ev.type === 'keydown') {
+        if (ev.repeat) return;
+        const k = ev.key;
+        if (k !== 'Escape' && k !== 'Enter' && k !== ' ') return;
+        ev.preventDefault();
+      }
+      if (el.classList.contains('skip') || settled) return;
+      el.classList.add('skip');
+      setTimeout(go, 280);
+    };
+    if (reduce) {
+      el.classList.add('skip');
+      setTimeout(go, 720);
+      return;
+    }
+    window.addEventListener('pointerdown', onSkip, true);
+    window.addEventListener('keydown', onSkip, true);
+    requestAnimationFrame(() => el.classList.add('play'));
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.body.classList.add('go', 'hold');
+    }));
+    setTimeout(go, 3680);
+  });
 }
 function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=80').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=82').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -3773,6 +3811,7 @@ function retireIntro() {
 Promise.all([
   initVisuals(),
   Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
+  preloadSplash(),
 ]).catch(() => {}).then(() => splashWait()).then(() => {
   applyLook();
   // 动画层已在卷首遮罩下建好（go+hold）。这里只放开播放。

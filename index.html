@@ -57,7 +57,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 </style>
 <script>
 (function () {
-  var EXPECT = 'moxian-v80';
+  var EXPECT = 'moxian-v82';
   var pending = '';
   function showFail(kind) {
     var box = document.getElementById('boot-fail');
@@ -130,7 +130,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     track(reg.waiting);
     reg.addEventListener('updatefound', function () { track(reg.installing); });
   }
-  navigator.serviceWorker.register('./sw.js?v=80').then(armWorker).catch(function () {});
+  navigator.serviceWorker.register('./sw.js?v=82').then(armWorker).catch(function () {});
   var reloading = false;
   function playing() {
     var screen = document.body && document.body.getAttribute('data-screen');
@@ -162,13 +162,18 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   });
 })();
 </script>
-<link rel="manifest" href="manifest.webmanifest?v=80">
-<link rel="icon" href="icon.svg?v=80" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=80">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=80" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=80" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=80">
-<link rel="stylesheet" href="css/style.css?v=80">
+<link rel="manifest" href="manifest.webmanifest?v=82">
+<link rel="icon" href="icon.svg?v=82" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=82">
+<link rel="preload" href="img/open-land.png?v=82" as="image">
+<link rel="preload" href="img/open-ink.png?v=82" as="image">
+<link rel="preload" href="img/open-seal.png?v=82" as="image">
+<link rel="preload" href="img/open-cloud.png?v=82" as="image">
+<link rel="preload" href="img/open-sub.png?v=82" as="image">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=82" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=82" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=82">
+<link rel="stylesheet" href="css/style.css?v=82">
 </head>
 <body>
 <div id="boot-fail" hidden>
@@ -216,11 +221,11 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
  <div id="realm-scape" aria-hidden="true">
-  <picture><source srcset="img/realm-0.avif?v=80" type="image/avif"><source srcset="img/realm-0.webp?v=80" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=80" alt="" decoding="async" width="720" height="404"></picture>
-  <picture><source srcset="img/realm-1.avif?v=80" type="image/avif"><source srcset="img/realm-1.webp?v=80" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=80" alt="" decoding="async" width="720" height="336"></picture>
-  <picture><source srcset="img/realm-2.avif?v=80" type="image/avif"><source srcset="img/realm-2.webp?v=80" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=80" alt="" decoding="async" width="720" height="405"></picture>
-  <picture><source srcset="img/realm-3.avif?v=80" type="image/avif"><source srcset="img/realm-3.webp?v=80" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=80" alt="" decoding="async" width="720" height="401"></picture>
-  <picture><source srcset="img/realm-4.avif?v=80" type="image/avif"><source srcset="img/realm-4.webp?v=80" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=80" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-0.avif?v=82" type="image/avif"><source srcset="img/realm-0.webp?v=82" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=82" alt="" decoding="async" width="720" height="404"></picture>
+  <picture><source srcset="img/realm-1.avif?v=82" type="image/avif"><source srcset="img/realm-1.webp?v=82" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=82" alt="" decoding="async" width="720" height="336"></picture>
+  <picture><source srcset="img/realm-2.avif?v=82" type="image/avif"><source srcset="img/realm-2.webp?v=82" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=82" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-3.avif?v=82" type="image/avif"><source srcset="img/realm-3.webp?v=82" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=82" alt="" decoding="async" width="720" height="401"></picture>
+  <picture><source srcset="img/realm-4.avif?v=82" type="image/avif"><source srcset="img/realm-4.webp?v=82" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=82" alt="" decoding="async" width="720" height="405"></picture>
  </div>
  <div id="season-veil" aria-hidden="true"></div>
 </div>
@@ -230,11 +235,21 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 <aside id="margin-r" class="page-aside" aria-hidden="true"><span id="margin-where"></span></aside>
 <canvas id="weather" aria-hidden="true"></canvas>
 <div id="intro" aria-hidden="true"><div class="drop"></div><div class="bloom"></div></div>
-<div id="splash" hidden>
-  <div class="splash-scroll">
-    <div class="splash-roller"></div>
-    <div class="splash-win"><div class="splash-paper"><span class="splash-char">纸</span></div></div>
-    <div class="splash-roller bot"></div>
+<div id="splash" hidden aria-hidden="true">
+  <div class="splash-board" role="img" aria-label="纸上仙途。水墨修仙文字游戏。">
+    <svg class="splash-arc" viewBox="0 0 1400 580" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M505.3 163.9 A246 246 0 0 0 954.7 163.9"/>
+    </svg>
+    <i class="splash-land"></i>
+    <i class="splash-cloud"></i>
+    <span class="inkslot s0"><b></b><i></i></span>
+    <span class="inkslot s1"><b></b><i></i></span>
+    <span class="inkslot s2"><b></b><i></i></span>
+    <span class="inkslot s3"><b></b><i></i></span>
+    <i class="splash-seal"></i>
+    <i class="splash-sub"></i>
+    <i class="splash-mist m1"></i>
+    <i class="splash-mist m2"></i>
   </div>
 </div>
 <div id="sw-refresh" hidden>
@@ -632,41 +647,41 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 
-<script src="js/data.js?v=80"></script>
-<script src="js/gongfa.js?v=80"></script>
-<script src="js/gear.js?v=80"></script>
-<script src="js/story.js?v=80"></script>
-<script src="js/sect.js?v=80"></script>
-<script src="js/baijia.js?v=80"></script>
-<script src="js/world.js?v=80"></script>
-<script src="js/tianxia.js?v=80"></script>
-<script src="js/karma.js?v=80"></script>
-<script src="js/life.js?v=80"></script>
-<script src="js/juan.js?v=80"></script>
-<script src="js/path.js?v=80"></script>
-<script src="js/core.js?v=80"></script>
-<script src="js/loops.js?v=80"></script>
-<script src="js/codec.js?v=80"></script>
-<script src="js/slots.js?v=80"></script>
-<script src="js/samsara.js?v=80"></script>
-<script src="js/jianghu.js?v=80"></script>
-<script src="js/folio.js?v=80"></script>
-<script src="js/arts.js?v=80"></script>
-<script src="js/people.js?v=80"></script>
-<script src="js/redworld.js?v=80"></script>
-<script src="js/ink.js?v=80"></script>
-<script src="js/ding.js?v=80"></script>
-<script src="js/map.js?v=80"></script>
-<script src="js/audio.js?v=80"></script>
-<script src="js/fx.js?v=80"></script>
-<script src="js/btfx.js?v=80"></script>
-<script src="js/fabaoart.js?v=80"></script>
-<script src="js/wallpaper.js?v=80"></script>
-<script src="js/inkgl.js?v=80"></script>
-<script src="js/jhui.js?v=80"></script>
-<script src="js/scrollart.js?v=80"></script>
-<script src="js/portraits.js?v=80"></script>
-<script src="js/notices.js?v=80"></script>
-<script src="js/game.js?v=80"></script>
+<script src="js/data.js?v=82"></script>
+<script src="js/gongfa.js?v=82"></script>
+<script src="js/gear.js?v=82"></script>
+<script src="js/story.js?v=82"></script>
+<script src="js/sect.js?v=82"></script>
+<script src="js/baijia.js?v=82"></script>
+<script src="js/world.js?v=82"></script>
+<script src="js/tianxia.js?v=82"></script>
+<script src="js/karma.js?v=82"></script>
+<script src="js/life.js?v=82"></script>
+<script src="js/juan.js?v=82"></script>
+<script src="js/path.js?v=82"></script>
+<script src="js/core.js?v=82"></script>
+<script src="js/loops.js?v=82"></script>
+<script src="js/codec.js?v=82"></script>
+<script src="js/slots.js?v=82"></script>
+<script src="js/samsara.js?v=82"></script>
+<script src="js/jianghu.js?v=82"></script>
+<script src="js/folio.js?v=82"></script>
+<script src="js/arts.js?v=82"></script>
+<script src="js/people.js?v=82"></script>
+<script src="js/redworld.js?v=82"></script>
+<script src="js/ink.js?v=82"></script>
+<script src="js/ding.js?v=82"></script>
+<script src="js/map.js?v=82"></script>
+<script src="js/audio.js?v=82"></script>
+<script src="js/fx.js?v=82"></script>
+<script src="js/btfx.js?v=82"></script>
+<script src="js/fabaoart.js?v=82"></script>
+<script src="js/wallpaper.js?v=82"></script>
+<script src="js/inkgl.js?v=82"></script>
+<script src="js/jhui.js?v=82"></script>
+<script src="js/scrollart.js?v=82"></script>
+<script src="js/portraits.js?v=82"></script>
+<script src="js/notices.js?v=82"></script>
+<script src="js/game.js?v=82"></script>
 </body>
 </html>
