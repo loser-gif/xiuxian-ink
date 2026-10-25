@@ -2411,8 +2411,8 @@ body[data-screen=main] .scroll-paper{
 #splash::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:var(--paper);pointer-events:none}
 #splash[hidden]{display:none}
 .splash-board{position:relative;z-index:1;overflow:visible;
-  width:min(1040px,92vw,calc(62vh * 1400 / 580));
-  height:min(calc(1040px * 580 / 1400),calc(92vw * 580 / 1400),62vh)}
+  width:min(1080px,94vw,calc(52vh * 3));
+  height:min(360px,calc(94vw / 3),52vh)}
 .splash-arc{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;color:var(--ink)}
 .splash-arc path{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;opacity:0;
   stroke-dasharray:580;stroke-dashoffset:580}
@@ -2422,21 +2422,35 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=87");mask-image:url("../img/open-land.png?v=87")}
+  -webkit-mask-image:url("../img/open-land.png?v=88");mask-image:url("../img/open-land.png?v=88")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=87");mask-image:url("../img/open-cloud.png?v=87")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=88");mask-image:url("../img/open-cloud.png?v=88")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=87");mask-image:url("../img/open-sub.png?v=87")}
+  -webkit-mask-image:url("../img/open-sub.png?v=88");mask-image:url("../img/open-sub.png?v=88")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-.inkslot.s0{-webkit-clip-path:inset(0 64.93% 0 17.14%);clip-path:inset(0 64.93% 0 17.14%)}
-.inkslot.s1{-webkit-clip-path:inset(0 48.36% 0 36%);clip-path:inset(0 48.36% 0 36%)}
-.inkslot.s2{-webkit-clip-path:inset(0 34.5% 0 52.71%);clip-path:inset(0 34.5% 0 52.71%)}
-.inkslot.s3{-webkit-clip-path:inset(0 15.93% 0 68.79%);clip-path:inset(0 15.93% 0 68.79%)}
-.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=87");mask-image:url("../img/open-ink.png?v=87")}
+.logo-plate{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;
+  background:url("../img/open-plate.png?v=88") center / 100% 100% no-repeat}
+.inkslot.s0{-webkit-clip-path:inset(0 60.42% 0 28.55%);clip-path:inset(0 60.42% 0 28.55%)}
+.inkslot.s1{-webkit-clip-path:inset(0 49.33% 0 39.15%);clip-path:inset(0 49.33% 0 39.15%)}
+.inkslot.s2{-webkit-clip-path:inset(0 39.89% 0 50.12%);clip-path:inset(0 39.89% 0 50.12%)}
+.inkslot.s3{-webkit-clip-path:inset(0 28.19% 0 60.11%);clip-path:inset(0 28.19% 0 60.11%)}
+.inkslot i,.inkslot b{background-color:transparent;
+  background-image:url("../img/open-glyph.png?v=88");
+  background-repeat:no-repeat;background-size:100% 100%;background-position:center;
+  -webkit-mask-image:none;mask-image:none}
+html[data-theme="night"] .logo-plate,
+html[data-theme="night"] .inkslot i{
+  -webkit-filter:invert(.9) sepia(.22) brightness(1.45) contrast(.85);
+  filter:invert(.9) sepia(.22) brightness(1.45) contrast(.85)}
+html[data-theme="night"] .inkslot b{
+  -webkit-filter:blur(7px) invert(.9) sepia(.22) brightness(1.45) contrast(.85);
+  filter:blur(7px) invert(.9) sepia(.22) brightness(1.45) contrast(.85)}
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
+.logo-seal{position:absolute;left:71.81%;top:35.48%;width:3.31%;height:20.77%;pointer-events:none;opacity:0;
+  background:url("../img/open-seal-logo.png?v=88") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=87") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=88") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -2456,12 +2470,14 @@ body[data-screen=main] .scroll-paper{
 #splash.play .splash-sub{animation:fadeUp .8s 2.62s var(--ease-ink) both}
 #splash.play .splash-mist.m1{animation:mistDrift 3.2s .5s ease-in-out both}
 #splash.play .splash-mist.m2{animation:mistDrift 3.4s .85s ease-in-out both}
-/* 题额上的远山、印、副题这次不画。名字单独落在纸上，山河等水纹过来。 */
+/* 旧的扁墨剪影留着，不再露出来。写字用选定题额的纹理字形。 */
 .splash-arc,.splash-land,.splash-cloud,.splash-seal,.splash-sub,.splash-mist{visibility:hidden}
-#splash.write .inkslot.s0 i{animation:inkFall .72s .28s cubic-bezier(.45,.05,.3,1) both}
-#splash.write .inkslot.s1 i{animation:inkFall .72s .72s cubic-bezier(.45,.05,.3,1) both}
-#splash.write .inkslot.s2 i{animation:inkFall .72s 1.16s cubic-bezier(.45,.05,.3,1) both}
-#splash.write .inkslot.s3 i{animation:inkFall .72s 1.6s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot i{opacity:1}
+#splash.write .inkslot.s0 i{animation:inkWrite .72s .28s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s1 i{animation:inkWrite .72s .72s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s2 i{animation:inkWrite .72s 1.16s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s3 i{animation:inkWrite .72s 1.6s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .logo-seal{animation:splashStamp .72s 1.45s var(--ease-ink) both}
 #splash.write .inkslot.s0 b{animation:inkBloom .8s .28s cubic-bezier(.45,.05,.3,1) both}
 #splash.write .inkslot.s1 b{animation:inkBloom .8s .72s cubic-bezier(.45,.05,.3,1) both}
 #splash.write .inkslot.s2 b{animation:inkBloom .8s 1.16s cubic-bezier(.45,.05,.3,1) both}
@@ -2470,12 +2486,14 @@ body[data-screen=main] .scroll-paper{
 #splash.write.quick .inkslot.s1 i{animation-duration:.34s;animation-delay:.24s}
 #splash.write.quick .inkslot.s2 i{animation-duration:.34s;animation-delay:.42s}
 #splash.write.quick .inkslot.s3 i{animation-duration:.34s;animation-delay:.6s}
+#splash.write.quick .logo-seal{animation-duration:.34s;animation-delay:.58s}
 #splash.write.quick .inkslot.s0 b{animation-duration:.4s;animation-delay:.06s}
 #splash.write.quick .inkslot.s1 b{animation-duration:.4s;animation-delay:.24s}
 #splash.write.quick .inkslot.s2 b{animation-duration:.4s;animation-delay:.42s}
 #splash.write.quick .inkslot.s3 b{animation-duration:.4s;animation-delay:.6s}
 #splash.skip .inkslot i{animation:none!important;opacity:1;-webkit-clip-path:none;clip-path:none}
 #splash.skip .inkslot b{animation:none!important;opacity:0}
+#splash.skip .logo-seal{animation:none!important;opacity:1;transform:none}
 #splash.wave{pointer-events:none;cursor:default}
 #splash.gone{opacity:0;pointer-events:none}
 body.sheet[data-screen=title] #scenery{animation:none;opacity:1;transform:none}
@@ -2486,6 +2504,9 @@ body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacit
   0%{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0);transform:translate3d(0,-1.2%,0)}
   28%{opacity:1}
   100%{opacity:1;-webkit-clip-path:inset(0 0 0 0);clip-path:inset(0 0 0 0);transform:none}}
+@keyframes inkWrite{
+  from{-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
+  to{-webkit-clip-path:none;clip-path:none}}
 @keyframes inkBloom{0%{opacity:0}32%{opacity:.42}100%{opacity:0}}
 @keyframes splashStamp{
   0%{opacity:0;transform:translate3d(0,-34%,0) scale(1.48) rotate(-12deg)}
@@ -3622,9 +3643,10 @@ html[data-theme="night"] .goal-cer .path-cer-panel{
 #voyage-rings i{position:absolute;left:0;top:0;box-sizing:border-box;border-style:solid;border-color:currentColor;border-radius:50%;pointer-events:none}
 #ring-b{opacity:.55}
 #ring-c{opacity:.32}
-#voyage-boat{position:fixed;z-index:64;left:0;top:0;width:50px;height:29px;overflow:hidden;pointer-events:none;background:transparent}
+#voyage-boat{position:fixed;z-index:64;left:0;top:0;width:50px;height:29px;overflow:visible;pointer-events:none;background:transparent}
 #voyage-boat[hidden]{display:none}
-#voyage-boat svg{display:block;width:100%;height:100%;transform-origin:50% 55%}
+#voyage-boat svg{display:none}
+#voyage-boat canvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 html[data-theme="night"] #voyage-boat svg{filter:invert(.88) sepia(.32) brightness(1.2) contrast(.92)}
 body.voyage:not(.voyage-live) #scenery .cam{animation:none!important;transform:none!important}
 body.voyage .boat-track{animation:none!important;transform:translate3d(48%,8%,0)!important}

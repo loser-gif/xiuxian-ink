@@ -3708,7 +3708,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-land.png?v=87', 'img/open-cloud.png?v=87', 'img/open-ink.png?v=87', 'img/open-sub.png?v=87', 'img/open-seal.png?v=87'];
+  const urls = ['img/open-plate.png?v=88', 'img/open-glyph.png?v=88', 'img/open-seal-logo.png?v=88'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -3740,7 +3740,7 @@ function splashWait() {
   if (soft) body.classList.add('voyage-quick');
   const T = soft
     ? { write: 1020, read: 400, drop: 680, wave: 1050, beat: 160, inscribe: 1320 }
-    : { write: 2400, read: 900, drop: 1450, wave: 2700, beat: 450, inscribe: 2450 };
+    : { write: 2400, read: 900, drop: 1680, wave: 2700, beat: 450, inscribe: 2450 };
   return new Promise(resolve => {
     let phase = 'write';
     let timer = 0;
@@ -3765,28 +3765,174 @@ function splashWait() {
       T.beat = 160;
       T.inscribe = 1320;
     };
+    const bleedCanvas = document.getElementById('voyage-bleed');
+    let bleedCtx = null;
+    let bleedOrder = null;
+    let bleedAlpha = null;
+    let bleedMax = 1;
+    let bleedImg = null;
+    let bleedW = 0;
+    let bleedH = 0;
+    let bleedInk = '';
+    let bleedRGB = [27, 24, 20];
+    let bleedAt = -1;
+    const SAMP = 3;
+    const prepareBleed = () => {
+      if (!bleedCanvas || bleedOrder) return;
+      bleedW = 120 * SAMP;
+      bleedH = 70 * SAMP;
+      bleedCanvas.width = bleedW;
+      bleedCanvas.height = bleedH;
+      const off = document.createElement('canvas');
+      off.width = bleedW;
+      off.height = bleedH;
+      const c = off.getContext('2d', { willReadFrequently: true });
+      if (!c) return;
+      c.setTransform(SAMP, 0, 0, SAMP, 0, 0);
+      c.fillStyle = '#000';
+      c.strokeStyle = '#000';
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+      c.beginPath();
+      c.moveTo(6, 38);
+      c.quadraticCurveTo(60, 50, 114, 34);
+      c.quadraticCurveTo(100, 46, 60, 47);
+      c.quadraticCurveTo(22, 47, 6, 38);
+      c.closePath();
+      c.fill();
+      c.beginPath();
+      c.moveTo(40, 39);
+      c.quadraticCurveTo(52, 22, 74, 24);
+      c.quadraticCurveTo(80, 30, 82, 38);
+      c.quadraticCurveTo(60, 41, 40, 39);
+      c.closePath();
+      c.fill();
+      c.lineWidth = 2.4;
+      c.beginPath();
+      c.moveTo(88, 37);
+      c.lineTo(90, 25);
+      c.stroke();
+      c.beginPath();
+      c.moveTo(82, 25);
+      c.quadraticCurveTo(90, 18, 98, 25);
+      c.closePath();
+      c.fill();
+      c.lineWidth = 1.15;
+      c.beginPath();
+      c.moveTo(95, 33);
+      c.lineTo(58, 6);
+      c.stroke();
+      const src = c.getImageData(0, 0, bleedW, bleedH).data;
+      const n = bleedW * bleedH;
+      bleedOrder = new Float32Array(n);
+      bleedAlpha = new Uint8Array(n);
+      const sx = 60 * SAMP;
+      const sy = 42 * SAMP;
+      let maxD = 1;
+      for (let i = 0; i < n; i++) {
+        const a = src[i * 4 + 3];
+        bleedAlpha[i] = a;
+        if (a < 16) {
+          bleedOrder[i] = 1e9;
+          continue;
+        }
+        const x = i % bleedW;
+        const y = (i / bleedW) | 0;
+        const noise = Math.sin(x * 0.31) + Math.cos(y * 0.27) + Math.sin((x + y) * 0.17);
+        const dist = Math.hypot(x - sx, y - sy) + noise * 6.5 * SAMP;
+        bleedOrder[i] = dist;
+        if (dist > maxD) maxD = dist;
+      }
+      bleedMax = maxD;
+      bleedCtx = bleedCanvas.getContext('2d', { willReadFrequently: true });
+      if (bleedCtx) bleedImg = bleedCtx.createImageData(bleedW, bleedH);
+    };
+    const readInk = () => {
+      let raw = '';
+      try { raw = getComputedStyle(document.documentElement).getPropertyValue('--ink'); } catch (e) { raw = ''; }
+      raw = (raw || '').trim();
+      if (raw === bleedInk) return;
+      bleedInk = raw;
+      bleedAt = -1;
+      let r = 27;
+      let g = 24;
+      let b = 20;
+      if (raw.charAt(0) === '#' && raw.length >= 7) {
+        r = parseInt(raw.slice(1, 3), 16);
+        g = parseInt(raw.slice(3, 5), 16);
+        b = parseInt(raw.slice(5, 7), 16);
+      } else if (raw.indexOf('rgb') === 0) {
+        const parts = raw.replace(/rgba?\(/, '').replace(')', '').split(',');
+        r = parseInt(parts[0], 10);
+        g = parseInt(parts[1], 10);
+        b = parseInt(parts[2], 10);
+      }
+      if (r !== r) r = 27;
+      if (g !== g) g = 24;
+      if (b !== b) b = 20;
+      bleedRGB = [r, g, b];
+    };
+    const paintBleed = (shape) => {
+      if (!bleedCtx || !bleedImg || !bleedOrder) return;
+      readInk();
+      const s = shape < 0 ? 0 : (shape > 1 ? 1 : shape);
+      if (s >= 1 && bleedAt >= 1) return;
+      bleedAt = s;
+      const reach = 11 * SAMP + s * (bleedMax - 11 * SAMP);
+      const data = bleedImg.data;
+      const r = bleedRGB[0];
+      const g = bleedRGB[1];
+      const b = bleedRGB[2];
+      const n = bleedW * bleedH;
+      for (let i = 0; i < n; i++) {
+        const o = i * 4;
+        if (bleedOrder[i] <= reach) {
+          data[o] = r;
+          data[o + 1] = g;
+          data[o + 2] = b;
+          data[o + 3] = bleedAlpha[i];
+        } else {
+          data[o + 3] = 0;
+        }
+      }
+      bleedCtx.putImageData(bleedImg, 0, 0);
+    };
+    prepareBleed();
     const paintBoat = (x, y, shape, stretch) => {
       if (!boatEl) return;
       const s = shape < 0 ? 0 : (shape > 1 ? 1 : shape);
-      const w = 14 + (50 - 14) * s;
-      const h = 18 + (29 - 18) * s;
       boatEl.hidden = false;
-      boatEl.style.width = w + 'px';
-      boatEl.style.height = h + 'px';
-      boatEl.style.marginLeft = (-w / 2) + 'px';
-      boatEl.style.marginTop = (-h / 2) + 'px';
+      if (boatSvg) boatSvg.style.display = 'none';
       boatEl.style.left = x + 'px';
       boatEl.style.top = y + 'px';
-      boatEl.style.backgroundColor = 'transparent';
-      boatEl.style.transformOrigin = '50% 62%';
-      boatEl.style.overflow = s > 0.92 ? 'visible' : 'hidden';
-      boatEl.style.borderRadius = ((1 - s) * Math.min(w, h) * 0.5) + 'px';
-      boatEl.style.transform = stretch === 1 ? 'none' : ('scaleY(' + stretch + ')');
-      if (boatSvg) {
-        const sc = s >= 1 ? 1 : (2.4 - 1.4 * s);
-        boatSvg.style.transformOrigin = '50% 64%';
-        boatSvg.style.transform = sc === 1 ? 'none' : ('scale(' + sc + ')');
+      if (s <= 0.001) {
+        const w = 8;
+        const h = 10;
+        boatEl.style.width = w + 'px';
+        boatEl.style.height = h + 'px';
+        boatEl.style.marginLeft = (-w / 2) + 'px';
+        boatEl.style.marginTop = (-h / 2) + 'px';
+        boatEl.style.backgroundColor = 'var(--ink)';
+        boatEl.style.borderRadius = '50%';
+        boatEl.style.overflow = 'hidden';
+        boatEl.style.transformOrigin = '50% 50%';
+        boatEl.style.transform = stretch === 1 ? 'none' : ('scaleY(' + stretch + ')');
+        if (bleedCanvas) bleedCanvas.style.display = 'none';
+        return;
       }
+      const w = 50;
+      const h = 29;
+      const anchorY = 17.4 + (14.5 - 17.4) * s;
+      boatEl.style.width = w + 'px';
+      boatEl.style.height = h + 'px';
+      boatEl.style.marginLeft = '-25px';
+      boatEl.style.marginTop = (-anchorY) + 'px';
+      boatEl.style.backgroundColor = 'transparent';
+      boatEl.style.borderRadius = '0';
+      boatEl.style.overflow = 'visible';
+      boatEl.style.transform = 'none';
+      if (bleedCanvas) bleedCanvas.style.display = 'block';
+      paintBleed(s);
     };
     const setHole = (cx, cy, r) => {
       const rr = r < 1 ? 1 : r;
@@ -3844,8 +3990,8 @@ function splashWait() {
       if (board) {
         const rct = board.getBoundingClientRect();
         if (rct.width > 2) {
-          ox = rct.left + rct.width * 0.78;
-          oy = rct.top + rct.height * 0.64;
+          ox = rct.left + rct.width * 0.66;
+          oy = rct.top + rct.height * 0.72;
         }
       }
       const shift = Math.min(48, window.innerWidth * 0.05);
@@ -3860,7 +4006,7 @@ function splashWait() {
     const frameDrop = t => {
       const u = !motion || motion.dur <= 0 ? 1 : Math.min(1, (t - motion.t0) / motion.dur);
       const g = geo;
-      const fallEnd = 0.62;
+      const fallEnd = 0.46;
       let x;
       let y;
       let shape = 0;
@@ -4039,7 +4185,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=87').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=88').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

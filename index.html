@@ -57,7 +57,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 </style>
 <script>
 (function () {
-  var EXPECT = 'moxian-v87';
+  var EXPECT = 'moxian-v88';
   var pending = '';
   function showFail(kind) {
     var box = document.getElementById('boot-fail');
@@ -130,7 +130,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     track(reg.waiting);
     reg.addEventListener('updatefound', function () { track(reg.installing); });
   }
-  navigator.serviceWorker.register('./sw.js?v=87').then(armWorker).catch(function () {});
+  navigator.serviceWorker.register('./sw.js?v=88').then(armWorker).catch(function () {});
   var reloading = false;
   function playing() {
     var screen = document.body && document.body.getAttribute('data-screen');
@@ -162,18 +162,16 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   });
 })();
 </script>
-<link rel="manifest" href="manifest.webmanifest?v=87">
-<link rel="icon" href="icon.svg?v=87" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=87">
-<link rel="preload" href="img/open-land.png?v=87" as="image">
-<link rel="preload" href="img/open-ink.png?v=87" as="image">
-<link rel="preload" href="img/open-seal.png?v=87" as="image">
-<link rel="preload" href="img/open-cloud.png?v=87" as="image">
-<link rel="preload" href="img/open-sub.png?v=87" as="image">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=87" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=87" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=87">
-<link rel="stylesheet" href="css/style.css?v=87">
+<link rel="manifest" href="manifest.webmanifest?v=88">
+<link rel="icon" href="icon.svg?v=88" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=88">
+<link rel="preload" href="img/open-plate.png?v=88" as="image">
+<link rel="preload" href="img/open-glyph.png?v=88" as="image">
+<link rel="preload" href="img/open-seal-logo.png?v=88" as="image">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=88" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=88" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=88">
+<link rel="stylesheet" href="css/style.css?v=88">
 </head>
 <body>
 <div id="boot-fail" hidden>
@@ -221,11 +219,11 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
  <div id="realm-scape" aria-hidden="true">
-  <picture><source srcset="img/realm-0.avif?v=87" type="image/avif"><source srcset="img/realm-0.webp?v=87" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=87" alt="" decoding="async" width="720" height="404"></picture>
-  <picture><source srcset="img/realm-1.avif?v=87" type="image/avif"><source srcset="img/realm-1.webp?v=87" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=87" alt="" decoding="async" width="720" height="336"></picture>
-  <picture><source srcset="img/realm-2.avif?v=87" type="image/avif"><source srcset="img/realm-2.webp?v=87" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=87" alt="" decoding="async" width="720" height="405"></picture>
-  <picture><source srcset="img/realm-3.avif?v=87" type="image/avif"><source srcset="img/realm-3.webp?v=87" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=87" alt="" decoding="async" width="720" height="401"></picture>
-  <picture><source srcset="img/realm-4.avif?v=87" type="image/avif"><source srcset="img/realm-4.webp?v=87" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=87" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-0.avif?v=88" type="image/avif"><source srcset="img/realm-0.webp?v=88" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=88" alt="" decoding="async" width="720" height="404"></picture>
+  <picture><source srcset="img/realm-1.avif?v=88" type="image/avif"><source srcset="img/realm-1.webp?v=88" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=88" alt="" decoding="async" width="720" height="336"></picture>
+  <picture><source srcset="img/realm-2.avif?v=88" type="image/avif"><source srcset="img/realm-2.webp?v=88" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=88" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-3.avif?v=88" type="image/avif"><source srcset="img/realm-3.webp?v=88" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=88" alt="" decoding="async" width="720" height="401"></picture>
+  <picture><source srcset="img/realm-4.avif?v=88" type="image/avif"><source srcset="img/realm-4.webp?v=88" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=88" alt="" decoding="async" width="720" height="405"></picture>
  </div>
  <div id="season-veil" aria-hidden="true"></div>
 </div>
@@ -237,6 +235,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 <div id="intro" aria-hidden="true"><div class="drop"></div><div class="bloom"></div></div>
 <div id="splash" hidden aria-hidden="true">
   <div class="splash-board" role="img" aria-label="纸上仙途。水墨修仙文字游戏。">
+    <i class="logo-plate"></i>
     <svg class="splash-arc" viewBox="0 0 1400 580" preserveAspectRatio="none" aria-hidden="true">
       <path d="M505.3 163.9 A246 246 0 0 0 954.7 163.9"/>
     </svg>
@@ -246,6 +245,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     <span class="inkslot s1"><b></b><i></i></span>
     <span class="inkslot s2"><b></b><i></i></span>
     <span class="inkslot s3"><b></b><i></i></span>
+    <i class="logo-seal"></i>
     <i class="splash-seal"></i>
     <i class="splash-sub"></i>
     <i class="splash-mist m1"></i>
@@ -253,7 +253,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 <div id="voyage-rings" hidden aria-hidden="true"><i id="ring-a"></i><i id="ring-b"></i><i id="ring-c"></i></div>
-<div id="voyage-boat" hidden aria-hidden="true"><svg viewBox="0 0 120 70"><g class="bt-up"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b" opacity=".85"/><path d="M88 37 L90 25" stroke="#1f1c18" stroke-width="2.2" stroke-linecap="round"/><path d="M82 25 Q90 18 98 25 Z" fill="#1f1c18"/><path d="M95 33 L58 6" stroke="#2a2621" stroke-width="1" stroke-linecap="round"/></g><g class="bt-refl" transform="translate(0 94) scale(1 -1)" opacity=".16"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b"/><path d="M82 25 Q90 18 98 25 Z M88 37 L90 25" fill="#1f1c18" stroke="#1f1c18" stroke-width="2"/></g></svg></div>
+<div id="voyage-boat" hidden aria-hidden="true"><canvas id="voyage-bleed" width="360" height="210" aria-hidden="true"></canvas><svg viewBox="0 0 120 70"><g class="bt-up"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b" opacity=".85"/><path d="M88 37 L90 25" stroke="#1f1c18" stroke-width="2.2" stroke-linecap="round"/><path d="M82 25 Q90 18 98 25 Z" fill="#1f1c18"/><path d="M95 33 L58 6" stroke="#2a2621" stroke-width="1" stroke-linecap="round"/></g><g class="bt-refl" transform="translate(0 94) scale(1 -1)" opacity=".16"><path d="M6 38 Q60 50 114 34 Q100 46 60 47 Q22 47 6 38Z" fill="#1f1c18"/><path d="M40 39 Q52 22 74 24 Q80 30 82 38 Q60 41 40 39Z" fill="#3a332b"/><path d="M82 25 Q90 18 98 25 Z M88 37 L90 25" fill="#1f1c18" stroke="#1f1c18" stroke-width="2"/></g></svg></div>
 <div id="sw-refresh" hidden>
   <span>新版已至，刷新</span>
   <button type="button" id="sw-refresh-btn">刷新</button>
@@ -649,41 +649,41 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 
-<script src="js/data.js?v=87"></script>
-<script src="js/gongfa.js?v=87"></script>
-<script src="js/gear.js?v=87"></script>
-<script src="js/story.js?v=87"></script>
-<script src="js/sect.js?v=87"></script>
-<script src="js/baijia.js?v=87"></script>
-<script src="js/world.js?v=87"></script>
-<script src="js/tianxia.js?v=87"></script>
-<script src="js/karma.js?v=87"></script>
-<script src="js/life.js?v=87"></script>
-<script src="js/juan.js?v=87"></script>
-<script src="js/path.js?v=87"></script>
-<script src="js/core.js?v=87"></script>
-<script src="js/loops.js?v=87"></script>
-<script src="js/codec.js?v=87"></script>
-<script src="js/slots.js?v=87"></script>
-<script src="js/samsara.js?v=87"></script>
-<script src="js/jianghu.js?v=87"></script>
-<script src="js/folio.js?v=87"></script>
-<script src="js/arts.js?v=87"></script>
-<script src="js/people.js?v=87"></script>
-<script src="js/redworld.js?v=87"></script>
-<script src="js/ink.js?v=87"></script>
-<script src="js/ding.js?v=87"></script>
-<script src="js/map.js?v=87"></script>
-<script src="js/audio.js?v=87"></script>
-<script src="js/fx.js?v=87"></script>
-<script src="js/btfx.js?v=87"></script>
-<script src="js/fabaoart.js?v=87"></script>
-<script src="js/wallpaper.js?v=87"></script>
-<script src="js/inkgl.js?v=87"></script>
-<script src="js/jhui.js?v=87"></script>
-<script src="js/scrollart.js?v=87"></script>
-<script src="js/portraits.js?v=87"></script>
-<script src="js/notices.js?v=87"></script>
-<script src="js/game.js?v=87"></script>
+<script src="js/data.js?v=88"></script>
+<script src="js/gongfa.js?v=88"></script>
+<script src="js/gear.js?v=88"></script>
+<script src="js/story.js?v=88"></script>
+<script src="js/sect.js?v=88"></script>
+<script src="js/baijia.js?v=88"></script>
+<script src="js/world.js?v=88"></script>
+<script src="js/tianxia.js?v=88"></script>
+<script src="js/karma.js?v=88"></script>
+<script src="js/life.js?v=88"></script>
+<script src="js/juan.js?v=88"></script>
+<script src="js/path.js?v=88"></script>
+<script src="js/core.js?v=88"></script>
+<script src="js/loops.js?v=88"></script>
+<script src="js/codec.js?v=88"></script>
+<script src="js/slots.js?v=88"></script>
+<script src="js/samsara.js?v=88"></script>
+<script src="js/jianghu.js?v=88"></script>
+<script src="js/folio.js?v=88"></script>
+<script src="js/arts.js?v=88"></script>
+<script src="js/people.js?v=88"></script>
+<script src="js/redworld.js?v=88"></script>
+<script src="js/ink.js?v=88"></script>
+<script src="js/ding.js?v=88"></script>
+<script src="js/map.js?v=88"></script>
+<script src="js/audio.js?v=88"></script>
+<script src="js/fx.js?v=88"></script>
+<script src="js/btfx.js?v=88"></script>
+<script src="js/fabaoart.js?v=88"></script>
+<script src="js/wallpaper.js?v=88"></script>
+<script src="js/inkgl.js?v=88"></script>
+<script src="js/jhui.js?v=88"></script>
+<script src="js/scrollart.js?v=88"></script>
+<script src="js/portraits.js?v=88"></script>
+<script src="js/notices.js?v=88"></script>
+<script src="js/game.js?v=88"></script>
 </body>
 </html>
