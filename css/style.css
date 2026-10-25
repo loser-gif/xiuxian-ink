@@ -2405,8 +2405,8 @@ body[data-screen=main] .scroll-paper{
 }
 
 /* ===== v82：开场题额。远山、圆月、四字落墨、问道印。颗粒用既有 #fiber / #grain（压在本层之上）。 ===== */
-#splash{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
-  background:transparent;padding:calc(var(--sat) + 18px) calc(var(--sar) + 16px) calc(var(--sab) + 18px) calc(var(--sal) + 16px);
+#splash{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;
+  background:transparent;padding:calc(var(--sat) + 4.5vh) calc(var(--sar) + 16px) calc(var(--sab) + 18px) calc(var(--sal) + 16px);
   cursor:pointer;-webkit-user-select:none;user-select:none}
 #splash::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:var(--paper);pointer-events:none}
 #splash[hidden]{display:none}
@@ -2422,21 +2422,21 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=86");mask-image:url("../img/open-land.png?v=86")}
+  -webkit-mask-image:url("../img/open-land.png?v=87");mask-image:url("../img/open-land.png?v=87")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=86");mask-image:url("../img/open-cloud.png?v=86")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=87");mask-image:url("../img/open-cloud.png?v=87")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=86");mask-image:url("../img/open-sub.png?v=86")}
+  -webkit-mask-image:url("../img/open-sub.png?v=87");mask-image:url("../img/open-sub.png?v=87")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .inkslot.s0{-webkit-clip-path:inset(0 64.93% 0 17.14%);clip-path:inset(0 64.93% 0 17.14%)}
 .inkslot.s1{-webkit-clip-path:inset(0 48.36% 0 36%);clip-path:inset(0 48.36% 0 36%)}
 .inkslot.s2{-webkit-clip-path:inset(0 34.5% 0 52.71%);clip-path:inset(0 34.5% 0 52.71%)}
 .inkslot.s3{-webkit-clip-path:inset(0 15.93% 0 68.79%);clip-path:inset(0 15.93% 0 68.79%)}
-.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=86");mask-image:url("../img/open-ink.png?v=86")}
+.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=87");mask-image:url("../img/open-ink.png?v=87")}
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=86") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=87") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -2456,12 +2456,27 @@ body[data-screen=main] .scroll-paper{
 #splash.play .splash-sub{animation:fadeUp .8s 2.62s var(--ease-ink) both}
 #splash.play .splash-mist.m1{animation:mistDrift 3.2s .5s ease-in-out both}
 #splash.play .splash-mist.m2{animation:mistDrift 3.4s .85s ease-in-out both}
-#splash.skip .splash-arc path{animation:none!important;stroke-dashoffset:0;opacity:.58}
-#splash.skip .splash-land,#splash.skip .splash-cloud{animation:none!important;opacity:1}
+/* 题额上的远山、印、副题这次不画。名字单独落在纸上，山河等水纹过来。 */
+.splash-arc,.splash-land,.splash-cloud,.splash-seal,.splash-sub,.splash-mist{visibility:hidden}
+#splash.write .inkslot.s0 i{animation:inkFall .72s .28s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s1 i{animation:inkFall .72s .72s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s2 i{animation:inkFall .72s 1.16s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s3 i{animation:inkFall .72s 1.6s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s0 b{animation:inkBloom .8s .28s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s1 b{animation:inkBloom .8s .72s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s2 b{animation:inkBloom .8s 1.16s cubic-bezier(.45,.05,.3,1) both}
+#splash.write .inkslot.s3 b{animation:inkBloom .8s 1.6s cubic-bezier(.45,.05,.3,1) both}
+#splash.write.quick .inkslot.s0 i{animation-duration:.34s;animation-delay:.06s}
+#splash.write.quick .inkslot.s1 i{animation-duration:.34s;animation-delay:.24s}
+#splash.write.quick .inkslot.s2 i{animation-duration:.34s;animation-delay:.42s}
+#splash.write.quick .inkslot.s3 i{animation-duration:.34s;animation-delay:.6s}
+#splash.write.quick .inkslot.s0 b{animation-duration:.4s;animation-delay:.06s}
+#splash.write.quick .inkslot.s1 b{animation-duration:.4s;animation-delay:.24s}
+#splash.write.quick .inkslot.s2 b{animation-duration:.4s;animation-delay:.42s}
+#splash.write.quick .inkslot.s3 b{animation-duration:.4s;animation-delay:.6s}
 #splash.skip .inkslot i{animation:none!important;opacity:1;-webkit-clip-path:none;clip-path:none}
-#splash.skip .inkslot b,#splash.skip .splash-mist{animation:none!important;opacity:0}
-#splash.skip .splash-seal{animation:none!important;opacity:1;transform:none}
-#splash.skip .splash-sub{animation:none!important;opacity:1;transform:none}
+#splash.skip .inkslot b{animation:none!important;opacity:0}
+#splash.wave{pointer-events:none;cursor:default}
 #splash.gone{opacity:0;pointer-events:none}
 body.sheet[data-screen=title] #scenery{animation:none;opacity:1;transform:none}
 body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacity:0!important}
@@ -3601,87 +3616,93 @@ html[data-theme="night"] .goal-cer .path-cer-panel{
 .shop-sheet .menu-item.is-wait:disabled{opacity:.92}
 .shop-sheet .menu-item.is-wait small{color:var(--zhu);letter-spacing:.14em}
 
-/* v86：题额落定后，这一张纸展开成卷首。四字留在原处淡去，山河、竖题、印和开卷在同一张纸上陆续出来。 */
-#splash.unfold{pointer-events:none;cursor:default}
-#splash.unfold::before{
-  animation:sheetOpen var(--handoff,5.8s) cubic-bezier(.45,.06,.2,1) forwards!important}
-#splash.unfold .splash-board{
-  transform-origin:50% 62%;
-  animation:boardGrow var(--handoff,5.8s) cubic-bezier(.42,.04,.2,1) forwards!important}
-#splash.unfold .inkslot,
-#splash.unfold .splash-seal,
-#splash.unfold .splash-sub{
-  animation:colophonFade var(--handoff,5.8s) cubic-bezier(.4,.05,.25,1) forwards!important}
-body.opening[data-screen=title] #scenery .cam{
-  animation:landOpen var(--handoff,5.8s) cubic-bezier(.33,.04,.2,1) forwards!important}
-body.opening[data-screen=title] #scenery .m1,
-body.opening[data-screen=title] #scenery .m2,
-body.opening[data-screen=title] #scenery .mist,
-body.opening[data-screen=title] #scenery .atmo{
-  animation:landDeepen var(--handoff,5.8s) ease-out forwards!important}
-body.opening[data-screen=title] #scenery .m3,
-body.opening[data-screen=title] #scenery .m4,
-body.opening[data-screen=title] #scenery .lake{
-  animation:landEmerge var(--handoff,5.8s) ease-out forwards!important}
-body.opening[data-screen=title] #scenery .sun{
-  animation:landEmerge var(--handoff,5.8s) ease-out forwards,sunArc 84s linear infinite!important}
-body.opening[data-screen=title] #scenery .pine{
-  animation:landPine var(--handoff,5.8s) ease-out forwards,sway 9s ease-in-out infinite alternate!important}
-@keyframes sheetOpen{
-  0%{opacity:1}
-  16%{opacity:.78}
-  40%{opacity:.32}
-  64%{opacity:.06}
-  100%{opacity:0}}
-@keyframes boardGrow{
-  0%{opacity:1;transform:scale(1)}
-  24%{opacity:.9;transform:scale(1.08)}
-  46%{opacity:.4;transform:scale(1.2)}
-  70%{opacity:.06;transform:scale(1.34)}
-  100%{opacity:0;transform:scale(1.42)}}
-@keyframes colophonFade{
-  0%{opacity:1}
-  14%{opacity:.92}
-  38%{opacity:0}
-  100%{opacity:0}}
-@keyframes landOpen{
-  0%{transform:scale(1.34) translate3d(-1%,5%,0)}
-  100%{transform:scale(1.045) translate3d(-1.6%,.4%,0)}}
-@keyframes landDeepen{
-  0%{opacity:.22}
-  42%{opacity:.7}
-  100%{opacity:1}}
-@keyframes landEmerge{
-  0%{opacity:0}
-  18%{opacity:0}
-  56%{opacity:1}
-  100%{opacity:1}}
-@keyframes landPine{
-  0%{opacity:0}
-  22%{opacity:0}
-  60%{opacity:.82}
-  100%{opacity:.82}}
-/* 动效简、系统减少动态：同一张纸展开，只是更短。盖过更早的 .01s，顺序仍是题、诗、印、开卷。 */
-body.unfold-quick:not(.intro-done) .tch b{
-  animation-duration:.68s!important;
-  animation-delay:calc(.18s + var(--d) * .1s)!important}
-body.unfold-quick:not(.intro-done) .tch::after{
-  animation-duration:1s!important;
-  animation-delay:calc(.28s + var(--d) * .1s)!important}
-body.unfold-quick:not(.intro-done) .title-sub{
-  animation-duration:.7s!important;
-  animation-delay:.48s!important}
-body.unfold-quick:not(.intro-done) .title-poem{
+/* v87：墨落成舟。纸上先写名字，墨滴落成舟，水纹以硬边揭开山河。菜单和朱印在舟停之后才写。 */
+#voyage-rings{position:fixed;left:0;top:0;width:100%;height:100%;z-index:63;pointer-events:none;color:var(--ink)}
+#voyage-rings[hidden]{display:none}
+#voyage-rings i{position:absolute;left:0;top:0;box-sizing:border-box;border-style:solid;border-color:currentColor;border-radius:50%;pointer-events:none}
+#ring-b{opacity:.55}
+#ring-c{opacity:.32}
+#voyage-boat{position:fixed;z-index:64;left:0;top:0;width:50px;height:29px;overflow:hidden;pointer-events:none;background:transparent}
+#voyage-boat[hidden]{display:none}
+#voyage-boat svg{display:block;width:100%;height:100%;transform-origin:50% 55%}
+html[data-theme="night"] #voyage-boat svg{filter:invert(.88) sepia(.32) brightness(1.2) contrast(.92)}
+body.voyage:not(.voyage-live) #scenery .cam{animation:none!important;transform:none!important}
+body.voyage .boat-track{animation:none!important;transform:translate3d(48%,8%,0)!important}
+body.voyage .boat{animation:none!important}
+body.voyage:not(.boat-live) .boat,
+body.voyage:not(.boat-live) .wake{visibility:hidden!important}
+body.voyage:not(.inscribe-go) .title-v,
+body.voyage:not(.inscribe-go) .title-side,
+body.voyage:not(.inscribe-go) .title-poem,
+body.voyage:not(.inscribe-go) .title-menu,
+body.voyage:not(.inscribe-go) #btn-notice,
+body.voyage:not(.inscribe-go) #audio-dock{visibility:hidden!important}
+@keyframes poemWet{from{-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}to{-webkit-clip-path:none;clip-path:none}}
+body.voyage:not(.intro-done) .tch b{
+  animation-duration:1.05s!important;
+  animation-delay:calc(.06s + var(--d) * .14s)!important}
+body.voyage:not(.intro-done) .tch::after{
+  animation-duration:1.2s!important;
+  animation-delay:calc(.12s + var(--d) * .14s)!important}
+body.voyage:not(.intro-done) .title-sub,
+body.voyage:not(.intro-done) .title-poem{
+  opacity:1!important;
+  animation-name:poemWet!important;
+  animation-duration:.85s!important;
+  animation-fill-mode:both!important;
+  animation-timing-function:var(--ease-ink)!important}
+body.voyage:not(.intro-done) .title-sub{animation-delay:.22s!important}
+body.voyage:not(.intro-done) .title-poem{animation-delay:.4s!important}
+body.voyage:not(.intro-done) .title-menu{--ink-d:.9s}
+body.voyage:not(.intro-done) .seal-title,
+body.voyage:not(.intro-done) .seal-title::before{
+  animation-duration:.72s!important;
+  animation-delay:1.62s!important}
+body.voyage:not(.intro-done) .seal-halo{
   animation-duration:.8s!important;
-  animation-delay:.58s!important}
-body.unfold-quick:not(.intro-done) .seal-title,
-body.unfold-quick:not(.intro-done) .seal-title::before{
-  animation-duration:.62s!important;
-  animation-delay:.72s!important}
-body.unfold-quick:not(.intro-done) .seal-halo{
-  animation-duration:.7s!important;
-  animation-delay:.86s!important}
-body.unfold-quick:not(.intro-done) .title-menu{--ink-d:1.05s}
-body.unfold-quick:not(.intro-done) #btn-notice.notice-seal{
-  animation-duration:.55s!important;
-  animation-delay:.64s!important}
+  animation-delay:1.82s!important}
+body.voyage:not(.intro-done) #btn-notice.notice-seal{
+  animation-duration:.6s!important;
+  animation-delay:1.15s!important}
+body.voyage.voyage-quick:not(.intro-done) .tch b{
+  animation-duration:.42s!important;
+  animation-delay:calc(.02s + var(--d) * .05s)!important}
+body.voyage.voyage-quick:not(.intro-done) .tch::after{
+  animation-duration:.5s!important;
+  animation-delay:calc(.06s + var(--d) * .05s)!important}
+body.voyage.voyage-quick:not(.intro-done) .title-sub{animation-duration:.36s!important;animation-delay:.08s!important}
+body.voyage.voyage-quick:not(.intro-done) .title-poem{animation-duration:.4s!important;animation-delay:.14s!important}
+body.voyage.voyage-quick:not(.intro-done) .title-menu{--ink-d:.32s}
+body.voyage.voyage-quick:not(.intro-done) .seal-title,
+body.voyage.voyage-quick:not(.intro-done) .seal-title::before{
+  animation-duration:.4s!important;
+  animation-delay:.78s!important}
+body.voyage.voyage-quick:not(.intro-done) .seal-halo{
+  animation-duration:.4s!important;
+  animation-delay:.88s!important}
+body.voyage.voyage-quick:not(.intro-done) #btn-notice.notice-seal{
+  animation-duration:.36s!important;
+  animation-delay:.5s!important}
+/* 舟停之前，题字、菜单、朱印都不走。加上 inscribe-go 才开始，避免暂停时延迟被吃掉。 */
+body.voyage:not(.inscribe-go) .tch b,
+body.voyage:not(.inscribe-go) .tch::after,
+body.voyage:not(.inscribe-go) .title-sub,
+body.voyage:not(.inscribe-go) .title-poem,
+body.voyage:not(.inscribe-go) .title-menu .bb-ink,
+body.voyage:not(.inscribe-go) .title-menu .bb-text,
+body.voyage:not(.inscribe-go) .title-menu small,
+body.voyage:not(.inscribe-go) .seal-title,
+body.voyage:not(.inscribe-go) .seal-title::before,
+body.voyage:not(.inscribe-go) .seal-halo,
+body.voyage:not(.inscribe-go) #btn-notice.notice-seal{animation:none!important}
+@media (prefers-reduced-motion:reduce){
+  body.voyage.inscribe-go:not(.intro-done) .title-menu .bb-ink{
+    -webkit-mask-image:linear-gradient(96deg,#000 0%,#000 46%,rgba(0,0,0,.5) 58%,transparent 72%)!important;
+    mask-image:linear-gradient(96deg,#000 0%,#000 46%,rgba(0,0,0,.5) 58%,transparent 72%)!important;
+    -webkit-mask-size:340% 260%!important;mask-size:340% 260%!important;
+    -webkit-mask-repeat:no-repeat!important;mask-repeat:no-repeat!important;
+    animation:inkSoak .55s linear var(--ink-d) both!important}
+  body.voyage.inscribe-go:not(.intro-done) .title-menu .bb-text,
+  body.voyage.inscribe-go:not(.intro-done) .title-menu small{
+    animation:inkWord .36s cubic-bezier(.16,.84,.28,1) calc(var(--ink-d) + .16s) both!important}
+}

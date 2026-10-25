@@ -3708,7 +3708,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-land.png?v=86', 'img/open-cloud.png?v=86', 'img/open-ink.png?v=86', 'img/open-sub.png?v=86', 'img/open-seal.png?v=86'];
+  const urls = ['img/open-land.png?v=87', 'img/open-cloud.png?v=87', 'img/open-ink.png?v=87', 'img/open-sub.png?v=87', 'img/open-seal.png?v=87'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -3718,49 +3718,266 @@ function preloadSplash() {
 }
 function splashSoft() {
   const root = document.documentElement;
+  /* 省电档 data-fx=thin 不缩短这段。动效简与系统减少动效才走同一叙事的短版。 */
   return matchMedia('(prefers-reduced-motion: reduce)').matches
-    || root.getAttribute('data-motion') === 'lite'
-    || root.getAttribute('data-fx') === 'thin';
+    || root.getAttribute('data-motion') === 'lite';
 }
 function splashWait() {
   const el = document.getElementById('splash');
   if (!el) return Promise.resolve();
   const soft = splashSoft();
+  const body = document.body;
+  const root = document.documentElement;
+  const boatEl = document.getElementById('voyage-boat');
+  const boatSvg = boatEl ? boatEl.querySelector('svg') : null;
+  const rings = document.getElementById('voyage-rings');
+  const ringA = document.getElementById('ring-a');
+  const ringB = document.getElementById('ring-b');
+  const ringC = document.getElementById('ring-c');
   el.hidden = false;
   el.setAttribute('aria-hidden', 'false');
+  body.classList.add('go', 'hold', 'sheet', 'voyage');
+  if (soft) body.classList.add('voyage-quick');
+  const T = soft
+    ? { write: 1020, read: 400, drop: 680, wave: 1050, beat: 160, inscribe: 1320 }
+    : { write: 2400, read: 900, drop: 1450, wave: 2700, beat: 450, inscribe: 2450 };
   return new Promise(resolve => {
-    let settled = false;
+    let phase = 'write';
+    let timer = 0;
+    let raf = 0;
+    let motion = null;
+    let geo = null;
+    let swallowTimer = 0;
+    const mark = (name, p) => {
+      root.dataset.voyagePhase = name;
+      if (p != null) root.dataset.voyageP = String(Math.round(p));
+    };
+    mark('write', 0);
     const swallowClick = ev => { ev.preventDefault(); ev.stopPropagation(); };
     const armSwallow = ms => {
       document.addEventListener('click', swallowClick, true);
-      setTimeout(() => document.removeEventListener('click', swallowClick, true), ms);
+      clearTimeout(swallowTimer);
+      swallowTimer = setTimeout(() => document.removeEventListener('click', swallowClick, true), ms);
     };
-    const reveal = quick => {
-      if (!document.body.classList.contains('go')) document.body.classList.add('go');
-      document.body.classList.add('sheet', 'opening');
-      if (quick) document.body.classList.add('unfold-quick');
-      document.body.classList.remove('hold');
+    const applyQuick = () => {
+      T.drop = 680;
+      T.wave = 1050;
+      T.beat = 160;
+      T.inscribe = 1320;
     };
-    const go = () => {
-      if (settled) return;
-      settled = true;
+    const paintBoat = (x, y, shape, stretch) => {
+      if (!boatEl) return;
+      const s = shape < 0 ? 0 : (shape > 1 ? 1 : shape);
+      const w = 14 + (50 - 14) * s;
+      const h = 18 + (29 - 18) * s;
+      boatEl.hidden = false;
+      boatEl.style.width = w + 'px';
+      boatEl.style.height = h + 'px';
+      boatEl.style.marginLeft = (-w / 2) + 'px';
+      boatEl.style.marginTop = (-h / 2) + 'px';
+      boatEl.style.left = x + 'px';
+      boatEl.style.top = y + 'px';
+      boatEl.style.backgroundColor = 'transparent';
+      boatEl.style.transformOrigin = '50% 62%';
+      boatEl.style.overflow = s > 0.92 ? 'visible' : 'hidden';
+      boatEl.style.borderRadius = ((1 - s) * Math.min(w, h) * 0.5) + 'px';
+      boatEl.style.transform = stretch === 1 ? 'none' : ('scaleY(' + stretch + ')');
+      if (boatSvg) {
+        const sc = s >= 1 ? 1 : (2.4 - 1.4 * s);
+        boatSvg.style.transformOrigin = '50% 64%';
+        boatSvg.style.transform = sc === 1 ? 'none' : ('scale(' + sc + ')');
+      }
+    };
+    const setHole = (cx, cy, r) => {
+      const rr = r < 1 ? 1 : r;
+      const edge = rr - 1.25;
+      const mask = 'radial-gradient(circle ' + rr.toFixed(2) + 'px at ' + cx.toFixed(2) + 'px ' + cy.toFixed(2) + 'px, rgba(255,255,255,0) ' + (edge < 0 ? 0 : edge).toFixed(2) + 'px, #fff ' + rr.toFixed(2) + 'px)';
+      el.style.webkitMaskImage = mask;
+      el.style.maskImage = mask;
+      el.style.webkitMaskRepeat = 'no-repeat';
+      el.style.maskRepeat = 'no-repeat';
+      el.style.webkitMaskPosition = '0 0';
+      el.style.maskPosition = '0 0';
+      el.style.webkitMaskSize = '100% 100%';
+      el.style.maskSize = '100% 100%';
+    };
+    const clearHole = () => {
+      el.style.webkitMaskImage = '';
+      el.style.maskImage = '';
+    };
+    const setRings = (cx, cy, r) => {
+      if (!rings) return;
+      const place = (node, rad, width) => {
+        if (!node) return;
+        if (rad < 8) {
+          node.style.display = 'none';
+          return;
+        }
+        const d = rad * 2;
+        node.style.display = 'block';
+        node.style.width = d + 'px';
+        node.style.height = d + 'px';
+        node.style.left = cx + 'px';
+        node.style.top = cy + 'px';
+        node.style.marginLeft = (-rad) + 'px';
+        node.style.marginTop = (-rad) + 'px';
+        node.style.borderWidth = width + 'px';
+      };
+      place(ringA, r, 3);
+      place(ringB, r - 22, 1.6);
+      place(ringC, r - 48, 1);
+    };
+    const measure = () => {
+      const real = document.querySelector('#scenery .boat');
+      let restX = window.innerWidth * 0.58;
+      let restY = window.innerHeight * 0.8;
+      if (real) {
+        const b = real.getBoundingClientRect();
+        if (b.width > 2) {
+          restX = b.left + b.width / 2;
+          restY = b.top + b.height / 2;
+        }
+      }
+      const board = el.querySelector('.splash-board');
+      let ox = window.innerWidth * 0.62;
+      let oy = window.innerHeight * 0.22;
+      if (board) {
+        const rct = board.getBoundingClientRect();
+        if (rct.width > 2) {
+          ox = rct.left + rct.width * 0.78;
+          oy = rct.top + rct.height * 0.64;
+        }
+      }
+      const shift = Math.min(48, window.innerWidth * 0.05);
+      const landX = restX - shift;
+      const landY = restY + 4;
+      const rMax = Math.hypot(
+        Math.max(landX, window.innerWidth - landX),
+        Math.max(landY, window.innerHeight - landY)
+      ) + 28;
+      return { ox: ox, oy: oy, restX: restX, restY: restY, landX: landX, landY: landY, rMax: rMax };
+    };
+    const frameDrop = t => {
+      const u = !motion || motion.dur <= 0 ? 1 : Math.min(1, (t - motion.t0) / motion.dur);
+      const g = geo;
+      const fallEnd = 0.62;
+      let x;
+      let y;
+      let shape = 0;
+      let stretch = 1;
+      if (u < fallEnd) {
+        const f = u / fallEnd;
+        const e = f * f;
+        x = g.ox + (g.landX - g.ox) * e;
+        y = g.oy + (g.landY - g.oy) * e;
+        stretch = 1 + 0.42 * Math.sin(f * Math.PI);
+        mark(f < 0.45 ? 'fall' : 'boat', Math.round(f * 40));
+      } else {
+        const f = (u - fallEnd) / (1 - fallEnd);
+        const e = 1 - Math.pow(1 - f, 3);
+        x = g.landX;
+        y = g.landY;
+        shape = e;
+        mark('boat', Math.round(40 + shape * 60));
+      }
+      paintBoat(x, y, shape, stretch);
+      if (u >= 1) beginWave();
+      else raf = requestAnimationFrame(frameDrop);
+    };
+    const beginDrop = () => {
+      if (phase === 'fall' || phase === 'wave' || phase === 'settle' || phase === 'menu' || phase === 'done') return;
+      phase = 'fall';
+      geo = measure();
+      mark('fall', 0);
+      paintBoat(geo.ox, geo.oy, 0, 1);
+      motion = { t0: performance.now(), dur: T.drop };
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frameDrop);
+    };
+    const frameWave = t => {
+      const u = !motion || motion.dur <= 0 ? 1 : Math.min(1, (t - motion.t0) / motion.dur);
+      const g = geo;
+      const glideU = Math.min(1, u / 0.82);
+      const ge = 1 - Math.pow(1 - glideU, 3);
+      paintBoat(g.landX + (g.restX - g.landX) * ge, g.landY + (g.restY - g.landY) * ge, 1, 1);
+      const r0 = 40;
+      const r = r0 + (g.rMax - r0) * u;
+      setHole(g.landX, g.landY, r);
+      setRings(g.landX, g.landY, r);
+      mark('wave', Math.round(u * 100));
+      if (u >= 1) beginSettle();
+      else raf = requestAnimationFrame(frameWave);
+    };
+    const beginWave = () => {
+      if (phase === 'wave' || phase === 'settle' || phase === 'menu' || phase === 'done') return;
+      phase = 'wave';
+      el.classList.add('wave');
+      geo = geo || measure();
+      if (rings) rings.hidden = false;
+      setHole(geo.landX, geo.landY, 40);
+      setRings(geo.landX, geo.landY, 40);
+      paintBoat(geo.landX, geo.landY, 1, 1);
+      motion = { t0: performance.now(), dur: T.wave };
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frameWave);
+    };
+    const beginSettle = () => {
+      if (phase === 'settle' || phase === 'menu' || phase === 'done') return;
+      phase = 'settle';
+      mark('settle', 100);
+      geo = geo || measure();
+      setHole(geo.landX, geo.landY, geo.rMax);
+      setRings(geo.landX, geo.landY, geo.rMax);
+      paintBoat(geo.restX, geo.restY, 1, 1);
+      clearTimeout(timer);
+      timer = setTimeout(beginInscribe, T.beat);
+    };
+    const beginInscribe = () => {
+      if (phase === 'menu' || phase === 'done') return;
+      phase = 'menu';
+      mark('menu', 100);
+      cancelAnimationFrame(raf);
+      geo = geo || measure();
+      const real = document.querySelector('#scenery .boat');
+      let x = geo.restX;
+      let y = geo.restY;
+      if (real) {
+        const b = real.getBoundingClientRect();
+        if (b.width > 2) {
+          x = b.left + b.width / 2;
+          y = b.top + b.height / 2;
+        }
+      }
+      paintBoat(x, y, 1, 1);
+      setHole(geo.landX, geo.landY, geo.rMax + 48);
+      body.classList.remove('hold');
+      body.classList.add('inscribe-go', 'boat-live');
+      if (boatEl) boatEl.hidden = true;
+      if (rings) rings.hidden = true;
+      clearHole();
+      el.hidden = true;
+      el.setAttribute('aria-hidden', 'true');
+      clearTimeout(timer);
+      timer = setTimeout(finish, T.inscribe);
+      armSwallow(T.inscribe + 480);
+    };
+    const finish = () => {
+      if (phase === 'done') return;
+      phase = 'done';
+      mark('done', 100);
+      body.classList.add('voyage-live');
       window.removeEventListener('pointerdown', onSkip, true);
       window.removeEventListener('keydown', onSkip, true);
-      const skipped = el.classList.contains('skip');
-      const quick = !!(soft || skipped);
-      const hand = soft ? 2500 : (skipped ? 3400 : 5800);
-      reveal(quick);
-      const sec = (hand / 1000) + 's';
-      document.body.style.setProperty('--handoff', sec);
-      el.style.setProperty('--handoff', sec);
-      el.classList.add('unfold');
-      armSwallow(hand + 420);
-      setTimeout(() => {
-        document.body.classList.remove('opening');
-        el.classList.add('gone');
-        el.hidden = true;
-        resolve();
-      }, hand);
+      cancelAnimationFrame(raf);
+      resolve();
+    };
+    const hasten = () => {
+      if (!motion) return;
+      const now = performance.now();
+      const u = motion.dur <= 0 ? 1 : Math.min(1, (now - motion.t0) / motion.dur);
+      const left = phase === 'wave' ? 720 : 260;
+      motion.t0 = now - u * left;
+      motion.dur = left;
     };
     const onSkip = ev => {
       if (ev && ev.type === 'keydown') {
@@ -3768,32 +3985,61 @@ function splashWait() {
         const k = ev.key;
         if (k !== 'Escape' && k !== 'Enter' && k !== ' ') return;
         ev.preventDefault();
+        ev.stopPropagation();
       }
-      if (el.classList.contains('skip') || settled) return;
-      el.classList.add('skip');
-      armSwallow(4200);
-      setTimeout(go, 280);
+      if (ev && ev.type === 'pointerdown') {
+        if (ev.button != null && ev.button !== 0) return;
+        ev.preventDefault();
+      }
+      armSwallow(phase === 'menu' || phase === 'done' ? 900 : 4800);
+      if (phase === 'done' || phase === 'menu') return;
+      if (phase === 'settle') {
+        clearTimeout(timer);
+        beginInscribe();
+        return;
+      }
+      if (phase === 'write' || phase === 'read') {
+        if (el.classList.contains('skip')) return;
+        el.classList.add('skip', 'quick');
+        body.classList.add('voyage-quick');
+        applyQuick();
+        clearTimeout(timer);
+        phase = 'read';
+        mark('read', 100);
+        timer = setTimeout(beginDrop, 220);
+        return;
+      }
+      if (phase === 'fall' || phase === 'wave') {
+        el.classList.add('skip', 'quick');
+        body.classList.add('voyage-quick');
+        applyQuick();
+        hasten();
+      }
     };
-    if (soft) {
-      el.classList.add('skip');
-      armSwallow(3700);
-      setTimeout(go, 720);
-      return;
-    }
     window.addEventListener('pointerdown', onSkip, true);
     window.addEventListener('keydown', onSkip, true);
-    requestAnimationFrame(() => el.classList.add('play'));
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.body.classList.add('go', 'hold');
-    }));
-    setTimeout(go, 4200);
+    const beginRead = () => {
+      if (phase !== 'write') return;
+      phase = 'read';
+      mark('read', 100);
+      timer = setTimeout(() => {
+        if (phase !== 'read') return;
+        beginDrop();
+      }, T.read);
+    };
+    requestAnimationFrame(() => {
+      el.classList.add('write');
+      if (soft) el.classList.add('quick');
+      if (phase !== 'write') return;
+      timer = setTimeout(beginRead, T.write);
+    });
   });
 }
 function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=86').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=87').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -3843,13 +4089,13 @@ Promise.all([
   preloadSplash(),
 ]).catch(() => {}).then(() => splashWait()).then(() => {
   applyLook();
-  // 动画层已在卷首遮罩下建好（go+hold）。这里只放开播放。
+  // 墨落成舟已经在 splashWait 里放开题字。这里只补一层，并踢一下壁纸。
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!document.body.classList.contains('go')) document.body.classList.add('go');
     document.body.classList.remove('hold');
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
-  // 首访不打 intro-done（InkGL 会据此缩短等待）。题额展开成卷首，竖题仍按原笔顺写下。
+  // 首访不打 intro-done（InkGL 会据此缩短等待）。竖题在舟停之后才按笔顺写下。
   setTimeout(retireIntro, 600);
 });
 
