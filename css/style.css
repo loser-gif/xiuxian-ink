@@ -2428,16 +2428,23 @@ body[data-screen=main] .scroll-paper{
 .splash-sub{opacity:0;background-color:var(--ink3);
   -webkit-mask-image:url("../img/open-sub.png?v=88");mask-image:url("../img/open-sub.png?v=88")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-.logo-plate{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background-color:var(--ink);
-  -webkit-mask-image:url("../img/open-plate.png?v=88");mask-image:url("../img/open-plate.png?v=88");
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-size:100% 100%;mask-size:100% 100%;
-  -webkit-mask-position:center;mask-position:center}
-.inkslot.s0{-webkit-clip-path:inset(0 60.97% 0 29.29%);clip-path:inset(0 60.97% 0 29.29%)}
-.inkslot.s1{-webkit-clip-path:inset(0 49.82% 0 39.58%);clip-path:inset(0 49.82% 0 39.58%)}
-.inkslot.s2{-webkit-clip-path:inset(0 40.63% 0 50.55%);clip-path:inset(0 40.63% 0 50.55%)}
-.inkslot.s3{-webkit-clip-path:inset(0 28.80% 0 60.66%);clip-path:inset(0 28.80% 0 60.66%)}
-.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-glyph.png?v=88");mask-image:url("../img/open-glyph.png?v=88")}
+.logo-plate{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;
+  background:url("../img/open-plate.png?v=88") center / 100% 100% no-repeat}
+.inkslot.s0{-webkit-clip-path:inset(0 60.42% 0 28.55%);clip-path:inset(0 60.42% 0 28.55%)}
+.inkslot.s1{-webkit-clip-path:inset(0 49.33% 0 39.15%);clip-path:inset(0 49.33% 0 39.15%)}
+.inkslot.s2{-webkit-clip-path:inset(0 39.89% 0 50.12%);clip-path:inset(0 39.89% 0 50.12%)}
+.inkslot.s3{-webkit-clip-path:inset(0 28.19% 0 60.11%);clip-path:inset(0 28.19% 0 60.11%)}
+.inkslot i,.inkslot b{background-color:transparent;
+  background-image:url("../img/open-glyph.png?v=88");
+  background-repeat:no-repeat;background-size:100% 100%;background-position:center;
+  -webkit-mask-image:none;mask-image:none}
+html[data-theme="night"] .logo-plate,
+html[data-theme="night"] .inkslot i{
+  -webkit-filter:invert(.9) sepia(.22) brightness(1.45) contrast(.85);
+  filter:invert(.9) sepia(.22) brightness(1.45) contrast(.85)}
+html[data-theme="night"] .inkslot b{
+  -webkit-filter:blur(7px) invert(.9) sepia(.22) brightness(1.45) contrast(.85);
+  filter:blur(7px) invert(.9) sepia(.22) brightness(1.45) contrast(.85)}
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .logo-seal{position:absolute;left:71.81%;top:35.48%;width:3.31%;height:20.77%;pointer-events:none;opacity:0;
