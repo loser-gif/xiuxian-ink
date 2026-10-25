@@ -2396,7 +2396,11 @@ body[data-screen=main] .scroll-paper{
   #splash.play .inkslot b,
   #splash.play .splash-seal,
   #splash.play .splash-sub,
-  #splash.play .splash-mist{animation:none!important}
+  #splash.play .splash-mist,
+  #splash.soak,
+  #splash.soak .splash-board,
+  #splash.soak::before{animation:none!important}
+  #splash.soft{transition:opacity .42s ease}
   #splash.gone{animation:none!important;opacity:0}
 }
 @media (prefers-reduced-motion:reduce) and (min-width:700px) and (min-height:520px){
@@ -2406,10 +2410,11 @@ body[data-screen=main] .scroll-paper{
 
 /* ===== v82：开场题额。远山、圆月、四字落墨、问道印。颗粒用既有 #fiber / #grain（压在本层之上）。 ===== */
 #splash{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
-  background:var(--paper);padding:calc(var(--sat) + 18px) calc(var(--sar) + 16px) calc(var(--sab) + 18px) calc(var(--sal) + 16px);
+  background:transparent;padding:calc(var(--sat) + 18px) calc(var(--sar) + 16px) calc(var(--sab) + 18px) calc(var(--sal) + 16px);
   cursor:pointer;-webkit-user-select:none;user-select:none}
+#splash::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:var(--paper);pointer-events:none}
 #splash[hidden]{display:none}
-.splash-board{position:relative;overflow:visible;
+.splash-board{position:relative;z-index:1;overflow:visible;
   width:min(1040px,92vw,calc(62vh * 1400 / 580));
   height:min(calc(1040px * 580 / 1400),calc(92vw * 580 / 1400),62vh)}
 .splash-arc{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;color:var(--ink)}
@@ -2421,21 +2426,21 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=82");mask-image:url("../img/open-land.png?v=82")}
+  -webkit-mask-image:url("../img/open-land.png?v=83");mask-image:url("../img/open-land.png?v=83")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=82");mask-image:url("../img/open-cloud.png?v=82")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=83");mask-image:url("../img/open-cloud.png?v=83")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=82");mask-image:url("../img/open-sub.png?v=82")}
+  -webkit-mask-image:url("../img/open-sub.png?v=83");mask-image:url("../img/open-sub.png?v=83")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .inkslot.s0{-webkit-clip-path:inset(0 64.93% 0 17.14%);clip-path:inset(0 64.93% 0 17.14%)}
 .inkslot.s1{-webkit-clip-path:inset(0 48.36% 0 36%);clip-path:inset(0 48.36% 0 36%)}
 .inkslot.s2{-webkit-clip-path:inset(0 34.5% 0 52.71%);clip-path:inset(0 34.5% 0 52.71%)}
 .inkslot.s3{-webkit-clip-path:inset(0 15.93% 0 68.79%);clip-path:inset(0 15.93% 0 68.79%)}
-.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=82");mask-image:url("../img/open-ink.png?v=82")}
+.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=83");mask-image:url("../img/open-ink.png?v=83")}
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=82") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=83") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -2461,7 +2466,20 @@ body[data-screen=main] .scroll-paper{
 #splash.skip .inkslot b,#splash.skip .splash-mist{animation:none!important;opacity:0}
 #splash.skip .splash-seal{animation:none!important;opacity:1;transform:none}
 #splash.skip .splash-sub{animation:none!important;opacity:1;transform:none}
-#splash.gone{animation:splashFade .42s ease forwards;pointer-events:none}
+/* 题额落定后：同一张纸从字心变薄，题字化成远墨，卷首本来就在纸下。不要做成圆孔擦除。 */
+#splash.soak{pointer-events:none;cursor:default}
+#splash.soak::before{
+  -webkit-mask-image:radial-gradient(ellipse at 50% 62%,rgba(0,0,0,.62) 0%,rgba(0,0,0,.82) 42%,rgba(0,0,0,.94) 72%,#000 100%);
+  mask-image:radial-gradient(ellipse at 50% 62%,rgba(0,0,0,.62) 0%,rgba(0,0,0,.82) 42%,rgba(0,0,0,.94) 72%,#000 100%);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  animation:soakVeil .9s linear both}
+#splash.soak .splash-board{animation:soakInk .9s linear forwards}
+#splash.soft{transition:opacity .42s ease}
+#splash.gone{opacity:0;pointer-events:none}
+body.sheet[data-screen=title] #scenery{animation:none;opacity:1;transform:none}
+body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacity:0!important}
 @keyframes splashArc{0%{stroke-dashoffset:580;opacity:.2}20%{opacity:.62}100%{stroke-dashoffset:0;opacity:.58}}
 @keyframes splashWash{from{opacity:0}to{opacity:1}}
 @keyframes inkFall{
@@ -2474,7 +2492,13 @@ body[data-screen=main] .scroll-paper{
   48%{opacity:1;transform:translate3d(0,1.5%,0) scale(.95) rotate(1deg)}
   72%{transform:scale(1.015) rotate(-.3deg)}
   100%{opacity:1;transform:none}}
-@keyframes splashFade{to{opacity:0}}
+@keyframes soakVeil{
+  0%{opacity:1}
+  100%{opacity:0}}
+@keyframes soakInk{
+  0%{opacity:1;-webkit-filter:blur(0);filter:blur(0);transform:scale(1)}
+  40%{opacity:.62;-webkit-filter:blur(1.1px);filter:blur(1.1px);transform:scale(1.008)}
+  100%{opacity:0;-webkit-filter:blur(3.4px);filter:blur(3.4px);transform:scale(1.02)}}
 @keyframes mistDrift{0%{opacity:0;transform:translate3d(-10px,6px,0)}28%{opacity:1}100%{opacity:.55;transform:translate3d(16px,-8px,0)}}
 #sw-refresh{position:fixed;z-index:70;left:50%;bottom:calc(var(--sab) + 16px);transform:translateX(-50%);
   display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;
@@ -2955,7 +2979,8 @@ html[data-motion="lite"] .mj .ink-ch,
 html[data-fx="thin"] .mj .ink-ch{opacity:1}
 html[data-theme="night"] .entry.warn .entry-text{color:#8a3028}
 html[data-theme="night"] .ink-cadence .ink-ch{color:#4a433a}
-html[data-theme="night"] #splash{background:#14110e}
+html[data-theme="night"] #splash{background:transparent}
+html[data-theme="night"] #splash::before{background:#14110e}
 html[data-theme="night"] .modal-shade{background:radial-gradient(ellipse at 50% 50%,rgba(8,6,5,.55),rgba(6,5,4,.78))}
 html[data-theme="night"] .sheet-shade{background:rgba(6,5,4,.62)}
 html[data-theme="night"] .end{background:rgba(8,6,5,.78)}
