@@ -1163,6 +1163,8 @@ function render() {
   stackAside($('#margin-when'), timeLabel());
   const locNow = typeof LOC !== 'undefined' && S.loc && LOC[S.loc] ? LOC[S.loc].name : '山中';
   stackAside($('#margin-where'), locNow);
+  const logWhere = $('#log-where');
+  if (logWhere && logWhere.textContent !== locNow) logWhere.textContent = locNow;
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
   const bagLab = S.eq && S.eq.weapon ? (cnt ? `佩·${cn(cnt)}` : '佩') : (cnt ? `${cn(cnt)}物` : '空');
   setText('#bag-count', bagLab);
@@ -3584,6 +3586,17 @@ $('#side').onclick = e => {
   const c = e.target.closest('.side-card'); if (!c || busy || !S || S.dead || S.ascended) return;
   const k = c.dataset.open; if (k === 'gf') openCult('gf'); else if (k === 'fabao') openCult('fabao'); else if (k === 'path') openCult('path'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else if (k === 'cult') openCult(); else act('youli');
 };
+/* v91 卷边书签，打开的是已有的修持、宗门、行囊、行迹。翻页以后再接到 .scroll[data-leaf]，这里不做。 */
+const bookTabs = document.querySelector('#scr-main .book-tabs');
+if (bookTabs) bookTabs.addEventListener('click', e => {
+  const c = e.target.closest('.book-tab');
+  if (!c || busy || !S || S.dead || S.ascended) return;
+  const k = c.dataset.open;
+  if (k === 'bag') openBag();
+  else if (k === 'sect') openSect();
+  else if (k === 'cult') openCult();
+  else act('youli');
+});
 addEventListener('resize', () => { if (document.body.dataset.screen === 'main') renderSide(); });
 
 /* 奇遇：收卷可关；必选未落定时只颤一下，不替玩家跳过。宽屏点遮罩同此。 */
@@ -3708,7 +3721,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=90', 'img/open-glyph.png?v=90', 'img/open-seal-logo.png?v=90'];
+  const urls = ['img/open-plate.png?v=91', 'img/open-glyph.png?v=91', 'img/open-seal-logo.png?v=91'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4339,8 +4352,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=90'),
-      loadInk('img/open-glyph.png?v=90')
+      loadInk('img/open-plate.png?v=91'),
+      loadInk('img/open-glyph.png?v=91')
     ]).then(pair => {
       plateImg = pair[0];
       glyphImg = pair[1];
@@ -4376,7 +4389,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=90').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=91').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
