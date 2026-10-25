@@ -2396,11 +2396,21 @@ body[data-screen=main] .scroll-paper{
   #splash.play .inkslot b,
   #splash.play .splash-seal,
   #splash.play .splash-sub,
-  #splash.play .splash-mist,
-  #splash.soak,
-  #splash.soak .splash-board,
-  #splash.soak::before{animation:none!important}
-  #splash.soft{transition:opacity .42s ease}
+  #splash.play .splash-mist{animation:none!important}
+  #splash.morph::before,
+  #splash.morph .splash-land,
+  #splash.morph .splash-cloud,
+  #splash.morph .splash-arc,
+  #splash.morph .splash-seal,
+  #splash.morph .splash-sub,
+  #splash.morph .splash-mist{animation:none!important;transition:opacity .36s ease}
+  #splash.morph.quick::before,
+  #splash.morph.quick .splash-land,
+  #splash.morph.quick .splash-cloud,
+  #splash.morph.quick .splash-arc,
+  #splash.morph.quick .splash-seal,
+  #splash.morph.quick .splash-sub,
+  #splash.morph.quick .splash-mist{opacity:0}
   #splash.gone{animation:none!important;opacity:0}
 }
 @media (prefers-reduced-motion:reduce) and (min-width:700px) and (min-height:520px){
@@ -2426,21 +2436,21 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=83");mask-image:url("../img/open-land.png?v=83")}
+  -webkit-mask-image:url("../img/open-land.png?v=84");mask-image:url("../img/open-land.png?v=84")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=83");mask-image:url("../img/open-cloud.png?v=83")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=84");mask-image:url("../img/open-cloud.png?v=84")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=83");mask-image:url("../img/open-sub.png?v=83")}
+  -webkit-mask-image:url("../img/open-sub.png?v=84");mask-image:url("../img/open-sub.png?v=84")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .inkslot.s0{-webkit-clip-path:inset(0 64.93% 0 17.14%);clip-path:inset(0 64.93% 0 17.14%)}
 .inkslot.s1{-webkit-clip-path:inset(0 48.36% 0 36%);clip-path:inset(0 48.36% 0 36%)}
 .inkslot.s2{-webkit-clip-path:inset(0 34.5% 0 52.71%);clip-path:inset(0 34.5% 0 52.71%)}
 .inkslot.s3{-webkit-clip-path:inset(0 15.93% 0 68.79%);clip-path:inset(0 15.93% 0 68.79%)}
-.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=83");mask-image:url("../img/open-ink.png?v=83")}
+.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=84");mask-image:url("../img/open-ink.png?v=84")}
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=83") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=84") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -2466,20 +2476,44 @@ body[data-screen=main] .scroll-paper{
 #splash.skip .inkslot b,#splash.skip .splash-mist{animation:none!important;opacity:0}
 #splash.skip .splash-seal{animation:none!important;opacity:1;transform:none}
 #splash.skip .splash-sub{animation:none!important;opacity:1;transform:none}
-/* 题额落定后：同一张纸从字心变薄，题字化成远墨，卷首本来就在纸下。不要做成圆孔擦除。 */
-#splash.soak{pointer-events:none;cursor:default}
-#splash.soak::before{
-  -webkit-mask-image:radial-gradient(ellipse at 50% 62%,rgba(0,0,0,.62) 0%,rgba(0,0,0,.82) 42%,rgba(0,0,0,.94) 72%,#000 100%);
-  mask-image:radial-gradient(ellipse at 50% 62%,rgba(0,0,0,.62) 0%,rgba(0,0,0,.82) 42%,rgba(0,0,0,.94) 72%,#000 100%);
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:center;mask-position:center;
-  -webkit-mask-size:100% 100%;mask-size:100% 100%;
-  animation:soakVeil .9s linear both}
-#splash.soak .splash-board{animation:soakInk .9s linear forwards}
-#splash.soft{transition:opacity .42s ease}
+/* 题额四字离纸，飞入卷首竖题，并收成那里的楷书。远山、印、副题只作纸上余墨退去。 */
+#splash.morph{pointer-events:none;cursor:default}
+#splash.morph .inkslot{visibility:hidden}
+#splash.morph::before{animation:paperAway 1.05s linear forwards}
+#splash.morph .splash-land,
+#splash.morph .splash-cloud,
+#splash.morph .splash-arc,
+#splash.morph .splash-seal,
+#splash.morph .splash-sub,
+#splash.morph .splash-mist{opacity:1;animation:washAway .78s ease forwards}
+#splash.morph.quick::before{animation-duration:.48s}
+#splash.morph.quick .splash-land,
+#splash.morph.quick .splash-cloud,
+#splash.morph.quick .splash-arc,
+#splash.morph.quick .splash-seal,
+#splash.morph.quick .splash-sub,
+#splash.morph.quick .splash-mist{animation-duration:.42s}
 #splash.gone{opacity:0;pointer-events:none}
 body.sheet[data-screen=title] #scenery{animation:none;opacity:1;transform:none}
 body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacity:0!important}
+body.morph:not(.inked) .tch b,
+body.morph:not(.inked) .tch::after{animation:none!important;opacity:0!important}
+body.inked:not(.intro-done) .tch b{animation:none!important;opacity:1!important}
+.ink-morph{position:fixed;top:0;right:0;bottom:0;left:0;z-index:65;pointer-events:none}
+.ink-fly{position:fixed;z-index:65;pointer-events:none;transform-origin:50% 50%}
+.ink-fly .fly-ink{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 50%}
+.ink-fly .fly-glyph{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;font-weight:400;text-align:center;opacity:0;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 48%,transparent 70%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 48%,transparent 70%);
+  -webkit-mask-size:100% 240%;mask-size:100% 240%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:0 100%;mask-position:0 100%}
+.ink-morph:not(.quick) .fly-glyph{animation:flyWrite var(--fly-d,1s) linear var(--fly-lag,0s) forwards}
+.ink-morph.quick .fly-glyph{
+  -webkit-mask-image:none;mask-image:none;
+  animation:flyGlyphQuick var(--fly-d,.5s) linear var(--fly-lag,0s) forwards}
+.ink-morph:not(.quick) .fly-ink{animation:flySoak var(--fly-d,1s) linear var(--fly-lag,0s) forwards}
+.ink-morph.quick .fly-ink{animation:flySoakQuick var(--fly-d,.5s) linear var(--fly-lag,0s) forwards}
 @keyframes splashArc{0%{stroke-dashoffset:580;opacity:.2}20%{opacity:.62}100%{stroke-dashoffset:0;opacity:.58}}
 @keyframes splashWash{from{opacity:0}to{opacity:1}}
 @keyframes inkFall{
@@ -2492,13 +2526,19 @@ body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacit
   48%{opacity:1;transform:translate3d(0,1.5%,0) scale(.95) rotate(1deg)}
   72%{transform:scale(1.015) rotate(-.3deg)}
   100%{opacity:1;transform:none}}
-@keyframes soakVeil{
-  0%{opacity:1}
-  100%{opacity:0}}
-@keyframes soakInk{
-  0%{opacity:1;-webkit-filter:blur(0);filter:blur(0);transform:scale(1)}
-  40%{opacity:.62;-webkit-filter:blur(1.1px);filter:blur(1.1px);transform:scale(1.008)}
-  100%{opacity:0;-webkit-filter:blur(3.4px);filter:blur(3.4px);transform:scale(1.02)}}
+@keyframes paperAway{0%{opacity:1}24%{opacity:.9}100%{opacity:0}}
+@keyframes washAway{0%{opacity:1;-webkit-filter:blur(0);filter:blur(0)}100%{opacity:0;-webkit-filter:blur(2px);filter:blur(2px)}}
+@keyframes flySoak{
+  0%{opacity:1;-webkit-filter:blur(0);filter:blur(0)}
+  34%{opacity:1;-webkit-filter:blur(1.4px);filter:blur(1.4px)}
+  68%{opacity:.45;-webkit-filter:blur(2px);filter:blur(2px)}
+  100%{opacity:0;-webkit-filter:blur(.4px);filter:blur(.4px)}}
+@keyframes flySoakQuick{0%{opacity:1}55%{opacity:.85}100%{opacity:0}}
+@keyframes flyWrite{
+  0%{opacity:0;-webkit-mask-position:0 100%;mask-position:0 100%}
+  36%{opacity:0;-webkit-mask-position:0 92%;mask-position:0 92%}
+  100%{opacity:1;-webkit-mask-position:0 0;mask-position:0 0}}
+@keyframes flyGlyphQuick{0%{opacity:0}40%{opacity:0}100%{opacity:1}}
 @keyframes mistDrift{0%{opacity:0;transform:translate3d(-10px,6px,0)}28%{opacity:1}100%{opacity:.55;transform:translate3d(16px,-8px,0)}}
 #sw-refresh{position:fixed;z-index:70;left:50%;bottom:calc(var(--sab) + 16px);transform:translateX(-50%);
   display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;
