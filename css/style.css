@@ -2397,20 +2397,6 @@ body[data-screen=main] .scroll-paper{
   #splash.play .splash-seal,
   #splash.play .splash-sub,
   #splash.play .splash-mist{animation:none!important}
-  #splash.morph::before,
-  #splash.morph .splash-land,
-  #splash.morph .splash-cloud,
-  #splash.morph .splash-arc,
-  #splash.morph .splash-seal,
-  #splash.morph .splash-sub,
-  #splash.morph .splash-mist{animation:none!important;transition:opacity .36s ease}
-  #splash.morph.quick::before,
-  #splash.morph.quick .splash-land,
-  #splash.morph.quick .splash-cloud,
-  #splash.morph.quick .splash-arc,
-  #splash.morph.quick .splash-seal,
-  #splash.morph.quick .splash-sub,
-  #splash.morph.quick .splash-mist{opacity:0}
   #splash.gone{animation:none!important;opacity:0}
 }
 @media (prefers-reduced-motion:reduce) and (min-width:700px) and (min-height:520px){
@@ -2436,21 +2422,21 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=85");mask-image:url("../img/open-land.png?v=85")}
+  -webkit-mask-image:url("../img/open-land.png?v=86");mask-image:url("../img/open-land.png?v=86")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=85");mask-image:url("../img/open-cloud.png?v=85")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=86");mask-image:url("../img/open-cloud.png?v=86")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=85");mask-image:url("../img/open-sub.png?v=85")}
+  -webkit-mask-image:url("../img/open-sub.png?v=86");mask-image:url("../img/open-sub.png?v=86")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .inkslot.s0{-webkit-clip-path:inset(0 64.93% 0 17.14%);clip-path:inset(0 64.93% 0 17.14%)}
 .inkslot.s1{-webkit-clip-path:inset(0 48.36% 0 36%);clip-path:inset(0 48.36% 0 36%)}
 .inkslot.s2{-webkit-clip-path:inset(0 34.5% 0 52.71%);clip-path:inset(0 34.5% 0 52.71%)}
 .inkslot.s3{-webkit-clip-path:inset(0 15.93% 0 68.79%);clip-path:inset(0 15.93% 0 68.79%)}
-.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=85");mask-image:url("../img/open-ink.png?v=85")}
+.inkslot i,.inkslot b{-webkit-mask-image:url("../img/open-ink.png?v=86");mask-image:url("../img/open-ink.png?v=86")}
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=85") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=86") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -2476,41 +2462,9 @@ body[data-screen=main] .scroll-paper{
 #splash.skip .inkslot b,#splash.skip .splash-mist{animation:none!important;opacity:0}
 #splash.skip .splash-seal{animation:none!important;opacity:1;transform:none}
 #splash.skip .splash-sub{animation:none!important;opacity:1;transform:none}
-/* 末笔拉成墨脉，四字顺着这一笔折进竖题。远山、印、副题沉进同一张纸。 */
-#splash.morph{pointer-events:none;cursor:default}
-#splash.morph .inkslot{visibility:hidden}
-#splash.morph::before{animation:paperAway var(--handoff,4.6s) cubic-bezier(.45,.06,.2,1) forwards}
-#splash.morph .splash-land,
-#splash.morph .splash-cloud,
-#splash.morph .splash-arc,
-#splash.morph .splash-seal,
-#splash.morph .splash-sub,
-#splash.morph .splash-mist{opacity:1;animation:washAway var(--handoff,4.6s) cubic-bezier(.4,.05,.25,1) forwards}
 #splash.gone{opacity:0;pointer-events:none}
 body.sheet[data-screen=title] #scenery{animation:none;opacity:1;transform:none}
 body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacity:0!important}
-body.morph:not(.inked) .tch b,
-body.morph:not(.inked) .tch::after{animation:none!important;opacity:0!important}
-body.inked:not(.intro-done) .tch b{animation:none!important;opacity:1!important}
-.ink-morph{position:fixed;top:0;right:0;bottom:0;left:0;z-index:65;pointer-events:none}
-.ink-vein{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.ink-vein .vein-wash,.ink-vein .vein-core{fill:none;stroke-linecap:round;stroke-linejoin:round}
-.ink-vein .vein-wash{stroke-width:22;opacity:.16}
-.ink-vein .vein-core{stroke-width:9;opacity:.9}
-.ink-fly{position:fixed;z-index:2;pointer-events:none;transform-origin:50% 50%}
-.ink-fly .fly-ink{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 50%}
-.ink-fly .fly-glyph{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;font-weight:400;text-align:center;opacity:0;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 52%,transparent 74%);
-  mask-image:linear-gradient(180deg,#000 0%,#000 52%,transparent 74%);
-  -webkit-mask-size:100% 240%;mask-size:100% 240%;
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:0 100%;mask-position:0 100%}
-.ink-morph:not(.quick) .fly-glyph{animation:flyWrite var(--fly-d,4.6s) linear var(--fly-lag,0s) forwards}
-.ink-morph.quick .fly-glyph{
-  -webkit-mask-image:none;mask-image:none;
-  animation:flyGlyphQuick var(--fly-d,1.9s) linear var(--fly-lag,0s) forwards}
-.ink-morph:not(.quick) .fly-ink{animation:flySoak var(--fly-d,4.6s) linear var(--fly-lag,0s) forwards}
-.ink-morph.quick .fly-ink{animation:flySoakQuick var(--fly-d,1.9s) linear var(--fly-lag,0s) forwards}
 @keyframes splashArc{0%{stroke-dashoffset:580;opacity:.2}20%{opacity:.62}100%{stroke-dashoffset:0;opacity:.58}}
 @keyframes splashWash{from{opacity:0}to{opacity:1}}
 @keyframes inkFall{
@@ -2523,25 +2477,6 @@ body.inked:not(.intro-done) .tch b{animation:none!important;opacity:1!important}
   48%{opacity:1;transform:translate3d(0,1.5%,0) scale(.95) rotate(1deg)}
   72%{transform:scale(1.015) rotate(-.3deg)}
   100%{opacity:1;transform:none}}
-@keyframes paperAway{0%{opacity:1}34%{opacity:.9}100%{opacity:0}}
-@keyframes washAway{
-  0%{opacity:1;-webkit-filter:blur(0);filter:blur(0)}
-  40%{opacity:.78;-webkit-filter:blur(.4px);filter:blur(.4px)}
-  100%{opacity:0;-webkit-filter:blur(1.6px);filter:blur(1.6px)}}
-@keyframes flySoak{
-  0%{opacity:1;-webkit-filter:blur(0);filter:blur(0)}
-  58%{opacity:1;-webkit-filter:blur(.35px);filter:blur(.35px)}
-  78%{opacity:.55;-webkit-filter:blur(1.1px);filter:blur(1.1px)}
-  100%{opacity:0;-webkit-filter:blur(.2px);filter:blur(.2px)}}
-@keyframes flySoakQuick{
-  0%{opacity:1;-webkit-filter:blur(0);filter:blur(0)}
-  46%{opacity:.9}
-  100%{opacity:0;-webkit-filter:blur(0);filter:blur(0)}}
-@keyframes flyWrite{
-  0%{opacity:0;-webkit-mask-position:0 100%;mask-position:0 100%}
-  60%{opacity:0;-webkit-mask-position:0 100%;mask-position:0 100%}
-  100%{opacity:1;-webkit-mask-position:0 0;mask-position:0 0}}
-@keyframes flyGlyphQuick{0%{opacity:0}48%{opacity:0}100%{opacity:1}}
 @keyframes mistDrift{0%{opacity:0;transform:translate3d(-10px,6px,0)}28%{opacity:1}100%{opacity:.55;transform:translate3d(16px,-8px,0)}}
 #sw-refresh{position:fixed;z-index:70;left:50%;bottom:calc(var(--sab) + 16px);transform:translateX(-50%);
   display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;
@@ -3665,3 +3600,88 @@ html[data-theme="night"] .goal-cer .path-cer-panel{
 /* v80：祠前有人未应时，禁用原因要能读出来。 */
 .shop-sheet .menu-item.is-wait:disabled{opacity:.92}
 .shop-sheet .menu-item.is-wait small{color:var(--zhu);letter-spacing:.14em}
+
+/* v86：题额落定后，这一张纸展开成卷首。四字留在原处淡去，山河、竖题、印和开卷在同一张纸上陆续出来。 */
+#splash.unfold{pointer-events:none;cursor:default}
+#splash.unfold::before{
+  animation:sheetOpen var(--handoff,5.8s) cubic-bezier(.45,.06,.2,1) forwards!important}
+#splash.unfold .splash-board{
+  transform-origin:50% 62%;
+  animation:boardGrow var(--handoff,5.8s) cubic-bezier(.42,.04,.2,1) forwards!important}
+#splash.unfold .inkslot,
+#splash.unfold .splash-seal,
+#splash.unfold .splash-sub{
+  animation:colophonFade var(--handoff,5.8s) cubic-bezier(.4,.05,.25,1) forwards!important}
+body.opening[data-screen=title] #scenery .cam{
+  animation:landOpen var(--handoff,5.8s) cubic-bezier(.33,.04,.2,1) forwards!important}
+body.opening[data-screen=title] #scenery .m1,
+body.opening[data-screen=title] #scenery .m2,
+body.opening[data-screen=title] #scenery .mist,
+body.opening[data-screen=title] #scenery .atmo{
+  animation:landDeepen var(--handoff,5.8s) ease-out forwards!important}
+body.opening[data-screen=title] #scenery .m3,
+body.opening[data-screen=title] #scenery .m4,
+body.opening[data-screen=title] #scenery .lake{
+  animation:landEmerge var(--handoff,5.8s) ease-out forwards!important}
+body.opening[data-screen=title] #scenery .sun{
+  animation:landEmerge var(--handoff,5.8s) ease-out forwards,sunArc 84s linear infinite!important}
+body.opening[data-screen=title] #scenery .pine{
+  animation:landPine var(--handoff,5.8s) ease-out forwards,sway 9s ease-in-out infinite alternate!important}
+@keyframes sheetOpen{
+  0%{opacity:1}
+  16%{opacity:.78}
+  40%{opacity:.32}
+  64%{opacity:.06}
+  100%{opacity:0}}
+@keyframes boardGrow{
+  0%{opacity:1;transform:scale(1)}
+  24%{opacity:.9;transform:scale(1.08)}
+  46%{opacity:.4;transform:scale(1.2)}
+  70%{opacity:.06;transform:scale(1.34)}
+  100%{opacity:0;transform:scale(1.42)}}
+@keyframes colophonFade{
+  0%{opacity:1}
+  14%{opacity:.92}
+  38%{opacity:0}
+  100%{opacity:0}}
+@keyframes landOpen{
+  0%{transform:scale(1.34) translate3d(-1%,5%,0)}
+  100%{transform:scale(1.045) translate3d(-1.6%,.4%,0)}}
+@keyframes landDeepen{
+  0%{opacity:.22}
+  42%{opacity:.7}
+  100%{opacity:1}}
+@keyframes landEmerge{
+  0%{opacity:0}
+  18%{opacity:0}
+  56%{opacity:1}
+  100%{opacity:1}}
+@keyframes landPine{
+  0%{opacity:0}
+  22%{opacity:0}
+  60%{opacity:.82}
+  100%{opacity:.82}}
+/* 动效简、系统减少动态：同一张纸展开，只是更短。盖过更早的 .01s，顺序仍是题、诗、印、开卷。 */
+body.unfold-quick:not(.intro-done) .tch b{
+  animation-duration:.68s!important;
+  animation-delay:calc(.18s + var(--d) * .1s)!important}
+body.unfold-quick:not(.intro-done) .tch::after{
+  animation-duration:1s!important;
+  animation-delay:calc(.28s + var(--d) * .1s)!important}
+body.unfold-quick:not(.intro-done) .title-sub{
+  animation-duration:.7s!important;
+  animation-delay:.48s!important}
+body.unfold-quick:not(.intro-done) .title-poem{
+  animation-duration:.8s!important;
+  animation-delay:.58s!important}
+body.unfold-quick:not(.intro-done) .seal-title,
+body.unfold-quick:not(.intro-done) .seal-title::before{
+  animation-duration:.62s!important;
+  animation-delay:.72s!important}
+body.unfold-quick:not(.intro-done) .seal-halo{
+  animation-duration:.7s!important;
+  animation-delay:.86s!important}
+body.unfold-quick:not(.intro-done) .title-menu{--ink-d:1.05s}
+body.unfold-quick:not(.intro-done) #btn-notice.notice-seal{
+  animation-duration:.55s!important;
+  animation-delay:.64s!important}

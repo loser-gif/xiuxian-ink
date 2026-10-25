@@ -3707,257 +3707,14 @@ if (scrollClose) scrollClose.onclick = () => closeScrollView();
 const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
-let splashInkImg = null;
 function preloadSplash() {
-  const urls = ['img/open-land.png?v=85', 'img/open-cloud.png?v=85', 'img/open-ink.png?v=85', 'img/open-sub.png?v=85', 'img/open-seal.png?v=85'];
+  const urls = ['img/open-land.png?v=86', 'img/open-cloud.png?v=86', 'img/open-ink.png?v=86', 'img/open-sub.png?v=86', 'img/open-seal.png?v=86'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
     im.src = u;
-    if (u.indexOf('open-ink') !== -1) splashInkImg = im;
   }));
   return Promise.race([Promise.all(jobs), sleep(1400)]);
-}
-/* 题额四字在画面上的落墨范围（相对题额画板）。略宽于笔画，避免裁掉飞白。 */
-const INK_BOX = [
-  { x: 0.162, y: 0.35, w: 0.198, h: 0.52 },
-  { x: 0.348, y: 0.378, w: 0.178, h: 0.474 },
-  { x: 0.514, y: 0.362, w: 0.152, h: 0.506 },
-  { x: 0.674, y: 0.342, w: 0.176, h: 0.546 }
-];
-function splashInkReady() {
-  if (splashInkImg && splashInkImg.complete && splashInkImg.naturalWidth) return Promise.resolve(splashInkImg);
-  return new Promise(res => {
-    const im = splashInkImg || new Image();
-    splashInkImg = im;
-    if (!im.getAttribute('src')) im.src = 'img/open-ink.png?v=85';
-    if (im.complete && im.naturalWidth) { res(im); return; }
-    im.onload = () => res(im);
-    im.onerror = () => res(null);
-    setTimeout(() => res(im.naturalWidth ? im : null), 700);
-  });
-}
-function cropInk(img, box, color) {
-  const sx = Math.max(0, Math.round(box.x * img.width));
-  const sy = Math.max(0, Math.round(box.y * img.height));
-  const sw = Math.max(1, Math.round(box.w * img.width));
-  const sh = Math.max(1, Math.round(box.h * img.height));
-  const cv = document.createElement('canvas');
-  cv.width = sw;
-  cv.height = sh;
-  const g = cv.getContext('2d');
-  if (!g) return cv;
-  g.drawImage(img, sx, sy, Math.min(sw, img.width - sx), Math.min(sh, img.height - sy), 0, 0, sw, sh);
-  g.globalCompositeOperation = 'source-in';
-  g.fillStyle = color || '#1b1814';
-  g.fillRect(0, 0, sw, sh);
-  cv.className = 'fly-ink';
-  return cv;
-}
-function splashMorph(soft, dur) {
-  const el = document.getElementById('splash');
-  const board = el ? el.querySelector('.splash-board') : null;
-  const targets = document.querySelectorAll('#scr-title .title-v .tch b');
-  if (!dur) dur = soft ? 1900 : 4600;
-  return new Promise(resolve => {
-    let closed = false;
-    const finish = () => {
-      if (closed) return;
-      closed = true;
-      document.body.classList.add('inked');
-      const layer = document.querySelector('.ink-morph');
-      if (layer && layer.parentNode) layer.parentNode.removeChild(layer);
-      if (el) {
-        el.classList.add('gone');
-        el.hidden = true;
-      }
-      resolve();
-    };
-    if (!el || !board || targets.length < 4) { finish(); return; }
-    splashInkReady().then(img => {
-      if (closed) return;
-      if (!img) { finish(); return; }
-      const br = board.getBoundingClientRect();
-      const chars = ['纸', '上', '仙', '途'];
-      const starts = [];
-      const ends = [];
-      const sizes = [];
-      for (let i = 0; i < 4; i++) {
-        const tr = targets[i].getBoundingClientRect();
-        const box = INK_BOX[i];
-        const sw = box.w * br.width;
-        const sh = box.h * br.height;
-        if (!(tr.width > 2) || !(sw > 2)) { finish(); return; }
-        starts.push({
-          x: br.left + (box.x + box.w / 2) * br.width,
-          y: br.top + (box.y + box.h / 2) * br.height
-        });
-        ends.push({ x: tr.left + tr.width / 2, y: tr.top + tr.height / 2, w: tr.width, h: tr.height });
-        sizes.push({ sw: sw, sh: sh, tr: tr });
-      }
-      let colX = 0;
-      for (let i = 0; i < 4; i++) colX += ends[i].x;
-      colX /= 4;
-      const top = ends[0].y;
-      const na = {
-        x: br.left + 0.828 * br.width,
-        y: br.top + 0.842 * br.height
-      };
-      const vw = window.innerWidth || 800;
-      const reach = Math.max(28, Math.min(110, vw * 0.07));
-      const p1 = { x: Math.min(vw - 14, na.x + reach), y: na.y - 8 };
-      const p2 = { x: Math.min(vw - 10, colX + reach * 1.35), y: top + (na.y - top) * 0.46 };
-      const p3 = { x: colX + 4, y: top - 6 };
-      const cubic = (t) => {
-        const u = 1 - t;
-        return {
-          x: u * u * u * na.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
-          y: u * u * u * na.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y
-        };
-      };
-      const stationU = [0.96, 0.7, 0.44, 0.16];
-      const calm = (t) => {
-        const x = t < 0 ? 0 : t > 1 ? 1 : t;
-        return 0.5 - 0.5 * Math.cos(Math.PI * x);
-      };
-      const place = (i, t) => {
-        const station = cubic(stationU[i]);
-        let x;
-        let y;
-        if (t < 0.64) {
-          const u = calm(t / 0.64);
-          x = starts[i].x + (station.x - starts[i].x) * u;
-          y = starts[i].y + (station.y - starts[i].y) * u;
-        } else {
-          const u = calm((t - 0.64) / 0.36);
-          x = station.x + (ends[i].x - station.x) * u;
-          y = station.y + (ends[i].y - station.y) * u;
-        }
-        return { x: x, y: y };
-      };
-      const layer = document.createElement('div');
-      layer.className = 'ink-morph' + (soft ? ' quick' : '');
-      layer.setAttribute('aria-hidden', 'true');
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNS, 'svg');
-      svg.setAttribute('class', 'ink-vein');
-      svg.setAttribute('viewBox', '0 0 ' + vw + ' ' + (window.innerHeight || 600));
-      const defs = document.createElementNS(svgNS, 'defs');
-      const filt = document.createElementNS(svgNS, 'filter');
-      filt.setAttribute('id', 'vein-soft');
-      filt.setAttribute('x', '-30%');
-      filt.setAttribute('y', '-30%');
-      filt.setAttribute('width', '160%');
-      filt.setAttribute('height', '160%');
-      const blur = document.createElementNS(svgNS, 'feGaussianBlur');
-      blur.setAttribute('stdDeviation', soft ? '1.2' : '2.2');
-      filt.appendChild(blur);
-      defs.appendChild(filt);
-      svg.appendChild(defs);
-      const d = 'M ' + na.x.toFixed(1) + ' ' + na.y.toFixed(1)
-        + ' C ' + p1.x.toFixed(1) + ' ' + p1.y.toFixed(1)
-        + ', ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1)
-        + ', ' + p3.x.toFixed(1) + ' ' + p3.y.toFixed(1);
-      const inkColor = getComputedStyle(targets[0]).color || '#1b1814';
-      const wash = document.createElementNS(svgNS, 'path');
-      const core = document.createElementNS(svgNS, 'path');
-      wash.setAttribute('class', 'vein-wash');
-      core.setAttribute('class', 'vein-core');
-      wash.setAttribute('d', d);
-      core.setAttribute('d', d);
-      wash.setAttribute('stroke', inkColor);
-      core.setAttribute('stroke', inkColor);
-      wash.setAttribute('filter', 'url(#vein-soft)');
-      svg.appendChild(wash);
-      svg.appendChild(core);
-      layer.appendChild(svg);
-      let pending = 0;
-      const done = () => {
-        pending -= 1;
-        if (pending <= 0) finish();
-      };
-      const steps = [0, 0.12, 0.26, 0.4, 0.54, 0.68, 0.8, 0.9, 1];
-      for (let i = 0; i < 4; i++) {
-        const tr = sizes[i].tr;
-        const s0 = Math.max(sizes[i].sw / tr.width, sizes[i].sh / tr.height);
-        const lead = (3 - i) * (soft ? 0.03 : 0.05) * dur;
-        const frames = [];
-        for (let k = 0; k < steps.length; k++) {
-          const t = steps[k];
-          const pt = place(i, t);
-          const ahead = place(i, t + 0.04 > 1 ? 1 : t + 0.04);
-          const behind = place(i, t - 0.04 < 0 ? 0 : t - 0.04);
-          let ang = Math.atan2(ahead.y - behind.y, ahead.x - behind.x) * 180 / Math.PI;
-          if (ang > 90) ang -= 180;
-          else if (ang < -90) ang += 180;
-          const lean = Math.sin(Math.PI * t) * Math.max(-42, Math.min(42, ang));
-          const grow = t < 0.5 ? 0 : calm((t - 0.5) / 0.5);
-          const sc = s0 + (1 - s0) * grow;
-          const dx = pt.x - ends[i].x;
-          const dy = pt.y - ends[i].y;
-          frames.push({
-            offset: steps[k],
-            transform: 'translate3d(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px,0) rotate(' + lean.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')'
-          });
-        }
-        const fly = document.createElement('div');
-        fly.className = 'ink-fly';
-        fly.style.left = tr.left + 'px';
-        fly.style.top = tr.top + 'px';
-        fly.style.width = tr.width + 'px';
-        fly.style.height = tr.height + 'px';
-        fly.style.transform = frames[0].transform;
-        const sec = (dur / 1000) + 's';
-        const wait = (lead / 1000) + 's';
-        fly.style.setProperty('--fly-d', sec);
-        fly.style.setProperty('--fly-lag', wait);
-        const cs = getComputedStyle(targets[i]);
-        const ink = cropInk(img, INK_BOX[i], cs.color);
-        const glyph = document.createElement('b');
-        glyph.className = 'fly-glyph';
-        glyph.textContent = chars[i];
-        glyph.style.fontFamily = cs.fontFamily;
-        glyph.style.fontSize = cs.fontSize;
-        glyph.style.fontWeight = cs.fontWeight;
-        glyph.style.lineHeight = cs.lineHeight;
-        glyph.style.color = cs.color;
-        glyph.style.textShadow = cs.textShadow;
-        ink.style.animationDuration = sec;
-        ink.style.animationDelay = wait;
-        glyph.style.animationDuration = sec;
-        glyph.style.animationDelay = wait;
-        fly.appendChild(ink);
-        fly.appendChild(glyph);
-        layer.appendChild(fly);
-        pending += 1;
-        const motion = fly.animate(frames, { duration: dur, delay: lead, easing: 'linear', fill: 'both' });
-        motion.onfinish = done;
-      }
-      document.body.appendChild(layer);
-      const len = core.getTotalLength();
-      const dash = len + 'px';
-      core.style.strokeDasharray = dash;
-      wash.style.strokeDasharray = dash;
-      core.style.strokeDashoffset = dash;
-      wash.style.strokeDashoffset = dash;
-      const draw = [
-        { strokeDashoffset: dash, offset: 0 },
-        { strokeDashoffset: '0px', offset: 0.56 },
-        { strokeDashoffset: '0px', offset: 1 }
-      ];
-      core.animate(draw, { duration: dur, easing: 'cubic-bezier(.33,.04,.2,1)', fill: 'both' });
-      wash.animate(draw, { duration: dur, easing: 'cubic-bezier(.33,.04,.2,1)', fill: 'both' });
-      svg.animate([
-        { opacity: 1, offset: 0 },
-        { opacity: 1, offset: 0.68 },
-        { opacity: 0, offset: 1 }
-      ], { duration: dur, fill: 'both', easing: 'linear' });
-      el.style.setProperty('--handoff', (dur / 1000) + 's');
-      el.classList.add('morph');
-      if (soft) el.classList.add('quick');
-      setTimeout(finish, dur + 0.16 * dur + 220);
-    }).catch(() => finish());
-  });
 }
 function splashSoft() {
   const root = document.documentElement;
@@ -3978,9 +3735,10 @@ function splashWait() {
       document.addEventListener('click', swallowClick, true);
       setTimeout(() => document.removeEventListener('click', swallowClick, true), ms);
     };
-    const reveal = () => {
+    const reveal = quick => {
       if (!document.body.classList.contains('go')) document.body.classList.add('go');
-      document.body.classList.add('sheet', 'morph');
+      document.body.classList.add('sheet', 'opening');
+      if (quick) document.body.classList.add('unfold-quick');
       document.body.classList.remove('hold');
     };
     const go = () => {
@@ -3988,11 +3746,21 @@ function splashWait() {
       settled = true;
       window.removeEventListener('pointerdown', onSkip, true);
       window.removeEventListener('keydown', onSkip, true);
-      reveal();
       const skipped = el.classList.contains('skip');
-      const hand = soft ? 1900 : (skipped ? 3000 : 4600);
-      armSwallow(hand + 520);
-      splashMorph(soft, hand).then(resolve);
+      const quick = !!(soft || skipped);
+      const hand = soft ? 2500 : (skipped ? 3400 : 5800);
+      reveal(quick);
+      const sec = (hand / 1000) + 's';
+      document.body.style.setProperty('--handoff', sec);
+      el.style.setProperty('--handoff', sec);
+      el.classList.add('unfold');
+      armSwallow(hand + 420);
+      setTimeout(() => {
+        document.body.classList.remove('opening');
+        el.classList.add('gone');
+        el.hidden = true;
+        resolve();
+      }, hand);
     };
     const onSkip = ev => {
       if (ev && ev.type === 'keydown') {
@@ -4003,10 +3771,12 @@ function splashWait() {
       }
       if (el.classList.contains('skip') || settled) return;
       el.classList.add('skip');
+      armSwallow(4200);
       setTimeout(go, 280);
     };
     if (soft) {
       el.classList.add('skip');
+      armSwallow(3700);
       setTimeout(go, 720);
       return;
     }
@@ -4016,14 +3786,14 @@ function splashWait() {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.body.classList.add('go', 'hold');
     }));
-    setTimeout(go, 4480);
+    setTimeout(go, 4200);
   });
 }
 function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=85').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=86').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -4079,8 +3849,8 @@ Promise.all([
     document.body.classList.remove('hold');
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
-  // 首访不打 intro-done（InkGL 会据此缩短等待）。末笔折进竖题，不再把字飞过去。
-  setTimeout(retireIntro, 4200);
+  // 首访不打 intro-done（InkGL 会据此缩短等待）。题额展开成卷首，竖题仍按原笔顺写下。
+  setTimeout(retireIntro, 600);
 });
 
 /* 日志滚动时短暂显示墨条 */
