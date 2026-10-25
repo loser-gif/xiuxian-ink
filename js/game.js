@@ -3708,7 +3708,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-land.png?v=82', 'img/open-cloud.png?v=82', 'img/open-ink.png?v=82', 'img/open-sub.png?v=82', 'img/open-seal.png?v=82'];
+  const urls = ['img/open-land.png?v=83', 'img/open-cloud.png?v=83', 'img/open-ink.png?v=83', 'img/open-sub.png?v=83', 'img/open-seal.png?v=83'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -3716,24 +3716,49 @@ function preloadSplash() {
   }));
   return Promise.race([Promise.all(jobs), sleep(1400)]);
 }
+function splashSoft() {
+  const root = document.documentElement;
+  return matchMedia('(prefers-reduced-motion: reduce)').matches
+    || root.getAttribute('data-motion') === 'lite'
+    || root.getAttribute('data-fx') === 'thin';
+}
 function splashWait() {
   const el = document.getElementById('splash');
   if (!el) return Promise.resolve();
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const soft = splashSoft();
   el.hidden = false;
   el.setAttribute('aria-hidden', 'false');
   return new Promise(resolve => {
     let settled = false;
     const swallowClick = ev => { ev.preventDefault(); ev.stopPropagation(); };
+    const armSwallow = ms => {
+      document.addEventListener('click', swallowClick, true);
+      setTimeout(() => document.removeEventListener('click', swallowClick, true), ms);
+    };
+    const reveal = () => {
+      if (!document.body.classList.contains('go')) document.body.classList.add('go');
+      document.body.classList.add('sheet');
+      document.body.classList.remove('hold');
+    };
     const go = () => {
       if (settled) return;
       settled = true;
       window.removeEventListener('pointerdown', onSkip, true);
       window.removeEventListener('keydown', onSkip, true);
-      document.addEventListener('click', swallowClick, true);
-      setTimeout(() => document.removeEventListener('click', swallowClick, true), 560);
-      el.classList.add('gone');
-      sleep(420).then(resolve);
+      reveal();
+      if (soft) {
+        armSwallow(720);
+        el.classList.add('soft');
+        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('gone')));
+        sleep(460).then(resolve);
+        return;
+      }
+      armSwallow(1100);
+      el.classList.add('soak');
+      sleep(900).then(() => {
+        el.classList.add('gone');
+        resolve();
+      });
     };
     const onSkip = ev => {
       if (ev && ev.type === 'keydown') {
@@ -3746,7 +3771,7 @@ function splashWait() {
       el.classList.add('skip');
       setTimeout(go, 280);
     };
-    if (reduce) {
+    if (soft) {
       el.classList.add('skip');
       setTimeout(go, 720);
       return;
@@ -3764,7 +3789,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=82').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=83').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -3818,10 +3843,9 @@ Promise.all([
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!document.body.classList.contains('go')) document.body.classList.add('go');
     document.body.classList.remove('hold');
-    if (typeof FX !== 'undefined' && FX.titleDrop) FX.titleDrop();
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
-  // 首访不在中途打 intro-done，也不要在墨滴落地时 display:none（会逼 InkGL 重扫、掐断晕开）。
+  // 首访不打 intro-done（InkGL 会据此缩短等待）。题额化进卷首，不再落墨。
   setTimeout(retireIntro, 4200);
 });
 
