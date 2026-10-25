@@ -3709,7 +3709,7 @@ if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 let splashInkImg = null;
 function preloadSplash() {
-  const urls = ['img/open-land.png?v=84', 'img/open-cloud.png?v=84', 'img/open-ink.png?v=84', 'img/open-sub.png?v=84', 'img/open-seal.png?v=84'];
+  const urls = ['img/open-land.png?v=85', 'img/open-cloud.png?v=85', 'img/open-ink.png?v=85', 'img/open-sub.png?v=85', 'img/open-seal.png?v=85'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -3730,7 +3730,7 @@ function splashInkReady() {
   return new Promise(res => {
     const im = splashInkImg || new Image();
     splashInkImg = im;
-    if (!im.getAttribute('src')) im.src = 'img/open-ink.png?v=84';
+    if (!im.getAttribute('src')) im.src = 'img/open-ink.png?v=85';
     if (im.complete && im.naturalWidth) { res(im); return; }
     im.onload = () => res(im);
     im.onerror = () => res(null);
@@ -3754,12 +3754,11 @@ function cropInk(img, box, color) {
   cv.className = 'fly-ink';
   return cv;
 }
-function splashMorph(soft) {
+function splashMorph(soft, dur) {
   const el = document.getElementById('splash');
   const board = el ? el.querySelector('.splash-board') : null;
   const targets = document.querySelectorAll('#scr-title .title-v .tch b');
-  const dur = soft ? 520 : 1000;
-  const step = soft ? 36 : 64;
+  if (!dur) dur = soft ? 1900 : 4600;
   return new Promise(resolve => {
     let closed = false;
     const finish = () => {
@@ -3779,38 +3778,141 @@ function splashMorph(soft) {
       if (closed) return;
       if (!img) { finish(); return; }
       const br = board.getBoundingClientRect();
+      const chars = ['纸', '上', '仙', '途'];
+      const starts = [];
+      const ends = [];
+      const sizes = [];
+      for (let i = 0; i < 4; i++) {
+        const tr = targets[i].getBoundingClientRect();
+        const box = INK_BOX[i];
+        const sw = box.w * br.width;
+        const sh = box.h * br.height;
+        if (!(tr.width > 2) || !(sw > 2)) { finish(); return; }
+        starts.push({
+          x: br.left + (box.x + box.w / 2) * br.width,
+          y: br.top + (box.y + box.h / 2) * br.height
+        });
+        ends.push({ x: tr.left + tr.width / 2, y: tr.top + tr.height / 2, w: tr.width, h: tr.height });
+        sizes.push({ sw: sw, sh: sh, tr: tr });
+      }
+      let colX = 0;
+      for (let i = 0; i < 4; i++) colX += ends[i].x;
+      colX /= 4;
+      const top = ends[0].y;
+      const na = {
+        x: br.left + 0.828 * br.width,
+        y: br.top + 0.842 * br.height
+      };
+      const vw = window.innerWidth || 800;
+      const reach = Math.max(28, Math.min(110, vw * 0.07));
+      const p1 = { x: Math.min(vw - 14, na.x + reach), y: na.y - 8 };
+      const p2 = { x: Math.min(vw - 10, colX + reach * 1.35), y: top + (na.y - top) * 0.46 };
+      const p3 = { x: colX + 4, y: top - 6 };
+      const cubic = (t) => {
+        const u = 1 - t;
+        return {
+          x: u * u * u * na.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
+          y: u * u * u * na.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y
+        };
+      };
+      const stationU = [0.96, 0.7, 0.44, 0.16];
+      const calm = (t) => {
+        const x = t < 0 ? 0 : t > 1 ? 1 : t;
+        return 0.5 - 0.5 * Math.cos(Math.PI * x);
+      };
+      const place = (i, t) => {
+        const station = cubic(stationU[i]);
+        let x;
+        let y;
+        if (t < 0.64) {
+          const u = calm(t / 0.64);
+          x = starts[i].x + (station.x - starts[i].x) * u;
+          y = starts[i].y + (station.y - starts[i].y) * u;
+        } else {
+          const u = calm((t - 0.64) / 0.36);
+          x = station.x + (ends[i].x - station.x) * u;
+          y = station.y + (ends[i].y - station.y) * u;
+        }
+        return { x: x, y: y };
+      };
       const layer = document.createElement('div');
       layer.className = 'ink-morph' + (soft ? ' quick' : '');
       layer.setAttribute('aria-hidden', 'true');
-      const chars = ['纸', '上', '仙', '途'];
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('class', 'ink-vein');
+      svg.setAttribute('viewBox', '0 0 ' + vw + ' ' + (window.innerHeight || 600));
+      const defs = document.createElementNS(svgNS, 'defs');
+      const filt = document.createElementNS(svgNS, 'filter');
+      filt.setAttribute('id', 'vein-soft');
+      filt.setAttribute('x', '-30%');
+      filt.setAttribute('y', '-30%');
+      filt.setAttribute('width', '160%');
+      filt.setAttribute('height', '160%');
+      const blur = document.createElementNS(svgNS, 'feGaussianBlur');
+      blur.setAttribute('stdDeviation', soft ? '1.2' : '2.2');
+      filt.appendChild(blur);
+      defs.appendChild(filt);
+      svg.appendChild(defs);
+      const d = 'M ' + na.x.toFixed(1) + ' ' + na.y.toFixed(1)
+        + ' C ' + p1.x.toFixed(1) + ' ' + p1.y.toFixed(1)
+        + ', ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1)
+        + ', ' + p3.x.toFixed(1) + ' ' + p3.y.toFixed(1);
+      const inkColor = getComputedStyle(targets[0]).color || '#1b1814';
+      const wash = document.createElementNS(svgNS, 'path');
+      const core = document.createElementNS(svgNS, 'path');
+      wash.setAttribute('class', 'vein-wash');
+      core.setAttribute('class', 'vein-core');
+      wash.setAttribute('d', d);
+      core.setAttribute('d', d);
+      wash.setAttribute('stroke', inkColor);
+      core.setAttribute('stroke', inkColor);
+      wash.setAttribute('filter', 'url(#vein-soft)');
+      svg.appendChild(wash);
+      svg.appendChild(core);
+      layer.appendChild(svg);
       let pending = 0;
       const done = () => {
         pending -= 1;
         if (pending <= 0) finish();
       };
-      for (let i = 0; i < chars.length; i++) {
-        const tr = targets[i].getBoundingClientRect();
-        const box = INK_BOX[i];
-        const sw = box.w * br.width;
-        const sh = box.h * br.height;
-        const scx = br.left + (box.x + box.w / 2) * br.width;
-        const scy = br.top + (box.y + box.h / 2) * br.height;
-        if (!(tr.width > 2) || !(sw > 2)) continue;
-        const tx = scx - (tr.left + tr.width / 2);
-        const ty = scy - (tr.top + tr.height / 2);
-        const sx = sw / tr.width;
-        const sy = sh / tr.height;
-        const lag = step * i;
+      const steps = [0, 0.12, 0.26, 0.4, 0.54, 0.68, 0.8, 0.9, 1];
+      for (let i = 0; i < 4; i++) {
+        const tr = sizes[i].tr;
+        const s0 = Math.max(sizes[i].sw / tr.width, sizes[i].sh / tr.height);
+        const lead = (3 - i) * (soft ? 0.03 : 0.05) * dur;
+        const frames = [];
+        for (let k = 0; k < steps.length; k++) {
+          const t = steps[k];
+          const pt = place(i, t);
+          const ahead = place(i, t + 0.04 > 1 ? 1 : t + 0.04);
+          const behind = place(i, t - 0.04 < 0 ? 0 : t - 0.04);
+          let ang = Math.atan2(ahead.y - behind.y, ahead.x - behind.x) * 180 / Math.PI;
+          if (ang > 90) ang -= 180;
+          else if (ang < -90) ang += 180;
+          const lean = Math.sin(Math.PI * t) * Math.max(-42, Math.min(42, ang));
+          const grow = t < 0.5 ? 0 : calm((t - 0.5) / 0.5);
+          const sc = s0 + (1 - s0) * grow;
+          const dx = pt.x - ends[i].x;
+          const dy = pt.y - ends[i].y;
+          frames.push({
+            offset: steps[k],
+            transform: 'translate3d(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px,0) rotate(' + lean.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')'
+          });
+        }
         const fly = document.createElement('div');
         fly.className = 'ink-fly';
         fly.style.left = tr.left + 'px';
         fly.style.top = tr.top + 'px';
         fly.style.width = tr.width + 'px';
         fly.style.height = tr.height + 'px';
-        fly.style.setProperty('--fly-d', (dur / 1000) + 's');
-        fly.style.setProperty('--fly-lag', (lag / 1000) + 's');
+        fly.style.transform = frames[0].transform;
+        const sec = (dur / 1000) + 's';
+        const wait = (lead / 1000) + 's';
+        fly.style.setProperty('--fly-d', sec);
+        fly.style.setProperty('--fly-lag', wait);
         const cs = getComputedStyle(targets[i]);
-        const ink = cropInk(img, box, cs.color);
+        const ink = cropInk(img, INK_BOX[i], cs.color);
         const glyph = document.createElement('b');
         glyph.className = 'fly-glyph';
         glyph.textContent = chars[i];
@@ -3820,8 +3922,6 @@ function splashMorph(soft) {
         glyph.style.lineHeight = cs.lineHeight;
         glyph.style.color = cs.color;
         glyph.style.textShadow = cs.textShadow;
-        const sec = (dur / 1000) + 's';
-        const wait = (lag / 1000) + 's';
         ink.style.animationDuration = sec;
         ink.style.animationDelay = wait;
         glyph.style.animationDuration = sec;
@@ -3829,24 +3929,33 @@ function splashMorph(soft) {
         fly.appendChild(ink);
         fly.appendChild(glyph);
         layer.appendChild(fly);
-        const start = 'translate3d(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px,0) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
-        const midSx = 1 + (sx - 1) * 0.74;
-        const midSy = 1 + (sy - 1) * 0.74;
-        const mid = 'translate3d(' + (tx * 0.58).toFixed(1) + 'px,' + (ty * 0.2).toFixed(1) + 'px,0) scale(' + midSx.toFixed(3) + ',' + midSy.toFixed(3) + ')';
-        fly.style.transform = start;
         pending += 1;
-        const motion = fly.animate([
-          { transform: start },
-          { transform: mid, offset: 0.46 },
-          { transform: 'none' }
-        ], { duration: dur, delay: lag, easing: 'cubic-bezier(.5,.04,.18,1)', fill: 'both' });
+        const motion = fly.animate(frames, { duration: dur, delay: lead, easing: 'linear', fill: 'both' });
         motion.onfinish = done;
       }
-      if (!pending) { finish(); return; }
       document.body.appendChild(layer);
+      const len = core.getTotalLength();
+      const dash = len + 'px';
+      core.style.strokeDasharray = dash;
+      wash.style.strokeDasharray = dash;
+      core.style.strokeDashoffset = dash;
+      wash.style.strokeDashoffset = dash;
+      const draw = [
+        { strokeDashoffset: dash, offset: 0 },
+        { strokeDashoffset: '0px', offset: 0.56 },
+        { strokeDashoffset: '0px', offset: 1 }
+      ];
+      core.animate(draw, { duration: dur, easing: 'cubic-bezier(.33,.04,.2,1)', fill: 'both' });
+      wash.animate(draw, { duration: dur, easing: 'cubic-bezier(.33,.04,.2,1)', fill: 'both' });
+      svg.animate([
+        { opacity: 1, offset: 0 },
+        { opacity: 1, offset: 0.68 },
+        { opacity: 0, offset: 1 }
+      ], { duration: dur, fill: 'both', easing: 'linear' });
+      el.style.setProperty('--handoff', (dur / 1000) + 's');
       el.classList.add('morph');
       if (soft) el.classList.add('quick');
-      setTimeout(finish, dur + step * 3 + 180);
+      setTimeout(finish, dur + 0.16 * dur + 220);
     }).catch(() => finish());
   });
 }
@@ -3880,8 +3989,10 @@ function splashWait() {
       window.removeEventListener('pointerdown', onSkip, true);
       window.removeEventListener('keydown', onSkip, true);
       reveal();
-      armSwallow(soft ? 980 : 1560);
-      splashMorph(soft).then(resolve);
+      const skipped = el.classList.contains('skip');
+      const hand = soft ? 1900 : (skipped ? 3000 : 4600);
+      armSwallow(hand + 520);
+      splashMorph(soft, hand).then(resolve);
     };
     const onSkip = ev => {
       if (ev && ev.type === 'keydown') {
@@ -3905,14 +4016,14 @@ function splashWait() {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.body.classList.add('go', 'hold');
     }));
-    setTimeout(go, 3680);
+    setTimeout(go, 4480);
   });
 }
 function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=84').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=85').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -3968,7 +4079,7 @@ Promise.all([
     document.body.classList.remove('hold');
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
-  // 首访不打 intro-done（InkGL 会据此缩短等待）。四字化进竖题，不再整层淡出。
+  // 首访不打 intro-done（InkGL 会据此缩短等待）。末笔折进竖题，不再把字飞过去。
   setTimeout(retireIntro, 4200);
 });
 
