@@ -3707,14 +3707,148 @@ if (scrollClose) scrollClose.onclick = () => closeScrollView();
 const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
+let splashInkImg = null;
 function preloadSplash() {
-  const urls = ['img/open-land.png?v=83', 'img/open-cloud.png?v=83', 'img/open-ink.png?v=83', 'img/open-sub.png?v=83', 'img/open-seal.png?v=83'];
+  const urls = ['img/open-land.png?v=84', 'img/open-cloud.png?v=84', 'img/open-ink.png?v=84', 'img/open-sub.png?v=84', 'img/open-seal.png?v=84'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
     im.src = u;
+    if (u.indexOf('open-ink') !== -1) splashInkImg = im;
   }));
   return Promise.race([Promise.all(jobs), sleep(1400)]);
+}
+/* 题额四字在画面上的落墨范围（相对题额画板）。略宽于笔画，避免裁掉飞白。 */
+const INK_BOX = [
+  { x: 0.162, y: 0.35, w: 0.198, h: 0.52 },
+  { x: 0.348, y: 0.378, w: 0.178, h: 0.474 },
+  { x: 0.514, y: 0.362, w: 0.152, h: 0.506 },
+  { x: 0.674, y: 0.342, w: 0.176, h: 0.546 }
+];
+function splashInkReady() {
+  if (splashInkImg && splashInkImg.complete && splashInkImg.naturalWidth) return Promise.resolve(splashInkImg);
+  return new Promise(res => {
+    const im = splashInkImg || new Image();
+    splashInkImg = im;
+    if (!im.getAttribute('src')) im.src = 'img/open-ink.png?v=84';
+    if (im.complete && im.naturalWidth) { res(im); return; }
+    im.onload = () => res(im);
+    im.onerror = () => res(null);
+    setTimeout(() => res(im.naturalWidth ? im : null), 700);
+  });
+}
+function cropInk(img, box, color) {
+  const sx = Math.max(0, Math.round(box.x * img.width));
+  const sy = Math.max(0, Math.round(box.y * img.height));
+  const sw = Math.max(1, Math.round(box.w * img.width));
+  const sh = Math.max(1, Math.round(box.h * img.height));
+  const cv = document.createElement('canvas');
+  cv.width = sw;
+  cv.height = sh;
+  const g = cv.getContext('2d');
+  if (!g) return cv;
+  g.drawImage(img, sx, sy, Math.min(sw, img.width - sx), Math.min(sh, img.height - sy), 0, 0, sw, sh);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = color || '#1b1814';
+  g.fillRect(0, 0, sw, sh);
+  cv.className = 'fly-ink';
+  return cv;
+}
+function splashMorph(soft) {
+  const el = document.getElementById('splash');
+  const board = el ? el.querySelector('.splash-board') : null;
+  const targets = document.querySelectorAll('#scr-title .title-v .tch b');
+  const dur = soft ? 520 : 1000;
+  const step = soft ? 36 : 64;
+  return new Promise(resolve => {
+    let closed = false;
+    const finish = () => {
+      if (closed) return;
+      closed = true;
+      document.body.classList.add('inked');
+      const layer = document.querySelector('.ink-morph');
+      if (layer && layer.parentNode) layer.parentNode.removeChild(layer);
+      if (el) {
+        el.classList.add('gone');
+        el.hidden = true;
+      }
+      resolve();
+    };
+    if (!el || !board || targets.length < 4) { finish(); return; }
+    splashInkReady().then(img => {
+      if (closed) return;
+      if (!img) { finish(); return; }
+      const br = board.getBoundingClientRect();
+      const layer = document.createElement('div');
+      layer.className = 'ink-morph' + (soft ? ' quick' : '');
+      layer.setAttribute('aria-hidden', 'true');
+      const chars = ['纸', '上', '仙', '途'];
+      let pending = 0;
+      const done = () => {
+        pending -= 1;
+        if (pending <= 0) finish();
+      };
+      for (let i = 0; i < chars.length; i++) {
+        const tr = targets[i].getBoundingClientRect();
+        const box = INK_BOX[i];
+        const sw = box.w * br.width;
+        const sh = box.h * br.height;
+        const scx = br.left + (box.x + box.w / 2) * br.width;
+        const scy = br.top + (box.y + box.h / 2) * br.height;
+        if (!(tr.width > 2) || !(sw > 2)) continue;
+        const tx = scx - (tr.left + tr.width / 2);
+        const ty = scy - (tr.top + tr.height / 2);
+        const sx = sw / tr.width;
+        const sy = sh / tr.height;
+        const lag = step * i;
+        const fly = document.createElement('div');
+        fly.className = 'ink-fly';
+        fly.style.left = tr.left + 'px';
+        fly.style.top = tr.top + 'px';
+        fly.style.width = tr.width + 'px';
+        fly.style.height = tr.height + 'px';
+        fly.style.setProperty('--fly-d', (dur / 1000) + 's');
+        fly.style.setProperty('--fly-lag', (lag / 1000) + 's');
+        const cs = getComputedStyle(targets[i]);
+        const ink = cropInk(img, box, cs.color);
+        const glyph = document.createElement('b');
+        glyph.className = 'fly-glyph';
+        glyph.textContent = chars[i];
+        glyph.style.fontFamily = cs.fontFamily;
+        glyph.style.fontSize = cs.fontSize;
+        glyph.style.fontWeight = cs.fontWeight;
+        glyph.style.lineHeight = cs.lineHeight;
+        glyph.style.color = cs.color;
+        glyph.style.textShadow = cs.textShadow;
+        const sec = (dur / 1000) + 's';
+        const wait = (lag / 1000) + 's';
+        ink.style.animationDuration = sec;
+        ink.style.animationDelay = wait;
+        glyph.style.animationDuration = sec;
+        glyph.style.animationDelay = wait;
+        fly.appendChild(ink);
+        fly.appendChild(glyph);
+        layer.appendChild(fly);
+        const start = 'translate3d(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px,0) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
+        const midSx = 1 + (sx - 1) * 0.74;
+        const midSy = 1 + (sy - 1) * 0.74;
+        const mid = 'translate3d(' + (tx * 0.58).toFixed(1) + 'px,' + (ty * 0.2).toFixed(1) + 'px,0) scale(' + midSx.toFixed(3) + ',' + midSy.toFixed(3) + ')';
+        fly.style.transform = start;
+        pending += 1;
+        const motion = fly.animate([
+          { transform: start },
+          { transform: mid, offset: 0.46 },
+          { transform: 'none' }
+        ], { duration: dur, delay: lag, easing: 'cubic-bezier(.5,.04,.18,1)', fill: 'both' });
+        motion.onfinish = done;
+      }
+      if (!pending) { finish(); return; }
+      document.body.appendChild(layer);
+      el.classList.add('morph');
+      if (soft) el.classList.add('quick');
+      setTimeout(finish, dur + step * 3 + 180);
+    }).catch(() => finish());
+  });
 }
 function splashSoft() {
   const root = document.documentElement;
@@ -3737,7 +3871,7 @@ function splashWait() {
     };
     const reveal = () => {
       if (!document.body.classList.contains('go')) document.body.classList.add('go');
-      document.body.classList.add('sheet');
+      document.body.classList.add('sheet', 'morph');
       document.body.classList.remove('hold');
     };
     const go = () => {
@@ -3746,19 +3880,8 @@ function splashWait() {
       window.removeEventListener('pointerdown', onSkip, true);
       window.removeEventListener('keydown', onSkip, true);
       reveal();
-      if (soft) {
-        armSwallow(720);
-        el.classList.add('soft');
-        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('gone')));
-        sleep(460).then(resolve);
-        return;
-      }
-      armSwallow(1100);
-      el.classList.add('soak');
-      sleep(900).then(() => {
-        el.classList.add('gone');
-        resolve();
-      });
+      armSwallow(soft ? 980 : 1560);
+      splashMorph(soft).then(resolve);
     };
     const onSkip = ev => {
       if (ev && ev.type === 'keydown') {
@@ -3789,7 +3912,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=83').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=84').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -3845,7 +3968,7 @@ Promise.all([
     document.body.classList.remove('hold');
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
-  // 首访不打 intro-done（InkGL 会据此缩短等待）。题额化进卷首，不再落墨。
+  // 首访不打 intro-done（InkGL 会据此缩短等待）。四字化进竖题，不再整层淡出。
   setTimeout(retireIntro, 4200);
 });
 
