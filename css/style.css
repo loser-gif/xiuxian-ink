@@ -368,16 +368,19 @@ body.go .title-menu .brush-btn small{animation-delay:calc(var(--ink-d) + .46s),c
 
 /* 卷轴日志 */
 .scroll{position:relative;flex:1;min-height:0;margin:12px 4px 6px;display:flex;flex-direction:column}
-.roller{position:relative;flex:none;height:1px;margin:8px 12px 0;border-radius:0;z-index:2;
-  background:rgba(27,24,20,.16);box-shadow:none;filter:none}
+.roller{position:absolute;left:16px;right:16px;height:0;margin:0;border:0;border-top:1px solid rgba(27,24,20,.26);
+  background:transparent;border-radius:0;z-index:3;box-shadow:none;filter:none;pointer-events:none}
 .roller::before,.roller::after{content:none}
-.roller-bot{margin:0 12px 8px}
+.roller-top{top:0}
+.roller-bot{top:auto;bottom:0;border-top:0;border-bottom:1px solid rgba(27,24,20,.2)}
 .scroll-paper{position:relative;flex:1;min-height:0;margin:0 2px;display:flex;flex-direction:column;
   --juan-h:0px;
   background:linear-gradient(90deg,rgba(60,80,90,.10),rgba(60,80,90,0) 9px,rgba(60,80,90,0) calc(100% - 9px),rgba(60,80,90,.10)),
              linear-gradient(rgba(250,246,234,.80),rgba(250,246,234,.80)),var(--paper-img);background-size:auto,auto,256px;
   box-shadow:inset 0 0 0 1px rgba(27,24,20,.08)}
-.scroll-paper::after{content:"";position:absolute;left:9px;right:9px;bottom:0;height:38%;background:var(--mtn-img) center bottom/100% auto no-repeat;opacity:.13;pointer-events:none}
+.scroll-paper::after{content:"";position:absolute;left:9px;right:9px;bottom:0;height:14%;z-index:0;background:var(--mtn-img) center bottom/100% auto no-repeat;opacity:.045;pointer-events:none;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 58%,#000 100%);
+  mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 58%,#000 100%)}
 .scroll-paper::before{content:"";position:absolute;top:0;right:9px;bottom:0;left:9px;inset:0 9px;border-left:1px solid rgba(60,80,90,.16);border-right:1px solid rgba(60,80,90,.16);pointer-events:none}
 .log{position:relative;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 24px 22px;scroll-behavior:smooth;
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 16px),transparent)}
@@ -2412,20 +2415,20 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=90");mask-image:url("../img/open-land.png?v=90")}
+  -webkit-mask-image:url("../img/open-land.png?v=91");mask-image:url("../img/open-land.png?v=91")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=90");mask-image:url("../img/open-cloud.png?v=90")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=91");mask-image:url("../img/open-cloud.png?v=91")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=90");mask-image:url("../img/open-sub.png?v=90")}
+  -webkit-mask-image:url("../img/open-sub.png?v=91");mask-image:url("../img/open-sub.png?v=91")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .logo-plate{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;
-  background:url("../img/open-plate.png?v=90") center / 100% 100% no-repeat}
+  background:url("../img/open-plate.png?v=91") center / 100% 100% no-repeat}
 .inkslot.s0{-webkit-clip-path:inset(0 60.42% 0 28.55%);clip-path:inset(0 60.42% 0 28.55%)}
 .inkslot.s1{-webkit-clip-path:inset(0 49.33% 0 39.15%);clip-path:inset(0 49.33% 0 39.15%)}
 .inkslot.s2{-webkit-clip-path:inset(0 39.89% 0 50.12%);clip-path:inset(0 39.89% 0 50.12%)}
 .inkslot.s3{-webkit-clip-path:inset(0 28.19% 0 60.11%);clip-path:inset(0 28.19% 0 60.11%)}
 .inkslot i,.inkslot b{background-color:transparent;
-  background-image:url("../img/open-glyph.png?v=90");
+  background-image:url("../img/open-glyph.png?v=91");
   background-repeat:no-repeat;background-size:100% 100%;background-position:center;
   -webkit-mask-image:none;mask-image:none}
 html[data-theme="night"] .logo-plate,
@@ -2438,9 +2441,9 @@ html[data-theme="night"] .inkslot b{
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .logo-seal{position:absolute;left:71.81%;top:35.48%;width:3.31%;height:20.77%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal-logo.png?v=90") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal-logo.png?v=91") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=90") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=91") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -3708,4 +3711,77 @@ body.voyage:not(.inscribe-go) #btn-notice.notice-seal{animation:none!important}
   body.voyage.inscribe-go:not(.intro-done) .title-menu .bb-text,
   body.voyage.inscribe-go:not(.intro-done) .title-menu small{
     animation:inkWord .36s cubic-bezier(.16,.84,.28,1) calc(var(--ink-d) + .16s) both!important}
+}
+
+/* v91 线装册。翻页动画先不写。钩子在 #scr-main .scroll[data-leaf="open"]，以后再接，这里保持摊开。 */
+#scr-main .scroll[data-leaf="open"]{transform:none}
+#scr-main .scroll-paper{background-color:#f7f1e4}
+#scr-main .log{
+  background:linear-gradient(180deg,rgba(247,241,228,.55) 0%,rgba(247,241,228,.28) 18%,rgba(247,241,228,.12) 74%,rgba(247,241,228,0) 100%)}
+.ming-kicker,.log-head,.book-tabs,.act-seal{display:none}
+.log-head{flex:none;position:relative;z-index:2;text-align:center}
+.log-title{font-family:var(--f-head);font-weight:400;letter-spacing:.42em;line-height:1.15}
+.log-title::after{content:"";display:inline-block;width:13px;height:13px;margin-left:8px;vertical-align:-1px;background:#9a332c;transform:rotate(8deg);box-shadow:1px 1px 0 rgba(80,20,16,.25)}
+.log-where{margin:2px 0 0;font-size:13px;letter-spacing:.28em;color:var(--ink3)}
+.book-tabs{position:absolute;z-index:4;flex-direction:column;gap:6px;pointer-events:auto}
+.book-tab{width:22px;margin:0;padding:7px 0 6px;background:#9a332c;color:#f6f0e2;border-radius:0 2px 2px 0;box-shadow:1px 1px 0 rgba(80,16,12,.22);font-family:var(--f-head);font-size:13px}
+.book-tab .vcol{--vls:0}
+.book-tab .vcol i{width:1em;line-height:1.08;margin-bottom:0;color:#f6f0e2}
+.act-seal{width:14px;height:14px;margin-top:1px;font-family:var(--f-head);font-size:10px;line-height:14px;text-align:center;color:#f6f0e2;background:#9a332c;transform:rotate(-9deg);box-shadow:1px 1px 0 rgba(80,20,16,.28)}
+@media (min-width:760px) and (min-height:620px){
+  #scr-main .log-head{display:flex;flex-direction:column;align-items:center;padding:8px 28px 2px}
+  #scr-main .log-title{font-size:26px;padding-left:.42em}
+  /* 线装针脚：贴纸左边，不进正文。翻页以后再动，这里只是摊开的那一页。 */
+  #scr-main .scroll-paper::before{
+    background-image:radial-gradient(circle at 7px 10px,rgba(27,24,20,.72) 1.15px,transparent 1.75px);
+    background-size:100% 18px;background-repeat:repeat-y}
+}
+@media (min-width:760px) and (max-width:1279px) and (min-height:620px){
+  body[data-screen=main] #scr-main .hud,
+  body[data-screen=main] #scr-main .side-card{
+    background:linear-gradient(rgba(250,246,234,.7),rgba(250,246,234,.62)),var(--paper-img);
+    background-size:auto,256px}
+}
+@media (min-width:1000px) and (min-height:600px){
+  body[data-screen=main] #scenery{
+    opacity:.72;
+    transform:translate3d(0,6%,0);
+    -webkit-mask-image:radial-gradient(ellipse 32% 38% at 50% 34%,transparent 0%,transparent 46%,rgba(0,0,0,.42) 72%,#000 100%);
+    mask-image:radial-gradient(ellipse 32% 38% at 50% 34%,transparent 0%,transparent 46%,rgba(0,0,0,.42) 72%,#000 100%)}
+  body[data-screen=main] #scenery .m1,
+  body[data-screen=main] #scenery .m2,
+  body[data-screen=main] #scenery .m3,
+  body[data-screen=main] #scenery .m4{opacity:.76}
+  body[data-screen=main] #scenery .pine{opacity:.48}
+  body[data-screen=main] #scenery .lake{opacity:.7}
+  body[data-screen=main] #scenery .boat-track{opacity:.62}
+  body[data-screen=main] #vignette::before{opacity:0}
+}
+@media (min-width:1280px) and (min-height:600px){
+  #scr-main .ming-kicker{display:flex;position:absolute;left:12px;top:22px;z-index:2;font-family:var(--f-head);font-size:14px;color:var(--ink3);pointer-events:none}
+  #scr-main .hud{padding-left:42px}
+  #scr-main .log-title{font-size:30px}
+  #scr-main .log{
+    background:linear-gradient(180deg,rgba(247,241,228,.82) 0%,rgba(247,241,228,.7) 12%,rgba(247,241,228,.62) 70%,rgba(247,241,228,.16) 100%)}
+  #scr-main .scroll{z-index:3}
+  #scr-main .scroll-paper{box-shadow:0 16px 36px rgba(40,30,18,.13),inset 0 0 0 1px rgba(27,24,20,.1)}
+  #scr-main .book-tabs{display:flex;right:-20px;top:14%}
+  #scr-main .act-seal{display:block}
+  #scr-main .side-card h3::before{content:"";width:8px;height:8px;flex:none;background:#9a332c;transform:rotate(8deg)}
+  body[data-screen=main] #scr-main .hud,
+  body[data-screen=main] #scr-main .side-card{
+    background:linear-gradient(rgba(250,246,234,.66),rgba(250,246,234,.56)),var(--paper-img);
+    background-size:auto,256px;
+    box-shadow:0 8px 22px rgba(60,40,20,.08),inset 0 0 0 1px rgba(27,24,20,.1)}
+}
+@media (hover:hover) and (pointer:fine){
+  #scr-main .book-tab:hover{transform:translateX(2px)}
+}
+html[data-theme="night"] body[data-screen=main] #scr-main .hud,
+html[data-theme="night"] body[data-screen=main] #scr-main .side-card{
+  background:linear-gradient(rgba(250,246,234,.92),rgba(250,246,234,.88)),var(--paper-img);
+  background-size:auto,256px}
+html[data-theme="night"] body[data-screen=main] #scenery{opacity:.4}
+@media (min-width:1000px) and (min-height:600px){
+  html[data-theme="night"] body[data-screen=main] #scenery{opacity:.46}
 }
