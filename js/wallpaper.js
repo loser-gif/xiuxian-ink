@@ -288,8 +288,8 @@ const Wallpaper = (() => {
     M.cv.width = Math.max(1, Math.round(w * k)); M.cv.height = Math.max(1, Math.round(h * k));
     M.c.setTransform(M.cv.width / w, 0, 0, M.cv.height / h, 0, 0);
     const r = Ink.mulberry(94);
-    M.fog = Array.from({ length: w < 1000 ? 7 : 12 }, (_, i) => ({
-      x: r() * w, y: h * (i % 3 === 0 ? .18 + r() * .2 : .78 + r() * .16),
+    M.fog = Array.from({ length: w < 1000 ? 3 : 5 }, (_, i) => ({
+      x: r() * w, y: h * (.9 + r() * .08),
       rw: Math.min(w * .6, 450) * (.65 + r() * .6), rh: 28 + r() * 45,
       v: 4 + r() * 5, phase: r() * Math.PI * 2, img: i % 4
     }));
@@ -328,10 +328,6 @@ const Wallpaper = (() => {
     const track = add('div', 'play-boat-track'), boat = document.createElement('div'); boat.className = 'play-boat';
     const originalBoat = $('#scenery .boat svg'); if (originalBoat) boat.appendChild(originalBoat.cloneNode(true));
     track.appendChild(boat);
-    for (let i = 0; i < 2; i++) {
-      const bird = add('div', 'play-crane play-crane-' + i), original = $('#scenery .crane svg');
-      if (original) bird.appendChild(original.cloneNode(true));
-    }
     buildMain(); syncMain();
     let resize;
     addEventListener('resize', () => { clearTimeout(resize); resize = setTimeout(() => { if (document.body.dataset.screen === 'main') { buildMain(); syncMain(); } }, 140); });
