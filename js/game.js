@@ -3782,17 +3782,21 @@ function splashWait() {
   const disabled = controls.map(b => b.disabled);
   controls.forEach(b => { b.disabled = true; });
   return new Promise(resolve => {
-    let done = false, timer = 0, stampTimer = 0;
+    let done = false, timer = 0, stampTimer = 0, releaseTimer = 0;
     const swallow = e => { e.preventDefault(); e.stopImmediatePropagation(); };
-    const finish = skipped => {
+    const finish = (skipped, gesture) => {
       if (done) return; done = true;
       clearTimeout(timer); clearTimeout(stampTimer);
       window.removeEventListener('pointerdown', onSkip, true);
-      window.removeEventListener('keydown', onSkip, true);
       document.removeEventListener('visibilitychange', onVisibility);
       if (rm.removeEventListener) rm.removeEventListener('change', onMotion); else rm.removeListener(onMotion);
-      if (skipped) setTimeout(() => window.removeEventListener('click', onClick, true), 250);
-      else window.removeEventListener('click', onClick, true);
+      if (skipped && gesture) {
+        window.addEventListener(gesture.type === 'keydown' ? 'keyup' : 'pointerup', onRelease, true);
+        window.addEventListener('pointercancel', onRelease, true);
+        window.addEventListener('blur', onRelease, true);
+        releaseTimer = setTimeout(onRelease, 10000);
+      } else if (skipped) onRelease();
+      else { window.removeEventListener('keydown', onSkip, true); window.removeEventListener('click', onClick, true); }
       body.classList.remove('hold', 'ink-opening', 'ink-quick', 'ink-quiet');
       body.classList.add('voyage-live');
       root.dataset.voyagePhase = 'done'; root.dataset.voyageP = '100';
@@ -3805,10 +3809,17 @@ function splashWait() {
       if (typeof Wallpaper !== 'undefined') Wallpaper.kick(0);
       resolve();
     };
+    const onRelease = e => {
+      if (e && e.type !== 'blur') swallow(e);
+      clearTimeout(releaseTimer);
+      ['keyup', 'pointerup', 'pointercancel', 'blur'].forEach(type => window.removeEventListener(type, onRelease, true));
+      window.removeEventListener('keydown', onSkip, true);
+      setTimeout(() => window.removeEventListener('click', onClick, true), 350);
+    };
     const onSkip = e => {
-      if (e.type === 'keydown' && (e.repeat || !['Escape', 'Enter', ' '].includes(e.key))) return;
+      if (e.type === 'keydown' && !['Escape', 'Enter', ' '].includes(e.key)) return;
       if (e.type === 'pointerdown' && e.button != null && e.button !== 0) return;
-      swallow(e); finish(true);
+      swallow(e); finish(true, e);
     };
     const onClick = e => { swallow(e); if (e.target === skip) finish(true); };
     const onVisibility = () => { if (document.hidden) finish(false); };
@@ -3827,7 +3838,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=96').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=97').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

@@ -30,3 +30,7 @@
 - [受保护文件](protected-files.json) 与 v95 相同；此次不调整玩法数值。
 
 环境：Windows Edge/Chromium。手机为浏览器视口模拟，没有 iOS Safari 真机；隐藏标签通过模拟 visibilitychange 检查处理逻辑。录屏保存在工作区 outputs/paper-awakening-v96，未将视频打入游戏资源。线上部署结果另行核实。
+
+## v97 跳过输入补验
+
+长按 Enter 跳过后，重复按键曾在松手前触发开卷。现保留输入保护至松手，并吸收尾随点击；普通点击、长按鼠标、重复 Enter 及松手后下一次操作均已覆盖。[32/32 开场检查](opening-checks-v97.json) 全通过；regress_soft、语法与字体审计再次通过。视觉和主界面样式沿用 v96，未重跑未变的主界面布局矩阵。

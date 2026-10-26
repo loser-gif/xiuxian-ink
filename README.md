@@ -8,6 +8,12 @@
 
 接手开发请先读 [HANDOVER.md](HANDOVER.md)（完整交接）。给编程工具自动加载的短规矩在 [AGENTS.md](AGENTS.md)，`CLAUDE.md` 与 `.cursorrules` 是同一份。
 
+## v97 · 落墨从容（?v=97）
+
+长按回车或按住屏幕跳过后，稳稳停在卷首；松手后再恢复操作。沿用 v96 的同纸开场与内页衔接。
+
+[长按跳过回归](docs/reviews/paper-awakening-v96/opening-checks-v97.json)。
+
 ## v96 · 空纸生山河（?v=96）
 
 远山与题字在同一张纸上渐显，朱印落定即可开卷。首次约 5.6 秒、回访约 0.9 秒，点击或按键可随时跳过；菜单与内页沿用同一纸面。

@@ -66,11 +66,21 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
       if (key === 'pointer') { const r = await p.locator('#btn-new').boundingBox(); await p.mouse.click(r.x + r.width / 2, r.y + r.height / 2); }
       else if (key === 'accessible-click') await p.locator('#intro-skip').evaluate(el => { el.focus(); el.click(); });
       else await p.keyboard.press(key);
-      const state = await done(p); await p.waitForTimeout(350);
+      const state = await done(p); await p.waitForTimeout(400);
       check('skip-' + key + '-no-click-through', state.ms < 1500 && state.screen === 'title' && !state.disabled && state.skip && await p.evaluate(() => document.body.dataset.screen === 'title'), state);
       if (key === 'accessible-click') check('skip-focus-returns-to-menu', await p.locator('#btn-new').evaluate(el => el === document.activeElement));
       await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
       check('skip-' + key + '-next-click-works', await p.evaluate(() => document.body.dataset.screen === 'create'));
+      await ctx.close();
+    }
+    for (const gesture of ['held-key', 'held-pointer']) {
+      const {ctx, p} = await make();
+      if (gesture === 'held-key') { await p.keyboard.down('Enter'); await p.waitForTimeout(600); await p.keyboard.down('Enter'); await p.waitForTimeout(150); await p.keyboard.up('Enter'); }
+      else { const r = await p.locator('#btn-new').boundingBox(); await p.mouse.move(r.x+r.width/2,r.y+r.height/2); await p.mouse.down(); await p.waitForTimeout(600); await p.mouse.up(); }
+      await done(p); await p.waitForTimeout(400);
+      check(gesture + '-skip-no-click-through', await p.evaluate(() => document.body.dataset.screen === 'title'));
+      await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
+      check(gesture + '-release-restores-input', await p.evaluate(() => document.body.dataset.screen === 'create'));
       await ctx.close();
     }
     for (const opt of [{reduce:true}, {lite:true}, {blockStorage:true}]) {
