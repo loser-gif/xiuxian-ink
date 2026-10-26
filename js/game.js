@@ -410,23 +410,166 @@ function setScreen(id) {
 }
 let lastTap = null;
 document.addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]; }, { passive: true, capture: true });
-async function unrollTo(id) {
+// Freeze only the departing scenery. The paper canvas stays alive throughout.
+// Computed styles and canvas pixels preserve the current camera, season and phone layout.
+function paperScene() {
+  const source = $('#scenery'), copy = source.cloneNode(true);
+  const originals = [source, ...source.querySelectorAll('*')];
+  const copies = [copy, ...copy.querySelectorAll('*')];
+  originals.forEach((node, i) => {
+    const dest = copies[i], style = getComputedStyle(node);
+    dest.removeAttribute('id'); dest.removeAttribute('class');
+    dest.style.cssText = Array.from(style, key => key + ':' + style.getPropertyValue(key) + ';').join('');
+    dest.style.setProperty('animation', 'none', 'important');
+    dest.style.setProperty('transition', 'none', 'important');
+    if (node.tagName === 'CANVAS' && node.width && node.height) dest.getContext('2d').drawImage(node, 0, 0);
+  });
+  const layer = document.createElement('div');
+  layer.className = 'paper-scene'; layer.setAttribute('aria-hidden', 'true');
+  layer.appendChild(copy); document.body.appendChild(layer);
+  return layer;
+}
+async function paperPassage(id, ready) {
+  const previous = $('#scr-' + curScreen), next = $('#scr-' + id);
+  const mode = id === 'create' ? 'open' : curScreen === 'title' ? 'resume' : 'name';
+  const full = !splashSoft() && !document.hidden && typeof previous.animate === 'function';
+  const total = mode === 'open' ? 2700 : mode === 'resume' ? 1700 : 1900;
+  const lead = mode === 'open' ? 600 : 360;
+  const animations = [], ghosts = [], hidden = [], keys = new Set();
+  let scene = null, switched = false, stopped = !full, active = true, release;
+  const interrupted = new Promise(resolve => { release = resolve; });
+  const stop = () => { stopped = true; release(); };
+  const wait = ms => stopped ? Promise.resolve() : Promise.race([sleep(ms), interrupted]);
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)');
+  const visibility = () => { if (document.hidden) { keys.clear(); stop(); } };
+  const motion = () => { if (splashSoft()) stop(); };
+  const keydown = e => {
+    if (!active && !keys.has(e.code)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (active) keys.add(e.code);
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (e.key === 'Escape') stop();
+  };
+  const unbindKeys = () => { window.removeEventListener('keydown', keydown, true); window.removeEventListener('keyup', keyup, true); window.removeEventListener('blur', blur); };
+  const keyup = e => { keys.delete(e.code); if (!active && !keys.size) unbindKeys(); };
+  const blur = () => { keys.clear(); if (!active) unbindKeys(); else stop(); };
+  const animate = (el, frames, duration, delay = 0) => {
+    if (!el || stopped) return;
+    const animation = el.animate(frames, { duration, delay, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'both' });
+    animations.push(animation);
+  };
+  const arrive = (el, delay, duration = 650) => animate(el, [{ opacity: 0 }, { opacity: 1 }], duration, delay);
+  const ghost = (selector, target, text) => {
+    const source = $(selector); if (!source || !text || !source.getClientRects().length) return;
+    const r = source.getBoundingClientRect(), s = getComputedStyle(source);
+    if (r.bottom <= 0 || r.top >= innerHeight) return;
+    const el = document.createElement('span'); el.className = 'paper-word'; el.textContent = text; el.setAttribute('aria-hidden', 'true');
+    const line = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.2;
+    const top = source.tagName === 'INPUT' ? r.top + (r.height - line) / 2 : r.top;
+    Object.assign(el.style, { left: (r.left + (source.tagName === 'INPUT' ? parseFloat(s.paddingLeft) : 0)) + 'px', top: top + 'px', fontFamily: s.fontFamily, fontWeight: s.fontWeight, fontStyle: s.fontStyle, fontSize: s.fontSize, lineHeight: line + 'px', letterSpacing: s.letterSpacing, color: s.color });
+    document.body.appendChild(el); ghosts.push({ el, target });
+    hidden.push([source, source.style.visibility]); source.style.visibility = 'hidden';
+  };
+  const switchPage = () => {
+    if (switched) return;
+    switched = true; setScreen(id); if (ready) ready();
+  };
+  const guard = document.createElement('div'); guard.className = 'paper-guard'; guard.setAttribute('aria-hidden', 'true');
+  const focusWasInside = previous.contains(document.activeElement);
+  const scenery = $('#scenery'), sceneryStyle = scenery.style.cssText;
+  const lookWatch = new MutationObserver(motion);
+  document.body.appendChild(guard);
+  window.addEventListener('keydown', keydown, true); window.addEventListener('keyup', keyup, true); window.addEventListener('blur', blur);
+  window.addEventListener('resize', stop); document.addEventListener('visibilitychange', visibility);
+  if (reduced) reduced.addListener(motion);
+  lookWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion', 'data-fx'] });
+  $('#app').setAttribute('aria-busy', 'true');
+  try {
+    if (full) {
+      try { scene = paperScene(); } catch (e) { stopped = true; }
+      if (mode === 'resume' && S) {
+        // A different slot may be loaded through the archive; never fly the wrong name.
+        if ($('#continue-name') && $('#continue-name').textContent === S.name) {
+          ghost('#continue-name', '#h-name', S.name);
+          ghost('#continue-realm', '#h-realm', REALMS[S.realm].name);
+        }
+      } else if (mode === 'name' && S) ghost('#inp-name', '#h-name', S.name);
+    }
+    document.body.classList.add('paper-turning'); document.body.dataset.passage = mode;
+    if (scene) {
+      scenery.style.setProperty('visibility', 'hidden', 'important');
+      animate(scene, [{ opacity: 1, transform: 'translateY(0)' }, { opacity: .12, offset: .65 }, { opacity: 0, transform: 'translateY(' + (innerWidth < 700 ? 6 : 18) + 'px)' }], total - 200);
+      const ink = previous.querySelector(mode === 'open' ? '#btn-new .bb-ink' : '#btn-continue .bb-ink');
+      animate(ink, [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }], 350);
+      animate(previous, [{ opacity: 1 }, { opacity: 0 }], lead + 120);
+    }
+    await wait(lead);
+    switchPage();
+    scenery.style.cssText = sceneryStyle;
+    if (!stopped) {
+      const opacity = getComputedStyle(scenery).opacity;
+      animate(scenery, [{ opacity: 0 }, { opacity }], total - lead);
+      if (id === 'create') {
+        arrive(next.querySelector('.create-head'), 0, 850);
+        arrive(next.querySelector('.create-body'), 280, 1100);
+        arrive(next.querySelector('.create-actions'), 700, 750);
+      } else {
+        arrive(next.querySelector('.hud'), ghosts.length ? 650 : 0, 500);
+        arrive(next.querySelector('.journal-head'), 100);
+        const entries = [...next.querySelectorAll('#log > *')];
+        entries.forEach((entry, i) => arrive(entry, mode === 'resume' && i === entries.length - 1 ? 130 : 350, 650));
+        ['.play-brand', '.play-tabs', '.side', '.margin-col', '.margin-note', '.status-line', '.trace-note', '.actions', '#btn-break'].forEach(sel => arrive(next.querySelector(sel), sel === '.actions' ? 600 : 420, 650));
+      }
+      ghosts.forEach(item => {
+        const target = $(item.target), r = target.getBoundingClientRect(), s = getComputedStyle(target);
+        const endLine = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.2;
+        if (r.height > endLine * 1.6) { // Long names may wrap on a small phone.
+          animate(item.el, [{ opacity: 1 }, { opacity: 0 }], 700);
+          return;
+        }
+        hidden.push([target, target.style.visibility]); target.style.visibility = 'hidden';
+        const start = item.el.getBoundingClientRect(), first = getComputedStyle(item.el);
+        const mix = (a, b, t) => a + (b - a) * t;
+        const realm = item.target === '#h-realm';
+        const frames = Array.from({ length: 17 }, (_, i) => {
+          const t = i / 16, travel = mode === 'resume' ? (realm ? 1 - Math.pow(1 - t, 1.7) : Math.pow(t, 1.4)) : t;
+          // Two separate arcs keep the menu's name-before-realm order from crossing on phones.
+          const bend = mode === 'resume' ? Math.sin(Math.PI * t) * (realm ? -20 : innerWidth < 700 ? 40 : 15) : 0;
+          return { offset: t, left: mix(start.left, r.left, t) + bend + 'px', top: mix(start.top, r.top, travel) + 'px',
+            fontSize: mix(parseFloat(first.fontSize), parseFloat(s.fontSize), t) + 'px',
+            letterSpacing: mix(parseFloat(first.letterSpacing) || 0, parseFloat(s.letterSpacing) || 0, t) + 'px',
+            lineHeight: mix(parseFloat(first.lineHeight), endLine, t) + 'px' };
+        });
+        animate(item.el, frames, mode === 'resume' ? 850 : 1000);
+      });
+      await wait(total - lead);
+    }
+  } finally {
+    switchPage();
+    animations.forEach(a => a.cancel());
+    hidden.forEach(([el, visibility]) => { el.style.visibility = visibility; });
+    ghosts.forEach(item => item.el.remove()); if (scene) scene.remove(); guard.remove();
+    scenery.style.cssText = sceneryStyle;
+    document.body.classList.remove('paper-turning'); delete document.body.dataset.passage;
+    $('#app').removeAttribute('aria-busy'); active = false;
+    window.removeEventListener('resize', stop); document.removeEventListener('visibilitychange', visibility);
+    if (reduced) reduced.removeListener(motion); lookWatch.disconnect();
+    if (!keys.size) unbindKeys();
+    if (focusWasInside) {
+      const heading = next.querySelector(id === 'create' ? '.ch-title' : '#journal-title');
+      if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus({ preventScroll: true }); }
+    }
+  }
+}
+async function unrollTo(id, ready) {
   const t = lastTap; lastTap = null;
   if (typeof MoAudio !== 'undefined') { MoAudio.unlock(); MoAudio.play('paper'); }
   if ((curScreen === 'title' || curScreen === 'create') && (id === 'create' || id === 'main')) {
     if (unrollTo.turn) return unrollTo.turn;
-    unrollTo.turn = (async () => {
-      const previous = $('#scr-' + curScreen);
-      document.body.classList.add('paper-turning'); previous.classList.add('paper-leave');
-      try {
-        await sleep(splashSoft() ? 40 : 180);
-        setScreen(id); const next = $('#scr-' + id); next.classList.add('paper-enter');
-        setTimeout(() => next.classList.remove('paper-enter'), splashSoft() ? 100 : 360);
-      } finally { previous.classList.remove('paper-leave'); document.body.classList.remove('paper-turning'); unrollTo.turn = null; }
-    })();
+    unrollTo.turn = paperPassage(id, ready).finally(() => { unrollTo.turn = null; });
     return unrollTo.turn;
   }
-  await FX.wash(async () => { setScreen(id); await sleep(60); }, t && t[0], t && t[1]);
+  await FX.wash(async () => { setScreen(id); if (ready) ready(); await sleep(60); }, t && t[0], t && t[1]);
 }
 
 function toast(msg) {
@@ -495,7 +638,11 @@ function initTitle() {
   if (s && !s.dead && !s.ascended) {
     $('#btn-continue').hidden = false;
     const extra = (typeof Slots !== 'undefined') ? Slots.loadBox().slots.filter(x => x && x.sum && !x.sum.dead && !x.sum.ascended).length : 1;
-    $('#continue-sub').textContent = extra > 1 ? `${s.name} · ${realmStr(s)} · 另有卷` : `${s.name} · ${realmStr(s)}`;
+    const sub = $('#continue-sub'); sub.textContent = '';
+    const name = document.createElement('span'), realm = document.createElement('span');
+    name.id = 'continue-name'; name.textContent = s.name;
+    realm.id = 'continue-realm'; realm.textContent = REALMS[s.realm].name;
+    sub.append(name, ' · ', realm, REALMS[s.realm].stages[s.stage], extra > 1 ? ' · 另有卷' : '');
   } else {
     const bc = $('#btn-continue'); if (bc) bc.hidden = true;
   }
@@ -844,8 +991,10 @@ function newGame(name, r, choice, originId) {
   if (legacy && legacy.thread) pushLog({ title: '前世绝笔', text: legacy.thread, cls: 'breath' });
   else if (S.flags && S.flags.threadText) pushLog({ title: '前世绝笔', text: S.flags.threadText, cls: 'breath' });
   save();
-  enterMain(false);
-  if (!trial) setTimeout(() => { if (S && !(S.life && S.life.goal)) openGoalPicker(); }, 800);
+  const started = S;
+  enterMain(false).then(() => {
+    if (!trial) setTimeout(() => { if (S === started && curScreen === 'main' && !(S.life && S.life.goal)) openGoalPicker(); }, 450);
+  });
 }
 
 function paintLunhuiSeal() {
@@ -957,14 +1106,16 @@ async function openBaishan(roll) {
 
 /* ================= 主界面 ================= */
 function enterMain(fromSave) {
-  $('#log').innerHTML = '';
+  if (unrollTo.turn) return unrollTo.turn;
   const logs = S.log.slice(-30);
-  unrollTo('main').then(() => {
-    // 先铺陈旧事，最后三条以墨晕写出
+  const passage = curScreen === 'title' || curScreen === 'create';
+  return unrollTo('main', () => {
+    $('#log').innerHTML = '';
     render();
-    logs.forEach((e, i) => renderEntry(e, fromSave ? i >= logs.length - 2 : true));
-    if (fromSave) scrollLog();
-    else { const l = $('#log'); if (l) l.scrollTop = 0; }
+    // Passage owns the reveal; do not restart old sentences underneath it.
+    logs.forEach((e, i) => renderEntry(e, passage ? false : fromSave ? i >= logs.length - 2 : true));
+    const l = $('#log'); l.scrollTop = fromSave ? l.scrollHeight : 0;
+  }).then(() => {
     if (S.flags && S.flags.trial) {
       if (!S.dead) ensurePendingPath().then(() => { if (!S.dead && typeof JHUI !== 'undefined') JHUI.resume(); });
     } else {
@@ -974,7 +1125,6 @@ function enterMain(fromSave) {
     if (fromSave && typeof Folio !== 'undefined' && Folio.needSex(S)) setTimeout(() => openSexSheet(), 1200);
     if (S.flags && S.flags.guide) setTimeout(() => maybeGuide(), fromSave ? 600 : 1100);
   });
-  render();
 }
 function clipMark(text) {
   let t = String(text || '').replace(/\s+/g, '');
@@ -3761,7 +3911,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=98', 'img/open-glyph.png?v=98', 'img/open-seal-logo.png?v=98'];
+  const urls = ['img/open-plate.png?v=99', 'img/open-glyph.png?v=99', 'img/open-seal-logo.png?v=99'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4388,8 +4538,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=98'),
-      loadInk('img/open-glyph.png?v=98')
+      loadInk('img/open-plate.png?v=99'),
+      loadInk('img/open-glyph.png?v=99')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4427,7 +4577,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=98').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=99').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

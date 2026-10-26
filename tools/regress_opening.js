@@ -56,15 +56,15 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
     check('boat-handoff-finished',await p.evaluate(()=>document.querySelector('#voyage-boat').hidden && getComputedStyle(document.querySelector('#scenery .boat')).visibility==='visible'));
     await p.screenshot({path:path.join(out,'03-menu.jpg'),type:'jpeg',quality:85});
     await p.evaluate(() => { window.__paper = document.querySelector('#paper canvas'); window.__washCount = 0; const old = FX.wash; FX.wash = (...args) => { __washCount++; return old(...args); }; });
-    await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
+    await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
     check('menu-to-create-same-paper-no-wash', await p.evaluate(() => __paper === document.querySelector('#paper canvas') && __washCount === 0));
     await p.evaluate(() => { __moxian.newGame('听山', { lg: LINGGEN.find(x => x.id === 'san'), els: ['金', '木', '火'], wx: 5, luck: 1 }, { id: 'dx' }, 'qingshi'); __moxian.S.flags.guide = 0; Life.setGoal(__moxian.S, 'wendao', false); __moxian.render(); __moxian.save(); });
-    await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy); await p.waitForTimeout(500);
+    await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy && !document.body.classList.contains('paper-turning')); await p.waitForTimeout(500);
     check('create-to-main-same-paper-no-wash', await p.evaluate(() => __paper === document.querySelector('#paper canvas') && __washCount === 0 && !document.body.classList.contains('paper-turning')));
     await p.reload(); await p.waitForFunction(() => window.__introTimes.start);
     check('return-preserves-original-sequence',await p.evaluate(()=>document.documentElement.dataset.openingMode==='full' && document.documentElement.dataset.voyagePhase==='paint'));
     await p.keyboard.press('Escape'); await done(p); await p.waitForTimeout(400);
-    await p.locator('#btn-continue').click(); await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy);
+    await p.locator('#btn-continue').click(); await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy && !document.body.classList.contains('paper-turning'));
     check('saved-character-continues', await p.evaluate(() => __moxian.S.name === '听山' && __moxian.S.v === 16));
     await ctx.close();
     for (const key of ['pointer', 'Enter', 'Escape', 'Space', 'accessible-click']) {
@@ -75,7 +75,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
       const state = await done(p); await p.waitForTimeout(400);
       check('skip-' + key + '-no-click-through', state.ms < 1500 && state.screen === 'title' && !state.disabled && state.skip && await p.evaluate(() => document.body.dataset.screen === 'title'), state);
       if (key === 'accessible-click') check('skip-focus-returns-to-menu', await p.locator('#btn-new').evaluate(el => el === document.activeElement));
-      await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
+      await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
       check('skip-' + key + '-next-click-works', await p.evaluate(() => document.body.dataset.screen === 'create'));
       await ctx.close();
     }
@@ -85,7 +85,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
       else { const r = await p.locator('#btn-new').boundingBox(); await p.mouse.move(r.x+r.width/2,r.y+r.height/2); await p.mouse.down(); await p.waitForTimeout(600); await p.mouse.up(); }
       await done(p); await p.waitForTimeout(400);
       check(gesture + '-skip-no-click-through', await p.evaluate(() => document.body.dataset.screen === 'title'));
-      await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
+      await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
       check(gesture + '-release-restores-input', await p.evaluate(() => document.body.dataset.screen === 'create'));
       await ctx.close();
     }

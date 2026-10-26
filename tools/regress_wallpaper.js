@@ -31,12 +31,12 @@ async function frozen(p, label) {
     const p = await ctx.newPage(); p.on('pageerror', e => errors.push(e.message));
     await p.goto(url, { waitUntil: 'domcontentloaded' });
     await p.waitForFunction(() => window.__moxian && document.body.classList.contains('voyage-live'));
-    await p.waitForTimeout(6000); await p.screenshot({path:path.join(out,'menu-desktop.jpg'),type:'jpeg',quality:88}); await p.evaluate(()=>{window.__paperAtMenu=document.querySelector('#paper canvas');}); await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
+    await p.waitForTimeout(6000); await p.screenshot({path:path.join(out,'menu-desktop.jpg'),type:'jpeg',quality:88}); await p.evaluate(()=>{window.__paperAtMenu=document.querySelector('#paper canvas');}); await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
     await p.evaluate(() => {
       __moxian.newGame('山水客', { lg: LINGGEN.find(x => x.id === 'san'), els: ['金', '木', '火'], wx: 5, luck: 1 }, { id: 'dx' }, 'qingshi');
       __moxian.S.flags.guide = 0; Life.setGoal(__moxian.S, 'wendao', false); __moxian.render(); __moxian.save();
     });
-    await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy);
+    await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy && !document.body.classList.contains('paper-turning'));
     await p.waitForTimeout(7000); // Let initial ink-writing finish before checking text geometry.
     const a = await snap(p); await p.waitForTimeout(1200); const b = await snap(p);
     check('fog-boat-move-branch-removed', a.fog !== b.fog && a.boat !== b.boat && b.branch === 'none' && b.live === 'on');
@@ -57,7 +57,7 @@ async function frozen(p, label) {
     await p.locator('#play-menu').click(); await p.locator('[data-m="title"]').click();
     await p.waitForFunction(() => document.body.dataset.screen === 'title'); await frozen(p, 'return-to-title-freezes-main');
     check('title-wallpaper-preserved', await p.locator('#scenery .boat').isVisible());
-    await p.locator('#btn-continue').click(); await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy);
+    await p.locator('#btn-continue').click(); await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy && !document.body.classList.contains('paper-turning'));
     await p.waitForFunction(() => document.documentElement.dataset.liveWallpaper === 'on');
     const resumed = await snap(p); await p.waitForTimeout(400);
     check('resume-restarts-fog', resumed.fog !== (await snap(p)).fog);
