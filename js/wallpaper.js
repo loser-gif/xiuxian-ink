@@ -246,6 +246,7 @@ const Wallpaper = (() => {
     if (L.sh.length > nS) L.sh.length = nS;
   }
   function syncMotion() {
+    syncMain();
     if (A.raf) cancelAnimationFrame(A.raf);
     A.raf = 0;
     if (reduced()) return;
@@ -278,11 +279,73 @@ const Wallpaper = (() => {
   function needsBuild() {
     return bitmapStale($('.pine')) || bitmapStale($('.lake-refl')) || bitmapStale($('.atmo-far')) || bitmapStale($('.atmo-near'));
   }
+  /* 主卷：复用卷首的雾纹、湖光和舟鹤，文字与卷轴不随景物移动。 */
+  const M = { cv: null, c: null, raf: 0, last: 0, time: 0, fog: [] };
+  function buildMain() {
+    if (!M.cv) return;
+    const w = innerWidth, h = innerHeight, k = Math.min(.25, 512 / w);
+    M.w = w; M.h = h;
+    M.cv.width = Math.max(1, Math.round(w * k)); M.cv.height = Math.max(1, Math.round(h * k));
+    M.c.setTransform(M.cv.width / w, 0, 0, M.cv.height / h, 0, 0);
+    const r = Ink.mulberry(94);
+    M.fog = Array.from({ length: w < 1000 ? 7 : 12 }, (_, i) => ({
+      x: r() * w, y: h * (i % 3 === 0 ? .18 + r() * .2 : .78 + r() * .16),
+      rw: Math.min(w * .6, 450) * (.65 + r() * .6), rh: 28 + r() * 45,
+      v: 4 + r() * 5, phase: r() * Math.PI * 2, img: i % 4
+    }));
+    paintMain(0);
+  }
+  function paintMain(dt) {
+    const c = M.c; c.clearRect(0, 0, M.w, M.h);
+    for (const f of M.fog) {
+      f.x += f.v * dt;
+      if (f.x - f.rw > M.w) f.x = -f.rw;
+      c.globalAlpha = .55 + Math.sin(M.time * .22 + f.phase) * .16;
+      c.drawImage(fogImgs[f.img], f.x - f.rw, f.y - f.rh + Math.sin(M.time * .18 + f.phase) * 9, f.rw * 2, f.rh * 2);
+    }
+    c.globalAlpha = 1;
+  }
+  function mainTick(now) {
+    M.raf = 0;
+    if (document.hidden || document.body.dataset.screen !== 'main' || thinNow()) { syncMain(); return; }
+    M.raf = requestAnimationFrame(mainTick);
+    if (M.last && now - M.last < 50) return; // 20fps，四分之一分辨率；不跟随设备 DPR 放大。
+    const dt = M.last ? Math.min(.1, (now - M.last) / 1000) : 0;
+    M.last = now; M.time += dt; paintMain(dt);
+  }
+  function syncMain() {
+    const on = !!M.cv && !document.hidden && document.body.dataset.screen === 'main' && !thinNow();
+    document.documentElement.dataset.liveWallpaper = on ? 'on' : 'off';
+    if (!on) { if (M.raf) cancelAnimationFrame(M.raf); M.raf = 0; M.last = 0; return; }
+    if (M.w !== innerWidth || M.h !== innerHeight) buildMain();
+    if (!M.raf) { M.last = 0; M.raf = requestAnimationFrame(mainTick); }
+  }
+  function initMain() {
+    const host = $('.play-landscape'); if (!host) return;
+    const add = (tag, cls) => { const el = document.createElement(tag); el.className = cls; host.appendChild(el); return el; };
+    M.cv = add('canvas', 'play-mist'); M.c = M.cv.getContext('2d');
+    add('div', 'play-water');
+    const track = add('div', 'play-boat-track'), boat = document.createElement('div'); boat.className = 'play-boat';
+    const originalBoat = $('#scenery .boat svg'); if (originalBoat) boat.appendChild(originalBoat.cloneNode(true));
+    track.appendChild(boat);
+    for (let i = 0; i < 2; i++) {
+      const bird = add('div', 'play-crane play-crane-' + i), original = $('#scenery .crane svg');
+      if (original) bird.appendChild(original.cloneNode(true));
+    }
+    buildMain(); syncMain();
+    let resize;
+    addEventListener('resize', () => { clearTimeout(resize); resize = setTimeout(() => { if (document.body.dataset.screen === 'main') { buildMain(); syncMain(); } }, 140); });
+    new MutationObserver(syncMain).observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion', 'data-fx'] });
+    if (RM) { if (RM.addEventListener) RM.addEventListener('change', syncMain); else RM.addListener(syncMain); }
+  }
+
   function init() {
     build();
-    document.addEventListener('visibilitychange', start);
+    initMain();
+    document.addEventListener('visibilitychange', () => { start(); syncMain(); });
     new MutationObserver(() => {
       if (document.body.dataset.screen === 'title') start();
+      syncMain();
     }).observe(document.body, { attributes: true, attributeFilter: ['data-screen'] });
   }
   return { init, rebuild: build, syncMotion, kick, needsBuild };

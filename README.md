@@ -8,6 +8,12 @@
 
 接手开发请先读 [HANDOVER.md](HANDOVER.md)（完整交接）。给编程工具自动加载的短规矩在 [AGENTS.md](AGENTS.md)，`CLAUDE.md` 与 `.cursorrules` 是同一份。
 
+## v94 · 山水有息（?v=94）
+
+主卷加入流雾、波光、行舟与飞鹤，卷边枫枝轻摆。沿用纸墨动效开关，简动效与系统减少动态时保持静止。
+
+[动态画卷验收](docs/reviews/living-scroll-v94/README.md)。
+
 ## v93 · 山水画卷（?v=93）
 
 - 按已确认的桌面、手机版设计重做主界面：实物感画卷、人物墨环、山水纸面与朱砂页签。
