@@ -2412,20 +2412,20 @@ body[data-screen=main] .scroll-paper{
   -webkit-mask-size:100% 100%;mask-size:100% 100%;
   -webkit-mask-position:center;mask-position:center}
 .splash-land{opacity:0;
-  -webkit-mask-image:url("../img/open-land.png?v=95");mask-image:url("../img/open-land.png?v=95")}
+  -webkit-mask-image:url("../img/open-land.png?v=98");mask-image:url("../img/open-land.png?v=98")}
 .splash-cloud{opacity:0;
-  -webkit-mask-image:url("../img/open-cloud.png?v=95");mask-image:url("../img/open-cloud.png?v=95")}
+  -webkit-mask-image:url("../img/open-cloud.png?v=98");mask-image:url("../img/open-cloud.png?v=98")}
 .splash-sub{opacity:0;background-color:var(--ink3);
-  -webkit-mask-image:url("../img/open-sub.png?v=95");mask-image:url("../img/open-sub.png?v=95")}
+  -webkit-mask-image:url("../img/open-sub.png?v=98");mask-image:url("../img/open-sub.png?v=98")}
 .inkslot{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .logo-plate{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;
-  background:url("../img/open-plate.png?v=95") center / 100% 100% no-repeat}
+  background:url("../img/open-plate.png?v=98") center / 100% 100% no-repeat}
 .inkslot.s0{-webkit-clip-path:inset(0 60.42% 0 28.55%);clip-path:inset(0 60.42% 0 28.55%)}
 .inkslot.s1{-webkit-clip-path:inset(0 49.33% 0 39.15%);clip-path:inset(0 49.33% 0 39.15%)}
 .inkslot.s2{-webkit-clip-path:inset(0 39.89% 0 50.12%);clip-path:inset(0 39.89% 0 50.12%)}
 .inkslot.s3{-webkit-clip-path:inset(0 28.19% 0 60.11%);clip-path:inset(0 28.19% 0 60.11%)}
 .inkslot i,.inkslot b{background-color:transparent;
-  background-image:url("../img/open-glyph.png?v=95");
+  background-image:url("../img/open-glyph.png?v=98");
   background-repeat:no-repeat;background-size:100% 100%;background-position:center;
   -webkit-mask-image:none;mask-image:none}
 html[data-theme="night"] .logo-plate,
@@ -2438,9 +2438,9 @@ html[data-theme="night"] .inkslot b{
 .inkslot i{opacity:0;-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
 .inkslot b{opacity:0;-webkit-filter:blur(7px);filter:blur(7px)}
 .logo-seal{position:absolute;left:71.81%;top:35.48%;width:3.31%;height:20.77%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal-logo.png?v=95") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal-logo.png?v=98") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-seal{position:absolute;left:85.43%;top:37.59%;width:5.64%;height:27.07%;pointer-events:none;opacity:0;
-  background:url("../img/open-seal.png?v=95") center / 100% 100% no-repeat;transform-origin:50% 28%}
+  background:url("../img/open-seal.png?v=98") center / 100% 100% no-repeat;transform-origin:50% 28%}
 .splash-mist{position:absolute;width:32%;height:18%;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(ellipse at center,rgba(27,24,20,.14),rgba(27,24,20,0) 72%)}
 .splash-mist.m1{left:2%;top:58%}
@@ -3630,7 +3630,7 @@ html[data-theme="night"] .goal-cer .path-cer-panel{
 #voyage-boat canvas{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 html[data-theme="night"] #voyage-boat svg{filter:invert(.88) sepia(.32) brightness(1.2) contrast(.92)}
 body.voyage:not(.voyage-live) #scenery .cam{animation:none!important;transform:none!important}
-body.voyage .boat-track{animation:none!important;transform:translate3d(48%,8%,0)!important}
+body.voyage .boat-track{animation:none!important;transform:translate3d(var(--boat-start,48%),8%,0)}
 body.voyage .boat{animation:none!important}
 body.voyage:not(.boat-live) .boat,
 body.voyage:not(.boat-live) .wake{visibility:hidden!important}
@@ -3717,13 +3717,13 @@ body.voyage:not(.inscribe-go) #btn-notice.notice-seal{animation:none!important}
 body[data-screen=main]{--dock-clear:0px}
 body[data-screen=main] #scenery,body[data-screen=main] #vignette,body[data-screen=main] .page-aside{visibility:hidden}
 body[data-screen=main] #scr-main{isolation:isolate;position:relative;max-width:none;width:100%;height:100%;margin:0;overflow:hidden}
-.play-landscape{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:-1;pointer-events:none;background:#f4eee0 url('../img/play-landscape.webp?v=95') center/100% 100% no-repeat}
+.play-landscape{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:-1;pointer-events:none;background:#f4eee0 url('../img/play-landscape.webp?v=98') center/100% 100% no-repeat}
 .play-masthead{display:flex;align-items:center;justify-content:space-between}
 .play-brand{font-family:var(--f-head);display:flex;align-items:center;font-size:28px;letter-spacing:.05em;line-height:1.1}
 .play-brand i{font-size:12px;font-style:normal;color:#f7efdf;background:#aa3a2c;border-radius:3px;padding:5px 2px;margin-left:9px;filter:url(#f-seal)}
 .play-settings{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;font-size:16px;letter-spacing:.12em}
 .play-settings svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5}
-.realm-halo{position:absolute;top:-16%;left:-16%;inset:-16%;width:132%;height:132%;pointer-events:none;z-index:-1;background:url('../img/play-ornaments.webp?v=95') left center/200% 100% no-repeat;opacity:.48}
+.realm-halo{position:absolute;top:-16%;left:-16%;inset:-16%;width:132%;height:132%;pointer-events:none;z-index:-1;background:url('../img/play-ornaments.webp?v=98') left center/200% 100% no-repeat;opacity:.48}
 .mobile-ls{display:none}
 #scr-main .realm-block{position:relative;isolation:isolate;justify-content:center;align-items:center}
 .who-time{font-size:14px;letter-spacing:.08em;margin-top:6px}
@@ -3732,21 +3732,21 @@ body[data-screen=main] #scr-main{isolation:isolate;position:relative;max-width:n
 .hud-toggle[aria-expanded=true] span{transform:rotate(225deg)}
 .play-tabs,.play-traces{display:none}
 #scr-main .scroll{isolation:isolate;perspective:none;overflow:visible;padding:34px 31px 32px;margin:0;min-height:0}
-#scr-main .scroll::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;inset:0;z-index:-1;pointer-events:none;border:solid transparent;border-width:40px 42px;border-image:url('../img/play-scroll.webp?v=95') 110 140 fill / 40px 42px / 0 stretch}
+#scr-main .scroll::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;inset:0;z-index:-1;pointer-events:none;border:solid transparent;border-width:40px 42px;border-image:url('../img/play-scroll.webp?v=98') 110 140 fill / 40px 42px / 0 stretch}
 #scr-main .roller{display:none}
 #scr-main .scroll-paper{margin:0;min-height:0;height:100%;background:none;box-shadow:none;border:0;--ink:#211d17;--ink2:#443b30;--ink3:#756957;--ink4:#8d8171;--zhu:#a4352a;color:var(--ink)}
 #scr-main .scroll-paper::before,#scr-main .scroll-paper::after,#scr-main .scroll-paper .curl{display:none}
 #scr-main .juan-head{display:none}
 .journal-head{position:relative;flex:none;text-align:center;padding:12px 20px 20px;color:var(--ink)}
-.journal-head::before{content:"";position:absolute;right:-10px;top:-7px;width:132px;height:132px;background:url('../img/play-ornaments.webp?v=95') right top/200% 100% no-repeat;opacity:.48;pointer-events:none}
+.journal-head::before{content:"";position:absolute;right:-10px;top:-7px;width:132px;height:132px;background:url('../img/play-ornaments.webp?v=98') right top/200% 100% no-repeat;opacity:.48;pointer-events:none}
 .journal-head h2{font-family:var(--f-head);font-weight:400;font-size:36px;letter-spacing:.18em;line-height:1.25}
 .journal-head h2::after{content:'录';font-size:11px;letter-spacing:0;display:inline-block;vertical-align:middle;background:#a33a2f;color:#f8f0de;padding:3px 2px;border-radius:2px;margin-left:8px;filter:url(#f-seal)}
 .journal-head p{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:5px;font-size:16px;letter-spacing:.15em}
 .journal-head p::before,.journal-head p::after{content:"";height:4px;width:60px;background:var(--brush-line) center/100% 100% no-repeat;opacity:.28}
 #scr-main .log{padding:4px 24px 20px;scrollbar-gutter:auto;z-index:1}
 #scr-main .entry{margin-bottom:22px;min-height:86px;isolation:isolate}
-#scr-main .entry::after{content:"";position:absolute;z-index:-1;right:-12px;bottom:0;width:45%;height:120px;max-height:100%;pointer-events:none;background:url('../img/realm-1.webp?v=95') center bottom/cover no-repeat;opacity:.3;mix-blend-mode:multiply;-webkit-mask-image:radial-gradient(ellipse at center,#000 20%,transparent 73%);mask-image:radial-gradient(ellipse at center,#000 20%,transparent 73%)}
-#scr-main .entry:nth-child(4n+3)::after{background-image:url('../img/realm-3.webp?v=95');opacity:.23}
+#scr-main .entry::after{content:"";position:absolute;z-index:-1;right:-12px;bottom:0;width:45%;height:120px;max-height:100%;pointer-events:none;background:url('../img/realm-1.webp?v=98') center bottom/cover no-repeat;opacity:.3;mix-blend-mode:multiply;-webkit-mask-image:radial-gradient(ellipse at center,#000 20%,transparent 73%);mask-image:radial-gradient(ellipse at center,#000 20%,transparent 73%)}
+#scr-main .entry:nth-child(4n+3)::after{background-image:url('../img/realm-3.webp?v=98');opacity:.23}
 #scr-main .entry-time{font-size:13px;letter-spacing:.2em;margin-bottom:10px;opacity:1}
 #scr-main .entry-title{font-size:28px;margin-bottom:7px}
 #scr-main .entry-text{font-size:17px;line-height:1.9;letter-spacing:.03em;text-align:left}
@@ -3770,7 +3770,7 @@ body[data-screen=main] #scr-main{isolation:isolate;position:relative;max-width:n
 #scr-main .sd-empty,#scr-main .sd-more{font-size:13px;color:var(--ink3);line-height:1.8}
 #scr-main .actions{gap:8px;padding:5px 0;max-width:none;min-width:0;width:100%}
 #scr-main .act{overflow:visible;height:88px}
-#scr-main .act::before{content:"";position:absolute;left:50%;top:50%;width:76px;height:76px;background:url('../img/play-ornaments.webp?v=95') left center/200% 100% no-repeat;opacity:.42;transform:translate(-50%,-58%) rotate(-25deg);pointer-events:none}
+#scr-main .act::before{content:"";position:absolute;left:50%;top:50%;width:76px;height:76px;background:url('../img/play-ornaments.webp?v=98') left center/200% 100% no-repeat;opacity:.42;transform:translate(-50%,-58%) rotate(-25deg);pointer-events:none}
 #scr-main .act-ink{opacity:.05}
 #scr-main .act-t{font-size:34px;letter-spacing:.08em;white-space:nowrap}
 #scr-main .act-t::after{content:'行';position:absolute;right:-10px;bottom:0;font-size:8px;line-height:1.4;letter-spacing:0;background:#a8382c;color:#f8f0dc;border-radius:1px;padding:1px;filter:url(#f-seal)}
@@ -4036,54 +4036,103 @@ html[data-theme=night] #scr-main .bar-life.low .stick,html[data-theme=night] #sc
 html[data-theme=night] #scr-main .entry.warn .entry-text{color:var(--zhu)}
 html[data-theme=night] #scr-main .ink-cadence .ink-ch{color:var(--ink2);text-shadow:none}
 
-/* v96 · 空纸生山河。显露现成的菜单，不用独立片头遮住另一张纸。 */
+/* v98 · 沿原卷起笔，松手后入卷。 */
 #intro-skip{position:fixed;right:calc(var(--sar) + 20px);bottom:calc(var(--sab) + 18px);z-index:75;min-width:56px;min-height:44px;font-size:13px;letter-spacing:.18em;color:var(--ink3);background:none}
-body.ink-born #intro,body.ink-born #splash,body.ink-born #voyage-boat,body.ink-born #voyage-rings{display:none!important}
-body.ink-born[data-screen=title] #scenery{animation:none!important;opacity:1;transform:none}
-body.ink-born .tch b,body.ink-born .title-sub,body.ink-born .title-poem,body.ink-born .seal-title,body.ink-born #btn-notice,body.ink-born .title-menu .bb-ink,body.ink-born .title-menu .bb-text,body.ink-born .title-menu small{animation:none!important;opacity:1;transform:none;-webkit-mask-image:none;mask-image:none}
-body.ink-born .title-menu small{opacity:.7}
-body.ink-born .seal-title{opacity:.93;transform:rotate(-4deg)}
-body.ink-born .tch::after,body.ink-born .seal-halo,body.ink-born .seal-title::before{animation:none!important;opacity:0}
-body.ink-born #scenery .cam{animation:paperCamera 100s ease-in-out infinite alternate}
-body.ink-born #scenery .mtn{animation:paperMountainDrift 90s ease-in-out infinite alternate}
-body.ink-born .boat-track{animation:none;transform:translate3d(48%,8%,0)}
-body.ink-born .boat{animation:none}
-body.ink-born.ink-opening .sun{transform:translate3d(0,26px,0) scale(.94)}
-body.ink-born.ink-opening .pine{transform:rotate(-.5deg) skewX(.3deg)}
-body.ink-born.ink-opening .title-menu button:disabled{opacity:1}
-body.ink-born.ink-opening #scenery .cam{animation:none!important;transform:none!important}
-body.ink-born.ink-opening #scenery .mtn{animation:paperMountain calc(2.6 * var(--intro-unit)) ease-out both!important;animation-play-state:running!important;-webkit-mask-image:linear-gradient(103deg,#000 0%,#000 35%,transparent 56%);mask-image:linear-gradient(103deg,#000 0%,#000 35%,transparent 56%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-body.ink-born.ink-opening #scenery .m1{animation-delay:calc(.3 * var(--intro-unit))!important}
-body.ink-born.ink-opening #scenery .m2{animation-delay:calc(.75 * var(--intro-unit))!important}
-body.ink-born.ink-opening #scenery .m3{animation-delay:calc(1.25 * var(--intro-unit))!important}
-body.ink-born.ink-opening #scenery .m4{animation-delay:calc(2 * var(--intro-unit))!important}
-body.ink-born.ink-opening .sun,body.ink-born.ink-opening .pine,body.ink-born.ink-opening .lake,body.ink-born.ink-opening .mist,body.ink-born.ink-opening .atmo,body.ink-born.ink-opening #tod{animation:paperArrive calc(2.4 * var(--intro-unit)) calc(1.25 * var(--intro-unit)) ease both!important}
-body.ink-born.ink-opening .pine{animation-delay:calc(2 * var(--intro-unit))!important}
-body.ink-born.ink-opening .lake{animation-delay:calc(1.65 * var(--intro-unit))!important}
-body.ink-born.ink-opening .cranes{visibility:hidden}
-body.ink-born.ink-opening .tch b{animation:paperTitle calc(1.35 * var(--intro-unit)) calc((1.6 + var(--d) * .38) * var(--intro-unit)) ease-out both!important;animation-play-state:running!important;-webkit-mask-image:linear-gradient(170deg,#000 35%,transparent 58%);mask-image:linear-gradient(170deg,#000 35%,transparent 58%);-webkit-mask-size:100% 300%;mask-size:100% 300%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-body.ink-born.ink-opening .title-sub,body.ink-born.ink-opening .title-poem{animation:paperArrive calc(1.2 * var(--intro-unit)) calc(2.25 * var(--intro-unit)) ease both!important}
-body.ink-born.ink-opening .seal-title{animation:paperSeal calc(.42 * var(--intro-unit)) calc(4.25 * var(--intro-unit)) ease-out both!important}
-body.ink-born.ink-opening .title-menu{animation:paperArrive calc(.65 * var(--intro-unit)) calc(4.65 * var(--intro-unit)) ease both!important}
-body.ink-born.ink-opening #btn-notice,body.ink-born.ink-opening #audio-dock{animation:paperArrive calc(.4 * var(--intro-unit)) calc(5.05 * var(--intro-unit)) ease both!important}
-body.ink-born.ink-opening .title-sub,body.ink-born.ink-opening .title-poem,body.ink-born.ink-opening .seal-title,body.ink-born.ink-opening #btn-notice{animation-play-state:running!important}
-body.ink-born.ink-opening .boat svg{animation:paperArrive calc(1.2 * var(--intro-unit)) calc(3 * var(--intro-unit)) ease-out both!important}
-body.ink-born.ink-opening .boat::before{content:"";position:absolute;left:48%;top:60%;width:5px;height:3px;border-radius:50%;background:var(--ink);animation:paperInkPoint calc(1.5 * var(--intro-unit)) calc(2.2 * var(--intro-unit)) ease both}
-body.ink-born.voyage-live .boat-track{animation:paperBoatDrift 160s ease-in-out infinite!important}
-body.ink-born.voyage-live .boat{animation:bob 5.5s ease-in-out infinite!important}
-@keyframes paperCamera{from{transform:none}to{transform:scale(1.025) translate3d(.6%,-.2%,0)}}
-@keyframes paperMountainDrift{from{transform:none}to{transform:translate3d(1.3%,0,0)}}
-@keyframes paperMountain{from{opacity:0;-webkit-mask-position:100% 50%;mask-position:100% 50%}30%{opacity:.38}to{opacity:1;-webkit-mask-position:0 50%;mask-position:0 50%}}
-@keyframes paperTitle{from{opacity:0;-webkit-mask-position:0 100%;mask-position:0 100%}24%{opacity:.72}to{opacity:1;-webkit-mask-position:0 0;mask-position:0 0}}
-@keyframes paperArrive{from{opacity:0}}
-@keyframes paperSeal{from{opacity:0;transform:translateY(-3px) rotate(-4deg) scale(1.04)}70%{opacity:.93;transform:rotate(-4deg) scale(.985)}to{opacity:.93;transform:rotate(-4deg)}}
-@keyframes paperInkPoint{0%{opacity:0;transform:scale(.5)}30%{opacity:.65;transform:scale(1)}100%{opacity:0;transform:scale(1.3,.8)}}
-@keyframes paperBoatDrift{0%,100%{transform:translate3d(48%,8%,0)}50%{transform:translate3d(68%,10%,0)}}
-body.ink-born.ink-opening.ink-quick #scenery .mtn,body.ink-born.ink-opening.ink-quick .tch b{-webkit-mask-image:none;mask-image:none;animation:paperArrive .7s ease both!important}
-body.ink-born.ink-opening.ink-quiet #scenery *,body.ink-born.ink-opening.ink-quiet #scr-title *,body.ink-born.ink-opening.ink-quiet #audio-dock{animation:none!important;-webkit-mask-image:none;mask-image:none}
-body.ink-born.ink-opening.ink-quiet .tch b,body.ink-born.ink-opening.ink-quiet .title-menu{opacity:1}
+body.voyage-skipped .tch b,body.voyage-skipped .title-sub,body.voyage-skipped .title-poem,body.voyage-skipped .seal-title,body.voyage-skipped #btn-notice,body.voyage-skipped .title-menu .bb-ink,body.voyage-skipped .title-menu .bb-text,body.voyage-skipped .title-menu small{animation:none!important;opacity:1;transform:none;-webkit-mask-image:none;mask-image:none;clip-path:none;-webkit-clip-path:none}
+body.voyage-skipped .title-menu small{opacity:.7}
+body.voyage-skipped .seal-title{opacity:.93;transform:rotate(-4deg)}
+body.voyage-skipped .tch::after,body.voyage-skipped .seal-halo,body.voyage-skipped .seal-title::before{animation:none!important;opacity:0}
+body.voyage .title-menu button:disabled{opacity:1}
+body.voyage #scenery .cam{animation:voyageCamera 100s ease-in-out infinite alternate}
+@keyframes voyageCamera{from{transform:none}to{transform:scale(1.025) translate3d(.6%,-.2%,0)}}
+#voyage-boat{transition:opacity .48s ease}
+body.voyage .boat{opacity:0;transition:opacity .48s ease}
+body.voyage.boat-live .boat{opacity:1}
+body.voyage.voyage-live .boat-track{animation:voyageBoat 160s ease-in-out infinite!important}
+@keyframes voyageBoat{0%,100%{transform:translate3d(var(--boat-start,48%),8%,0)}50%{transform:translate3d(var(--boat-end,68%),10%,0)}}
 body.paper-turning #app{pointer-events:none}
 .screen.paper-leave{opacity:0;transition:opacity .18s ease}
 .screen.paper-enter{animation:paperArrive .32s ease both}
-@media (prefers-reduced-motion:reduce){body.ink-born.voyage-live .boat-track,body.ink-born.voyage-live .boat{animation:none!important}.screen.paper-leave{transition:none}.screen.paper-enter{animation:none}}
-html[data-motion=lite] body.ink-born.voyage-live .boat-track,html[data-motion=lite] body.ink-born.voyage-live .boat,html[data-fx=thin] body.ink-born.voyage-live .boat-track,html[data-fx=thin] body.ink-born.voyage-live .boat{animation:none!important}
+@keyframes paperArrive{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){body.voyage.voyage-live .boat-track{animation:none!important}.screen.paper-leave{transition:none}.screen.paper-enter{animation:none}}
+html[data-motion=lite] body.voyage.voyage-live .boat-track,html[data-fx=thin] body.voyage.voyage-live .boat-track{animation:none!important}
+/* 侧笺依然可滚动，墨条只在实际滚动或键盘聚焦时出现。 */
+#scr-main .side,#scr-main .hud{scrollbar-width:thin;scrollbar-color:transparent transparent}
+#scr-main .side::-webkit-scrollbar-thumb,#scr-main .hud::-webkit-scrollbar-thumb{background:transparent}
+#scr-main .side.is-scrolling,#scr-main .side:focus-within,#scr-main .hud.is-scrolling,#scr-main .hud:focus-within{scrollbar-color:var(--sb-thumb) transparent}
+#scr-main .side.is-scrolling::-webkit-scrollbar-thumb,#scr-main .side:focus-within::-webkit-scrollbar-thumb,#scr-main .hud.is-scrolling::-webkit-scrollbar-thumb,#scr-main .hud:focus-within::-webkit-scrollbar-thumb{background:var(--sb-thumb)}
+#scr-main .side::-webkit-scrollbar-button,#scr-main .hud::-webkit-scrollbar-button{display:none;width:0;height:0}
+@media (max-width:699px) and (orientation:portrait){
+  #splash{padding-top:calc(var(--sat) + 8vh)}
+  .splash-board{width:min(360px,calc(100vw - 36px));height:min(460px,50vh);height:min(460px,50dvh)}
+  .logo-seal{left:25%;top:72%;width:8%;height:11%}
+  .title-block{top:calc(var(--sat) + 5vh);right:calc(var(--sar) + 8%)}
+  .title-v{font-size:clamp(56px,8.3vh,80px);font-size:clamp(56px,8.3dvh,80px)}
+  .title-sub{font-size:13px}.title-side{gap:14px}.seal-title{width:38px;height:38px}
+  .title-poem{left:calc(var(--sal) + 6%);top:calc(var(--sat) + 4vh);font-size:12px}
+  .title-menu{bottom:calc(var(--sab) + 54px);gap:12px;padding:0 26px}
+  .title-menu-main{gap:8px}
+  .title-menu .brush-btn:not(.title-subbtn){min-width:170px;padding:12px 38px 11px}
+  .title-menu .brush-btn:not(.title-subbtn) .bb-text{font-size:27px}
+  .title-menu-sub{width:min(100%,300px);max-width:100%;gap:8px 28px}
+  .title-menu .title-subbtn{min-height:48px;padding:7px 6px}
+  body[data-screen=title] #audio-dock{bottom:calc(var(--sab) + 8px);right:18px;flex-direction:row;gap:8px}
+  body[data-screen=title] #scenery .m1{top:34%;height:29%}
+  body[data-screen=title] #scenery .m2{top:47%;height:24%}
+  body[data-screen=title] #scenery .m3{top:65%;height:16%;opacity:.65}
+  body[data-screen=title] #scenery .m4{top:88%;height:15%;opacity:.6}
+  body[data-screen=title] .pine{width:45%;height:25%;right:-10%;opacity:.5}
+  body[data-screen=title] .lake{top:56%}
+  body[data-screen=title] .boat-track{top:3%;--boat-start:40%;--boat-end:60%}
+}
+@media (max-width:699px) and (orientation:portrait) and (max-height:720px){
+  #splash{padding-top:calc(var(--sat) + 4vh)}
+  .splash-board{height:38vh;height:38dvh}
+  body[data-screen=title] .lake{top:35%}
+  .title-v{font-size:clamp(47px,7.7vh,56px)}.title-block{top:calc(var(--sat) + 3vh)}
+  .title-poem{font-size:11px}.title-side{gap:9px}.title-sub{font-size:12px}.seal-title{width:32px;height:32px}
+  .title-menu{gap:8px;bottom:calc(var(--sab) + 48px)}
+  .title-menu .brush-btn:not(.title-subbtn){padding:8px 34px;min-height:52px}
+  .title-menu .brush-btn:not(.title-subbtn) .bb-text{font-size:24px}
+}
+/* 手机内页把空间还给正文，详情仍可展开，底部保留完整点按区域。 */
+@media (max-width:639px){
+  body[data-screen=main] #scr-main{grid-template-rows:auto auto auto minmax(120px,1fr) auto auto;padding-top:calc(var(--sat) + 5px);padding-bottom:calc(var(--sab) + 44px)}
+  .play-masthead{min-height:39px;margin-bottom:2px}.play-brand{font-size:24px}
+  #scr-main .hud{padding:4px 12px 0;max-height:36vh;max-height:36dvh}
+  #scr-main .realm-block{min-width:88px;flex-basis:88px;min-height:70px}
+  #scr-main .realm-name{font-size:43px}#scr-main .realm-stage{font-size:15px}
+  #scr-main .who-name{font-size:25px;white-space:normal;overflow-wrap:anywhere}#scr-main .who-time{font-size:12px}
+  #scr-main .hud-toggle{min-width:44px;min-height:44px;top:10px;right:-7px}
+  #scr-main .bars{margin-top:6px;gap:5px}#scr-main .chips{margin-top:6px;padding:5px 0;gap:5px 10px}
+  #scr-main .chip{font-size:13px}#scr-main .chip em{font-size:15px}
+  .play-tabs{padding:3px 8px 6px}.play-tabs button{min-height:44px;font-size:20px}
+  #scr-main .scroll{padding:12px 6px 10px}#scr-main .journal-head{padding:3px 8px 9px}
+  #scr-main .journal-head h2{font-size:25px}#scr-main .journal-head p{font-size:12px}
+  #scr-main .log,body[data-seals="1"] #scr-main .log{padding:3px 12px 12px}
+  #scr-main .side{margin:68px 20px 12px}
+  #scr-main .entry{min-height:0;margin-bottom:20px}#scr-main .entry-text{font-size:17px;line-height:1.85}
+  #scr-main .act{height:66px}#scr-main .act-t{font-size:27px}#scr-main .act small{margin-top:5px}
+  body[data-screen=main] #audio-dock{height:44px;bottom:var(--sab);flex-direction:row}
+  body[data-screen=main] #audio-dock .audio-btn{width:44px;height:44px;min-height:44px;font-size:14px}
+}
+
+@media (max-width:699px) and (orientation:portrait) and (min-height:721px) and (max-height:860px){body[data-screen=title] .lake{top:49%}}
+@media (max-width:639px) and (max-height:650px){
+  .play-masthead{min-height:32px}.play-brand{font-size:22px}
+  #scr-main .realm-block{min-height:58px}#scr-main .realm-name{font-size:38px}#scr-main .who-name{font-size:22px}
+  #scr-main .bars{margin-top:4px}#scr-main .chips{margin-top:4px;padding:3px 0}
+  #scr-main .journal-head{padding-bottom:5px}#scr-main .journal-head h2{font-size:22px}
+  #scr-main .act{height:60px}
+}
+
+/* 矮屏把山与日一同上移，避免湖面上移后遮住峰形和红日。 */
+@media (max-width:699px) and (orientation:portrait) and (max-height:720px){
+  body[data-screen=title] #scenery .m1{top:18%;height:23%}
+  body[data-screen=title] #scenery .m2{top:26%;height:21%}
+  body[data-screen=title] .sun{top:17%;width:56px;height:56px}
+}
+@media (max-width:699px) and (orientation:portrait) and (min-height:721px) and (max-height:860px){
+  body[data-screen=title] #scenery .m1{top:28%;height:26%}
+  body[data-screen=title] #scenery .m2{top:35%;height:23%}
+}

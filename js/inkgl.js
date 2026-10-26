@@ -47,14 +47,14 @@ const InkGL = (() => {
           d = length(vec2((q.x - x0) * .95, (q.y - cy) * .98)) - th * (1.04 + wob * .12);
         } else if (along > 1.) {
           float over = along - 1.;
-          float pinch = smoothstep(0., .07, over);
-          d = length(vec2((q.x - x1) * (1.15 + pinch * 5.), (q.y - cy) * (1. + pinch))) - th * (1. - pinch);
+          float pinch = smoothstep(0., .28, over);
+          d = length(vec2((q.x - x1) * .52, q.y - cy)) - th * (1. - pinch);
         } else d = abs(q.y - cy) - th;
         d -= .05 * press;
         // 笔缘起伏，上下沿和起笔都不要拉成直线
         d += (fbm(q * vec2(3.2, 8.) + uSeed) - .5) * .042;
         d += (noise(vec2(q.x * 2.2, q.y * 26.) + uSeed) - .5) * .016;
-        d += smoothstep(1.05, 1.18, along) * .45;
+        // 收锋延伸为细丝，末端渐淡，不再用一堵距离墙截住湿墨。
       } else {
         d = length(q) - .3 + (fbm(q * 2.2 + uSeed) - .5) * .2;
       }
@@ -76,10 +76,11 @@ const InkGL = (() => {
       float a = max(core * inner + rim * core, bleed);
       float lane = noise(vec2(uSeed * 4.2, (q.y - cy) * 34.));
       float hair = smoothstep(.52, .74, lane);
-      float reach = .86 + .22 * noise(vec2(lane * 9., uSeed));
+      float reach = 1.03 + .28 * noise(vec2(lane * 9., uSeed));
       hair *= smoothstep(.58, .74, along) * smoothstep(reach, reach - .14, along);
       hair *= smoothstep(.011, 0., abs(q.y - cy) - .003);
       a = max(a, hair * .82 * (1. - uKind));
+      if (uKind < .5) a *= 1. - smoothstep(1.08, 1.48, along);
       // 尾端偶尔甩出一粒小墨点
       float P = 9.;
       float ph = fract(t / P + uSeed * .137);

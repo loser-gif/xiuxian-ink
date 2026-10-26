@@ -323,6 +323,7 @@ const Ink = (() => {
       let th = h * (taper ? Math.pow(Math.sin(Math.PI * Math.min(1, t * 1.15 + 0.02)), 0.45) : 1) * (0.82 + R() * 0.18);
       if (t > 0.86) th *= (1 - (t - 0.86) * 3.5) + R() * 0.25; // 飞白收锋
       const mid = h / 2 + Math.sin(t * 3 + seed) * h * 0.08;
+      if (taper && i === n) { top.push([x, mid]); bot.push([x, mid]); continue; }
       top.push([x, mid - th / 2 + (R() - 0.5) * h * 0.06]); bot.push([x, mid + th / 2 + (R() - 0.5) * h * 0.06]);
     }
     let d = `M${top[0][0].toFixed(1)},${top[0][1].toFixed(1)}`;
