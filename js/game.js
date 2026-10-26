@@ -412,6 +412,19 @@ document.addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]
 async function unrollTo(id) {
   const t = lastTap; lastTap = null;
   if (typeof MoAudio !== 'undefined') { MoAudio.unlock(); MoAudio.play('paper'); }
+  if ((curScreen === 'title' || curScreen === 'create') && (id === 'create' || id === 'main')) {
+    if (unrollTo.turn) return unrollTo.turn;
+    unrollTo.turn = (async () => {
+      const previous = $('#scr-' + curScreen);
+      document.body.classList.add('paper-turning'); previous.classList.add('paper-leave');
+      try {
+        await sleep(splashSoft() ? 40 : 180);
+        setScreen(id); const next = $('#scr-' + id); next.classList.add('paper-enter');
+        setTimeout(() => next.classList.remove('paper-enter'), splashSoft() ? 100 : 360);
+      } finally { previous.classList.remove('paper-leave'); document.body.classList.remove('paper-turning'); unrollTo.turn = null; }
+    })();
+    return unrollTo.turn;
+  }
   await FX.wash(async () => { setScreen(id); await sleep(60); }, t && t[0], t && t[1]);
 }
 
@@ -3746,676 +3759,75 @@ if (scrollClose) scrollClose.onclick = () => closeScrollView();
 const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
-function preloadSplash() {
-  const urls = ['img/open-plate.png?v=95', 'img/open-glyph.png?v=95', 'img/open-seal-logo.png?v=95'];
-  const jobs = urls.map(u => new Promise(res => {
-    const im = new Image();
-    im.onload = im.onerror = () => res();
-    im.src = u;
-  }));
-  return Promise.race([Promise.all(jobs), sleep(1400)]);
-}
+/* 卷首与开场是同一张纸。首次完整显墨，回访只作短暂入纸。 */
 function splashSoft() {
-  const root = document.documentElement;
-  /* 省电档 data-fx=thin 不缩短这段。动效简与系统减少动效才走同一叙事的短版。 */
-  return matchMedia('(prefers-reduced-motion: reduce)').matches
-    || root.getAttribute('data-motion') === 'lite';
+  return matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'lite';
 }
 function splashWait() {
-  const el = document.getElementById('splash');
-  if (!el) return Promise.resolve();
-  const soft = splashSoft();
-  const body = document.body;
-  const root = document.documentElement;
-  const boatEl = document.getElementById('voyage-boat');
-  const boatSvg = boatEl ? boatEl.querySelector('svg') : null;
-  const rings = document.getElementById('voyage-rings');
-  const ringA = document.getElementById('ring-a');
-  const ringB = document.getElementById('ring-b');
-  const ringC = document.getElementById('ring-c');
-  el.hidden = false;
-  el.setAttribute('aria-hidden', 'false');
-  body.classList.add('go', 'hold', 'sheet', 'voyage');
-  if (soft) body.classList.add('voyage-quick');
-  const T = soft
-    ? { paint: 1500, drop: 680, wave: 1050, beat: 160, inscribe: 1320 }
-    : { paint: 3680, drop: 1680, wave: 2700, beat: 450, inscribe: 2450 };
+  const body = document.body, menu = $('#scr-title'), skip = $('#intro-skip');
+  const rm = matchMedia('(prefers-reduced-motion: reduce)');
+  let seen = false;
+  try { seen = localStorage.getItem('moxian.openingSeen') === '1'; } catch (e) {}
+  const soft = splashSoft(), duration = soft ? 240 : seen ? 900 : 5600;
+  root.style.setProperty('--intro-unit', (duration / 5600).toFixed(4) + 's');
+  root.dataset.voyagePhase = 'paper'; root.dataset.voyageP = '0';
+  root.dataset.openingMode = soft ? 'quiet' : seen ? 'return' : 'first';
+  body.classList.add('go', 'hold', 'sheet', 'intro-done', 'inscribe-go', 'boat-live', 'ink-born', 'ink-opening');
+  if (seen) body.classList.add('ink-quick');
+  if (soft) body.classList.add('ink-quiet');
+  body.classList.remove('ink-await');
+  if (skip) skip.hidden = false;
+  menu.setAttribute('aria-busy', 'true');
+  const controls = [...menu.querySelectorAll('button'), ...document.querySelectorAll('#audio-dock button, #audio-dock input')];
+  const disabled = controls.map(b => b.disabled);
+  controls.forEach(b => { b.disabled = true; });
   return new Promise(resolve => {
-    let phase = 'paint';
-    let timer = 0;
-    let raf = 0;
-    let motion = null;
-    let geo = null;
-    let swallowTimer = 0;
-    const mark = (name, p) => {
-      root.dataset.voyagePhase = name;
-      if (p != null) root.dataset.voyageP = String(Math.round(p));
-    };
-    mark('paint', 0);
-    const swallowClick = ev => { ev.preventDefault(); ev.stopPropagation(); };
-    const armSwallow = ms => {
-      document.addEventListener('click', swallowClick, true);
-      clearTimeout(swallowTimer);
-      swallowTimer = setTimeout(() => document.removeEventListener('click', swallowClick, true), ms);
-    };
-    const applyQuick = () => {
-      T.drop = 680;
-      T.wave = 1050;
-      T.beat = 160;
-      T.inscribe = 1320;
-    };
-    const bleedCanvas = document.getElementById('voyage-bleed');
-    let bleedCtx = null;
-    let bleedOrder = null;
-    let bleedAlpha = null;
-    let bleedMax = 1;
-    let bleedImg = null;
-    let bleedW = 0;
-    let bleedH = 0;
-    let bleedInk = '';
-    let bleedRGB = [27, 24, 20];
-    let bleedAt = -1;
-    const SAMP = 3;
-    const prepareBleed = () => {
-      if (!bleedCanvas || bleedOrder) return;
-      bleedW = 120 * SAMP;
-      bleedH = 70 * SAMP;
-      bleedCanvas.width = bleedW;
-      bleedCanvas.height = bleedH;
-      const off = document.createElement('canvas');
-      off.width = bleedW;
-      off.height = bleedH;
-      const c = off.getContext('2d', { willReadFrequently: true });
-      if (!c) return;
-      c.setTransform(SAMP, 0, 0, SAMP, 0, 0);
-      c.fillStyle = '#000';
-      c.strokeStyle = '#000';
-      c.lineCap = 'round';
-      c.lineJoin = 'round';
-      c.beginPath();
-      c.moveTo(6, 38);
-      c.quadraticCurveTo(60, 50, 114, 34);
-      c.quadraticCurveTo(100, 46, 60, 47);
-      c.quadraticCurveTo(22, 47, 6, 38);
-      c.closePath();
-      c.fill();
-      c.beginPath();
-      c.moveTo(40, 39);
-      c.quadraticCurveTo(52, 22, 74, 24);
-      c.quadraticCurveTo(80, 30, 82, 38);
-      c.quadraticCurveTo(60, 41, 40, 39);
-      c.closePath();
-      c.fill();
-      c.lineWidth = 2.4;
-      c.beginPath();
-      c.moveTo(88, 37);
-      c.lineTo(90, 25);
-      c.stroke();
-      c.beginPath();
-      c.moveTo(82, 25);
-      c.quadraticCurveTo(90, 18, 98, 25);
-      c.closePath();
-      c.fill();
-      c.lineWidth = 1.15;
-      c.beginPath();
-      c.moveTo(95, 33);
-      c.lineTo(58, 6);
-      c.stroke();
-      const src = c.getImageData(0, 0, bleedW, bleedH).data;
-      const n = bleedW * bleedH;
-      bleedOrder = new Float32Array(n);
-      bleedAlpha = new Uint8Array(n);
-      const sx = 60 * SAMP;
-      const sy = 42 * SAMP;
-      let maxD = 1;
-      for (let i = 0; i < n; i++) {
-        const a = src[i * 4 + 3];
-        bleedAlpha[i] = a;
-        if (a < 16) {
-          bleedOrder[i] = 1e9;
-          continue;
-        }
-        const x = i % bleedW;
-        const y = (i / bleedW) | 0;
-        const noise = Math.sin(x * 0.31) + Math.cos(y * 0.27) + Math.sin((x + y) * 0.17);
-        const dist = Math.hypot(x - sx, y - sy) + noise * 6.5 * SAMP;
-        bleedOrder[i] = dist;
-        if (dist > maxD) maxD = dist;
-      }
-      bleedMax = maxD;
-      bleedCtx = bleedCanvas.getContext('2d', { willReadFrequently: true });
-      if (bleedCtx) bleedImg = bleedCtx.createImageData(bleedW, bleedH);
-    };
-    const readInk = () => {
-      let raw = '';
-      try { raw = getComputedStyle(document.documentElement).getPropertyValue('--ink'); } catch (e) { raw = ''; }
-      raw = (raw || '').trim();
-      if (raw === bleedInk) return;
-      bleedInk = raw;
-      bleedAt = -1;
-      let r = 27;
-      let g = 24;
-      let b = 20;
-      if (raw.charAt(0) === '#' && raw.length >= 7) {
-        r = parseInt(raw.slice(1, 3), 16);
-        g = parseInt(raw.slice(3, 5), 16);
-        b = parseInt(raw.slice(5, 7), 16);
-      } else if (raw.indexOf('rgb') === 0) {
-        const parts = raw.replace(/rgba?\(/, '').replace(')', '').split(',');
-        r = parseInt(parts[0], 10);
-        g = parseInt(parts[1], 10);
-        b = parseInt(parts[2], 10);
-      }
-      if (r !== r) r = 27;
-      if (g !== g) g = 24;
-      if (b !== b) b = 20;
-      bleedRGB = [r, g, b];
-    };
-    const paintBleed = (shape) => {
-      if (!bleedCtx || !bleedImg || !bleedOrder) return;
-      readInk();
-      const s = shape < 0 ? 0 : (shape > 1 ? 1 : shape);
-      if (s >= 1 && bleedAt >= 1) return;
-      bleedAt = s;
-      const reach = 11 * SAMP + s * (bleedMax - 11 * SAMP);
-      const data = bleedImg.data;
-      const r = bleedRGB[0];
-      const g = bleedRGB[1];
-      const b = bleedRGB[2];
-      const n = bleedW * bleedH;
-      for (let i = 0; i < n; i++) {
-        const o = i * 4;
-        if (bleedOrder[i] <= reach) {
-          data[o] = r;
-          data[o + 1] = g;
-          data[o + 2] = b;
-          data[o + 3] = bleedAlpha[i];
-        } else {
-          data[o + 3] = 0;
-        }
-      }
-      bleedCtx.putImageData(bleedImg, 0, 0);
-    };
-    prepareBleed();
-    const paintBoat = (x, y, shape, stretch) => {
-      if (!boatEl) return;
-      const s = shape < 0 ? 0 : (shape > 1 ? 1 : shape);
-      boatEl.hidden = false;
-      if (boatSvg) boatSvg.style.display = 'none';
-      boatEl.style.left = x + 'px';
-      boatEl.style.top = y + 'px';
-      if (s <= 0.001) {
-        const w = 8;
-        const h = 10;
-        boatEl.style.width = w + 'px';
-        boatEl.style.height = h + 'px';
-        boatEl.style.marginLeft = (-w / 2) + 'px';
-        boatEl.style.marginTop = (-h / 2) + 'px';
-        boatEl.style.backgroundColor = 'var(--ink)';
-        boatEl.style.borderRadius = '50%';
-        boatEl.style.overflow = 'hidden';
-        boatEl.style.transformOrigin = '50% 50%';
-        boatEl.style.transform = stretch === 1 ? 'none' : ('scaleY(' + stretch + ')');
-        if (bleedCanvas) bleedCanvas.style.display = 'none';
-        return;
-      }
-      const w = 50;
-      const h = 29;
-      const anchorY = 17.4 + (14.5 - 17.4) * s;
-      boatEl.style.width = w + 'px';
-      boatEl.style.height = h + 'px';
-      boatEl.style.marginLeft = '-25px';
-      boatEl.style.marginTop = (-anchorY) + 'px';
-      boatEl.style.backgroundColor = 'transparent';
-      boatEl.style.borderRadius = '0';
-      boatEl.style.overflow = 'visible';
-      boatEl.style.transform = 'none';
-      if (bleedCanvas) bleedCanvas.style.display = 'block';
-      paintBleed(s);
-    };
-    const setHole = (cx, cy, r) => {
-      const rr = r < 1 ? 1 : r;
-      const edge = rr - 1.25;
-      const mask = 'radial-gradient(circle ' + rr.toFixed(2) + 'px at ' + cx.toFixed(2) + 'px ' + cy.toFixed(2) + 'px, rgba(255,255,255,0) ' + (edge < 0 ? 0 : edge).toFixed(2) + 'px, #fff ' + rr.toFixed(2) + 'px)';
-      el.style.webkitMaskImage = mask;
-      el.style.maskImage = mask;
-      el.style.webkitMaskRepeat = 'no-repeat';
-      el.style.maskRepeat = 'no-repeat';
-      el.style.webkitMaskPosition = '0 0';
-      el.style.maskPosition = '0 0';
-      el.style.webkitMaskSize = '100% 100%';
-      el.style.maskSize = '100% 100%';
-    };
-    const clearHole = () => {
-      el.style.webkitMaskImage = '';
-      el.style.maskImage = '';
-    };
-    const setRings = (cx, cy, r) => {
-      if (!rings) return;
-      const place = (node, rad, width) => {
-        if (!node) return;
-        if (rad < 8) {
-          node.style.display = 'none';
-          return;
-        }
-        const d = rad * 2;
-        node.style.display = 'block';
-        node.style.width = d + 'px';
-        node.style.height = d + 'px';
-        node.style.left = cx + 'px';
-        node.style.top = cy + 'px';
-        node.style.marginLeft = (-rad) + 'px';
-        node.style.marginTop = (-rad) + 'px';
-        node.style.borderWidth = width + 'px';
-      };
-      place(ringA, r, 3);
-      place(ringB, r - 22, 1.6);
-      place(ringC, r - 48, 1);
-    };
-    const measure = () => {
-      const real = document.querySelector('#scenery .boat');
-      let restX = window.innerWidth * 0.58;
-      let restY = window.innerHeight * 0.8;
-      if (real) {
-        const b = real.getBoundingClientRect();
-        if (b.width > 2) {
-          restX = b.left + b.width / 2;
-          restY = b.top + b.height / 2;
-        }
-      }
-      const board = el.querySelector('.splash-board');
-      let ox = window.innerWidth * 0.62;
-      let oy = window.innerHeight * 0.22;
-      if (board) {
-        const rct = board.getBoundingClientRect();
-        if (rct.width > 2) {
-          ox = rct.left + rct.width * 0.66;
-          oy = rct.top + rct.height * 0.72;
-        }
-      }
-      const shift = Math.min(48, window.innerWidth * 0.05);
-      const landX = restX - shift;
-      const landY = restY + 4;
-      const rMax = Math.hypot(
-        Math.max(landX, window.innerWidth - landX),
-        Math.max(landY, window.innerHeight - landY)
-      ) + 28;
-      return { ox: ox, oy: oy, restX: restX, restY: restY, landX: landX, landY: landY, rMax: rMax };
-    };
-    const frameDrop = t => {
-      const u = !motion || motion.dur <= 0 ? 1 : Math.min(1, (t - motion.t0) / motion.dur);
-      const g = geo;
-      const fallEnd = 0.46;
-      let x;
-      let y;
-      let shape = 0;
-      let stretch = 1;
-      if (u < fallEnd) {
-        const f = u / fallEnd;
-        const e = f * f;
-        x = g.ox + (g.landX - g.ox) * e;
-        y = g.oy + (g.landY - g.oy) * e;
-        stretch = 1 + 0.42 * Math.sin(f * Math.PI);
-        mark(f < 0.45 ? 'fall' : 'boat', Math.round(f * 40));
-      } else {
-        const f = (u - fallEnd) / (1 - fallEnd);
-        const e = 1 - Math.pow(1 - f, 3);
-        x = g.landX;
-        y = g.landY;
-        shape = e;
-        mark('boat', Math.round(40 + shape * 60));
-      }
-      paintBoat(x, y, shape, stretch);
-      if (u >= 1) beginWave();
-      else raf = requestAnimationFrame(frameDrop);
-    };
-    const beginDrop = () => {
-      if (phase === 'fall' || phase === 'wave' || phase === 'settle' || phase === 'menu' || phase === 'done') return;
-      phase = 'fall';
-      geo = measure();
-      mark('fall', 0);
-      paintBoat(geo.ox, geo.oy, 0, 1);
-      motion = { t0: performance.now(), dur: T.drop };
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(frameDrop);
-    };
-    const frameWave = t => {
-      const u = !motion || motion.dur <= 0 ? 1 : Math.min(1, (t - motion.t0) / motion.dur);
-      const g = geo;
-      const glideU = Math.min(1, u / 0.82);
-      const ge = 1 - Math.pow(1 - glideU, 3);
-      paintBoat(g.landX + (g.restX - g.landX) * ge, g.landY + (g.restY - g.landY) * ge, 1, 1);
-      const r0 = 40;
-      const r = r0 + (g.rMax - r0) * u;
-      setHole(g.landX, g.landY, r);
-      setRings(g.landX, g.landY, r);
-      mark('wave', Math.round(u * 100));
-      if (u >= 1) beginSettle();
-      else raf = requestAnimationFrame(frameWave);
-    };
-    const beginWave = () => {
-      if (phase === 'wave' || phase === 'settle' || phase === 'menu' || phase === 'done') return;
-      phase = 'wave';
-      el.classList.add('wave');
-      geo = geo || measure();
-      if (rings) rings.hidden = false;
-      setHole(geo.landX, geo.landY, 40);
-      setRings(geo.landX, geo.landY, 40);
-      paintBoat(geo.landX, geo.landY, 1, 1);
-      motion = { t0: performance.now(), dur: T.wave };
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(frameWave);
-    };
-    const beginSettle = () => {
-      if (phase === 'settle' || phase === 'menu' || phase === 'done') return;
-      phase = 'settle';
-      mark('settle', 100);
-      geo = geo || measure();
-      setHole(geo.landX, geo.landY, geo.rMax);
-      setRings(geo.landX, geo.landY, geo.rMax);
-      paintBoat(geo.restX, geo.restY, 1, 1);
-      clearTimeout(timer);
-      timer = setTimeout(beginInscribe, T.beat);
-    };
-    const beginInscribe = () => {
-      if (phase === 'menu' || phase === 'done') return;
-      phase = 'menu';
-      mark('menu', 100);
-      cancelAnimationFrame(raf);
-      geo = geo || measure();
-      const real = document.querySelector('#scenery .boat');
-      let x = geo.restX;
-      let y = geo.restY;
-      if (real) {
-        const b = real.getBoundingClientRect();
-        if (b.width > 2) {
-          x = b.left + b.width / 2;
-          y = b.top + b.height / 2;
-        }
-      }
-      paintBoat(x, y, 1, 1);
-      setHole(geo.landX, geo.landY, geo.rMax + 48);
-      body.classList.remove('hold');
-      body.classList.add('inscribe-go', 'boat-live');
-      if (boatEl) boatEl.hidden = true;
-      if (rings) rings.hidden = true;
-      clearHole();
-      el.hidden = true;
-      el.setAttribute('aria-hidden', 'true');
-      clearTimeout(timer);
-      timer = setTimeout(finish, T.inscribe);
-      armSwallow(T.inscribe + 480);
-    };
-    const finish = () => {
-      if (phase === 'done') return;
-      phase = 'done';
-      mark('done', 100);
-      body.classList.add('voyage-live');
+    let done = false, timer = 0, stampTimer = 0;
+    const swallow = e => { e.preventDefault(); e.stopImmediatePropagation(); };
+    const finish = skipped => {
+      if (done) return; done = true;
+      clearTimeout(timer); clearTimeout(stampTimer);
       window.removeEventListener('pointerdown', onSkip, true);
       window.removeEventListener('keydown', onSkip, true);
-      cancelAnimationFrame(raf);
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (rm.removeEventListener) rm.removeEventListener('change', onMotion); else rm.removeListener(onMotion);
+      if (skipped) setTimeout(() => window.removeEventListener('click', onClick, true), 250);
+      else window.removeEventListener('click', onClick, true);
+      body.classList.remove('hold', 'ink-opening', 'ink-quick', 'ink-quiet');
+      body.classList.add('voyage-live');
+      root.dataset.voyagePhase = 'done'; root.dataset.voyageP = '100';
+      menu.setAttribute('aria-busy', 'false');
+      controls.forEach((b, i) => { b.disabled = disabled[i]; });
+      const focusedSkip = skip && document.activeElement === skip;
+      if (skip) skip.hidden = true;
+      if (focusedSkip) { const target = $('#btn-continue').hidden ? $('#btn-new') : $('#btn-continue'); target.focus({ preventScroll: true }); }
+      try { localStorage.setItem('moxian.openingSeen', '1'); } catch (e) {}
+      if (typeof Wallpaper !== 'undefined') Wallpaper.kick(0);
       resolve();
     };
-    const hasten = () => {
-      if (!motion) return;
-      const now = performance.now();
-      const u = motion.dur <= 0 ? 1 : Math.min(1, (now - motion.t0) / motion.dur);
-      const left = phase === 'wave' ? 720 : 260;
-      motion.t0 = now - u * left;
-      motion.dur = left;
+    const onSkip = e => {
+      if (e.type === 'keydown' && (e.repeat || !['Escape', 'Enter', ' '].includes(e.key))) return;
+      if (e.type === 'pointerdown' && e.button != null && e.button !== 0) return;
+      swallow(e); finish(true);
     };
-    const onSkip = ev => {
-      if (ev && ev.type === 'keydown') {
-        if (ev.repeat) return;
-        const k = ev.key;
-        if (k !== 'Escape' && k !== 'Enter' && k !== ' ') return;
-        ev.preventDefault();
-        ev.stopPropagation();
-      }
-      if (ev && ev.type === 'pointerdown') {
-        if (ev.button != null && ev.button !== 0) return;
-        ev.preventDefault();
-      }
-      armSwallow(phase === 'menu' || phase === 'done' ? 900 : 4800);
-      if (phase === 'done' || phase === 'menu') return;
-      if (phase === 'settle') {
-        clearTimeout(timer);
-        beginInscribe();
-        return;
-      }
-      if (phase === 'paint' || phase === 'lift') {
-        if (el.classList.contains('skip')) return;
-        el.classList.add('skip', 'quick');
-        body.classList.add('voyage-quick');
-        applyQuick();
-        clearTimeout(timer);
-        cancelAnimationFrame(raf);
-        finishPaint();
-        phase = 'lift';
-        mark('lift', 100);
-        timer = setTimeout(beginDrop, 120);
-        return;
-      }
-      if (phase === 'fall' || phase === 'wave') {
-        el.classList.add('skip', 'quick');
-        body.classList.add('voyage-quick');
-        applyQuick();
-        hasten();
-      }
-    };
+    const onClick = e => { swallow(e); if (e.target === skip) finish(true); };
+    const onVisibility = () => { if (document.hidden) finish(false); };
+    const onMotion = () => { if (rm.matches) finish(false); };
     window.addEventListener('pointerdown', onSkip, true);
     window.addEventListener('keydown', onSkip, true);
-    const brush = document.getElementById('splash-brush');
-    let brushCtx = null;
-    let brushW = 0;
-    let brushH = 0;
-    let brushDpr = 1;
-    let plateImg = null;
-    let glyphImg = null;
-    let brushPts = null;
-    let brushCursor = 0;
-    let paintDone = false;
-    const loadInk = (url) => new Promise(res => {
-      const im = new Image();
-      im.onload = () => res(im);
-      im.onerror = () => res(null);
-      im.src = url;
-    });
-    const finishPaint = () => {
-      if (paintDone) return;
-      paintDone = true;
-      const seal = el.querySelector('.logo-seal');
-      if (seal) seal.classList.add('stamping');
-      if (!brushCtx || !plateImg || !plateImg.width) {
-        el.classList.add('painted');
-        return;
-      }
-      brushCtx.setTransform(brushDpr, 0, 0, brushDpr, 0, 0);
-      brushCtx.clearRect(0, 0, brushW, brushH);
-      brushCtx.drawImage(plateImg, 0, 0, brushW, brushH);
-      if (glyphImg && glyphImg.width) brushCtx.drawImage(glyphImg, 0, 0, brushW, brushH);
-    };
-    const stampBrush = (p) => {
-      if (!brushCtx) return;
-      brushCtx.save();
-      brushCtx.beginPath();
-      if (p.axis === 'box') brushCtx.rect(p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0);
-      else if (p.r < 0.35) { brushCtx.restore(); return; }
-      else if (p.axis === 'h') brushCtx.ellipse(p.x, p.y, Math.max(0.5, p.r * 0.42), p.r, 0, 0, Math.PI * 2);
-      else if (p.axis === 'r') brushCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      else brushCtx.ellipse(p.x, p.y, p.r, Math.max(0.5, p.r * 0.42), 0, 0, Math.PI * 2);
-      brushCtx.clip();
-      brushCtx.globalAlpha = p.ink;
-      if (plateImg && plateImg.width) brushCtx.drawImage(plateImg, 0, 0, brushW, brushH);
-      if (glyphImg && glyphImg.width) brushCtx.drawImage(glyphImg, 0, 0, brushW, brushH);
-      brushCtx.restore();
-    };
-    const buildBrush = () => {
-      const W = brushW;
-      const H = brushH;
-      const segs = [];
-      const pushLine = (x0, y0, x1, y1, r, n, axis, weight) => {
-        const pts = [];
-        for (let i = 0; i <= n; i++) {
-          const t = i / n;
-          const press = Math.sin(Math.pow(t, 0.9) * Math.PI);
-          const sway = Math.sin(t * Math.PI) * r * 0.12;
-          const x = x0 + (x1 - x0) * t + (axis === 'v' ? sway : 0);
-          const y = y0 + (y1 - y0) * t + (axis === 'h' ? sway * 0.4 : 0);
-          pts.push({ x: x, y: y, r: r * (0.46 + 0.54 * press), ink: 0.82 + 0.18 * press, axis: axis });
-        }
-        segs.push({ pts: pts, weight: weight });
-      };
-      const arcN = 28;
-      const arcPts = [];
-      for (let i = 0; i <= arcN; i++) {
-        const t = i / arcN;
-        const ang = Math.PI * (1 - t);
-        const press = Math.sin(t * Math.PI);
-        arcPts.push({
-          x: W * 0.5 + Math.cos(ang) * W * 0.125,
-          y: H * 0.25 - Math.sin(ang) * H * 0.11,
-          r: W * 0.011 * (0.4 + 0.8 * press),
-          ink: 0.78 + 0.22 * press,
-          axis: 'r'
-        });
-      }
-      segs.push({ pts: arcPts, weight: 1.15 });
-      pushLine(W * 0.36, H * 0.2, W * 0.64, H * 0.19, H * 0.055, 16, 'h', 0.55);
-      pushLine(W * 0.34, H * 0.25, W * 0.66, H * 0.27, H * 0.06, 16, 'h', 0.6);
-      pushLine(W * 0.1, H * 0.52, W * 0.3, H * 0.5, H * 0.07, 14, 'h', 0.55);
-      pushLine(W * 0.12, H * 0.66, W * 0.3, H * 0.62, H * 0.055, 12, 'h', 0.4);
-      const chars = [
-        [0.286, 0.396],
-        [0.392, 0.507],
-        [0.50, 0.602],
-        [0.60, 0.72]
-      ];
-      for (let k = 0; k < chars.length; k++) {
-        const x0 = chars[k][0];
-        const x1 = chars[k][1];
-        for (let s = 1; s <= 4; s++) {
-          const x = x0 + (x1 - x0) * (s / 5);
-          pushLine(W * x, H * 0.30, W * x, H * 0.78, W * 0.022, 22, 'v', 0.78);
-        }
-        segs.push({ pts: [{ x: 0, y: 0, r: 1, ink: 1, axis: 'box', x0: W * (x0 - 0.01), y0: H * 0.28, x1: W * (x1 + 0.01), y1: H * 0.80 }], weight: 0.08 });
-      }
-      pushLine(W * 0.74, H * 0.48, W * 0.93, H * 0.52, H * 0.06, 14, 'h', 0.5);
-      pushLine(W * 0.76, H * 0.64, W * 0.92, H * 0.68, H * 0.05, 12, 'h', 0.4);
-      pushLine(W * 0.3, H * 0.81, W * 0.72, H * 0.81, H * 0.045, 22, 'h', 1.05);
-      let sum = 0;
-      for (let s = 0; s < segs.length; s++) sum += segs[s].weight;
-      const out = [];
-      let acc = 0;
-      for (let s = 0; s < segs.length; s++) {
-        const seg = segs[s];
-        const t0 = acc / sum;
-        acc += seg.weight;
-        const t1 = acc / sum;
-        const n = seg.pts.length;
-        for (let i = 0; i < n; i++) {
-          const p = seg.pts[i];
-          p.t = n === 1 ? t1 : (t0 + (t1 - t0) * (i / (n - 1)));
-          out.push(p);
-        }
-      }
-      return out;
-    };
-    const framePaint = (now) => {
-      if (phase !== 'paint' && phase !== 'lift') return;
-      if (!motion) return;
-      const u = motion.dur <= 0 ? 1 : Math.min(1, (now - motion.t0) / motion.dur);
-      if (brushPts) {
-        while (brushCursor < brushPts.length && brushPts[brushCursor].t <= u) {
-          stampBrush(brushPts[brushCursor]);
-          brushCursor++;
-        }
-      }
-      if (u >= 0.9) {
-        const seal = el.querySelector('.logo-seal');
-        if (seal) seal.classList.add('stamping');
-        mark('lift', Math.round(u * 100));
-        phase = 'lift';
-      } else mark('paint', Math.round(u * 100));
-      if (u >= 1) {
-        finishPaint();
-        beginDrop();
-        return;
-      }
-      raf = requestAnimationFrame(framePaint);
-    };
-    const startPaint = () => {
-      if (el.classList.contains('skip')) {
-        finishPaint();
-        timer = setTimeout(beginDrop, 120);
-        return;
-      }
-      const board = el.querySelector('.splash-board');
-      const box = board ? board.getBoundingClientRect() : null;
-      if (!brush || !box || box.width < 8) {
-        el.classList.add('painted');
-        const seal = el.querySelector('.logo-seal');
-        if (seal) seal.classList.add('stamping');
-        timer = setTimeout(beginDrop, 80);
-        return;
-      }
-      brushDpr = Math.min(2, window.devicePixelRatio || 1);
-      brushW = box.width;
-      brushH = box.height;
-      brush.width = Math.round(brushW * brushDpr);
-      brush.height = Math.round(brushH * brushDpr);
-      brushCtx = brush.getContext('2d');
-      if (!brushCtx) {
-        el.classList.add('painted');
-        timer = setTimeout(beginDrop, 80);
-        return;
-      }
-      brushCtx.setTransform(brushDpr, 0, 0, brushDpr, 0, 0);
-      brushPts = buildBrush();
-      brushCursor = 0;
-      motion = { t0: performance.now(), dur: T.paint };
-      raf = requestAnimationFrame(framePaint);
-    };
-    let inkReady = false;
-    Promise.all([
-      loadInk('img/open-plate.png?v=95'),
-      loadInk('img/open-glyph.png?v=95')
-    ]).then(pair => {
-      plateImg = pair[0];
-      glyphImg = pair[1];
-      inkReady = true;
-      if ((phase === 'paint' || phase === 'lift') && el.classList.contains('skip')) finishPaint();
-    });
-    let armT0 = 0;
-    const armPaint = (now) => {
-      if (!armT0) armT0 = now || performance.now();
-      if (phase !== 'paint' && phase !== 'lift') return;
-      if (el.classList.contains('skip')) {
-        finishPaint();
-        if (phase !== 'fall' && phase !== 'wave' && phase !== 'settle' && phase !== 'menu' && phase !== 'done') {
-          clearTimeout(timer);
-          timer = setTimeout(beginDrop, 120);
-        }
-        return;
-      }
-      if (!inkReady && (performance.now() - armT0) < 1200) {
-        raf = requestAnimationFrame(armPaint);
-        return;
-      }
-      startPaint();
-    };
-    requestAnimationFrame(() => {
-      el.classList.add('write');
-      if (soft) el.classList.add('quick');
-      armPaint();
-    });
+    window.addEventListener('click', onClick, true);
+    document.addEventListener('visibilitychange', onVisibility);
+    if (rm.addEventListener) rm.addEventListener('change', onMotion); else rm.addListener(onMotion);
+    stampTimer = setTimeout(() => { root.dataset.voyagePhase = 'seal'; if (!seen && !soft && typeof MoAudio !== 'undefined') MoAudio.play('stamp'); }, duration * .76);
+    timer = setTimeout(() => finish(false), duration);
+    if (document.hidden) finish(false);
   });
 }
 function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=95').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=96').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -4462,16 +3874,15 @@ function retireIntro() {
 Promise.all([
   initVisuals(),
   Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), sleep(2500)]),
-  preloadSplash(),
 ]).catch(() => {}).then(() => splashWait()).then(() => {
   applyLook();
-  // 墨落成舟已经在 splashWait 里放开题字。这里只补一层，并踢一下壁纸。
+  // 显墨结束即是菜单，复用同一纸面与景物。
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!document.body.classList.contains('go')) document.body.classList.add('go');
     document.body.classList.remove('hold');
     if (typeof Wallpaper !== 'undefined' && Wallpaper.kick) Wallpaper.kick(1000);
   }));
-  // 首访不打 intro-done（InkGL 会据此缩短等待）。竖题在舟停之后才按笔顺写下。
+  // 旧片头节点保持隐藏，预热仅在空闲时进行。
   setTimeout(retireIntro, 600);
 });
 

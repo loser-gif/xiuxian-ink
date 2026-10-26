@@ -1,19 +1,16 @@
 /* 墨仙录 · 离线壳。网络优先；坏响应不入库、也不当作样式或脚本交出去。版本不符则自愈。 */
 'use strict';
-var CACHE = 'moxian-v95';
+var CACHE = 'moxian-v96';
 var PRECACHE = [
   './',
   './index.html',
-  './css/style.css?v=95',
-  './css/fonts.css?v=95',
-  './manifest.webmanifest?v=95',
+  './css/style.css?v=96',
+  './css/fonts.css?v=96',
+  './manifest.webmanifest?v=96',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
   './icon.svg',
-  './img/open-plate.png?v=95',
-  './img/open-glyph.png?v=95',
-  './img/open-seal-logo.png?v=95',
 ];
 
 function kindOf(url, req) {
