@@ -3747,7 +3747,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=94', 'img/open-glyph.png?v=94', 'img/open-seal-logo.png?v=94'];
+  const urls = ['img/open-plate.png?v=95', 'img/open-glyph.png?v=95', 'img/open-seal-logo.png?v=95'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4378,8 +4378,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=94'),
-      loadInk('img/open-glyph.png?v=94')
+      loadInk('img/open-plate.png?v=95'),
+      loadInk('img/open-glyph.png?v=95')
     ]).then(pair => {
       plateImg = pair[0];
       glyphImg = pair[1];
@@ -4415,7 +4415,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=94').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=95').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

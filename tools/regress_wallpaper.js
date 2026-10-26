@@ -31,7 +31,7 @@ async function frozen(p, label) {
     const p = await ctx.newPage(); p.on('pageerror', e => errors.push(e.message));
     await p.goto(url, { waitUntil: 'domcontentloaded' });
     await p.waitForFunction(() => window.__moxian && document.body.classList.contains('voyage-live'));
-    await p.waitForTimeout(1000); await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
+    await p.waitForTimeout(6000); await p.screenshot({path:path.join(out,'menu-desktop.jpg'),type:'jpeg',quality:88}); await p.evaluate(()=>{window.__paperAtMenu=document.querySelector('#paper canvas');}); await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor();
     await p.evaluate(() => {
       __moxian.newGame('山水客', { lg: LINGGEN.find(x => x.id === 'san'), els: ['金', '木', '火'], wx: 5, luck: 1 }, { id: 'dx' }, 'qingshi');
       __moxian.S.flags.guide = 0; Life.setGoal(__moxian.S, 'wendao', false); __moxian.render(); __moxian.save();
@@ -39,7 +39,9 @@ async function frozen(p, label) {
     await p.waitForFunction(() => document.body.dataset.screen === 'main' && !__moxian.busy);
     await p.waitForTimeout(7000); // Let initial ink-writing finish before checking text geometry.
     const a = await snap(p); await p.waitForTimeout(1200); const b = await snap(p);
-    check('fog-boat-branch-move', a.fog !== b.fog && a.boat !== b.boat && a.branch !== b.branch && b.live === 'on');
+    check('fog-boat-move-branch-removed', a.fog !== b.fog && a.boat !== b.boat && b.branch === 'none' && b.live === 'on');
+    const quiet = await p.evaluate(()=>({samePaper:window.__paperAtMenu===document.querySelector('#paper canvas'),frame:getComputedStyle(document.querySelector('.scroll'),'::before').borderImageSource,entry:getComputedStyle(document.querySelector('.entry'),'::after').content,branch:getComputedStyle(document.querySelector('.journal-head'),'::before').content,landscape:getComputedStyle(document.querySelector('.play-landscape')).backgroundImage}));
+    check('same-paper-no-illustration',quiet.samePaper&&quiet.frame==='none'&&quiet.entry==='none'&&quiet.branch==='none'&&quiet.landscape==='none',quiet);
     check('reading-area-stable', JSON.stringify(a.rect) === JSON.stringify(b.rect));
     await p.evaluate(() => __moxian.applyLook({ motion: 'lite' })); await frozen(p, 'lite-freezes');
     await p.evaluate(() => __moxian.applyLook({ motion: 'full' }));
@@ -67,6 +69,8 @@ async function frozen(p, label) {
           bitmap: [document.querySelector('.play-mist').width, document.querySelector('.play-mist').height],
           blocked: document.elementFromPoint(innerWidth / 2, innerHeight / 2).closest('.play-landscape') !== null,
           actions: [...document.querySelectorAll('.act')].map(e => { const r = e.getBoundingClientRect(); return [r.top, r.bottom]; }) }));
+        const inks=await p.evaluate(()=>['.hud','.scroll-paper','.side','.side-card'].map(s=>getComputedStyle(document.querySelector('#scr-main '+s)).getPropertyValue('--ink')));
+        check(w+'-'+theme+'-unified-ink',new Set(inks).size===1,inks);
         check(w + 'x' + h + '-' + theme, g.sw <= w && g.sh <= h && g.bitmap[0] <= 512 && !g.blocked && g.actions.every(r => r[0] >= 0 && r[1] <= h), g);
         if (w === 1440 || w === 440) await p.screenshot({ path: path.join(out, w + '-' + theme + '.jpg'), type: 'jpeg', quality: 82 });
       }
