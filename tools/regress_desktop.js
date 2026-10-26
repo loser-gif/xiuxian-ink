@@ -46,6 +46,8 @@ async function fixture(page) {
     __moxian.render(); __moxian.save();
   });
   await ready(page);
+  await page.waitForFunction(() => document.body.dataset.screen === 'main', null, { timeout: 10000 });
+  await page.waitForTimeout(650);
 }
 async function duelGeometry(page, label) {
   const g = await page.evaluate(() => {
@@ -102,6 +104,38 @@ async function smoke(page, label, size) {
   const main = await rect(page, '#scr-main');
   check(label + '-main-width', main.right <= size.width + 1, main);
   await shot(page, label + '-main');
+  if (size.width < 1000) {
+    // The mobile summary tabs expose the same live panels as the desktop side column.
+    for (const [tab, panel, title] of [['cult', 'side-cult', '功法'], ['sect', 'side-sect', '丹霞谷']]) {
+      await page.locator('#play-tab-' + tab).click();
+      check(label + '-tab-' + tab, await page.locator('#' + panel).isVisible());
+      await page.locator('#' + panel).click();
+      await page.locator('#sheet.open').waitFor();
+      check(label + '-panel-' + tab, (await page.locator('#sheet-title').innerText()) === title);
+      await page.keyboard.press('Escape');
+      await page.locator('#sheet').waitFor({ state: 'hidden' });
+    }
+    await page.locator('#play-tab-trace').click();
+    await page.locator('#play-traces').click();
+    await page.locator('#sheet.open').waitFor();
+    check(label + '-trace-panel', (await page.locator('#sheet-title').innerText()) === '行迹');
+    await page.keyboard.press('Escape');
+    await page.locator('#sheet').waitFor({ state: 'hidden' });
+    await page.locator('#play-tab-log').click();
+    await page.locator('#play-tab-log').focus();
+    await page.keyboard.press('ArrowRight');
+    check(label + '-keyboard-tab', (await page.locator('#play-tab-cult').getAttribute('aria-selected')) === 'true');
+    await page.keyboard.press('Home');
+    await page.locator('#hud-toggle').click();
+    check(label + '-details-expand', await page.locator('#next-line').isVisible());
+    await shot(page, label + '-details');
+    await page.locator('#hud-toggle').click();
+    await page.locator('#play-settings').click();
+    await page.locator('#sheet.open').waitFor();
+    check(label + '-settings', (await page.locator('#sheet-title').innerText()) === '纸墨');
+    await page.keyboard.press('Escape');
+    await page.locator('#sheet').waitFor({ state: 'hidden' });
+  }
   await page.locator('.act[data-act="bag"]').click();
   await page.locator('#sheet.open').waitFor();
   await page.waitForTimeout(650);
