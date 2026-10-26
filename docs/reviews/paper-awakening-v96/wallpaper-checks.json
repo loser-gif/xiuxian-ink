@@ -1,0 +1,677 @@
+{
+  "checks": [
+    {
+      "name": "fog-boat-move-branch-removed",
+      "ok": true
+    },
+    {
+      "name": "same-paper-no-illustration",
+      "ok": true,
+      "detail": {
+        "samePaper": true,
+        "frame": "none",
+        "entry": "none",
+        "branch": "none",
+        "landscape": "none"
+      }
+    },
+    {
+      "name": "reading-area-stable",
+      "ok": true
+    },
+    {
+      "name": "lite-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 263.718, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            124,
+            676.15625,
+            620
+          ]
+        },
+        "b": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 263.718, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            124,
+            676.15625,
+            620
+          ]
+        }
+      }
+    },
+    {
+      "name": "system-reduce-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 504, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            124,
+            676.15625,
+            620
+          ]
+        },
+        "b": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 504, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            124,
+            676.15625,
+            620
+          ]
+        }
+      }
+    },
+    {
+      "name": "automatic-thin-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            123.28123474121094,
+            676.15625,
+            615.5436401367188
+          ]
+        },
+        "b": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            123.95482635498047,
+            676.15625,
+            619.7199096679688
+          ]
+        }
+      }
+    },
+    {
+      "name": "hidden-handler-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            123.99154663085938,
+            676.15625,
+            619.9476318359375
+          ]
+        },
+        "b": {
+          "fog": "0e31392e6837536f769c8081094e7fcf0a540fc0b8711a00ae8645313bab5ce1",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "none",
+          "rect": [
+            382.265625,
+            124,
+            676.15625,
+            620
+          ]
+        }
+      }
+    },
+    {
+      "name": "return-to-title-freezes-main",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "49bcac8bb0e5e64a7b6f5491239fc043b12d34de0511daf273db317d19720c70",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "none",
+          "branch": "none",
+          "rect": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "b": {
+          "fog": "49bcac8bb0e5e64a7b6f5491239fc043b12d34de0511daf273db317d19720c70",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "none",
+          "branch": "none",
+          "rect": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "name": "title-wallpaper-preserved",
+      "ok": true
+    },
+    {
+      "name": "resume-restarts-fog",
+      "ok": true
+    },
+    {
+      "name": "1440-day-unified-ink",
+      "ok": true,
+      "detail": [
+        "#1b1814",
+        "#1b1814",
+        "#1b1814",
+        "#1b1814"
+      ]
+    },
+    {
+      "name": "1440x900-day",
+      "ok": true,
+      "detail": {
+        "width": 1440,
+        "height": 900,
+        "sw": 1440,
+        "sh": 900,
+        "bitmap": [
+          360,
+          225
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ]
+        ]
+      }
+    },
+    {
+      "name": "1440-night-unified-ink",
+      "ok": true,
+      "detail": [
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6"
+      ]
+    },
+    {
+      "name": "1440x900-night",
+      "ok": true,
+      "detail": {
+        "width": 1440,
+        "height": 900,
+        "sw": 1440,
+        "sh": 900,
+        "bitmap": [
+          360,
+          225
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ]
+        ]
+      }
+    },
+    {
+      "name": "1280-day-unified-ink",
+      "ok": true,
+      "detail": [
+        "#1b1814",
+        "#1b1814",
+        "#1b1814",
+        "#1b1814"
+      ]
+    },
+    {
+      "name": "1280x720-day",
+      "ok": true,
+      "detail": {
+        "width": 1280,
+        "height": 720,
+        "sw": 1280,
+        "sh": 720,
+        "bitmap": [
+          320,
+          180
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ]
+        ]
+      }
+    },
+    {
+      "name": "1280-night-unified-ink",
+      "ok": true,
+      "detail": [
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6"
+      ]
+    },
+    {
+      "name": "1280x720-night",
+      "ok": true,
+      "detail": {
+        "width": 1280,
+        "height": 720,
+        "sw": 1280,
+        "sh": 720,
+        "bitmap": [
+          320,
+          180
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ]
+        ]
+      }
+    },
+    {
+      "name": "440-day-unified-ink",
+      "ok": true,
+      "detail": [
+        "#1b1814",
+        "#1b1814",
+        "#1b1814",
+        "#1b1814"
+      ]
+    },
+    {
+      "name": "440x956-day",
+      "ok": true,
+      "detail": {
+        "width": 440,
+        "height": 956,
+        "sw": 440,
+        "sh": 956,
+        "bitmap": [
+          110,
+          239
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ]
+        ]
+      }
+    },
+    {
+      "name": "440-night-unified-ink",
+      "ok": true,
+      "detail": [
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6"
+      ]
+    },
+    {
+      "name": "440x956-night",
+      "ok": true,
+      "detail": {
+        "width": 440,
+        "height": 956,
+        "sw": 440,
+        "sh": 956,
+        "bitmap": [
+          110,
+          239
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ]
+        ]
+      }
+    },
+    {
+      "name": "375-day-unified-ink",
+      "ok": true,
+      "detail": [
+        "#1b1814",
+        "#1b1814",
+        "#1b1814",
+        "#1b1814"
+      ]
+    },
+    {
+      "name": "375x812-day",
+      "ok": true,
+      "detail": {
+        "width": 375,
+        "height": 812,
+        "sw": 375,
+        "sh": 812,
+        "bitmap": [
+          94,
+          203
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ]
+        ]
+      }
+    },
+    {
+      "name": "375-night-unified-ink",
+      "ok": true,
+      "detail": [
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6"
+      ]
+    },
+    {
+      "name": "375x812-night",
+      "ok": true,
+      "detail": {
+        "width": 375,
+        "height": 812,
+        "sw": 375,
+        "sh": 812,
+        "bitmap": [
+          94,
+          203
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ]
+        ]
+      }
+    },
+    {
+      "name": "844-day-unified-ink",
+      "ok": true,
+      "detail": [
+        "#1b1814",
+        "#1b1814",
+        "#1b1814",
+        "#1b1814"
+      ]
+    },
+    {
+      "name": "844x390-day",
+      "ok": true,
+      "detail": {
+        "width": 844,
+        "height": 390,
+        "sw": 844,
+        "sh": 390,
+        "bitmap": [
+          211,
+          98
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ]
+        ]
+      }
+    },
+    {
+      "name": "844-night-unified-ink",
+      "ok": true,
+      "detail": [
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6",
+        "#f0e6d6"
+      ]
+    },
+    {
+      "name": "844x390-night",
+      "ok": true,
+      "detail": {
+        "width": 844,
+        "height": 390,
+        "sw": 844,
+        "sh": 390,
+        "bitmap": [
+          211,
+          98
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ]
+        ]
+      }
+    },
+    {
+      "name": "mobile-cult-operable",
+      "ok": true
+    },
+    {
+      "name": "mobile-details-operable",
+      "ok": true
+    },
+    {
+      "name": "bag-operable",
+      "ok": true
+    },
+    {
+      "name": "DPR3-canvas-budget",
+      "ok": true,
+      "detail": [
+        110,
+        239
+      ]
+    },
+    {
+      "name": "no-page-errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}

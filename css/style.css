@@ -4035,3 +4035,55 @@ html[data-theme=night] #scr-main .stick{background:var(--ink3)}
 html[data-theme=night] #scr-main .bar-life.low .stick,html[data-theme=night] #scr-main .bar-life.thin .stick{background:var(--zhu)}
 html[data-theme=night] #scr-main .entry.warn .entry-text{color:var(--zhu)}
 html[data-theme=night] #scr-main .ink-cadence .ink-ch{color:var(--ink2);text-shadow:none}
+
+/* v96 · 空纸生山河。显露现成的菜单，不用独立片头遮住另一张纸。 */
+#intro-skip{position:fixed;right:calc(var(--sar) + 20px);bottom:calc(var(--sab) + 18px);z-index:75;min-width:56px;min-height:44px;font-size:13px;letter-spacing:.18em;color:var(--ink3);background:none}
+body.ink-born #intro,body.ink-born #splash,body.ink-born #voyage-boat,body.ink-born #voyage-rings{display:none!important}
+body.ink-born[data-screen=title] #scenery{animation:none!important;opacity:1;transform:none}
+body.ink-born .tch b,body.ink-born .title-sub,body.ink-born .title-poem,body.ink-born .seal-title,body.ink-born #btn-notice,body.ink-born .title-menu .bb-ink,body.ink-born .title-menu .bb-text,body.ink-born .title-menu small{animation:none!important;opacity:1;transform:none;-webkit-mask-image:none;mask-image:none}
+body.ink-born .title-menu small{opacity:.7}
+body.ink-born .seal-title{opacity:.93;transform:rotate(-4deg)}
+body.ink-born .tch::after,body.ink-born .seal-halo,body.ink-born .seal-title::before{animation:none!important;opacity:0}
+body.ink-born #scenery .cam{animation:paperCamera 100s ease-in-out infinite alternate}
+body.ink-born #scenery .mtn{animation:paperMountainDrift 90s ease-in-out infinite alternate}
+body.ink-born .boat-track{animation:none;transform:translate3d(48%,8%,0)}
+body.ink-born .boat{animation:none}
+body.ink-born.ink-opening .sun{transform:translate3d(0,26px,0) scale(.94)}
+body.ink-born.ink-opening .pine{transform:rotate(-.5deg) skewX(.3deg)}
+body.ink-born.ink-opening .title-menu button:disabled{opacity:1}
+body.ink-born.ink-opening #scenery .cam{animation:none!important;transform:none!important}
+body.ink-born.ink-opening #scenery .mtn{animation:paperMountain calc(2.6 * var(--intro-unit)) ease-out both!important;animation-play-state:running!important;-webkit-mask-image:linear-gradient(103deg,#000 0%,#000 35%,transparent 56%);mask-image:linear-gradient(103deg,#000 0%,#000 35%,transparent 56%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+body.ink-born.ink-opening #scenery .m1{animation-delay:calc(.3 * var(--intro-unit))!important}
+body.ink-born.ink-opening #scenery .m2{animation-delay:calc(.75 * var(--intro-unit))!important}
+body.ink-born.ink-opening #scenery .m3{animation-delay:calc(1.25 * var(--intro-unit))!important}
+body.ink-born.ink-opening #scenery .m4{animation-delay:calc(2 * var(--intro-unit))!important}
+body.ink-born.ink-opening .sun,body.ink-born.ink-opening .pine,body.ink-born.ink-opening .lake,body.ink-born.ink-opening .mist,body.ink-born.ink-opening .atmo,body.ink-born.ink-opening #tod{animation:paperArrive calc(2.4 * var(--intro-unit)) calc(1.25 * var(--intro-unit)) ease both!important}
+body.ink-born.ink-opening .pine{animation-delay:calc(2 * var(--intro-unit))!important}
+body.ink-born.ink-opening .lake{animation-delay:calc(1.65 * var(--intro-unit))!important}
+body.ink-born.ink-opening .cranes{visibility:hidden}
+body.ink-born.ink-opening .tch b{animation:paperTitle calc(1.35 * var(--intro-unit)) calc((1.6 + var(--d) * .38) * var(--intro-unit)) ease-out both!important;animation-play-state:running!important;-webkit-mask-image:linear-gradient(170deg,#000 35%,transparent 58%);mask-image:linear-gradient(170deg,#000 35%,transparent 58%);-webkit-mask-size:100% 300%;mask-size:100% 300%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+body.ink-born.ink-opening .title-sub,body.ink-born.ink-opening .title-poem{animation:paperArrive calc(1.2 * var(--intro-unit)) calc(2.25 * var(--intro-unit)) ease both!important}
+body.ink-born.ink-opening .seal-title{animation:paperSeal calc(.42 * var(--intro-unit)) calc(4.25 * var(--intro-unit)) ease-out both!important}
+body.ink-born.ink-opening .title-menu{animation:paperArrive calc(.65 * var(--intro-unit)) calc(4.65 * var(--intro-unit)) ease both!important}
+body.ink-born.ink-opening #btn-notice,body.ink-born.ink-opening #audio-dock{animation:paperArrive calc(.4 * var(--intro-unit)) calc(5.05 * var(--intro-unit)) ease both!important}
+body.ink-born.ink-opening .title-sub,body.ink-born.ink-opening .title-poem,body.ink-born.ink-opening .seal-title,body.ink-born.ink-opening #btn-notice{animation-play-state:running!important}
+body.ink-born.ink-opening .boat svg{animation:paperArrive calc(1.2 * var(--intro-unit)) calc(3 * var(--intro-unit)) ease-out both!important}
+body.ink-born.ink-opening .boat::before{content:"";position:absolute;left:48%;top:60%;width:5px;height:3px;border-radius:50%;background:var(--ink);animation:paperInkPoint calc(1.5 * var(--intro-unit)) calc(2.2 * var(--intro-unit)) ease both}
+body.ink-born.voyage-live .boat-track{animation:paperBoatDrift 160s ease-in-out infinite!important}
+body.ink-born.voyage-live .boat{animation:bob 5.5s ease-in-out infinite!important}
+@keyframes paperCamera{from{transform:none}to{transform:scale(1.025) translate3d(.6%,-.2%,0)}}
+@keyframes paperMountainDrift{from{transform:none}to{transform:translate3d(1.3%,0,0)}}
+@keyframes paperMountain{from{opacity:0;-webkit-mask-position:100% 50%;mask-position:100% 50%}30%{opacity:.38}to{opacity:1;-webkit-mask-position:0 50%;mask-position:0 50%}}
+@keyframes paperTitle{from{opacity:0;-webkit-mask-position:0 100%;mask-position:0 100%}24%{opacity:.72}to{opacity:1;-webkit-mask-position:0 0;mask-position:0 0}}
+@keyframes paperArrive{from{opacity:0}}
+@keyframes paperSeal{from{opacity:0;transform:translateY(-3px) rotate(-4deg) scale(1.04)}70%{opacity:.93;transform:rotate(-4deg) scale(.985)}to{opacity:.93;transform:rotate(-4deg)}}
+@keyframes paperInkPoint{0%{opacity:0;transform:scale(.5)}30%{opacity:.65;transform:scale(1)}100%{opacity:0;transform:scale(1.3,.8)}}
+@keyframes paperBoatDrift{0%,100%{transform:translate3d(48%,8%,0)}50%{transform:translate3d(68%,10%,0)}}
+body.ink-born.ink-opening.ink-quick #scenery .mtn,body.ink-born.ink-opening.ink-quick .tch b{-webkit-mask-image:none;mask-image:none;animation:paperArrive .7s ease both!important}
+body.ink-born.ink-opening.ink-quiet #scenery *,body.ink-born.ink-opening.ink-quiet #scr-title *,body.ink-born.ink-opening.ink-quiet #audio-dock{animation:none!important;-webkit-mask-image:none;mask-image:none}
+body.ink-born.ink-opening.ink-quiet .tch b,body.ink-born.ink-opening.ink-quiet .title-menu{opacity:1}
+body.paper-turning #app{pointer-events:none}
+.screen.paper-leave{opacity:0;transition:opacity .18s ease}
+.screen.paper-enter{animation:paperArrive .32s ease both}
+@media (prefers-reduced-motion:reduce){body.ink-born.voyage-live .boat-track,body.ink-born.voyage-live .boat{animation:none!important}.screen.paper-leave{transition:none}.screen.paper-enter{animation:none}}
+html[data-motion=lite] body.ink-born.voyage-live .boat-track,html[data-motion=lite] body.ink-born.voyage-live .boat,html[data-fx=thin] body.ink-born.voyage-live .boat-track,html[data-fx=thin] body.ink-born.voyage-live .boat{animation:none!important}

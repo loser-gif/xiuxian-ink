@@ -1,0 +1,22 @@
+{
+  "js/core.js": {
+    "unchanged": true,
+    "sha256": "4363099ddbf7b429def46a35631e55b1d3e9d9bcfbbc3f455937aa6b61fce5ae"
+  },
+  "js/slots.js": {
+    "unchanged": true,
+    "sha256": "1c7e6ea539d3b518173f9f0cb50eaa2a2d1db45aefc12d3272af093d7519c8e9"
+  },
+  "js/codec.js": {
+    "unchanged": true,
+    "sha256": "0a77c664cf4908d61d7ca72298efa108016a361466fde03c91d2c06fcd04b756"
+  },
+  "js/data.js": {
+    "unchanged": true,
+    "sha256": "287881454cd48244386a9e9ede3fa57fc0c148c1f45651d0c26f449bd5cc2b19"
+  },
+  "js/life.js": {
+    "unchanged": true,
+    "sha256": "77ec83110c51b403795cbff1f358e03ada9db2c865bc7be2fc21ed3e664c6c49"
+  }
+}
