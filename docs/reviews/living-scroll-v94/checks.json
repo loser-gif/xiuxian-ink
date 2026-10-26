@@ -1,0 +1,566 @@
+{
+  "checks": [
+    {
+      "name": "fog-boat-branch-move",
+      "ok": true
+    },
+    {
+      "name": "reading-area-stable",
+      "ok": true
+    },
+    {
+      "name": "lite-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 263.731, 0)",
+          "branch": "matrix(0.999782, 0.0208766, -0.0208766, 0.999782, 0, 0)",
+          "rect": [
+            397.265625,
+            154,
+            646.15625,
+            564
+          ]
+        },
+        "b": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 263.731, 0)",
+          "branch": "matrix(0.999782, 0.0208766, -0.0208766, 0.999782, 0, 0)",
+          "rect": [
+            397.265625,
+            154,
+            646.15625,
+            564
+          ]
+        }
+      }
+    },
+    {
+      "name": "system-reduce-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 504, 0)",
+          "branch": "none",
+          "rect": [
+            397.265625,
+            154,
+            646.15625,
+            564
+          ]
+        },
+        "b": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 504, 0)",
+          "branch": "none",
+          "rect": [
+            397.265625,
+            154,
+            646.15625,
+            564
+          ]
+        }
+      }
+    },
+    {
+      "name": "automatic-thin-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "matrix(0.999781, -0.0209424, 0.0209424, 0.999781, 0, 0)",
+          "rect": [
+            397.265625,
+            153.2504425048828,
+            646.15625,
+            559.9351806640625
+          ]
+        },
+        "b": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "matrix(0.999781, -0.0209424, 0.0209424, 0.999781, 0, 0)",
+          "rect": [
+            397.265625,
+            153.95260620117188,
+            646.15625,
+            563.742919921875
+          ]
+        }
+      }
+    },
+    {
+      "name": "hidden-handler-freezes",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "matrix(0.999781, -0.0209424, 0.0209424, 0.999781, 0, 0)",
+          "rect": [
+            397.265625,
+            153.99118041992188,
+            646.15625,
+            563.9521484375
+          ]
+        },
+        "b": {
+          "fog": "a7542faabba2903f6b4bc09b197943940c131bffba76172eba624125fc1a85e5",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "matrix(1, 0, 0, 1, 259.2, 0)",
+          "branch": "matrix(0.999781, -0.0209424, 0.0209424, 0.999781, 0, 0)",
+          "rect": [
+            397.265625,
+            154,
+            646.15625,
+            564
+          ]
+        }
+      }
+    },
+    {
+      "name": "return-to-title-freezes-main",
+      "ok": true,
+      "detail": {
+        "a": {
+          "fog": "23836dcb8e3996efc5005c6b3be123c466de8ea634b35d4a4dde7b06532586bb",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "none",
+          "branch": "none",
+          "rect": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "b": {
+          "fog": "23836dcb8e3996efc5005c6b3be123c466de8ea634b35d4a4dde7b06532586bb",
+          "bitmap": [
+            360,
+            225
+          ],
+          "live": "off",
+          "boat": "none",
+          "branch": "none",
+          "rect": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "name": "title-wallpaper-preserved",
+      "ok": true
+    },
+    {
+      "name": "resume-restarts-fog",
+      "ok": true
+    },
+    {
+      "name": "1440x900-day",
+      "ok": true,
+      "detail": {
+        "width": 1440,
+        "height": 900,
+        "sw": 1440,
+        "sh": 900,
+        "bitmap": [
+          360,
+          225
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ]
+        ]
+      }
+    },
+    {
+      "name": "1440x900-night",
+      "ok": true,
+      "detail": {
+        "width": 1440,
+        "height": 900,
+        "sw": 1440,
+        "sh": 900,
+        "bitmap": [
+          360,
+          225
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ],
+          [
+            777,
+            865
+          ]
+        ]
+      }
+    },
+    {
+      "name": "1280x720-day",
+      "ok": true,
+      "detail": {
+        "width": 1280,
+        "height": 720,
+        "sw": 1280,
+        "sh": 720,
+        "bitmap": [
+          320,
+          180
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ]
+        ]
+      }
+    },
+    {
+      "name": "1280x720-night",
+      "ok": true,
+      "detail": {
+        "width": 1280,
+        "height": 720,
+        "sw": 1280,
+        "sh": 720,
+        "bitmap": [
+          320,
+          180
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ],
+          [
+            613,
+            685
+          ]
+        ]
+      }
+    },
+    {
+      "name": "440x956-day",
+      "ok": true,
+      "detail": {
+        "width": 440,
+        "height": 956,
+        "sw": 440,
+        "sh": 956,
+        "bitmap": [
+          110,
+          239
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ]
+        ]
+      }
+    },
+    {
+      "name": "440x956-night",
+      "ok": true,
+      "detail": {
+        "width": 440,
+        "height": 956,
+        "sw": 440,
+        "sh": 956,
+        "bitmap": [
+          110,
+          239
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ],
+          [
+            858,
+            932
+          ]
+        ]
+      }
+    },
+    {
+      "name": "375x812-day",
+      "ok": true,
+      "detail": {
+        "width": 375,
+        "height": 812,
+        "sw": 375,
+        "sh": 812,
+        "bitmap": [
+          94,
+          203
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ]
+        ]
+      }
+    },
+    {
+      "name": "375x812-night",
+      "ok": true,
+      "detail": {
+        "width": 375,
+        "height": 812,
+        "sw": 375,
+        "sh": 812,
+        "bitmap": [
+          94,
+          203
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ],
+          [
+            722,
+            788
+          ]
+        ]
+      }
+    },
+    {
+      "name": "844x390-day",
+      "ok": true,
+      "detail": {
+        "width": 844,
+        "height": 390,
+        "sw": 844,
+        "sh": 390,
+        "bitmap": [
+          211,
+          98
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ]
+        ]
+      }
+    },
+    {
+      "name": "844x390-night",
+      "ok": true,
+      "detail": {
+        "width": 844,
+        "height": 390,
+        "sw": 844,
+        "sh": 390,
+        "bitmap": [
+          211,
+          98
+        ],
+        "blocked": false,
+        "actions": [
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ],
+          [
+            312,
+            366
+          ]
+        ]
+      }
+    },
+    {
+      "name": "mobile-cult-operable",
+      "ok": true
+    },
+    {
+      "name": "mobile-details-operable",
+      "ok": true
+    },
+    {
+      "name": "bag-operable",
+      "ok": true
+    },
+    {
+      "name": "DPR3-canvas-budget",
+      "ok": true,
+      "detail": [
+        110,
+        239
+      ]
+    },
+    {
+      "name": "no-page-errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}
