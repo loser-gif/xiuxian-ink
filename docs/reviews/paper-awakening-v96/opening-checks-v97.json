@@ -1,0 +1,331 @@
+{
+  "checks": [
+    {
+      "name": "paper-before-title-menu-seal",
+      "ok": true,
+      "detail": {
+        "title": "0",
+        "menu": "0",
+        "seal": "0",
+        "disabled": true,
+        "skip": true
+      }
+    },
+    {
+      "name": "mountains-and-title-before-seal-menu",
+      "ok": true,
+      "detail": {
+        "title": 0.896915,
+        "menu": 0,
+        "seal": 0,
+        "mountain": 0.928359
+      }
+    },
+    {
+      "name": "first-5.6s-unlocks-and-remembers",
+      "ok": true,
+      "detail": {
+        "ms": 5603.300000011921,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "menu-to-create-same-paper-no-wash",
+      "ok": true
+    },
+    {
+      "name": "create-to-main-same-paper-no-wash",
+      "ok": true
+    },
+    {
+      "name": "return-under-1.5s",
+      "ok": true,
+      "detail": {
+        "ms": 903.2999999523163,
+        "mode": "return",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "saved-character-continues",
+      "ok": true
+    },
+    {
+      "name": "skip-pointer-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 38,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "skip-pointer-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-Enter-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 17.099999964237213,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "skip-Enter-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-Escape-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 16.899999976158142,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "skip-Escape-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-Space-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 16.80000001192093,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "skip-Space-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-accessible-click-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 42.40000003576279,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "skip-focus-returns-to-menu",
+      "ok": true
+    },
+    {
+      "name": "skip-accessible-click-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "held-key-skip-no-click-through",
+      "ok": true
+    },
+    {
+      "name": "held-key-release-restores-input",
+      "ok": true
+    },
+    {
+      "name": "held-pointer-skip-no-click-through",
+      "ok": true
+    },
+    {
+      "name": "held-pointer-release-restores-input",
+      "ok": true
+    },
+    {
+      "name": "quiet-or-storage-reduce",
+      "ok": true,
+      "detail": {
+        "ms": 242.20000004768372,
+        "mode": "quiet",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "quiet-camera-still-reduce",
+      "ok": true
+    },
+    {
+      "name": "quiet-or-storage-lite",
+      "ok": true,
+      "detail": {
+        "ms": 242.60000002384186,
+        "mode": "quiet",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "quiet-camera-still-lite",
+      "ok": true
+    },
+    {
+      "name": "quiet-or-storage-blockStorage",
+      "ok": true,
+      "detail": {
+        "ms": 16.600000023841858,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "interrupt-hidden-unlocks",
+      "ok": true,
+      "detail": {
+        "ms": 22.900000035762787,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "interrupt-reduce-unlocks",
+      "ok": true,
+      "detail": {
+        "ms": 32.59999996423721,
+        "mode": "first",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": "1"
+      }
+    },
+    {
+      "name": "mobile-day-resize-stable",
+      "ok": true,
+      "detail": {
+        "w": 440,
+        "sw": 440,
+        "h": 956,
+        "sh": 956,
+        "buttons": [
+          [
+            129.59375,
+            720.078125,
+            310.390625,
+            797.078125
+          ],
+          [
+            74,
+            809.078125,
+            210,
+            861.8125
+          ],
+          [
+            230,
+            809.078125,
+            366,
+            861.8125
+          ],
+          [
+            74,
+            869.8125,
+            210,
+            922.546875
+          ],
+          [
+            230,
+            869.8125,
+            366,
+            922.546875
+          ]
+        ]
+      }
+    },
+    {
+      "name": "mobile-night-resize-stable",
+      "ok": true,
+      "detail": {
+        "w": 440,
+        "sw": 440,
+        "h": 956,
+        "sh": 956,
+        "buttons": [
+          [
+            129.59375,
+            720.078125,
+            310.390625,
+            797.078125
+          ],
+          [
+            74,
+            809.078125,
+            210,
+            861.8125
+          ],
+          [
+            230,
+            809.078125,
+            366,
+            861.8125
+          ],
+          [
+            74,
+            869.8125,
+            210,
+            922.546875
+          ],
+          [
+            230,
+            869.8125,
+            366,
+            922.546875
+          ]
+        ]
+      }
+    },
+    {
+      "name": "no-page-errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}
