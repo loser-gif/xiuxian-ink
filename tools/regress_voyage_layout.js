@@ -17,7 +17,7 @@ const checks=[],errors=[];function check(name,ok,detail){checks.push({name,ok:!!
   check('portrait-art-reflows-during-paint',await p.locator('.splash-board').evaluate(e=>{const b=e.getBoundingClientRect(),c=e.querySelector('canvas');return b.height>b.width&&Math.abs(c.width/c.height-b.width/b.height)<.02;}));
   await p.waitForFunction(()=>document.documentElement.dataset.voyagePhase==='wave');await p.setViewportSize({width:375,height:812});await p.waitForTimeout(200);
   check('resized-boat-stays-on-paper',await p.locator('#voyage-boat').evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;}));
-  await p.keyboard.press('Escape');await p.waitForTimeout(400);await p.locator('#btn-new').click();await p.locator('#inp-name').waitFor();
+  await p.keyboard.press('Escape');await p.waitForTimeout(400);await p.locator('#btn-new').click();await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
   await p.evaluate(()=>{__moxian.newGame('南宫听雨',{lg:LINGGEN.find(x=>x.id==='san'),els:['金','木','火'],wx:5,luck:1},{id:'dx'},'qingshi');__moxian.S.flags.guide=0;__moxian.S.ls=999999;Life.setGoal(__moxian.S,'wendao',false);__moxian.render();__moxian.save();});
   await p.waitForFunction(()=>document.body.dataset.screen==='main'&&!__moxian.busy);await p.waitForTimeout(6000);
   for(const [w,h] of [[320,568],[360,640],[375,812],[390,844],[440,956],[844,390]]){
