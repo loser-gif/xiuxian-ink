@@ -57,7 +57,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 </style>
 <script>
 (function () {
-  var EXPECT = 'moxian-v92';
+  var EXPECT = 'moxian-v93';
   var pending = '';
   function showFail(kind) {
     var box = document.getElementById('boot-fail');
@@ -130,7 +130,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     track(reg.waiting);
     reg.addEventListener('updatefound', function () { track(reg.installing); });
   }
-  navigator.serviceWorker.register('./sw.js?v=92').then(armWorker).catch(function () {});
+  navigator.serviceWorker.register('./sw.js?v=93').then(armWorker).catch(function () {});
   var reloading = false;
   function playing() {
     var screen = document.body && document.body.getAttribute('data-screen');
@@ -162,16 +162,16 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   });
 })();
 </script>
-<link rel="manifest" href="manifest.webmanifest?v=92">
-<link rel="icon" href="icon.svg?v=92" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=92">
-<link rel="preload" href="img/open-plate.png?v=92" as="image">
-<link rel="preload" href="img/open-glyph.png?v=92" as="image">
-<link rel="preload" href="img/open-seal-logo.png?v=92" as="image">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=92" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=92" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=92">
-<link rel="stylesheet" href="css/style.css?v=92">
+<link rel="manifest" href="manifest.webmanifest?v=93">
+<link rel="icon" href="icon.svg?v=93" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=93">
+<link rel="preload" href="img/open-plate.png?v=93" as="image">
+<link rel="preload" href="img/open-glyph.png?v=93" as="image">
+<link rel="preload" href="img/open-seal-logo.png?v=93" as="image">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=93" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=93" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=93">
+<link rel="stylesheet" href="css/style.css?v=93">
 </head>
 <body>
 <div id="boot-fail" hidden>
@@ -219,11 +219,11 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
  <div id="realm-scape" aria-hidden="true">
-  <picture><source srcset="img/realm-0.avif?v=92" type="image/avif"><source srcset="img/realm-0.webp?v=92" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=92" alt="" decoding="async" width="720" height="404"></picture>
-  <picture><source srcset="img/realm-1.avif?v=92" type="image/avif"><source srcset="img/realm-1.webp?v=92" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=92" alt="" decoding="async" width="720" height="336"></picture>
-  <picture><source srcset="img/realm-2.avif?v=92" type="image/avif"><source srcset="img/realm-2.webp?v=92" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=92" alt="" decoding="async" width="720" height="405"></picture>
-  <picture><source srcset="img/realm-3.avif?v=92" type="image/avif"><source srcset="img/realm-3.webp?v=92" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=92" alt="" decoding="async" width="720" height="401"></picture>
-  <picture><source srcset="img/realm-4.avif?v=92" type="image/avif"><source srcset="img/realm-4.webp?v=92" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=92" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-0.avif?v=93" type="image/avif"><source srcset="img/realm-0.webp?v=93" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=93" alt="" decoding="async" width="720" height="404"></picture>
+  <picture><source srcset="img/realm-1.avif?v=93" type="image/avif"><source srcset="img/realm-1.webp?v=93" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=93" alt="" decoding="async" width="720" height="336"></picture>
+  <picture><source srcset="img/realm-2.avif?v=93" type="image/avif"><source srcset="img/realm-2.webp?v=93" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=93" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-3.avif?v=93" type="image/avif"><source srcset="img/realm-3.webp?v=93" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=93" alt="" decoding="async" width="720" height="401"></picture>
+  <picture><source srcset="img/realm-4.avif?v=93" type="image/avif"><source srcset="img/realm-4.webp?v=93" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=93" alt="" decoding="async" width="720" height="405"></picture>
  </div>
  <div id="season-veil" aria-hidden="true"></div>
 </div>
@@ -341,10 +341,16 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </section>
 
   <!-- 主界面 -->
-  <section id="scr-main" class="screen" hidden>
+  <section id="scr-main" class="screen" data-page="log" hidden>
+    <div class="play-landscape" aria-hidden="true"></div>
+    <div class="play-masthead">
+      <button class="play-brand" id="play-menu" aria-label="纸上仙途 · 卷首菜单"><span>纸</span><span>上</span><span>仙</span><span>途</span><i aria-hidden="true">仙</i></button>
+      <button class="play-settings" id="play-settings" aria-label="设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3 1-2h4l1 2 3 2 2 .2 2 3-1 2v4l1 2-2 3-2 .2-3 2-1 2h-4l-1-2-3-2-2-.2-2-3 1-2v-4l-1-2 2-3 2-.2Z"/><circle cx="12" cy="12" r="4"/></svg>设置</button>
+    </div>
     <header class="hud">
       <div class="hud-top">
         <div class="realm-block">
+          <span class="realm-halo" aria-hidden="true"></span>
           <div class="realm-name" id="h-realm">炼气</div>
           <div class="realm-stage-row">
             <div class="realm-stage" id="h-stage">一层</div>
@@ -355,7 +361,9 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
         <div class="who">
           <div class="who-name" id="h-name">无名</div>
           <div class="who-sub" id="h-sub">外门弟子 · 三灵根</div>
+          <div class="who-time" id="h-time"></div>
         </div>
+        <button id="hud-toggle" class="hud-toggle" aria-label="展开人物详情" aria-expanded="false"><span aria-hidden="true"></span></button>
         <div class="hud-seals">
           <button class="menu-seal sect-seal" id="btn-sect" aria-label="宗门"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="44" fill="#1b1814"/><circle cx="50" cy="50" r="36" fill="none" stroke="#f3ead6" stroke-width="2.5" opacity=".7"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font" id="sect-seal-t">宗</text></g></svg></button>
           <button class="menu-seal cult-seal" id="btn-cult" aria-label="修持"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#1b1814"/><rect x="14" y="14" width="72" height="72" rx="3" fill="none" stroke="#f3ead6" stroke-width="2.2" opacity=".75"/><text x="50" y="68" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font">修</text></g></svg></button>
@@ -379,16 +387,23 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
         <span class="chip"><b>岁</b><em id="c-age">十六</em><i id="c-season">春</i></span>
         <span class="chip"><b>悟性</b><em id="c-wx">七</em></span>
         <span class="chip"><b>心境</b><em id="c-xj">平和</em></span>
-        <span class="chip"><b>灵石</b><em id="c-ls">十</em></span>
+        <span class="chip"><b>灵石</b><em id="c-ls">十</em><em class="mobile-ls" id="h-ls">10</em></span>
         <span class="chip" id="chip-court" hidden><b>朝</b><em id="c-court">—</em></span>
         <span class="chip chip-goal" id="chip-goal" hidden><b>求</b><em id="c-goal">长生</em></span>
       </div>
       <div class="path-seals" id="path-seals" hidden></div>
     </header>
 
+    <nav class="play-tabs" aria-label="卷内页签" role="tablist">
+      <button id="play-tab-log" role="tab" aria-selected="true" aria-controls="log" data-page="log">修行</button>
+      <button id="play-tab-cult" role="tab" aria-selected="false" aria-controls="side-cult" tabindex="-1" data-page="cult">修持</button>
+      <button id="play-tab-sect" role="tab" aria-selected="false" aria-controls="side-sect" tabindex="-1" data-page="sect">宗门</button>
+      <button id="play-tab-trace" role="tab" aria-selected="false" aria-controls="side-trace" tabindex="-1" data-page="trace">行迹</button>
+    </nav>
     <div class="scroll">
       <div class="roller roller-top"></div>
       <div class="scroll-paper">
+        <header class="journal-head"><h2 id="journal-title">修行录</h2><p id="journal-place"></p></header>
         <div class="juan-head" id="juan-head" aria-hidden="true">
           <div class="season-wash" aria-hidden="true"></div>
         </div>
@@ -409,10 +424,11 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
       <button class="act" data-act="bag"><span class="act-ink"></span><span class="act-t">行囊</span><small id="bag-count">丹器</small></button>
     </nav>
     <aside class="side" id="side" aria-label="行藏">
-      <button class="side-card" data-open="cult"><h3>修持</h3><div class="sd-body" id="sd-gf"></div></button>
-      <button class="side-card" data-open="sect"><h3>宗门</h3><div class="sd-body" id="sd-sect"></div></button>
+      <button class="side-card" id="side-cult" data-open="cult"><h3>修持</h3><div class="sd-body" id="sd-gf"></div></button>
+      <button class="side-card" id="side-sect" data-open="sect"><h3>宗门</h3><div class="sd-body" id="sd-sect"></div></button>
       <button class="side-card" data-open="bag"><h3>行囊</h3><div class="sd-body" id="sd-bag"></div></button>
-      <button class="side-card" data-open="youli"><h3>行迹</h3><div class="sd-body" id="sd-loc"></div></button>
+      <button class="side-card" id="side-trace" data-open="youli"><h3>行迹</h3><div class="sd-body" id="sd-loc"></div></button>
+      <button type="button" class="play-traces" id="play-traces">查看因果与印记</button>
       <p class="side-keys">键 1 2 3 4 行动 · Esc 收起</p>
     </aside>
     <button class="break-seal" id="btn-break" hidden aria-label="破境">
@@ -652,41 +668,41 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 
-<script src="js/data.js?v=92"></script>
-<script src="js/gongfa.js?v=92"></script>
-<script src="js/gear.js?v=92"></script>
-<script src="js/story.js?v=92"></script>
-<script src="js/sect.js?v=92"></script>
-<script src="js/baijia.js?v=92"></script>
-<script src="js/world.js?v=92"></script>
-<script src="js/tianxia.js?v=92"></script>
-<script src="js/karma.js?v=92"></script>
-<script src="js/life.js?v=92"></script>
-<script src="js/juan.js?v=92"></script>
-<script src="js/path.js?v=92"></script>
-<script src="js/core.js?v=92"></script>
-<script src="js/loops.js?v=92"></script>
-<script src="js/codec.js?v=92"></script>
-<script src="js/slots.js?v=92"></script>
-<script src="js/samsara.js?v=92"></script>
-<script src="js/jianghu.js?v=92"></script>
-<script src="js/folio.js?v=92"></script>
-<script src="js/arts.js?v=92"></script>
-<script src="js/people.js?v=92"></script>
-<script src="js/redworld.js?v=92"></script>
-<script src="js/ink.js?v=92"></script>
-<script src="js/ding.js?v=92"></script>
-<script src="js/map.js?v=92"></script>
-<script src="js/audio.js?v=92"></script>
-<script src="js/fx.js?v=92"></script>
-<script src="js/btfx.js?v=92"></script>
-<script src="js/fabaoart.js?v=92"></script>
-<script src="js/wallpaper.js?v=92"></script>
-<script src="js/inkgl.js?v=92"></script>
-<script src="js/jhui.js?v=92"></script>
-<script src="js/scrollart.js?v=92"></script>
-<script src="js/portraits.js?v=92"></script>
-<script src="js/notices.js?v=92"></script>
-<script src="js/game.js?v=92"></script>
+<script src="js/data.js?v=93"></script>
+<script src="js/gongfa.js?v=93"></script>
+<script src="js/gear.js?v=93"></script>
+<script src="js/story.js?v=93"></script>
+<script src="js/sect.js?v=93"></script>
+<script src="js/baijia.js?v=93"></script>
+<script src="js/world.js?v=93"></script>
+<script src="js/tianxia.js?v=93"></script>
+<script src="js/karma.js?v=93"></script>
+<script src="js/life.js?v=93"></script>
+<script src="js/juan.js?v=93"></script>
+<script src="js/path.js?v=93"></script>
+<script src="js/core.js?v=93"></script>
+<script src="js/loops.js?v=93"></script>
+<script src="js/codec.js?v=93"></script>
+<script src="js/slots.js?v=93"></script>
+<script src="js/samsara.js?v=93"></script>
+<script src="js/jianghu.js?v=93"></script>
+<script src="js/folio.js?v=93"></script>
+<script src="js/arts.js?v=93"></script>
+<script src="js/people.js?v=93"></script>
+<script src="js/redworld.js?v=93"></script>
+<script src="js/ink.js?v=93"></script>
+<script src="js/ding.js?v=93"></script>
+<script src="js/map.js?v=93"></script>
+<script src="js/audio.js?v=93"></script>
+<script src="js/fx.js?v=93"></script>
+<script src="js/btfx.js?v=93"></script>
+<script src="js/fabaoart.js?v=93"></script>
+<script src="js/wallpaper.js?v=93"></script>
+<script src="js/inkgl.js?v=93"></script>
+<script src="js/jhui.js?v=93"></script>
+<script src="js/scrollart.js?v=93"></script>
+<script src="js/portraits.js?v=93"></script>
+<script src="js/notices.js?v=93"></script>
+<script src="js/game.js?v=93"></script>
 </body>
 </html>

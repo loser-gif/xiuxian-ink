@@ -398,6 +398,7 @@ function setScreen(id) {
   if (curScreen === 'title' && id !== 'title') document.body.classList.add('intro-done');
   $$('.screen').forEach(el => el.hidden = el.id !== 'scr-' + id);
   document.body.dataset.screen = id; curScreen = id;
+  if (id === 'main' && prev !== 'main') setPlayPage('log');
   placeRealmScape();
   if (prev !== id && (prev === 'title' || id === 'title')) drawMountains(true, { yield: !snappy() });
   if (typeof MoAudio !== 'undefined') {
@@ -1128,6 +1129,7 @@ function render() {
   if (nx) nx.textContent = nextRealmLine();
   const season = Math.floor((S.months % 12) / 3);
   setText('#c-age', cn(S.age)); setText('#c-season', ['春', '夏', '秋', '冬'][season]);
+  setText('#h-time', cn(S.age) + '岁 · ' + ['春', '夏', '秋', '冬'][season]);
   FX.setSeason(season); FX.setGold(S.realm || 0);
   if (typeof MoAudio !== 'undefined') MoAudio.setSeason(season);
   const nextRealm = String(S.ascended ? 5 : S.realm);
@@ -1143,6 +1145,7 @@ function render() {
   const mIn = S.months % 3; // 0..2 within season quarter-ish
   document.body.dataset.tod = mIn === 0 ? 'dawn' : mIn === 1 ? 'noon' : 'dusk';
   setText('#c-wx', cn(S.wx)); setText('#c-xj', xinjingWord(S.xj)); setText('#c-ls', S.ls > 9999 ? fmtNum(S.ls) : cn(S.ls));
+  setText('#h-ls', fmtNum(S.ls));
   const chipC = $('#chip-court');
   if (chipC) {
     const on = !!(S.court && S.court.rank >= 0);
@@ -1162,6 +1165,7 @@ function render() {
   setText('#dur-biguan', cnDur(Math.round(bgMonths)) + (trial && bgMonths > trial.left ? ' · 越期' : ''));
   stackAside($('#margin-when'), timeLabel());
   const locNow = typeof LOC !== 'undefined' && S.loc && LOC[S.loc] ? LOC[S.loc].name : '山中';
+  setText('#journal-place', locNow);
   stackAside($('#margin-where'), locNow);
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
   const bagLab = S.eq && S.eq.weapon ? (cnt ? `佩·${cn(cnt)}` : '佩') : (cnt ? `${cn(cnt)}物` : '空');
@@ -3555,6 +3559,37 @@ $('#btn-break').onclick = openBreak;
 $('#btn-menu').onclick = openMenu;
 $('#btn-sect').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openSect(); };
 $('#btn-cult').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openCult(); };
+$('#play-menu').onclick = () => { if (!busy && S) openMenu(); };
+$('#play-settings').onclick = () => { if (!busy) openLook(); };
+$('#hud-toggle').onclick = () => {
+  const b = $('#hud-toggle'), open = b.getAttribute('aria-expanded') !== 'true';
+  b.setAttribute('aria-expanded', String(open));
+  b.setAttribute('aria-label', open ? '收起人物详情' : '展开人物详情');
+  $('#scr-main .hud').classList.toggle('details-open', open);
+};
+function setPlayPage(page) {
+  if (!['log', 'cult', 'sect', 'trace'].includes(page)) return;
+  $('#scr-main').dataset.page = page;
+  setText('#journal-title', { log: '修行录', cult: '修持', sect: '宗门', trace: '行迹' }[page]);
+  $$('.play-tabs button').forEach(b => {
+    const selected = b.dataset.page === page;
+    b.setAttribute('aria-selected', String(selected)); b.tabIndex = selected ? 0 : -1;
+  });
+  renderSide();
+}
+$('.play-tabs').onclick = e => {
+  const b = e.target.closest('[data-page]');
+  if (b && !busy && S) setPlayPage(b.dataset.page);
+};
+$('.play-tabs').onkeydown = e => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) || busy) return;
+  const tabs = $$('.play-tabs button'), i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  e.preventDefault();
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  setPlayPage(tabs[next].dataset.page); tabs[next].focus();
+};
+$('#play-traces').onclick = () => { if (!busy && S) openTraceSheet(); };
 $('#path-seals').onclick = e => {
   const s = e.target.closest('.path-seal'); if (!s || busy || !S || S.dead || S.ascended) return;
   openCult('path');
@@ -3584,7 +3619,11 @@ $('#side').onclick = e => {
   const c = e.target.closest('.side-card'); if (!c || busy || !S || S.dead || S.ascended) return;
   const k = c.dataset.open; if (k === 'gf') openCult('gf'); else if (k === 'fabao') openCult('fabao'); else if (k === 'path') openCult('path'); else if (k === 'bag') openBag(); else if (k === 'sect') openSect(); else if (k === 'cult') openCult(); else act('youli');
 };
-addEventListener('resize', () => { if (document.body.dataset.screen === 'main') renderSide(); });
+addEventListener('resize', () => {
+  if (document.body.dataset.screen !== 'main') return;
+  if (innerWidth >= 1000 && $('#scr-main').dataset.page !== 'log') setPlayPage('log');
+  else renderSide();
+});
 
 /* 奇遇：收卷可关；必选未落定时只颤一下，不替玩家跳过。宽屏点遮罩同此。 */
 function choiceBoxShake(box) {
@@ -3708,7 +3747,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=92', 'img/open-glyph.png?v=92', 'img/open-seal-logo.png?v=92'];
+  const urls = ['img/open-plate.png?v=93', 'img/open-glyph.png?v=93', 'img/open-seal-logo.png?v=93'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4339,8 +4378,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=92'),
-      loadInk('img/open-glyph.png?v=92')
+      loadInk('img/open-plate.png?v=93'),
+      loadInk('img/open-glyph.png?v=93')
     ]).then(pair => {
       plateImg = pair[0];
       glyphImg = pair[1];
@@ -4376,7 +4415,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=92').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=93').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

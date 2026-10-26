@@ -1,0 +1,3491 @@
+{
+  "checks": [
+    {
+      "name": "1280x720-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "bottom": 720,
+        "right": 1280,
+        "sh": 720,
+        "ch": 720
+      }
+    },
+    {
+      "name": "1280x720-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 280,
+        "y": 141.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 578.5859375,
+        "right": 1000,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1280x720-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2384,
+        "height": 473,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1280x720-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1280x720-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4078,
+        "height": 423,
+        "scroll": 4501
+      }
+    },
+    {
+      "name": "1280x720-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 41.664085388183594,
+        "y": 97.8465347290039,
+        "width": 1196.6717529296875,
+        "height": 497.7251281738281,
+        "bottom": 595.571662902832,
+        "right": 1238.335838317871,
+        "sh": 509,
+        "ch": 499
+      }
+    },
+    {
+      "name": "1280x720-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1280x720-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 552,
+        "y": 576.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 622.46875,
+        "right": 728,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1280x720-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-day-next-1",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-day-next-2",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-day-tournament-returns",
+      "ok": true,
+      "detail": {
+        "nextMatches": 2
+      }
+    },
+    {
+      "name": "1280x720-day-tournament-recorded",
+      "ok": true
+    },
+    {
+      "name": "1280x720-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "bottom": 720,
+        "right": 1280,
+        "sh": 720,
+        "ch": 720
+      }
+    },
+    {
+      "name": "1280x720-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 280,
+        "y": 141.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 578.5859375,
+        "right": 1000,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1280x720-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2384,
+        "height": 473,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1280x720-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1280x720-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4078,
+        "height": 423,
+        "scroll": 4501
+      }
+    },
+    {
+      "name": "1280x720-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 41.11906051635742,
+        "y": 96.9141845703125,
+        "width": 1197.7618408203125,
+        "height": 498.178466796875,
+        "bottom": 595.0926513671875,
+        "right": 1238.88090133667,
+        "sh": 509,
+        "ch": 499
+      }
+    },
+    {
+      "name": "1280x720-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1280x720-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 552,
+        "y": 576.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 622.46875,
+        "right": 728,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1280x720-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1280x720-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 720,
+        "scrollHeight": 720,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 243.65625,
+            "bottom": 306.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 544.8125,
+            "bottom": 588,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 618,
+            "bottom": 696,
+            "height": 78
+          }
+        ],
+        "shade": 722
+      }
+    },
+    {
+      "name": "1366x768-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 768,
+        "bottom": 768,
+        "right": 1366,
+        "sh": 768,
+        "ch": 768
+      }
+    },
+    {
+      "name": "1366x768-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 323,
+        "y": 165.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 602.5859375,
+        "right": 1043,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1366x768-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2347,
+        "height": 511,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1366x768-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1366x768-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4030,
+        "height": 471,
+        "scroll": 4501
+      }
+    },
+    {
+      "name": "1366x768-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 84.15766143798828,
+        "y": 97.01732635498047,
+        "width": 1197.6845703125,
+        "height": 546.0537109375,
+        "bottom": 643.0710372924805,
+        "right": 1281.8422317504883,
+        "sh": 557,
+        "ch": 547
+      }
+    },
+    {
+      "name": "1366x768-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1366x768-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 595,
+        "y": 600.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 646.46875,
+        "right": 771,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1366x768-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-day-next-1",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-day-next-2",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-day-tournament-returns",
+      "ok": true,
+      "detail": {
+        "nextMatches": 2
+      }
+    },
+    {
+      "name": "1366x768-day-tournament-recorded",
+      "ok": true
+    },
+    {
+      "name": "1366x768-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 768,
+        "bottom": 768,
+        "right": 1366,
+        "sh": 768,
+        "ch": 768
+      }
+    },
+    {
+      "name": "1366x768-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 323,
+        "y": 165.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 602.5859375,
+        "right": 1043,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1366x768-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2347,
+        "height": 511,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1366x768-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1366x768-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4030,
+        "height": 471,
+        "scroll": 4501
+      }
+    },
+    {
+      "name": "1366x768-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 84.3990478515625,
+        "y": 97.4379653930664,
+        "width": 1197.2017822265625,
+        "height": 545.8336181640625,
+        "bottom": 643.2715835571289,
+        "right": 1281.600830078125,
+        "sh": 557,
+        "ch": 547
+      }
+    },
+    {
+      "name": "1366x768-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1366x768-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 595,
+        "y": 600.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 646.46875,
+        "right": 771,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1366x768-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1366x768-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 768,
+        "scrollHeight": 768,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 267.65625,
+            "bottom": 330.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 592.8125,
+            "bottom": 636,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 666,
+            "bottom": 744,
+            "height": 78
+          }
+        ],
+        "shade": 770
+      }
+    },
+    {
+      "name": "1920x1080-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080,
+        "bottom": 1080,
+        "right": 1920,
+        "sh": 1080,
+        "ch": 1080
+      }
+    },
+    {
+      "name": "1920x1080-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 600,
+        "y": 321.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 758.5859375,
+        "right": 1320,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1920x1080-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2104,
+        "height": 754,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1920x1080-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1920x1080-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 3729,
+        "height": 744,
+        "scroll": 4473
+      }
+    },
+    {
+      "name": "1920x1080-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 361.1445007324219,
+        "y": 97.23236846923828,
+        "width": 1197.7109375,
+        "height": 857.4706420898438,
+        "bottom": 954.703010559082,
+        "right": 1558.8554382324219,
+        "sh": 869,
+        "ch": 859
+      }
+    },
+    {
+      "name": "1920x1080-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1920x1080-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 872,
+        "y": 880.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 926.46875,
+        "right": 1048,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1920x1080-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-day-next-1",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-day-next-2",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-day-tournament-returns",
+      "ok": true,
+      "detail": {
+        "nextMatches": 2
+      }
+    },
+    {
+      "name": "1920x1080-day-tournament-recorded",
+      "ok": true
+    },
+    {
+      "name": "1920x1080-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080,
+        "bottom": 1080,
+        "right": 1920,
+        "sh": 1080,
+        "ch": 1080
+      }
+    },
+    {
+      "name": "1920x1080-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 600,
+        "y": 321.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 758.5859375,
+        "right": 1320,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1920x1080-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2104,
+        "height": 754,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1920x1080-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1920x1080-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 3729,
+        "height": 744,
+        "scroll": 4473
+      }
+    },
+    {
+      "name": "1920x1080-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 361.541015625,
+        "y": 98.00585174560547,
+        "width": 1196.91796875,
+        "height": 856.90283203125,
+        "bottom": 954.9086837768555,
+        "right": 1558.458984375,
+        "sh": 869,
+        "ch": 859
+      }
+    },
+    {
+      "name": "1920x1080-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1920x1080-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 872,
+        "y": 880.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 926.46875,
+        "right": 1048,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1920x1080-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1920x1080-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 1080,
+        "scrollHeight": 1080,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 423.65625,
+            "bottom": 486.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 904.8125,
+            "bottom": 948,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 978,
+            "bottom": 1056,
+            "height": 78
+          }
+        ],
+        "shade": 1082
+      }
+    },
+    {
+      "name": "1280x800-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 800,
+        "bottom": 800,
+        "right": 1280,
+        "sh": 800,
+        "ch": 800
+      }
+    },
+    {
+      "name": "1280x800-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 280,
+        "y": 181.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 618.5859375,
+        "right": 1000,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1280x800-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2322,
+        "height": 536,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1280x800-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1280x800-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 3998,
+        "height": 503,
+        "scroll": 4501
+      }
+    },
+    {
+      "name": "1280x800-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 41.13330841064453,
+        "y": 96.9990005493164,
+        "width": 1197.7333984375,
+        "height": 578.0155029296875,
+        "bottom": 675.0145034790039,
+        "right": 1238.8667068481445,
+        "sh": 589,
+        "ch": 579
+      }
+    },
+    {
+      "name": "1280x800-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1280x800-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 552,
+        "y": 616.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 662.46875,
+        "right": 728,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1280x800-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 800,
+        "scrollHeight": 800,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 283.65625,
+            "bottom": 346.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 624.8125,
+            "bottom": 668,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 698,
+            "bottom": 776,
+            "height": 78
+          }
+        ],
+        "shade": 802
+      }
+    },
+    {
+      "name": "1280x800-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 800,
+        "scrollHeight": 800,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 283.65625,
+            "bottom": 346.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 624.8125,
+            "bottom": 668,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 698,
+            "bottom": 776,
+            "height": 78
+          }
+        ],
+        "shade": 802
+      }
+    },
+    {
+      "name": "1280x800-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 800,
+        "scrollHeight": 800,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 283.65625,
+            "bottom": 346.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 624.8125,
+            "bottom": 668,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 698,
+            "bottom": 776,
+            "height": 78
+          }
+        ],
+        "shade": 802
+      }
+    },
+    {
+      "name": "1280x800-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 800,
+        "bottom": 800,
+        "right": 1280,
+        "sh": 800,
+        "ch": 800
+      }
+    },
+    {
+      "name": "1280x800-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 280,
+        "y": 181.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 618.5859375,
+        "right": 1000,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1280x800-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2322,
+        "height": 536,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1280x800-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1280x800-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 3998,
+        "height": 503,
+        "scroll": 4501
+      }
+    },
+    {
+      "name": "1280x800-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 41.1334228515625,
+        "y": 96.99925231933594,
+        "width": 1197.733154296875,
+        "height": 578.015380859375,
+        "bottom": 675.0146331787109,
+        "right": 1238.8665771484375,
+        "sh": 589,
+        "ch": 579
+      }
+    },
+    {
+      "name": "1280x800-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1280x800-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 552,
+        "y": 616.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 662.46875,
+        "right": 728,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1280x800-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 800,
+        "scrollHeight": 800,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 283.65625,
+            "bottom": 346.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 624.8125,
+            "bottom": 668,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 698,
+            "bottom": 776,
+            "height": 78
+          }
+        ],
+        "shade": 802
+      }
+    },
+    {
+      "name": "1280x800-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 800,
+        "scrollHeight": 800,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 283.65625,
+            "bottom": 346.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 624.8125,
+            "bottom": 668,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 698,
+            "bottom": 776,
+            "height": 78
+          }
+        ],
+        "shade": 802
+      }
+    },
+    {
+      "name": "1280x800-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 800,
+        "scrollHeight": 800,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 283.65625,
+            "bottom": 346.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 624.8125,
+            "bottom": 668,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 698,
+            "bottom": 776,
+            "height": 78
+          }
+        ],
+        "shade": 802
+      }
+    },
+    {
+      "name": "1440x900-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900,
+        "bottom": 900,
+        "right": 1440,
+        "sh": 900,
+        "ch": 900
+      }
+    },
+    {
+      "name": "1440x900-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 360,
+        "y": 231.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 668.5859375,
+        "right": 1080,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1440x900-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2244,
+        "height": 614,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1440x900-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1440x900-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 3909,
+        "height": 564,
+        "scroll": 4473
+      }
+    },
+    {
+      "name": "1440x900-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 121.53274536132812,
+        "y": 97.80577850341797,
+        "width": 1196.9345703125,
+        "height": 677.37451171875,
+        "bottom": 775.180290222168,
+        "right": 1318.4673156738281,
+        "sh": 689,
+        "ch": 679
+      }
+    },
+    {
+      "name": "1440x900-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1440x900-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 632,
+        "y": 790.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 836.46875,
+        "right": 808,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1440x900-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 900,
+        "scrollHeight": 900,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 333.65625,
+            "bottom": 396.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 724.8125,
+            "bottom": 768,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 798,
+            "bottom": 876,
+            "height": 78
+          }
+        ],
+        "shade": 902
+      }
+    },
+    {
+      "name": "1440x900-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 900,
+        "scrollHeight": 900,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 333.65625,
+            "bottom": 396.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 724.8125,
+            "bottom": 768,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 798,
+            "bottom": 876,
+            "height": 78
+          }
+        ],
+        "shade": 902
+      }
+    },
+    {
+      "name": "1440x900-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 900,
+        "scrollHeight": 900,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 333.65625,
+            "bottom": 396.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 724.8125,
+            "bottom": 768,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 798,
+            "bottom": 876,
+            "height": 78
+          }
+        ],
+        "shade": 902
+      }
+    },
+    {
+      "name": "1440x900-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900,
+        "bottom": 900,
+        "right": 1440,
+        "sh": 900,
+        "ch": 900
+      }
+    },
+    {
+      "name": "1440x900-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 360,
+        "y": 231.4140625,
+        "width": 720,
+        "height": 437.171875,
+        "bottom": 668.5859375,
+        "right": 1080,
+        "sh": 443,
+        "ch": 437
+      }
+    },
+    {
+      "name": "1440x900-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2244,
+        "height": 614,
+        "scroll": 2858
+      }
+    },
+    {
+      "name": "1440x900-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "1440x900-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 3909,
+        "height": 564,
+        "scroll": 4473
+      }
+    },
+    {
+      "name": "1440x900-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 121.15768432617188,
+        "y": 97.11919403076172,
+        "width": 1197.6845703125,
+        "height": 677.799072265625,
+        "bottom": 774.9182662963867,
+        "right": 1318.8422546386719,
+        "sh": 689,
+        "ch": 679
+      }
+    },
+    {
+      "name": "1440x900-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "1440x900-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 632,
+        "y": 790.46875,
+        "width": 176,
+        "height": 46,
+        "bottom": 836.46875,
+        "right": 808,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "1440x900-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 900,
+        "scrollHeight": 900,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 333.65625,
+            "bottom": 396.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 724.8125,
+            "bottom": 768,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 798,
+            "bottom": 876,
+            "height": 78
+          }
+        ],
+        "shade": 902
+      }
+    },
+    {
+      "name": "1440x900-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 900,
+        "scrollHeight": 900,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 333.65625,
+            "bottom": 396.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 724.8125,
+            "bottom": 768,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 798,
+            "bottom": 876,
+            "height": 78
+          }
+        ],
+        "shade": 902
+      }
+    },
+    {
+      "name": "1440x900-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 900,
+        "scrollHeight": 900,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 56,
+            "bottom": 99.1875,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-tell",
+            "top": 333.65625,
+            "bottom": 396.34375,
+            "height": 62.6875
+          },
+          {
+            "id": "duel-mname",
+            "top": 724.8125,
+            "bottom": 768,
+            "height": 43.1875
+          },
+          {
+            "id": "duel-moves",
+            "top": 798,
+            "bottom": 876,
+            "height": 78
+          }
+        ],
+        "shade": 902
+      }
+    },
+    {
+      "name": "440x956-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 440,
+        "height": 956,
+        "bottom": 956,
+        "right": 440,
+        "sh": 956,
+        "ch": 956
+      }
+    },
+    {
+      "name": "440x956-day-tab-cult",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-panel-cult",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-tab-sect",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-panel-sect",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-trace-panel",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-keyboard-tab",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-details-expand",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-settings",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 526.828125,
+        "width": 440,
+        "height": 429.171875,
+        "bottom": 956,
+        "right": 440,
+        "sh": 429,
+        "ch": 429
+      }
+    },
+    {
+      "name": "440x956-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 1996,
+        "height": 668,
+        "scroll": 2664
+      }
+    },
+    {
+      "name": "440x956-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4781,
+        "height": 349,
+        "scroll": 5131
+      }
+    },
+    {
+      "name": "440x956-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 0.188140869140625,
+        "y": 85.96701049804688,
+        "width": 439.62371826171875,
+        "height": 656.6566162109375,
+        "bottom": 742.6236267089844,
+        "right": 439.8118591308594,
+        "sh": 667,
+        "ch": 657
+      }
+    },
+    {
+      "name": "440x956-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "440x956-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 132,
+        "y": 885,
+        "width": 176,
+        "height": 46,
+        "bottom": 931,
+        "right": 308,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "440x956-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 956,
+        "scrollHeight": 956,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 365.5,
+            "bottom": 422.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 794,
+            "bottom": 830,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 860,
+            "bottom": 938,
+            "height": 78
+          }
+        ],
+        "shade": 958
+      }
+    },
+    {
+      "name": "440x956-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 956,
+        "scrollHeight": 956,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 365.5,
+            "bottom": 422.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 794,
+            "bottom": 830,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 860,
+            "bottom": 938,
+            "height": 78
+          }
+        ],
+        "shade": 958
+      }
+    },
+    {
+      "name": "440x956-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 956,
+        "scrollHeight": 956,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 365.5,
+            "bottom": 422.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 794,
+            "bottom": 830,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 860,
+            "bottom": 938,
+            "height": 78
+          }
+        ],
+        "shade": 958
+      }
+    },
+    {
+      "name": "440x956-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 440,
+        "height": 956,
+        "bottom": 956,
+        "right": 440,
+        "sh": 956,
+        "ch": 956
+      }
+    },
+    {
+      "name": "440x956-night-tab-cult",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-panel-cult",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-tab-sect",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-panel-sect",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-trace-panel",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-keyboard-tab",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-details-expand",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-settings",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 526.828125,
+        "width": 440,
+        "height": 429.171875,
+        "bottom": 956,
+        "right": 440,
+        "sh": 429,
+        "ch": 429
+      }
+    },
+    {
+      "name": "440x956-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 1996,
+        "height": 668,
+        "scroll": 2664
+      }
+    },
+    {
+      "name": "440x956-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4781,
+        "height": 349,
+        "scroll": 5131
+      }
+    },
+    {
+      "name": "440x956-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 0.2080841064453125,
+        "y": 86.06953430175781,
+        "width": 439.5838623046875,
+        "height": 656.5971069335938,
+        "bottom": 742.6666412353516,
+        "right": 439.7919464111328,
+        "sh": 667,
+        "ch": 657
+      }
+    },
+    {
+      "name": "440x956-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "440x956-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 132,
+        "y": 885,
+        "width": 176,
+        "height": 46,
+        "bottom": 931,
+        "right": 308,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "440x956-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 956,
+        "scrollHeight": 956,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 365.5,
+            "bottom": 422.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 794,
+            "bottom": 830,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 860,
+            "bottom": 938,
+            "height": 78
+          }
+        ],
+        "shade": 958
+      }
+    },
+    {
+      "name": "440x956-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 956,
+        "scrollHeight": 956,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 365.5,
+            "bottom": 422.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 794,
+            "bottom": 830,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 860,
+            "bottom": 938,
+            "height": 78
+          }
+        ],
+        "shade": 958
+      }
+    },
+    {
+      "name": "440x956-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 956,
+        "scrollHeight": 956,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 365.5,
+            "bottom": 422.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 794,
+            "bottom": 830,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 860,
+            "bottom": 938,
+            "height": 78
+          }
+        ],
+        "shade": 958
+      }
+    },
+    {
+      "name": "390x844-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "bottom": 844,
+        "right": 390,
+        "sh": 844,
+        "ch": 844
+      }
+    },
+    {
+      "name": "390x844-day-tab-cult",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-panel-cult",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-tab-sect",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-panel-sect",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-trace-panel",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-keyboard-tab",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-details-expand",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-settings",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 414.828125,
+        "width": 390,
+        "height": 429.171875,
+        "bottom": 844,
+        "right": 390,
+        "sh": 429,
+        "ch": 429
+      }
+    },
+    {
+      "name": "390x844-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2296,
+        "height": 581,
+        "scroll": 2877
+      }
+    },
+    {
+      "name": "390x844-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4871,
+        "height": 278,
+        "scroll": 5149
+      }
+    },
+    {
+      "name": "390x844-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 0.4532623291015625,
+        "y": 87.524169921875,
+        "width": 389.093505859375,
+        "height": 543.951416015625,
+        "bottom": 631.4755859375,
+        "right": 389.54676818847656,
+        "sh": 555,
+        "ch": 545
+      }
+    },
+    {
+      "name": "390x844-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "390x844-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 107,
+        "y": 779,
+        "width": 176,
+        "height": 46,
+        "bottom": 825,
+        "right": 283,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "390x844-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 844,
+        "scrollHeight": 844,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 309.5,
+            "bottom": 366.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 682,
+            "bottom": 718,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 748,
+            "bottom": 826,
+            "height": 78
+          }
+        ],
+        "shade": 846
+      }
+    },
+    {
+      "name": "390x844-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 844,
+        "scrollHeight": 844,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 309.5,
+            "bottom": 366.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 682,
+            "bottom": 718,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 748,
+            "bottom": 826,
+            "height": 78
+          }
+        ],
+        "shade": 846
+      }
+    },
+    {
+      "name": "390x844-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 844,
+        "scrollHeight": 844,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 309.5,
+            "bottom": 366.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 682,
+            "bottom": 718,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 748,
+            "bottom": 826,
+            "height": 78
+          }
+        ],
+        "shade": 846
+      }
+    },
+    {
+      "name": "390x844-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "bottom": 844,
+        "right": 390,
+        "sh": 844,
+        "ch": 844
+      }
+    },
+    {
+      "name": "390x844-night-tab-cult",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-panel-cult",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-tab-sect",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-panel-sect",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-trace-panel",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-keyboard-tab",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-details-expand",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-settings",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 414.828125,
+        "width": 390,
+        "height": 429.171875,
+        "bottom": 844,
+        "right": 390,
+        "sh": 429,
+        "ch": 429
+      }
+    },
+    {
+      "name": "390x844-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2296,
+        "height": 581,
+        "scroll": 2877
+      }
+    },
+    {
+      "name": "390x844-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4871,
+        "height": 278,
+        "scroll": 5149
+      }
+    },
+    {
+      "name": "390x844-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 0.342803955078125,
+        "y": 86.90907287597656,
+        "width": 389.31439208984375,
+        "height": 544.26025390625,
+        "bottom": 631.1693267822266,
+        "right": 389.6571960449219,
+        "sh": 555,
+        "ch": 545
+      }
+    },
+    {
+      "name": "390x844-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "390x844-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 107,
+        "y": 779,
+        "width": 176,
+        "height": 46,
+        "bottom": 825,
+        "right": 283,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "390x844-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 844,
+        "scrollHeight": 844,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 309.5,
+            "bottom": 366.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 682,
+            "bottom": 718,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 748,
+            "bottom": 826,
+            "height": 78
+          }
+        ],
+        "shade": 846
+      }
+    },
+    {
+      "name": "390x844-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 844,
+        "scrollHeight": 844,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 309.5,
+            "bottom": 366.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 682,
+            "bottom": 718,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 748,
+            "bottom": 826,
+            "height": 78
+          }
+        ],
+        "shade": 846
+      }
+    },
+    {
+      "name": "390x844-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 844,
+        "scrollHeight": 844,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 309.5,
+            "bottom": 366.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 682,
+            "bottom": 718,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 748,
+            "bottom": 826,
+            "height": 78
+          }
+        ],
+        "shade": 846
+      }
+    },
+    {
+      "name": "375x812-day-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 375,
+        "height": 812,
+        "bottom": 812,
+        "right": 375,
+        "sh": 812,
+        "ch": 812
+      }
+    },
+    {
+      "name": "375x812-day-tab-cult",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-panel-cult",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-tab-sect",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-panel-sect",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-trace-panel",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-keyboard-tab",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-details-expand",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-settings",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 382.828125,
+        "width": 375,
+        "height": 429.171875,
+        "bottom": 812,
+        "right": 375,
+        "sh": 429,
+        "ch": 429
+      }
+    },
+    {
+      "name": "375x812-day-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2341,
+        "height": 556,
+        "scroll": 2898
+      }
+    },
+    {
+      "name": "375x812-day-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4903,
+        "height": 246,
+        "scroll": 5149
+      }
+    },
+    {
+      "name": "375x812-day-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 0.3924560546875,
+        "y": 87.24618530273438,
+        "width": 374.215087890625,
+        "height": 486.3081359863281,
+        "bottom": 573.5543212890625,
+        "right": 374.6075439453125,
+        "sh": 497,
+        "ch": 487
+      }
+    },
+    {
+      "name": "375x812-day-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "375x812-day-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 99.5,
+        "y": 747,
+        "width": 176,
+        "height": 46,
+        "bottom": 793,
+        "right": 275.5,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "375x812-day-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 812,
+        "scrollHeight": 812,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 293.5,
+            "bottom": 350.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 650,
+            "bottom": 686,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 716,
+            "bottom": 794,
+            "height": 78
+          }
+        ],
+        "shade": 814
+      }
+    },
+    {
+      "name": "375x812-day-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 812,
+        "scrollHeight": 812,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 293.5,
+            "bottom": 350.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 650,
+            "bottom": 686,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 716,
+            "bottom": 794,
+            "height": 78
+          }
+        ],
+        "shade": 814
+      }
+    },
+    {
+      "name": "375x812-day-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 812,
+        "scrollHeight": 812,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 293.5,
+            "bottom": 350.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 650,
+            "bottom": 686,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 716,
+            "bottom": 794,
+            "height": 78
+          }
+        ],
+        "shade": 814
+      }
+    },
+    {
+      "name": "375x812-night-main-width",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 375,
+        "height": 812,
+        "bottom": 812,
+        "right": 375,
+        "sh": 812,
+        "ch": 812
+      }
+    },
+    {
+      "name": "375x812-night-tab-cult",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-panel-cult",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-tab-sect",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-panel-sect",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-trace-panel",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-keyboard-tab",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-details-expand",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-settings",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-bag-bounds",
+      "ok": true,
+      "detail": {
+        "x": 0,
+        "y": 382.828125,
+        "width": 375,
+        "height": 429.171875,
+        "bottom": 812,
+        "right": 375,
+        "sh": 429,
+        "ch": 429
+      }
+    },
+    {
+      "name": "375x812-night-long-bag-scrolls",
+      "ok": true,
+      "detail": {
+        "top": 2341,
+        "height": 556,
+        "scroll": 2898
+      }
+    },
+    {
+      "name": "375x812-night-journal-start-reachable",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-journal-end-reachable",
+      "ok": true,
+      "detail": {
+        "top": 4903,
+        "height": 246,
+        "scroll": 5149
+      }
+    },
+    {
+      "name": "375x812-night-map-not-collapsed",
+      "ok": true,
+      "detail": {
+        "x": 0.4038543701171875,
+        "y": 87.3114242553711,
+        "width": 374.1922607421875,
+        "height": 486.2784729003906,
+        "bottom": 573.5898971557617,
+        "right": 374.5961151123047,
+        "sh": 497,
+        "ch": 487
+      }
+    },
+    {
+      "name": "375x812-night-travel-changes-location",
+      "ok": true
+    },
+    {
+      "name": "375x812-night-wish-confirm-reachable",
+      "ok": true,
+      "detail": {
+        "x": 99.5,
+        "y": 747,
+        "width": 176,
+        "height": 46,
+        "bottom": 793,
+        "right": 275.5,
+        "sh": 58,
+        "ch": 46
+      }
+    },
+    {
+      "name": "375x812-night-initial",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 812,
+        "scrollHeight": 812,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 293.5,
+            "bottom": 350.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 650,
+            "bottom": 686,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 716,
+            "bottom": 794,
+            "height": 78
+          }
+        ],
+        "shade": 814
+      }
+    },
+    {
+      "name": "375x812-night-keyboard",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 812,
+        "scrollHeight": 812,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 293.5,
+            "bottom": 350.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 650,
+            "bottom": 686,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 716,
+            "bottom": 794,
+            "height": 78
+          }
+        ],
+        "shade": 814
+      }
+    },
+    {
+      "name": "375x812-night-center-scroll",
+      "ok": true,
+      "detail": {
+        "scroll": 0,
+        "height": 812,
+        "scrollHeight": 812,
+        "parts": [
+          {
+            "id": "duel-oname",
+            "top": 48,
+            "bottom": 84,
+            "height": 36
+          },
+          {
+            "id": "duel-tell",
+            "top": 293.5,
+            "bottom": 350.5,
+            "height": 57
+          },
+          {
+            "id": "duel-mname",
+            "top": 650,
+            "bottom": 686,
+            "height": 36
+          },
+          {
+            "id": "duel-moves",
+            "top": 716,
+            "bottom": 794,
+            "height": 78
+          }
+        ],
+        "shade": 814
+      }
+    },
+    {
+      "name": "no-browser-exceptions",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}
