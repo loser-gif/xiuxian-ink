@@ -4145,3 +4145,14 @@ body[data-screen=create] #scenery{opacity:.18;transform:none;-webkit-mask-image:
 .paper-recall{position:absolute;right:12px;bottom:-2px;font-family:var(--f-body);font-size:11px;line-height:1.4;letter-spacing:.1em;color:var(--ink3);pointer-events:none}
 
 body[data-screen=main] #scr-main .scroll-paper{animation:none;transform:none;transition:none}
+
+/* v101 · 触石与回卷 */
+.stone-touch{position:absolute;top:18%;right:18%;bottom:18%;left:18%;inset:18%;border:0;border-radius:50%;padding:0;background:none;color:inherit;cursor:pointer;touch-action:manipulation}
+.stone-touch .stone-center{font-size:46px}
+.stone-touch:disabled{cursor:default}
+.stone-touch:focus-visible{outline:2px solid var(--zhu);outline-offset:8px}
+.stone-hint{margin:8px 0 0;text-align:center;color:var(--ink3);font-size:14px;line-height:1.6;min-height:23px}
+.play-return{margin-left:auto;min-height:44px;padding:6px 8px;font-size:14px;letter-spacing:.08em;color:var(--ink2);white-space:nowrap}
+.play-return:hover{color:var(--zhu)}
+.play-return:focus-visible{outline:1px solid var(--zhu);outline-offset:2px}
+@media (min-width:1000px){.play-return{position:fixed;left:16px;bottom:18px;margin:0}}

@@ -817,7 +817,7 @@ function resetCreate() {
   $('#inp-name').value = '';
   $('#lg-name').textContent = ''; $('#lg-stats').textContent = '';
   const f = $('#lg-flavor'); f.textContent = trial ? '灵根随你。入局之后，已是金丹初期。' : '以指触石，可知灵根。'; f.className = 'lg-flavor dim';
-  $('#btn-test').querySelector('.bb-text').textContent = '测灵根'; $('#btn-test').disabled = false;
+  $('#stone-hint').textContent = '点击测字 · 测灵根'; $('#btn-test').setAttribute('aria-label', '测灵根'); $('#btn-test').disabled = false;
   $('#btn-start').hidden = true;
   $$('.el').forEach(e => e.classList.remove('on'));
   $('#stone-center').textContent = '测'; $('#stone-glow').style.opacity = 0;
@@ -843,7 +843,7 @@ function rollLinggen() {
 }
 async function doTest() {
   if (testing) return; testing = true;
-  const btn = $('#btn-test'); btn.disabled = true; $('#btn-start').hidden = true;
+  const btn = $('#btn-test'); btn.disabled = true; $('#stone-hint').textContent = '正在测灵根……'; $('#btn-start').hidden = true;
   const stone = $('#stone'), glow = $('#stone-glow'), center = $('#stone-center');
   $$('.el').forEach(e => e.classList.remove('on'));
   glow.style.opacity = 0; center.style.opacity = 0.3;
@@ -876,12 +876,12 @@ async function doTest() {
   await sleep(900);
   testing = false;
   $('#btn-start').hidden = false;
-  if (rerolls > 0) { btn.disabled = false; btn.querySelector('.bb-text').textContent = `再测·余${cn(rerolls)}`; }
-  else { btn.querySelector('.bb-text').textContent = '天意已定'; }
+  if (rerolls > 0) { btn.disabled = false; btn.setAttribute('aria-label', `再测灵根·余${cn(rerolls)}次`); $('#stone-hint').textContent = `点击灵石再测 · 余${cn(rerolls)}次`; }
+  else { btn.setAttribute('aria-label', '天意已定'); $('#stone-hint').textContent = '天意已定'; }
 }
 function initCreate() {
   $('#btn-randname').onclick = () => { $('#inp-name').value = randName(); };
-  $('#btn-test').onclick = () => { if (roll) { if (rerolls <= 0) return; rerolls--; } doTest(); };
+  $('#btn-test').onclick = () => { if (testing || $('#btn-test').disabled) return; if (roll) { if (rerolls <= 0) return; rerolls--; } doTest(); };
   $('#btn-start').onclick = async () => {
     if (!roll) return;
     let name = $('#inp-name').value.trim().replace(/\s+/g, '');
@@ -2850,6 +2850,10 @@ function useItem(k, n) {
   pushLog({ text: o.text, tags: o.tags, cls: 'sys' }); Core.afterGain(S, o.ups, pushLog); render(); save(); checkEnd();
   return o;
 }
+function returnToTitle() {
+  if (busy || !S || document.body.classList.contains('paper-turning')) return;
+  save(); initTitle(); unrollTo('title');
+}
 function openMenu() {
   const w = document.createElement('div'); w.className = 'menu-list';
   const ps = (Core.pathSummary(S) || []).map(x => x.name).join(' · ') || '道基未定';
@@ -2885,7 +2889,7 @@ function openMenu() {
       return;
     }
     await closeSheet();
-    if (m === 'title') { save(); initTitle(); unrollTo('title'); }
+    if (m === 'title') returnToTitle();
     if (m === 'retire' && await inkConfirm('此去不问长生。归隐之后，此卷即终。', '归隐')) {
       Core.retire(S); pushLog({ title: '归隐', text: '你解下腰牌，放在洞府石案上，转身下山。山道上的石阶，你走了许多年，今日才觉出它这样长。', cls: 'event', div: true });
       render(); save(); setTimeout(() => showEnd('guiyin'), 900);
@@ -3720,6 +3724,7 @@ $('#btn-menu').onclick = openMenu;
 $('#btn-sect').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openSect(); };
 $('#btn-cult').onclick = () => { if (!busy && S && !S.dead && !S.ascended) openCult(); };
 $('#play-menu').onclick = () => { if (!busy && S) openMenu(); };
+$('#play-return').onclick = returnToTitle;
 $('#play-settings').onclick = () => { if (!busy) openLook(); };
 $('#hud-toggle').onclick = () => {
   const b = $('#hud-toggle'), open = b.getAttribute('aria-expanded') !== 'true';
@@ -3907,7 +3912,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=100', 'img/open-glyph.png?v=100', 'img/open-seal-logo.png?v=100'];
+  const urls = ['img/open-plate.png?v=101', 'img/open-glyph.png?v=101', 'img/open-seal-logo.png?v=101'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4534,8 +4539,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=100'),
-      loadInk('img/open-glyph.png?v=100')
+      loadInk('img/open-plate.png?v=101'),
+      loadInk('img/open-glyph.png?v=101')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4573,7 +4578,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=100').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=101').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

@@ -180,6 +180,9 @@ const InkGL = (() => {
       // 纸色微漾：一圈极淡的墨痕自圆相向外荡开（呼）
       float rip = exp(-pow((r - (uR + s * .42)) / (.025 + s * .03), 2.)) * s * (1. - s) * .22;
       float A = smoke * .26 + enso * .52 + rip;
+      // 云气在纸面内自然散尽，避免整块画布边缘截出矩形。
+      vec2 extent = max(min(uC, uRes - uC) / uRes.y, vec2(.001));
+      A *= 1. - smoothstep(.55, .96, length(p / extent));
       A *= 1. - smoothstep(1.6, 1.8, t);
       vec3 col = mix(INDIGO, INK, clamp(enso * 1.4 + smoke * .4, 0., 1.));
       gl_FragColor = vec4(col * A, A);
