@@ -1,0 +1,78 @@
+[
+  {
+    "w": 1440,
+    "h": 800,
+    "theme": "day",
+    "before": {
+      "scrollbar": "none",
+      "webkit": "none",
+      "overflow": "auto",
+      "max": 123
+    },
+    "after": {
+      "top": 123,
+      "bottomReached": true,
+      "noteVisible": true,
+      "startVisible": true,
+      "overflowX": false
+    },
+    "errors": []
+  },
+  {
+    "w": 440,
+    "h": 956,
+    "theme": "day",
+    "before": {
+      "scrollbar": "none",
+      "webkit": "none",
+      "overflow": "auto",
+      "max": 0
+    },
+    "after": {
+      "top": 0,
+      "bottomReached": true,
+      "noteVisible": true,
+      "startVisible": true,
+      "overflowX": false
+    },
+    "errors": []
+  },
+  {
+    "w": 320,
+    "h": 568,
+    "theme": "day",
+    "before": {
+      "scrollbar": "none",
+      "webkit": "none",
+      "overflow": "auto",
+      "max": 262
+    },
+    "after": {
+      "top": 261,
+      "bottomReached": true,
+      "noteVisible": true,
+      "startVisible": true,
+      "overflowX": false
+    },
+    "errors": []
+  },
+  {
+    "w": 440,
+    "h": 956,
+    "theme": "night",
+    "before": {
+      "scrollbar": "none",
+      "webkit": "none",
+      "overflow": "auto",
+      "max": 0
+    },
+    "after": {
+      "top": 0,
+      "bottomReached": true,
+      "noteVisible": true,
+      "startVisible": true,
+      "overflowX": false
+    },
+    "errors": []
+  }
+]

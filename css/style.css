@@ -4156,3 +4156,7 @@ body[data-screen=main] #scr-main .scroll-paper{animation:none;transform:none;tra
 .play-return:hover{color:var(--zhu)}
 .play-return:focus-visible{outline:1px solid var(--zhu);outline-offset:2px}
 @media (min-width:1000px){.play-return{position:fixed;left:16px;bottom:18px;margin:0}}
+
+/* v102 · 拜山页隐去滚动轨道，保留内容滚动 */
+#scr-create .create-body{scrollbar-width:none}
+#scr-create .create-body::-webkit-scrollbar{display:none;width:0;height:0}

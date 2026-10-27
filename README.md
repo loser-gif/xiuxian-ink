@@ -5,9 +5,13 @@
 - 纯静态：`index.html` + `css/` + `js/` + `fonts/`，无需构建
 - 字体：霞鹜文楷、马善政楷书、志莽行书（均为 OFL 开源字体，已自托管子集）
 - 存档：浏览器 localStorage
-- 官网：[`site/`](site/)（介绍、截图、玩法、近讯）。游戏当前缓存号为 `?v=101`。
+- 官网：[`site/`](site/)（介绍、截图、玩法、近讯）。游戏当前缓存号为 `?v=102`。
 
 接手开发请先读 [HANDOVER.md](HANDOVER.md)（完整交接）。给编程工具自动加载的短规矩在 [AGENTS.md](AGENTS.md)，`CLAUDE.md` 与 `.cursorrules` 是同一份。
+
+## v102 · 灵石留白（?v=102）
+
+拜山页隐藏测灵根后出现的长滚动条，保留滚轮、触屏和键盘滚动，完整结果与拜山按钮仍可到达。[验收截图](docs/reviews/create-scroll-v102/README.md)。
 
 ## v101 · 触石回卷（?v=101）
 
