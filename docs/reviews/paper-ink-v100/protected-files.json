@@ -1,0 +1,11 @@
+{
+  "files": {
+    "js/core.js": true,
+    "js/slots.js": true,
+    "js/codec.js": true,
+    "js/data.js": true,
+    "js/life.js": true
+  },
+  "openingUnchanged": true,
+  "SAVE_V": 16
+}

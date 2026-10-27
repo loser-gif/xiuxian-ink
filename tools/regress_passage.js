@@ -24,7 +24,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
   }
   async function done(p, screen) {
     await p.waitForFunction(screen => document.body.dataset.screen === screen && !document.body.classList.contains('paper-turning'), screen);
-    return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-scene,.paper-word,.paper-guard').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
+    return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-scene,.paper-word,.paper-guard,.paper-recall').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
   }
   async function seed(p, name = '顾长生', goal = true) {
     await p.locator('#inp-name').fill(name);
@@ -47,21 +47,22 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
         const label=w+'-'+theme;
         const start=Date.now();await p.locator('#btn-new').click();
         await p.waitForTimeout(100);
-        const snap=await p.evaluate(()=>({copies:document.querySelectorAll('.paper-scene canvas').length,originals:document.querySelectorAll('#scenery canvas').length,dupes:[...document.querySelectorAll('[id]')].map(e=>e.id).filter((id,i,a)=>a.indexOf(id)!==i),locked:document.querySelector('#app').getAttribute('aria-busy')}));
-        check(label+'-scenery-preserved',snap.copies===snap.originals&&snap.copies>0&&!snap.dupes.length&&snap.locked==='true',snap);
+        const snap=await p.evaluate(()=>({copies:document.querySelectorAll('.paper-scene canvas').length,originals:document.querySelectorAll('#scenery canvas').length,dupes:[...document.querySelectorAll('[id]')].map(e=>e.id).filter((id,i,a)=>a.indexOf(id)!==i),mask:getComputedStyle(document.querySelector('.paper-scene')).maskImage,locked:document.querySelector('#app').getAttribute('aria-busy')}));
+        check(label+'-scenery-preserved',snap.copies===snap.originals&&snap.copies>0&&!snap.dupes.length&&snap.locked==='true'&&snap.mask.startsWith('url('),{copies:snap.copies,originals:snap.originals,dupes:snap.dupes,locked:snap.locked,masked:snap.mask.startsWith('url(')});
         const opened=await done(p,'create');
         check(label+'-open-completes',Date.now()-start>=2400&&opened.paper&&!opened.washes&&!opened.leftovers&&!opened.locked,opened);
         await seed(p,w===320?'南宫长生听雨':'南宫听雨');
         const named=await done(p,'main');
         check(label+'-name-enters',named.paper&&!named.washes&&!named.leftovers&&await p.locator('#h-name').textContent()===(w===320?'南宫长生听雨':'南宫听雨'),named);
         await menu(p);
-        await p.evaluate(()=>{window.__flight=[];window.__sampleFlight=setInterval(()=>{const es=[...document.querySelectorAll('.paper-word')];if(es.length!==2)return;const a=es[0].getBoundingClientRect(),b=es[1].getBoundingClientRect();__flight.push({overlap:a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top,inside:es.every(e=>{const r=e.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1&&r.top>=-1&&r.bottom<=innerHeight+1;})});},30);});
+        await p.evaluate(()=>{window.__flight=[];window.__sampleFlight=setInterval(()=>{if(document.body.dataset.screen!=='main')return;const es=['#h-name','#h-realm','#journal-title','#log'].map(s=>document.querySelector(s));__flight.push({rects:es.map(e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height].map(v=>Math.round(v*10)/10);}),ghosts:document.querySelectorAll('.paper-word').length,recall:!!document.querySelector('.paper-recall')});},30);});
         await p.locator('#btn-continue').click();
         if(w===390||w===1440){await p.waitForTimeout(750);await p.screenshot({path:path.join(out,'resume-mid-'+label+'.jpg'),type:'jpeg',quality:82});}
         const resumed=await done(p,'main');
         const state=await p.evaluate(()=>{clearInterval(__sampleFlight);return{flight:__flight,age:__moxian.S.age,name:__moxian.S.name,version:__moxian.S.v,width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,logAtEnd:document.querySelector('#log').scrollHeight-document.querySelector('#log').scrollTop-document.querySelector('#log').clientHeight<2};});
         check(label+'-resume-clean',resumed.paper&&!resumed.leftovers&&!resumed.locked&&state.version===16&&state.age===16&&state.logAtEnd&&state.width<=w&&state.height<=h,{resumed,state});
-        check(label+'-words-never-collide',state.flight.length>5&&state.flight.every(f=>!f.overlap&&f.inside),state.flight);
+        const fixed=state.flight.length>5&&state.flight.every(f=>!f.ghosts&&JSON.stringify(f.rects)===JSON.stringify(state.flight[0].rects));
+        check(label+'-ink-stays-in-place',fixed&&state.flight.some(f=>f.recall),{samples:state.flight.length,fixed,recall:state.flight.some(f=>f.recall)});
         if(w===390||w===440||w===1440)await p.screenshot({path:path.join(out,'main-'+label+'.jpg'),type:'jpeg',quality:82});
         await ctx.close();
       }
@@ -91,5 +92,5 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
     await p.keyboard.up('Digit1');await p.locator('[data-act=bag]').click();await p.locator('#sheet').waitFor();check('controls-work-after-arrival',true);await ctx.close();
     check('no-browser-errors',errors.length===0,errors);
   } catch(e) {checks.push({name:'runner',ok:false,error:e.stack});console.error(e.stack);}
-  finally {await browser.close();fs.writeFileSync(path.join(out,'checks.json'),JSON.stringify({checks,errors},null,2));const failed=checks.filter(x=>!x.ok);console.log(JSON.stringify({passed:checks.length-failed.length,failed:failed.length}));if(failed.length)process.exitCode=1;}
+  finally {await browser.close();fs.writeFileSync(path.join(out,'checks.json'),JSON.stringify({checks,errors},(k,v)=>k==='flight'?{samples:v.length}:v,2));const failed=checks.filter(x=>!x.ok);console.log(JSON.stringify({passed:checks.length-failed.length,failed:failed.length}));if(failed.length)process.exitCode=1;}
 })();

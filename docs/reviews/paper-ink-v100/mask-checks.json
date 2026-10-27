@@ -1,0 +1,17 @@
+{
+  "mask": {
+    "center": 0,
+    "corner": 255,
+    "feather": 10044,
+    "recall": "一百九十五岁 · 春",
+    "realm": "金丹"
+  },
+  "fallback": {
+    "name": "韩立",
+    "realm": 2,
+    "age": 195,
+    "months": 2340,
+    "temporary": 0
+  },
+  "errors": []
+}

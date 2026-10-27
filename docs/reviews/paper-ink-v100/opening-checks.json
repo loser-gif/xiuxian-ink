@@ -1,0 +1,329 @@
+{
+  "checks": [
+    {
+      "name": "original-title-before-menu",
+      "ok": true,
+      "detail": {
+        "phase": "paint",
+        "splash": true,
+        "menu": "hidden",
+        "disabled": true,
+        "skip": true
+      }
+    },
+    {
+      "name": "original-art-painted-on-canvas",
+      "ok": true,
+      "detail": 29741
+    },
+    {
+      "name": "ink-becomes-boat-and-reveals-landscape",
+      "ok": true,
+      "detail": {
+        "mask": "radial-gradient(277.54px at 659.56px 719.27px, rgba(255, 255, 255, 0) 233.13px, rgb(255, 255, 255) 277.54px)",
+        "boat": true
+      }
+    },
+    {
+      "name": "full-sequence-unlocks-without-rushing",
+      "ok": true,
+      "detail": {
+        "ms": 14057,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "boat-handoff-finished",
+      "ok": true
+    },
+    {
+      "name": "menu-to-create-same-paper-no-wash",
+      "ok": true
+    },
+    {
+      "name": "create-to-main-same-paper-no-wash",
+      "ok": true
+    },
+    {
+      "name": "return-preserves-original-sequence",
+      "ok": true
+    },
+    {
+      "name": "saved-character-continues",
+      "ok": true
+    },
+    {
+      "name": "skip-pointer-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 44.69999998807907,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "skip-pointer-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-Enter-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 17.30000001192093,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "skip-Enter-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-Escape-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 18.19999998807907,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "skip-Escape-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-Space-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 17.299999952316284,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "skip-Space-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "skip-accessible-click-no-click-through",
+      "ok": true,
+      "detail": {
+        "ms": 46.5,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "skip-focus-returns-to-menu",
+      "ok": true
+    },
+    {
+      "name": "skip-accessible-click-next-click-works",
+      "ok": true
+    },
+    {
+      "name": "held-key-skip-no-click-through",
+      "ok": true
+    },
+    {
+      "name": "held-key-release-restores-input",
+      "ok": true
+    },
+    {
+      "name": "held-pointer-skip-no-click-through",
+      "ok": true
+    },
+    {
+      "name": "held-pointer-release-restores-input",
+      "ok": true
+    },
+    {
+      "name": "quiet-or-storage-reduce",
+      "ok": true,
+      "detail": {
+        "ms": 0,
+        "mode": "quiet",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "quiet-camera-still-reduce",
+      "ok": true
+    },
+    {
+      "name": "quiet-or-storage-lite",
+      "ok": true,
+      "detail": {
+        "ms": 0,
+        "mode": "quiet",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "quiet-camera-still-lite",
+      "ok": true
+    },
+    {
+      "name": "quiet-or-storage-blockStorage",
+      "ok": true,
+      "detail": {
+        "ms": 17.700000047683716,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "interrupt-hidden-unlocks",
+      "ok": true,
+      "detail": {
+        "ms": 25,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "interrupt-reduce-unlocks",
+      "ok": true,
+      "detail": {
+        "ms": 35.59999996423721,
+        "mode": "full",
+        "screen": "title",
+        "busy": "false",
+        "disabled": false,
+        "skip": true,
+        "seen": null
+      }
+    },
+    {
+      "name": "mobile-day-resize-stable",
+      "ok": true,
+      "detail": {
+        "w": 440,
+        "sw": 440,
+        "h": 956,
+        "sh": 956,
+        "buttons": [
+          [
+            135,
+            705.84375,
+            305,
+            776.53125
+          ],
+          [
+            70,
+            788.53125,
+            206,
+            841.265625
+          ],
+          [
+            234,
+            788.53125,
+            370,
+            841.265625
+          ],
+          [
+            70,
+            849.265625,
+            206,
+            902
+          ],
+          [
+            234,
+            849.265625,
+            370,
+            902
+          ]
+        ]
+      }
+    },
+    {
+      "name": "mobile-night-resize-stable",
+      "ok": true,
+      "detail": {
+        "w": 440,
+        "sw": 440,
+        "h": 956,
+        "sh": 956,
+        "buttons": [
+          [
+            135,
+            705.84375,
+            305,
+            776.53125
+          ],
+          [
+            70,
+            788.53125,
+            206,
+            841.265625
+          ],
+          [
+            234,
+            788.53125,
+            370,
+            841.265625
+          ],
+          [
+            70,
+            849.265625,
+            206,
+            902
+          ],
+          [
+            234,
+            849.265625,
+            370,
+            902
+          ]
+        ]
+      }
+    },
+    {
+      "name": "no-page-errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": []
+}
