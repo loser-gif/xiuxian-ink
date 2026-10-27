@@ -1,0 +1,730 @@
+{
+  "checks": [
+    {
+      "name": "320-day-touch-target",
+      "ok": true,
+      "data": {
+        "x": 123.125,
+        "y": 295.625,
+        "width": 73.75,
+        "height": 73.75
+      }
+    },
+    {
+      "name": "320-day-testing-disabled-0",
+      "ok": true
+    },
+    {
+      "name": "320-day-rerolls-0",
+      "ok": true,
+      "data": "点击灵石再测 · 余二次"
+    },
+    {
+      "name": "320-day-testing-disabled-1",
+      "ok": true
+    },
+    {
+      "name": "320-day-rerolls-1",
+      "ok": true,
+      "data": "点击灵石再测 · 余一次"
+    },
+    {
+      "name": "320-day-testing-disabled-2",
+      "ok": true
+    },
+    {
+      "name": "320-day-rerolls-2",
+      "ok": true,
+      "data": "天意已定"
+    },
+    {
+      "name": "320-day-no-fourth-roll",
+      "ok": true
+    },
+    {
+      "name": "320-day-single-test-control",
+      "ok": true
+    },
+    {
+      "name": "320-day-return-visible",
+      "ok": true,
+      "data": {
+        "x": 162.671875,
+        "y": 5,
+        "width": 76.484375,
+        "height": 44
+      }
+    },
+    {
+      "name": "320-day-transparent-edges-0.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 4
+      }
+    },
+    {
+      "name": "320-day-transparent-edges-0.6",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 122
+      }
+    },
+    {
+      "name": "320-day-transparent-edges-1.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 121
+      }
+    },
+    {
+      "name": "320-day-return-blocked-during-action",
+      "ok": true
+    },
+    {
+      "name": "320-day-single-settlement",
+      "ok": true,
+      "data": {
+        "name": "顾长生",
+        "months": 194.5,
+        "xw": 45,
+        "logs": 4,
+        "sink": 1,
+        "previous": 192
+      }
+    },
+    {
+      "name": "320-day-resume-saved-state",
+      "ok": true,
+      "data": {
+        "before": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 45,
+          "logs": 4,
+          "sink": 1,
+          "previous": 192
+        },
+        "after": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 45,
+          "logs": 4,
+          "v": 16
+        }
+      }
+    },
+    {
+      "name": "320-day-no-overflow",
+      "ok": true
+    },
+    {
+      "name": "440-day-touch-target",
+      "ok": true,
+      "data": {
+        "x": 162.390625,
+        "y": 361.1875,
+        "width": 115.21875,
+        "height": 115.21875
+      }
+    },
+    {
+      "name": "440-day-testing-disabled-0",
+      "ok": true
+    },
+    {
+      "name": "440-day-rerolls-0",
+      "ok": true,
+      "data": "点击灵石再测 · 余二次"
+    },
+    {
+      "name": "440-day-testing-disabled-1",
+      "ok": true
+    },
+    {
+      "name": "440-day-rerolls-1",
+      "ok": true,
+      "data": "点击灵石再测 · 余一次"
+    },
+    {
+      "name": "440-day-testing-disabled-2",
+      "ok": true
+    },
+    {
+      "name": "440-day-rerolls-2",
+      "ok": true,
+      "data": "天意已定"
+    },
+    {
+      "name": "440-day-no-fourth-roll",
+      "ok": true
+    },
+    {
+      "name": "440-day-single-test-control",
+      "ok": true
+    },
+    {
+      "name": "440-day-return-visible",
+      "ok": true,
+      "data": {
+        "x": 282.671875,
+        "y": 5,
+        "width": 76.484375,
+        "height": 44
+      }
+    },
+    {
+      "name": "440-day-transparent-edges-0.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 28
+      }
+    },
+    {
+      "name": "440-day-transparent-edges-0.6",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 134
+      }
+    },
+    {
+      "name": "440-day-transparent-edges-1.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 121
+      }
+    },
+    {
+      "name": "440-day-return-blocked-during-action",
+      "ok": true
+    },
+    {
+      "name": "440-day-single-settlement",
+      "ok": true,
+      "data": {
+        "name": "顾长生",
+        "months": 194.5,
+        "xw": 49,
+        "logs": 4,
+        "sink": 1,
+        "previous": 192
+      }
+    },
+    {
+      "name": "440-day-resume-saved-state",
+      "ok": true,
+      "data": {
+        "before": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 49,
+          "logs": 4,
+          "sink": 1,
+          "previous": 192
+        },
+        "after": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 49,
+          "logs": 4,
+          "v": 16
+        }
+      }
+    },
+    {
+      "name": "440-day-no-overflow",
+      "ok": true
+    },
+    {
+      "name": "440-night-touch-target",
+      "ok": true,
+      "data": {
+        "x": 162.390625,
+        "y": 361.1875,
+        "width": 115.21875,
+        "height": 115.21875
+      }
+    },
+    {
+      "name": "440-night-testing-disabled-0",
+      "ok": true
+    },
+    {
+      "name": "440-night-rerolls-0",
+      "ok": true,
+      "data": "点击灵石再测 · 余二次"
+    },
+    {
+      "name": "440-night-testing-disabled-1",
+      "ok": true
+    },
+    {
+      "name": "440-night-rerolls-1",
+      "ok": true,
+      "data": "点击灵石再测 · 余一次"
+    },
+    {
+      "name": "440-night-testing-disabled-2",
+      "ok": true
+    },
+    {
+      "name": "440-night-rerolls-2",
+      "ok": true,
+      "data": "天意已定"
+    },
+    {
+      "name": "440-night-no-fourth-roll",
+      "ok": true
+    },
+    {
+      "name": "440-night-single-test-control",
+      "ok": true
+    },
+    {
+      "name": "440-night-return-visible",
+      "ok": true,
+      "data": {
+        "x": 282.671875,
+        "y": 5,
+        "width": 76.484375,
+        "height": 44
+      }
+    },
+    {
+      "name": "440-night-transparent-edges-0.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 28
+      }
+    },
+    {
+      "name": "440-night-transparent-edges-0.6",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 134
+      }
+    },
+    {
+      "name": "440-night-transparent-edges-1.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 121
+      }
+    },
+    {
+      "name": "440-night-return-blocked-during-action",
+      "ok": true
+    },
+    {
+      "name": "440-night-single-settlement",
+      "ok": true,
+      "data": {
+        "name": "顾长生",
+        "months": 194.5,
+        "xw": 46,
+        "logs": 4,
+        "sink": 1,
+        "previous": 192
+      }
+    },
+    {
+      "name": "440-night-resume-saved-state",
+      "ok": true,
+      "data": {
+        "before": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 46,
+          "logs": 4,
+          "sink": 1,
+          "previous": 192
+        },
+        "after": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 46,
+          "logs": 4,
+          "v": 16
+        }
+      }
+    },
+    {
+      "name": "440-night-no-overflow",
+      "ok": true
+    },
+    {
+      "name": "844-day-touch-target",
+      "ok": true,
+      "data": {
+        "x": 383.890625,
+        "y": 256.9375,
+        "width": 64.890625,
+        "height": 64.890625
+      }
+    },
+    {
+      "name": "844-day-testing-disabled-0",
+      "ok": true
+    },
+    {
+      "name": "844-day-rerolls-0",
+      "ok": true,
+      "data": "点击灵石再测 · 余二次"
+    },
+    {
+      "name": "844-day-testing-disabled-1",
+      "ok": true
+    },
+    {
+      "name": "844-day-rerolls-1",
+      "ok": true,
+      "data": "点击灵石再测 · 余一次"
+    },
+    {
+      "name": "844-day-testing-disabled-2",
+      "ok": true
+    },
+    {
+      "name": "844-day-rerolls-2",
+      "ok": true,
+      "data": "天意已定"
+    },
+    {
+      "name": "844-day-no-fourth-roll",
+      "ok": true
+    },
+    {
+      "name": "844-day-single-test-control",
+      "ok": true
+    },
+    {
+      "name": "844-day-return-visible",
+      "ok": true,
+      "data": {
+        "x": 136.515625,
+        "y": 8,
+        "width": 76.484375,
+        "height": 44
+      }
+    },
+    {
+      "name": "844-day-transparent-edges-0.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 30
+      }
+    },
+    {
+      "name": "844-day-transparent-edges-0.6",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 134
+      }
+    },
+    {
+      "name": "844-day-transparent-edges-1.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 120
+      }
+    },
+    {
+      "name": "844-day-return-blocked-during-action",
+      "ok": true
+    },
+    {
+      "name": "844-day-single-settlement",
+      "ok": true,
+      "data": {
+        "name": "顾长生",
+        "months": 194.5,
+        "xw": 51,
+        "logs": 4,
+        "sink": 1,
+        "previous": 192
+      }
+    },
+    {
+      "name": "844-day-resume-saved-state",
+      "ok": true,
+      "data": {
+        "before": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 51,
+          "logs": 4,
+          "sink": 1,
+          "previous": 192
+        },
+        "after": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 51,
+          "logs": 4,
+          "v": 16
+        }
+      }
+    },
+    {
+      "name": "844-day-no-overflow",
+      "ok": true
+    },
+    {
+      "name": "1440-day-touch-target",
+      "ok": true,
+      "data": {
+        "x": 662.390625,
+        "y": 355.890625,
+        "width": 115.21875,
+        "height": 115.21875
+      }
+    },
+    {
+      "name": "1440-day-testing-disabled-0",
+      "ok": true
+    },
+    {
+      "name": "1440-day-rerolls-0",
+      "ok": true,
+      "data": "点击灵石再测 · 余二次"
+    },
+    {
+      "name": "1440-day-testing-disabled-1",
+      "ok": true
+    },
+    {
+      "name": "1440-day-rerolls-1",
+      "ok": true,
+      "data": "点击灵石再测 · 余一次"
+    },
+    {
+      "name": "1440-day-testing-disabled-2",
+      "ok": true
+    },
+    {
+      "name": "1440-day-rerolls-2",
+      "ok": true,
+      "data": "天意已定"
+    },
+    {
+      "name": "1440-day-no-fourth-roll",
+      "ok": true
+    },
+    {
+      "name": "1440-day-single-test-control",
+      "ok": true
+    },
+    {
+      "name": "1440-day-return-visible",
+      "ok": true,
+      "data": {
+        "x": 16,
+        "y": 838,
+        "width": 76.484375,
+        "height": 44
+      }
+    },
+    {
+      "name": "1440-day-transparent-edges-0.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 28
+      }
+    },
+    {
+      "name": "1440-day-transparent-edges-0.6",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 135
+      }
+    },
+    {
+      "name": "1440-day-transparent-edges-1.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 121
+      }
+    },
+    {
+      "name": "1440-day-return-blocked-during-action",
+      "ok": true
+    },
+    {
+      "name": "1440-day-single-settlement",
+      "ok": true,
+      "data": {
+        "name": "顾长生",
+        "months": 194.5,
+        "xw": 52,
+        "logs": 4,
+        "sink": 1,
+        "previous": 192
+      }
+    },
+    {
+      "name": "1440-day-resume-saved-state",
+      "ok": true,
+      "data": {
+        "before": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 52,
+          "logs": 4,
+          "sink": 1,
+          "previous": 192
+        },
+        "after": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 52,
+          "logs": 4,
+          "v": 16
+        }
+      }
+    },
+    {
+      "name": "1440-day-no-overflow",
+      "ok": true
+    },
+    {
+      "name": "1440-night-touch-target",
+      "ok": true,
+      "data": {
+        "x": 662.390625,
+        "y": 355.890625,
+        "width": 115.21875,
+        "height": 115.21875
+      }
+    },
+    {
+      "name": "1440-night-testing-disabled-0",
+      "ok": true
+    },
+    {
+      "name": "1440-night-rerolls-0",
+      "ok": true,
+      "data": "点击灵石再测 · 余二次"
+    },
+    {
+      "name": "1440-night-testing-disabled-1",
+      "ok": true
+    },
+    {
+      "name": "1440-night-rerolls-1",
+      "ok": true,
+      "data": "点击灵石再测 · 余一次"
+    },
+    {
+      "name": "1440-night-testing-disabled-2",
+      "ok": true
+    },
+    {
+      "name": "1440-night-rerolls-2",
+      "ok": true,
+      "data": "天意已定"
+    },
+    {
+      "name": "1440-night-no-fourth-roll",
+      "ok": true
+    },
+    {
+      "name": "1440-night-single-test-control",
+      "ok": true
+    },
+    {
+      "name": "1440-night-return-visible",
+      "ok": true,
+      "data": {
+        "x": 16,
+        "y": 838,
+        "width": 76.484375,
+        "height": 44
+      }
+    },
+    {
+      "name": "1440-night-transparent-edges-0.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 28
+      }
+    },
+    {
+      "name": "1440-night-transparent-edges-0.6",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 135
+      }
+    },
+    {
+      "name": "1440-night-transparent-edges-1.25",
+      "ok": true,
+      "data": {
+        "edge": 0,
+        "peak": 121
+      }
+    },
+    {
+      "name": "1440-night-return-blocked-during-action",
+      "ok": true
+    },
+    {
+      "name": "1440-night-single-settlement",
+      "ok": true,
+      "data": {
+        "name": "顾长生",
+        "months": 194.5,
+        "xw": 53,
+        "logs": 4,
+        "sink": 1,
+        "previous": 192
+      }
+    },
+    {
+      "name": "1440-night-resume-saved-state",
+      "ok": true,
+      "data": {
+        "before": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 53,
+          "logs": 4,
+          "sink": 1,
+          "previous": 192
+        },
+        "after": {
+          "name": "顾长生",
+          "months": 194.5,
+          "xw": 53,
+          "logs": 4,
+          "v": 16
+        }
+      }
+    },
+    {
+      "name": "1440-night-no-overflow",
+      "ok": true
+    },
+    {
+      "name": "no-page-errors",
+      "ok": true,
+      "data": []
+    }
+  ],
+  "errors": []
+}
