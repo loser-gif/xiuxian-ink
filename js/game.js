@@ -429,13 +429,44 @@ function paperScene() {
   layer.appendChild(copy); document.body.appendChild(layer);
   return layer;
 }
+// A small, feathered mask lets the existing paper show through the old scenery.
+// Its uneven edge is generated once; no new texture or full-screen bitmap is needed.
+function absorbPaper(layer, duration) {
+  if (!window.CSS || !(CSS.supports('mask-image', 'linear-gradient(black,transparent)') || CSS.supports('-webkit-mask-image', 'linear-gradient(black,transparent)'))) return () => {};
+  const canvas = document.createElement('canvas'); canvas.width = 160; canvas.height = 100;
+  const ctx = canvas.getContext('2d'); if (!ctx) return () => {};
+  const pixels = ctx.createImageData(160, 100), distance = new Float32Array(16000);
+  for (let y = 0; y < 100; y++) for (let x = 0; x < 160; x++) {
+    const dx = (x / 159 - .51) / .67, dy = (y / 99 - .43) / .77, a = Math.atan2(dy, dx);
+    distance[y * 160 + x] = Math.hypot(dx, dy) * (1 + .07 * Math.sin(a * 3) + .045 * Math.sin(a * 7 + 1.2) + .025 * Math.cos(a * 11));
+  }
+  let raf = 0, last = -100, finished = false; const start = performance.now();
+  const tick = now => {
+    if (finished) return;
+    const p = Math.min(1, (now - start) / duration);
+    if (now - last >= 33 || p === 1) {
+      last = now; const radius = - .4 + 2 * p * p * (3 - 2 * p);
+      for (let i = 0; i < distance.length; i++) {
+        const a = Math.max(0, Math.min(1, (distance[i] - radius) / .42 + .5));
+        pixels.data[i * 4 + 3] = Math.round(255 * a * a * (3 - 2 * a));
+      }
+      ctx.putImageData(pixels, 0, 0);
+      const mask = 'url(' + canvas.toDataURL() + ')';
+      layer.style.webkitMaskImage = mask; layer.style.maskImage = mask;
+    }
+    if (p < 1) raf = requestAnimationFrame(tick);
+  };
+  tick(start);
+  return () => { finished = true; cancelAnimationFrame(raf); };
+}
 async function paperPassage(id, ready) {
   const previous = $('#scr-' + curScreen), next = $('#scr-' + id);
   const mode = id === 'create' ? 'open' : curScreen === 'title' ? 'resume' : 'name';
   const full = !splashSoft() && !document.hidden && typeof previous.animate === 'function';
-  const total = mode === 'open' ? 2700 : mode === 'resume' ? 1700 : 1900;
-  const lead = mode === 'open' ? 600 : 360;
-  const animations = [], ghosts = [], hidden = [], keys = new Set();
+  const total = mode === 'open' ? 2600 : mode === 'resume' ? 1900 : 2100;
+  const lead = mode === 'open' ? 560 : 380;
+  const animations = [], keys = new Set();
+  let absorb = null, recall = null;
   let scene = null, switched = false, stopped = !full, active = true, release;
   const interrupted = new Promise(resolve => { release = resolve; });
   const stop = () => { stopped = true; release(); };
@@ -458,18 +489,7 @@ async function paperPassage(id, ready) {
     const animation = el.animate(frames, { duration, delay, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'both' });
     animations.push(animation);
   };
-  const arrive = (el, delay, duration = 650) => animate(el, [{ opacity: 0 }, { opacity: 1 }], duration, delay);
-  const ghost = (selector, target, text) => {
-    const source = $(selector); if (!source || !text || !source.getClientRects().length) return;
-    const r = source.getBoundingClientRect(), s = getComputedStyle(source);
-    if (r.bottom <= 0 || r.top >= innerHeight) return;
-    const el = document.createElement('span'); el.className = 'paper-word'; el.textContent = text; el.setAttribute('aria-hidden', 'true');
-    const line = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.2;
-    const top = source.tagName === 'INPUT' ? r.top + (r.height - line) / 2 : r.top;
-    Object.assign(el.style, { left: (r.left + (source.tagName === 'INPUT' ? parseFloat(s.paddingLeft) : 0)) + 'px', top: top + 'px', fontFamily: s.fontFamily, fontWeight: s.fontWeight, fontStyle: s.fontStyle, fontSize: s.fontSize, lineHeight: line + 'px', letterSpacing: s.letterSpacing, color: s.color });
-    document.body.appendChild(el); ghosts.push({ el, target });
-    hidden.push([source, source.style.visibility]); source.style.visibility = 'hidden';
-  };
+  const arrive = (el, delay, duration = 800) => animate(el, [{ opacity: 0 }, { opacity: .22, offset: .35 }, { opacity: .78, offset: .72 }, { opacity: 1 }], duration, delay);
   const switchPage = () => {
     if (switched) return;
     switched = true; setScreen(id); if (ready) ready();
@@ -487,18 +507,12 @@ async function paperPassage(id, ready) {
   try {
     if (full) {
       try { scene = paperScene(); } catch (e) { stopped = true; }
-      if (mode === 'resume' && S) {
-        // A different slot may be loaded through the archive; never fly the wrong name.
-        if ($('#continue-name') && $('#continue-name').textContent === S.name) {
-          ghost('#continue-name', '#h-name', S.name);
-          ghost('#continue-realm', '#h-realm', REALMS[S.realm].name);
-        }
-      } else if (mode === 'name' && S) ghost('#inp-name', '#h-name', S.name);
     }
     document.body.classList.add('paper-turning'); document.body.dataset.passage = mode;
     if (scene) {
       scenery.style.setProperty('visibility', 'hidden', 'important');
-      animate(scene, [{ opacity: 1, transform: 'translateY(0)' }, { opacity: .12, offset: .65 }, { opacity: 0, transform: 'translateY(' + (innerWidth < 700 ? 6 : 18) + 'px)' }], total - 200);
+      absorb = absorbPaper(scene, total - 150);
+      animate(scene, [{ opacity: 1 }, { opacity: .65, offset: .55 }, { opacity: 0 }], total - 100);
       const ink = previous.querySelector(mode === 'open' ? '#btn-new .bb-ink' : '#btn-continue .bb-ink');
       animate(ink, [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }], 350);
       animate(previous, [{ opacity: 1 }, { opacity: 0 }], lead + 120);
@@ -511,44 +525,30 @@ async function paperPassage(id, ready) {
       animate(scenery, [{ opacity: 0 }, { opacity }], total - lead);
       if (id === 'create') {
         arrive(next.querySelector('.create-head'), 0, 850);
-        arrive(next.querySelector('.create-body'), 280, 1100);
+        arrive(next.querySelector('.create-body'), 240, 1100);
+        animate(next.querySelector('.field-line'), [{ opacity: 0 }, { opacity: 1 }], 700, 950);
         arrive(next.querySelector('.create-actions'), 700, 750);
       } else {
-        arrive(next.querySelector('.hud'), ghosts.length ? 650 : 0, 500);
-        arrive(next.querySelector('.journal-head'), 100);
-        const entries = [...next.querySelectorAll('#log > *')];
-        entries.forEach((entry, i) => arrive(entry, mode === 'resume' && i === entries.length - 1 ? 130 : 350, 650));
-        ['.play-brand', '.play-tabs', '.side', '.margin-col', '.margin-note', '.status-line', '.trace-note', '.actions', '#btn-break'].forEach(sel => arrive(next.querySelector(sel), sel === '.actions' ? 600 : 420, 650));
-      }
-      ghosts.forEach(item => {
-        const target = $(item.target), r = target.getBoundingClientRect(), s = getComputedStyle(target);
-        const endLine = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.2;
-        if (r.height > endLine * 1.6) { // Long names may wrap on a small phone.
-          animate(item.el, [{ opacity: 1 }, { opacity: 0 }], 700);
-          return;
+        arrive(next.querySelector('.hud'), mode === 'resume' ? 260 : 100, 900);
+        arrive(next.querySelector('.journal-head'), 0);
+        if (mode === 'resume' && S) {
+          const last = S.log[S.log.length - 1];
+          recall = document.createElement('span'); recall.className = 'paper-recall'; recall.setAttribute('aria-hidden', 'true');
+          recall.textContent = last && last.time || timeLabel();
+          next.querySelector('.journal-head').appendChild(recall);
+          animate(recall, [{ opacity: 0 }, { opacity: .8, offset: .3 }, { opacity: .8, offset: .72 }, { opacity: 0 }], total - lead);
         }
-        hidden.push([target, target.style.visibility]); target.style.visibility = 'hidden';
-        const start = item.el.getBoundingClientRect(), first = getComputedStyle(item.el);
-        const mix = (a, b, t) => a + (b - a) * t;
-        const realm = item.target === '#h-realm';
-        const frames = Array.from({ length: 17 }, (_, i) => {
-          const t = i / 16, travel = mode === 'resume' ? (realm ? 1 - Math.pow(1 - t, 1.7) : Math.pow(t, 1.4)) : t;
-          // Two separate arcs keep the menu's name-before-realm order from crossing on phones.
-          const bend = mode === 'resume' ? Math.sin(Math.PI * t) * (realm ? -20 : innerWidth < 700 ? 40 : 15) : 0;
-          return { offset: t, left: mix(start.left, r.left, t) + bend + 'px', top: mix(start.top, r.top, travel) + 'px',
-            fontSize: mix(parseFloat(first.fontSize), parseFloat(s.fontSize), t) + 'px',
-            letterSpacing: mix(parseFloat(first.letterSpacing) || 0, parseFloat(s.letterSpacing) || 0, t) + 'px',
-            lineHeight: mix(parseFloat(first.lineHeight), endLine, t) + 'px' };
-        });
-        animate(item.el, frames, mode === 'resume' ? 850 : 1000);
-      });
+        const entries = [...next.querySelectorAll('#log > *')];
+        entries.forEach((entry, i) => arrive(entry, mode === 'resume' && i === entries.length - 1 ? 30 : 300, 900));
+        ['.play-masthead', '.play-tabs', '.side', '.margin-col', '.margin-note', '.status-line', '.trace-note', '.actions', '#btn-break'].forEach(sel => arrive(next.querySelector(sel), sel === '.actions' ? 600 : 420, 650));
+      }
       await wait(total - lead);
     }
   } finally {
     switchPage();
     animations.forEach(a => a.cancel());
-    hidden.forEach(([el, visibility]) => { el.style.visibility = visibility; });
-    ghosts.forEach(item => item.el.remove()); if (scene) scene.remove(); guard.remove();
+    if (absorb) absorb(); if (recall) recall.remove();
+    if (scene) scene.remove(); guard.remove();
     scenery.style.cssText = sceneryStyle;
     document.body.classList.remove('paper-turning'); delete document.body.dataset.passage;
     $('#app').removeAttribute('aria-busy'); active = false;
@@ -638,11 +638,7 @@ function initTitle() {
   if (s && !s.dead && !s.ascended) {
     $('#btn-continue').hidden = false;
     const extra = (typeof Slots !== 'undefined') ? Slots.loadBox().slots.filter(x => x && x.sum && !x.sum.dead && !x.sum.ascended).length : 1;
-    const sub = $('#continue-sub'); sub.textContent = '';
-    const name = document.createElement('span'), realm = document.createElement('span');
-    name.id = 'continue-name'; name.textContent = s.name;
-    realm.id = 'continue-realm'; realm.textContent = REALMS[s.realm].name;
-    sub.append(name, ' · ', realm, REALMS[s.realm].stages[s.stage], extra > 1 ? ' · 另有卷' : '');
+    $('#continue-sub').textContent = extra > 1 ? `${s.name} · ${realmStr(s)} · 另有卷` : `${s.name} · ${realmStr(s)}`;
   } else {
     const bc = $('#btn-continue'); if (bc) bc.hidden = true;
   }
@@ -3911,7 +3907,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=99', 'img/open-glyph.png?v=99', 'img/open-seal-logo.png?v=99'];
+  const urls = ['img/open-plate.png?v=100', 'img/open-glyph.png?v=100', 'img/open-seal-logo.png?v=100'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4538,8 +4534,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=99'),
-      loadInk('img/open-glyph.png?v=99')
+      loadInk('img/open-plate.png?v=100'),
+      loadInk('img/open-glyph.png?v=100')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4577,7 +4573,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=99').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=100').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
