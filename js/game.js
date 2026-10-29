@@ -208,7 +208,19 @@ const PUNCT = '，。、；：？！”’）》」…—·';
 let inkBusyUntil = 0;
 function splitUnits(text) {
   const units = [];
+  let glue = false;
   for (const ch of text) {
+    if (ch === '\u2060') {
+      if (units.length) units[units.length - 1] += ch;
+      else units.push(ch);
+      glue = true;
+      continue;
+    }
+    if (glue && units.length) {
+      units[units.length - 1] += ch;
+      glue = false;
+      continue;
+    }
     if (units.length && (PUNCT.includes(ch) || ch === ' ')) units[units.length - 1] += ch;
     else if (units.length && '“‘（《「'.includes(units[units.length - 1].slice(-1))) units[units.length - 1] += ch;
     else units.push(ch);
@@ -958,7 +970,7 @@ function newGame(name, r, choice, originId) {
       tags: [{ t: '金丹初期', c: 'gold' }, { t: '二十载', c: 'gold' }]
     });
   } else {
-    const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(S) : `你名${name}，青石镇人氏，年方十六。`;
+    const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(S) : ('你名' + name + '，青石镇人氏，年方十\u2060六。');
     pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
   }
   pushLog({ text: sectLine });
@@ -3912,7 +3924,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=102', 'img/open-glyph.png?v=102', 'img/open-seal-logo.png?v=102'];
+  const urls = ['img/open-plate.png?v=103', 'img/open-glyph.png?v=103', 'img/open-seal-logo.png?v=103'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4539,8 +4551,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=102'),
-      loadInk('img/open-glyph.png?v=102')
+      loadInk('img/open-plate.png?v=103'),
+      loadInk('img/open-glyph.png?v=103')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4578,7 +4590,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=102').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=103').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

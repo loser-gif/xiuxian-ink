@@ -73,7 +73,7 @@ const Juan = (() => {
   function originLine(s) {
     const o = byId(s && s.origin);
     const name = (s && s.name) || '你';
-    return `你名${name}，${o.intro}`;
+    return ('你名' + name + '，' + o.intro).replace(/年方十六/g, '年方十\u2060六');
   }
   function originName(s) { return byId(s && s.origin).name; }
 
