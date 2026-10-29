@@ -1,0 +1,343 @@
+/* 墨童闲录。卷首多一枚同级笔触，不塞进存档 / 图鉴 / 日缘 / 试炼那四格。
+   闲录本身是同一张宣纸上的一层，淡墨细边，不铺厚罩，也不加木轴。 */
+
+.title-menu #btn-idle{
+  width:calc((min(100%,348px) - 20px) / 2);
+  max-width:164px;
+  min-width:0;
+}
+body.go #btn-idle .bb-ink{animation-delay:calc(var(--ink-d) + .74s)}
+body.go #btn-idle .bb-text,
+body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--ink-d) + 1.78s)}
+@media (min-width:800px){
+  .title-menu #btn-idle{width:148px;max-width:160px}
+}
+@media (max-height:740px) and (max-width:719px){
+  .title-menu{gap:6px}
+  .title-menu #btn-idle{min-height:36px;padding-top:4px;padding-bottom:3px}
+}
+
+.idle{
+  position:fixed;
+  top:0;right:0;bottom:0;left:0;
+  z-index:30;
+  display:flex;
+  flex-direction:column;
+  background:var(--paper);
+  color:var(--ink);
+  overflow:hidden;
+}
+.idle[hidden]{display:none !important}
+.idle-wrap{
+  position:relative;
+  width:min(1040px,100%);
+  margin:0 auto;
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  padding:calc(var(--sat) + 18px) 22px calc(var(--sab) + 10px);
+  box-sizing:border-box;
+}
+.idle-mark,
+.idle-slip-mark{
+  position:absolute;
+  z-index:2;
+  width:28px;height:28px;line-height:28px;
+  text-align:center;
+  font-family:var(--f-head);
+  font-size:15px;
+  letter-spacing:0;
+  color:var(--seal-paper);
+  background:var(--seal-red);
+  border-radius:1px;
+  transform:rotate(7deg);
+  pointer-events:none;
+}
+.idle-mark{top:calc(var(--sat) + 16px);right:18px}
+.idle-hero{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:28px;
+  padding:6px 36px 8px 8px;
+  flex:none;
+}
+.idle-boy{
+  flex:none;
+  width:210px;height:230px;
+  padding:0;border:0;background:transparent;
+  color:var(--ink);
+  cursor:pointer;
+  -webkit-user-select:none;user-select:none;
+}
+.idle-boy svg{display:block;width:100%;height:100%;overflow:visible}
+.idle-svg .hole{fill:var(--paper)}
+.idle-svg .zhu-dot{fill:var(--seal-red)}
+.idle-svg .ink-body{transform-origin:120px 168px;animation:idleBreath 5.2s ease-in-out infinite}
+.idle-boy.is-tap .idle-fig{animation:idleJolt .22s linear}
+@keyframes idleBreath{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.02)}
+}
+@keyframes idleJolt{
+  0%{transform:translate(0,0)}
+  40%{transform:translate(1.5px,-1px)}
+  100%{transform:none}
+}
+.idle-read{min-width:0;text-align:left}
+.idle-count{display:flex;align-items:baseline;gap:10px;margin:0}
+.idle-count b{
+  font-family:var(--f-head);
+  font-weight:400;
+  font-size:52px;
+  letter-spacing:.04em;
+  line-height:1;
+  color:var(--ink);
+}
+.idle-count span{
+  font-size:14px;
+  letter-spacing:.42em;
+  color:var(--ink3);
+}
+.idle-dps,.idle-meta,.idle-buff,.idle-goal,.idle-hint,.idle-col-note{
+  margin:4px 0 0;
+  font-size:13px;
+  letter-spacing:.12em;
+  color:var(--ink3);
+  line-height:1.45;
+}
+.idle-buff{color:var(--zhu)}
+.idle-goal{min-height:1.2em}
+.idle-tabs{display:none}
+.idle-main{
+  flex:1;
+  min-height:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin-top:8px;
+}
+.idle-col{
+  min-height:0;
+  overflow:auto;
+  padding:10px 14px 14px;
+  border:1px solid rgba(95,79,53,.28);
+  background:transparent;
+  scrollbar-color:transparent transparent;
+}
+.idle-col:hover,.idle-col:focus-within{scrollbar-color:var(--sb-thumb) transparent}
+.idle :focus-visible{outline:1px solid rgba(27,24,20,.28);outline-offset:5px}
+.idle-col h2{
+  margin:0 0 8px;
+  font-family:var(--f-head);
+  font-weight:400;
+  font-size:22px;
+  letter-spacing:.28em;
+  padding-left:.28em;
+}
+.idle-modes{display:flex;gap:8px;margin:0 0 8px}
+.idle-modes button,
+.idle-tab{
+  min-width:44px;min-height:36px;
+  padding:4px 10px;
+  border:0;background:transparent;
+  font-family:var(--f-head);
+  font-size:16px;
+  letter-spacing:.12em;
+  color:var(--ink3);
+  cursor:pointer;
+}
+.idle-modes button.on,
+.idle-tab.on{color:var(--zhu)}
+.idle-row{
+  padding:8px 0 9px;
+  border-top:1px solid rgba(95,79,53,.14);
+}
+.idle-row-t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.idle-row-t b{font-weight:400;font-family:var(--f-head);font-size:18px;letter-spacing:.14em}
+.idle-row-t i{font-style:normal;font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+.idle-row-d{margin:2px 0 6px;font-size:12px;letter-spacing:.06em;color:var(--ink3)}
+.idle-row.is-lock p{margin:3px 0 0;font-size:12px;letter-spacing:.08em;color:var(--ink4)}
+.idle-go{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  width:100%;min-height:40px;
+  padding:4px 2px;
+  border:0;border-bottom:1px solid rgba(95,79,53,.22);
+  background:transparent;
+  color:var(--ink);
+  font-family:var(--f-head);
+  font-size:16px;
+  letter-spacing:.12em;
+  cursor:pointer;
+}
+.idle-go:disabled{opacity:.38;cursor:default}
+.idle-go-c{font-family:var(--f-body);font-size:13px;letter-spacing:.04em;color:var(--ink2)}
+.idle-hint{
+  flex:none;
+  margin:8px 0 0;
+  text-align:center;
+  min-height:1.3em;
+}
+.idle-dock{
+  flex:none;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  padding-top:6px;
+}
+.idle-dock .brush-btn{min-width:0}
+.idle-dock .brush-btn.small{padding:8px 16px 7px;min-width:92px}
+.idle-dock .brush-btn.small .bb-text{font-size:18px;letter-spacing:.14em;padding-left:.14em}
+.idle-dock .idle-tap{padding:10px 28px 9px;min-width:132px}
+.idle-dock .idle-tap .bb-text{font-size:28px;letter-spacing:.28em;padding-left:.28em}
+.idle-dock .idle-tap small{letter-spacing:.2em}
+.idle-fx{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;overflow:hidden;z-index:3}
+.idle-flo{
+  position:absolute;
+  font-family:var(--f-head);
+  font-size:16px;
+  letter-spacing:.06em;
+  color:var(--ink);
+  animation:idleRise .84s ease forwards;
+}
+.idle-drop{
+  position:absolute;
+  border-radius:50%;
+  background:var(--ink);
+  opacity:.75;
+  animation:idleDrop .52s ease forwards;
+}
+@keyframes idleRise{
+  to{opacity:0;transform:translateY(-26px)}
+}
+@keyframes idleDrop{
+  to{opacity:0;transform:scale(.35)}
+}
+.idle-shade{
+  position:absolute;
+  top:0;right:0;bottom:0;left:0;
+  z-index:4;
+  background:radial-gradient(ellipse at 50% 46%, rgba(55,42,28,.045), rgba(55,42,28,.13));
+}
+.idle-slip{
+  position:absolute;
+  z-index:5;
+  left:50%;top:46%;
+  width:min(420px,calc(100% - 36px));
+  transform:translate(-50%,-46%);
+  padding:22px 46px 18px 22px;
+  background:var(--paper);
+  color:var(--ink);
+  box-shadow:inset 0 0 0 1px rgba(95,79,53,.34);
+  -webkit-clip-path:inset(0 0 100% 0);
+  clip-path:inset(0 0 100% 0);
+}
+.idle-slip.on{
+  -webkit-clip-path:inset(0 0 0 0);
+  clip-path:inset(0 0 0 0);
+  transition:clip-path .52s cubic-bezier(.22,.7,.18,1),-webkit-clip-path .52s cubic-bezier(.22,.7,.18,1);
+}
+.idle-slip-mark{top:12px;right:12px}
+.idle-slip h3{
+  margin:0 0 8px;
+  font-family:var(--f-head);
+  font-weight:400;
+  font-size:24px;
+  letter-spacing:.18em;
+}
+.idle-slip p{margin:0;font-size:15px;line-height:1.75;letter-spacing:.08em}
+.idle-slip-sub{margin-top:8px !important;color:var(--zhu);font-size:14px !important}
+.idle-slip-actions{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:16px}
+.idle-slip-alt{
+  border:0;background:transparent;
+  font-family:var(--f-head);
+  font-size:16px;
+  letter-spacing:.12em;
+  color:var(--ink3);
+  min-height:44px;
+  cursor:pointer;
+}
+.idle-stamp{
+  position:absolute;
+  z-index:6;
+  left:50%;top:40%;
+  width:78px;height:78px;
+  margin:-39px 0 0 -39px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--seal-red);
+  color:var(--seal-paper);
+  font-family:var(--f-head);
+  font-size:42px;
+  letter-spacing:0;
+  transform:rotate(-8deg) scale(1.35);
+  opacity:0;
+}
+.idle-stamp b{font-weight:400}
+.idle-stamp.go{animation:idleStamp .72s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes idleStamp{
+  0%{opacity:0;transform:rotate(-14deg) scale(1.55)}
+  42%{opacity:1;transform:rotate(-7deg) scale(1)}
+  100%{opacity:.92;transform:rotate(-7deg) scale(1)}
+}
+
+@media (max-width:719px){
+  .idle-wrap{padding:calc(var(--sat) + 12px) 12px calc(var(--sab) + 8px)}
+  .idle-mark{right:12px;top:calc(var(--sat) + 10px);width:24px;height:24px;line-height:24px;font-size:13px}
+  .idle-hero{gap:4px;padding:0 28px 0 0;align-items:flex-end}
+  .idle-boy{width:112px;height:128px}
+  .idle-count b{font-size:34px}
+  .idle-count span{letter-spacing:.28em;font-size:12px}
+  .idle-dps,.idle-meta,.idle-goal{font-size:12px;letter-spacing:.06em}
+  .idle-tabs{
+    display:flex;
+    gap:18px;
+    margin-top:4px;
+    border-bottom:1px solid rgba(95,79,53,.18);
+  }
+  .idle-main{grid-template-columns:1fr;margin-top:0}
+  .idle.is-tab-bld .idle-col-xin,
+  .idle.is-tab-xin .idle-col-bld{display:none}
+  .idle-col{border:0;padding:8px 2px 4px}
+  .idle-dock .idle-tap{padding:8px 16px 7px;min-width:108px}
+  .idle-dock .idle-tap .bb-text{font-size:24px}
+  .idle-dock .brush-btn.small{padding:6px 8px 5px}
+  .idle-dock .brush-btn.small .bb-text{font-size:16px;letter-spacing:.08em;padding-left:.08em}
+  .idle-hint{font-size:12px;letter-spacing:.04em}
+}
+@media (min-width:720px){
+  .idle-tabs{display:none}
+}
+
+html[data-theme="night"] .idle-shade{
+  background:radial-gradient(ellipse at 50% 46%, rgba(0,0,0,.04), rgba(0,0,0,.16));
+}
+html[data-theme="night"] .idle-col,
+html[data-theme="night"] .idle-row,
+html[data-theme="night"] .idle-go,
+html[data-theme="night"] .idle-tabs{
+  border-color:rgba(236,226,208,.22);
+}
+html[data-theme="night"] .idle-slip{
+  background:#3b3730;
+  color:#f0e6d6;
+  --ink:#f0e6d6;--ink2:#d9cbb6;--ink3:#b7a892;
+  box-shadow:inset 0 0 0 1px rgba(236,226,208,.36);
+}
+html[data-theme="night"] .idle-slip .brush-btn.light{color:var(--panel-ink)}
+html[data-theme="night"] .idle-slip .brush-btn.light small{color:#3a332b}
+
+@media (prefers-reduced-motion:reduce){
+  .idle-svg .ink-body,.idle-boy.is-tap .idle-fig,.idle-flo,.idle-drop,.idle-stamp.go{animation:none}
+  .idle-slip,.idle-slip.on{-webkit-clip-path:none;clip-path:none}
+  .idle-stamp.go{opacity:.92;transform:rotate(-7deg) scale(1)}
+}
+html[data-motion="lite"] .idle-svg .ink-body,
+html[data-motion="lite"] .idle-boy.is-tap .idle-fig,
+html[data-fx="thin"] .idle-svg .ink-body,
+html[data-fx="thin"] .idle-boy.is-tap .idle-fig{animation:none}
+html[data-motion="lite"] .idle-slip,
+html[data-motion="lite"] .idle-slip.on,
+html[data-fx="thin"] .idle-slip,
+html[data-fx="thin"] .idle-slip.on{-webkit-clip-path:none;clip-path:none}
