@@ -381,7 +381,7 @@ const InkGL = (() => {
     if (btn && btn.id === 'btn-continue') {
       return night
         ? { kind: 0, ink: '#f4ecdc', alpha: .98, sheen: .22 }
-        : { kind: 0, ink: '#6a6156', alpha: .94, sheen: .4 };
+        : { kind: 0, ink: '#e6dcc8', alpha: .97, sheen: .2 };
     }
     if (btn && btn.classList.contains('light')) return { kind: 0, ink: '#f3ead6', alpha: night ? .97 : .95, sheen: 0 };
     if (btn && btn.closest('.create-actions') && !btn.classList.contains('primary')) return { kind: 0, ink: '#1b1814', alpha: .15, sheen: 0 };
