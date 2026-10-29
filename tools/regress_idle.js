@@ -97,11 +97,11 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 assert(html.includes('id="btn-idle"'));
 assert(html.includes('墨童'));
-assert(html.includes('js/idle.js?v=105'));
-assert(html.includes('css/idle.css?v=105'));
-assert(html.includes("var EXPECT = 'moxian-v105'"));
-assert(sw.includes("var CACHE = 'moxian-v105'"));
-assert(sw.includes('css/idle.css?v=105'));
+assert(html.includes('js/idle.js?v=106'));
+assert(html.includes('css/idle.css?v=106'));
+assert(html.includes("var EXPECT = 'moxian-v106'"));
+assert(sw.includes("var CACHE = 'moxian-v106'"));
+assert(sw.includes('css/idle.css?v=106'));
 
 function scoreBuy(state, cps) {
   let pick = null;

@@ -23,7 +23,7 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
   z-index:30;
   display:flex;
   flex-direction:column;
-  background:var(--paper);
+  background:radial-gradient(ellipse at 50% 42%, rgba(239,230,211,.96) 0%, rgba(239,230,211,.9) 58%, rgba(239,230,211,.42) 84%, rgba(239,230,211,.14) 100%);
   color:var(--ink);
   overflow:hidden;
 }
@@ -67,12 +67,12 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
   flex:none;
   width:210px;height:230px;
   padding:0;border:0;background:transparent;
-  color:var(--ink);
+  color:#1b1814;
   cursor:pointer;
   -webkit-user-select:none;user-select:none;
 }
 .idle-boy svg{display:block;width:100%;height:100%;overflow:visible}
-.idle-svg .hole{fill:var(--paper)}
+.idle-svg .hole{fill:#efe6d3}
 .idle-svg .zhu-dot{fill:var(--seal-red)}
 .idle-svg .ink-body{transform-origin:120px 168px;animation:idleBreath 5.2s ease-in-out infinite}
 .idle-boy.is-tap .idle-fig{animation:idleJolt .22s linear}
@@ -120,13 +120,16 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
 }
 .idle-col{
   min-height:0;
-  overflow:auto;
-  padding:10px 14px 14px;
-  border:1px solid rgba(95,79,53,.28);
+  overflow-x:hidden;
+  overflow-y:auto;
+  padding:8px 14px 36px;
+  border:0;
   background:transparent;
-  scrollbar-color:transparent transparent;
+  scroll-padding-bottom:28px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(95,79,53,.38) transparent;
 }
-.idle-col:hover,.idle-col:focus-within{scrollbar-color:var(--sb-thumb) transparent}
+.idle-col .idle-row:last-child{margin-bottom:8px}
 .idle :focus-visible{outline:1px solid rgba(27,24,20,.28);outline-offset:5px}
 .idle-col h2{
   margin:0 0 8px;
@@ -205,7 +208,7 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
 .idle-drop{
   position:absolute;
   border-radius:50%;
-  background:var(--ink);
+  background:#1b1814;
   opacity:.75;
   animation:idleDrop .52s ease forwards;
 }
@@ -282,6 +285,20 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
   100%{opacity:.92;transform:rotate(-7deg) scale(1)}
 }
 
+@media (min-width:720px){
+  .idle-col-bld{box-shadow:inset -1px 0 0 rgba(95,79,53,.2)}
+}
+@media (max-height:860px) and (min-width:720px){
+  .idle-boy{width:132px;height:144px}
+  .idle-count b{font-size:40px}
+  .idle-hero{gap:16px;padding-top:0;padding-bottom:0}
+  .idle-wrap{padding-top:calc(var(--sat) + 8px)}
+  .idle-hint{margin-top:4px}
+}
+@media (max-height:740px) and (max-width:719px){
+  body[data-screen=title] .title-menu{bottom:calc(var(--sab) + 78px)}
+  .title-menu #btn-idle .bb-ink{top:-6px;bottom:-2px}
+}
 @media (max-width:719px){
   .idle-wrap{padding:calc(var(--sat) + 12px) 12px calc(var(--sab) + 8px)}
   .idle-mark{right:12px;top:calc(var(--sat) + 10px);width:24px;height:24px;line-height:24px;font-size:13px}
@@ -299,7 +316,7 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
   .idle-main{grid-template-columns:1fr;margin-top:0}
   .idle.is-tab-bld .idle-col-xin,
   .idle.is-tab-xin .idle-col-bld{display:none}
-  .idle-col{border:0;padding:8px 2px 4px}
+  .idle-col{border:0;padding:8px 2px 32px}
   .idle-dock .idle-tap{padding:8px 16px 7px;min-width:108px}
   .idle-dock .idle-tap .bb-text{font-size:24px}
   .idle-dock .brush-btn.small{padding:6px 8px 5px}
@@ -310,6 +327,22 @@ body.go #btn-idle small{animation-delay:calc(var(--ink-d) + 1.06s),calc(var(--in
   .idle-tabs{display:none}
 }
 
+body.idle-on .title-menu,
+body.idle-on .title-block,
+body.idle-on .title-poem,
+body.idle-on #btn-notice,
+body.idle-on #audio-dock,
+body.idle-on .legacy-hint{visibility:hidden}
+html[data-theme="night"] .idle{
+  background:radial-gradient(ellipse at 50% 42%, rgba(48,43,38,.92) 0%, rgba(32,27,23,.72) 62%, rgba(16,13,11,.28) 100%);
+  color:#f0e6d6;
+}
+html[data-theme="night"] .idle-boy{
+  color:#14110e;
+  background:radial-gradient(ellipse at 50% 58%, rgba(236,226,208,.22), rgba(236,226,208,0) 58%);
+}
+html[data-theme="night"] .idle-svg .hole{fill:#e6dcc8}
+html[data-theme="night"] .idle-drop{background:#14110e}
 html[data-theme="night"] .idle-shade{
   background:radial-gradient(ellipse at 50% 46%, rgba(0,0,0,.04), rgba(0,0,0,.16));
 }
