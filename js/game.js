@@ -1753,10 +1753,11 @@ function mountFoeSlip(after) {
   } else if (S.evFoe && Core.glance) {
     const g = Core.glance(S);
     slip.className = 'foe-slip' + (g.exact ? '' : ' dim');
-    const title = meta.title ? `<em>${esc(meta.title)}</em>` : '';
-    slip.innerHTML = `<div class="foe-name">${esc(meta.name || '对手')}${title}</div>`
+    const title = meta.title ? `<div class="foe-role">${esc(meta.title)}</div>` : '';
+    slip.innerHTML = `<div class="foe-name">${esc(meta.name || '对手')}</div>`
+      + title
       + (g.exact ? `<div class="foe-realm">${esc(g.realm)}</div>` : '')
-      + `<div class="foe-read">「${esc(g.read)}」</div>`
+      + `<div class="foe-read">${esc(g.read)}</div>`
       + (g.exact ? '' : `<div class="foe-rough">${esc(g.rough)}</div>`);
   } else return;
   after.insertAdjacentElement('afterend', slip);
@@ -3924,7 +3925,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=103', 'img/open-glyph.png?v=103', 'img/open-seal-logo.png?v=103'];
+  const urls = ['img/open-plate.png?v=104', 'img/open-glyph.png?v=104', 'img/open-seal-logo.png?v=104'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4551,8 +4552,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=103'),
-      loadInk('img/open-glyph.png?v=103')
+      loadInk('img/open-plate.png?v=104'),
+      loadInk('img/open-glyph.png?v=104')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4590,7 +4591,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=103').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=104').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
