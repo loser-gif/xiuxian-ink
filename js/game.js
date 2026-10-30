@@ -2385,7 +2385,13 @@ function sectNpc() {
         kinds.forEach(([kind, name, months]) => {
           const b = document.createElement('button'); b.className = 'path-wash-btn'; b.type = 'button';
           b.textContent = name + (months ? ' · ' + cnDur(Core.timeMonths(S, months)) : '');
-          b.disabled = S.months < (st.life.nextAct || 0) || (kind === 'gift' && !(S.items['清心丹'] > 0)) || (kind === 'promise' && !!(S.bond && S.bond.promiseDue));
+          let reason = '';
+          if (S.months < (st.life.nextAct || 0)) reason = '这一季的话已说过 · 还余' + cnDur(Math.max(0, (st.life.nextAct || 0) - S.months));
+          else if (kind === 'gift' && !(S.items['清心丹'] > 0)) reason = '囊中无清心丹';
+          else if (kind === 'promise' && S.bond && S.bond.promiseDue) reason = '上一个约还没有赴';
+          b.disabled = !!reason;
+          if (reason) b.title = reason;
+          b.setAttribute('aria-label', b.textContent + (reason ? ' · ' + reason : ''));
           b.onclick = () => {
             const r = People.interact(S, id, kind, pushLog);
             if (r.err) { toast(r.err); return; }
@@ -3925,7 +3931,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=112', 'img/open-glyph.png?v=112', 'img/open-seal-logo.png?v=112'];
+  const urls = ['img/open-plate.png?v=113', 'img/open-glyph.png?v=113', 'img/open-seal-logo.png?v=113'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4552,8 +4558,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=112'),
-      loadInk('img/open-glyph.png?v=112')
+      loadInk('img/open-plate.png?v=113'),
+      loadInk('img/open-glyph.png?v=113')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4591,7 +4597,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=112').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=113').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

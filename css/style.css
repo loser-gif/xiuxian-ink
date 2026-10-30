@@ -191,7 +191,7 @@ body.intro-done.go .title-menu{--ink-d:2.05s}
   .title-menu-main{gap:8px}
   .title-menu .brush-btn:not(.title-subbtn){padding:10px 34px 9px;min-width:148px}
   .title-menu .brush-btn:not(.title-subbtn) .bb-text{font-size:24px}
-  .title-menu .title-subbtn{padding:6px 6px 5px;min-height:38px}
+  .title-menu .title-subbtn{padding:6px 6px 5px;min-height:44px}
   .title-menu .title-subbtn .bb-text{font-size:16px}
 }
 
@@ -1425,7 +1425,7 @@ html[data-motion="lite"] .qi-ink,html[data-fx="thin"] .qi-ink{display:none}
 .item-use.price small{font-family:var(--f-body);font-size:11px;letter-spacing:.12em;color:var(--ink2)}
 .mkt-buy{display:flex;align-items:center;gap:6px;flex:none}
 .qty{display:flex;align-items:center;gap:2px}
-.qty-btn{width:28px;height:28px;border:1px solid rgba(27,24,20,.35);border-radius:2px;color:var(--ink);font-size:16px;line-height:1}
+.qty-btn{box-sizing:border-box;flex:none;width:40px;height:40px;min-width:40px;min-height:40px;border:1px solid rgba(27,24,20,.35);border-radius:2px;color:var(--ink);font-size:16px;line-height:1}
 .qty-n{min-width:1.4em;text-align:center;font-weight:400;font-size:13px;color:var(--ink)}
 .item-use.price.arm,.item-use.price[data-arm="1"]{box-shadow:inset 0 0 0 1px var(--zhu)}
 .item-use:disabled{opacity:.42;color:var(--ink3);background-image:var(--brush-img-ink-l)}
@@ -2587,14 +2587,14 @@ body.sheet #intro .drop,body.sheet #intro .bloom{animation:none!important;opacit
 @media (max-width:360px){
   .title-menu{padding:0 12px}
   .title-menu-sub{width:min(100%,300px);max-width:100%;gap:6px 14px}
-  .title-menu .brush-btn.title-subbtn{padding:7px 6px 6px;min-height:40px}
+  .title-menu .brush-btn.title-subbtn{padding:7px 6px 6px;min-height:44px}
   .title-menu .title-subbtn .bb-text{font-size:16px;letter-spacing:.1em;padding-left:.1em}
   .title-menu .title-subbtn small{font-size:11px;letter-spacing:.02em}
   /* 320 宽放不下「声」和两列笔触，把声抬到菜单之上、松枝之间 */
   body[data-screen=title] #audio-dock{bottom:calc(var(--sab) + 168px)}
 }
 @media (max-height:700px) and (max-width:719px){
-  .title-menu .brush-btn.title-subbtn{padding:6px 6px 5px;min-height:38px}
+  .title-menu .brush-btn.title-subbtn{padding:6px 6px 5px;min-height:44px}
   .title-menu .title-subbtn .bb-text{font-size:16px}
   .title-menu .title-subbtn small{font-size:11px}
   .title-menu-sub{gap:6px 16px}
