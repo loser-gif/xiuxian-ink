@@ -267,7 +267,7 @@ EVENTS.push(
     choices: () => [
       { label: '亲审，不为偏袒', act: () => ({ text: '你把案卷翻到天明，判得不漂亮，却让两边都无话可说。下山时，外门弟子朝你拱手。', fx: { flag: 'peak_duty', xj: 6, gx: 40 } }) },
       { label: '交给执事堂，自去闭关', act: () => ({ text: '你把金令一推：「你们裁。」闭关三月，出关时山门已贴了新榜——你的名字小了一寸，心倒静了。', fx: { flag: 'peak_duty', xj: 3, gx: -20 } }) },
-      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案一角。堂上噤若寒蝉。此后峰会之上，再无人敢虚与委蛇、暗藏机锋——只是有人背后私语：掌门锋芒太盛，山门未免冷薄了些。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
+      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案一角，堂上一下子静了。此后峰会上再没人敢阴阳怪气——只是背后有人说：掌门太锋利，山门也冷了些。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
     ] },
   { id: 'peak_duty_dx', title: '药谷冬疫', seal: '疫', w: 4.5, once: true, rm: [4, 4],
     cond: s => s.sect && s.sect.org === 'dx' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
