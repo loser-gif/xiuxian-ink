@@ -5,7 +5,7 @@
 - 纯静态：`index.html` + `css/` + `js/` + `fonts/`，无需构建
 - 字体：霞鹜文楷、马善政楷书、志莽行书（均为 OFL 开源字体，已自托管子集）
 - 存档：浏览器 localStorage
-- 官网：[`site/`](site/)（介绍、截图、玩法、近讯）。游戏当前缓存号为 `?v=107`。
+- 官网：[`site/`](site/)（介绍、截图、玩法、近讯）。游戏当前缓存号为 `?v=108`。
 
 接手开发请先读 [HANDOVER.md](HANDOVER.md)（完整交接）。给编程工具自动加载的短规矩在 [AGENTS.md](AGENTS.md)，`CLAUDE.md` 与 `.cursorrules` 是同一份。
 

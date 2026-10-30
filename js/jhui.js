@@ -301,7 +301,7 @@ function makeJHUI(G) {
   function sellPage(refresh) {
     const w = document.createElement('div'); w.className = 'mkt-list';
     const keys = Object.keys(G.S.items).filter(k => G.S.items[k] > 0 && ITEM_VAL[k]);
-    if (!keys.length) w.innerHTML = '<div class="empty">囊中无可售之物</div>';
+    if (!keys.length) w.innerHTML = '<div class="empty">囊中无可售</div>';
     keys.forEach(k => {
       const p = J.sellPrice(G.S, k), row = document.createElement('div'); row.className = 'item mkt-row';
       row.innerHTML = `<div class="item-info"><div class="item-name">${k}<em>×${G.S.items[k]}</em>${trend(k)}</div><div class="item-desc"></div></div>
