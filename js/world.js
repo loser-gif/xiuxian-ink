@@ -152,7 +152,7 @@ EVENTS.push(
         return r > 0.85 ? { text: '刀锋落下，石皮剥开，一道赤光冲起——竟是一块成色极好的火精石。围观的人倒吸一口凉气。', fx: { ls: -p, lsRaw: true, item: { '火精石': 2 } } }
           : r > 0.45 ? { text: '开出来一小块寒铁，不亏不赚。摊主笑眯眯地说：“道友手气不错。”', fx: { ls: -p, lsRaw: true, item: { '寒铁': 1 } } }
           : { text: '一刀下去，满地石屑，里头空空如也。摊主摊手：“赌石嘛。”', fx: { ls: -p, lsRaw: true, xj: -1 } }; } },
-      { label: '看别人开', sub: '', act: () => ({ text: '你立于街角看了一下午。刀起石落，有人癫狂大喜，有人失魂落魄。求仙与赌石，原皆是拿命数博前程。你摇了摇头，拂袖悄然离去。', fx: { xj: 3 } }) },
+      { label: '看别人开', sub: '', act: () => ({ text: '你在街角看了一下午。刀起石落，有人狂喜，有人枯坐。你摇摇头，转身走了。', fx: { xj: 3 } }) },
     ]; } },
   { id: 'su_recipe', title: '丹房传方', seal: '丹', w: 8, cond: s => Core.npcAlive(s, 'su') && s.npc.su.a >= 30 && s.dan && !(s.dan.rec.includes('huichun') && s.dan.rec.includes('qingxin')),
     text: () => '苏晚晴将泛黄纸卷推至案前，字迹娟秀：“师尊传下的旧方。你行迹不定，备着总好过硬撑。”',

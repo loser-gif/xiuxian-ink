@@ -405,7 +405,7 @@ const InkGL = (() => {
       if (b.w > 1 && !b.host.offsetParent) { b.cv.width = b.cv.height = 1; b.w = b.h = 1; b.drawn = false; }
     }
   }
-  let titleClock = 0;
+  let titleClock = 0, titleWake = 0;
   function titleQuiet() {
     if (document.body.dataset.screen !== 'title') { titleClock = 0; return false; }
     if (!document.body.classList.contains('go') || document.body.classList.contains('hold')) return true;
@@ -472,10 +472,18 @@ const InkGL = (() => {
     if (document.hidden) return;
     if (thinNow()) return;
     const prewarm = needsTitlePrewarm();
-    if (!prewarm && (titleQuiet() || !lively())) { B.raf = requestAnimationFrame(tick); return; }
+    if (!prewarm && titleQuiet()) {
+      // 静候结束只唤醒一次；尚未开场时由 body 状态变化唤醒。
+      if (titleClock && !titleWake && document.body.classList.contains('go') && !document.body.classList.contains('hold')) {
+        const wait = document.body.classList.contains('intro-done') ? 4300 : 6400;
+        titleWake = setTimeout(() => { titleWake = 0; start(); }, Math.max(1, wait - (performance.now() - titleClock)));
+      }
+      return;
+    }
+    if (!prewarm && !lively()) return;
     release();
     const vis = B.list.filter(visible);
-    if (!vis.length) { B.raf = requestAnimationFrame(tick); return; }
+    if (!vis.length) return;
     B.raf = requestAnimationFrame(tick);
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
     const stride = matchMedia('(pointer: coarse)').matches ? 6 : 3;
@@ -487,7 +495,7 @@ const InkGL = (() => {
       renderBlot(b, reduced() ? 0 : t);
     }
   }
-  function start() { if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick); }
+  function start() { livelyAt = 0; if (B.ok && !B.raf) B.raf = requestAnimationFrame(tick); }
   function press(btn, on) {
     const host = btn && btn.querySelector('.live'); if (!host || !host.__live) return;
     host.__live.surgeT = on ? 1 : 0; start();
@@ -645,8 +653,12 @@ const InkGL = (() => {
         if (window.requestIdleCallback) requestIdleCallback(run, { timeout: 700 });
         else init.t = setTimeout(run, 180);
       }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'data-screen'] });
+      new MutationObserver(start).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      document.addEventListener('animationend', start);
+      document.addEventListener('transitionend', start);
       document.addEventListener('visibilitychange', start);
       addEventListener('resize', start);
+      document.addEventListener('scroll', start, { capture: true, passive: true });
       const on = e => { const b = e.target.closest && e.target.closest('.brush-btn,.act'); if (b && !b.disabled) { press(b, true); B.pressed = b; } };
       const off = () => { if (B.pressed) { press(B.pressed, false); B.pressed = null; } };
       document.addEventListener('pointerdown', on, { passive: true });

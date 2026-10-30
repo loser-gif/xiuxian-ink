@@ -382,7 +382,7 @@ EVENTS.push(
   { id: 'su_fire', title: '炸炉', w: 6, rm: [0, 3], once: true, cond: s => met(s, 'su'), seal: '苏',
     text: () => '一声闷响，丹房的屋顶掀了半边。浓烟里传来苏晚晴的咳嗽声。众人都在往外跑，只有你站在原地。',
     choices: s => [
-      { label: '冲进烟里', sub: '负伤', act: () => ({ text: '你在倒塌的药架下找到她，硬以脊背抗住了一根焦灼的横梁。脱险时外袍焦黑大半。她眼角带泪替你涂抹清凉药膏，双手轻颤，咬着唇低斥你不要命，语带哽咽。', fx: { inj: 3, npc: { su: 25 }, xj: 4, karma: { id: 'su_vow', years: 14 } } }) },
+      { label: '冲进烟里', sub: '负伤', act: () => ({ text: '你钻进烟里，用背扛住烧着的横梁把她拖出来，外袍焦了一半。她红着眼给你上药，手一直抖，咬着嘴唇骂你不要命。', fx: { inj: 3, npc: { su: 25 }, xj: 4, karma: { id: 'su_vow', years: 14 } } }) },
       { label: '去唤长老来救', act: () => ({ text: '长老们赶来，引水灭火，救出了她。她伤得不重，只是此后见了你，笑容里总隔着一层什么。', fx: { npc: { su: -6 } } }) },
     ] },
   { id: 'su_lamp', title: '灯下', w: 6, rm: [1, 4], cond: s => met(s, 'su') && aff(s, 'su') >= 40, seal: '苏',
