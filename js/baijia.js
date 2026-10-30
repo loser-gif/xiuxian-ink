@@ -29,11 +29,11 @@ Object.assign(ORGS, {
 /* 青冥补 mentor 已在 sect.js；拜山帖选项 */
 const BAISHAN = [
   { id: 'qm', seal: '宗', name: '青冥宗', sub: '剑修名门 · 斗法破境', prose: '云海之上，百峰如剑。青冥收人，先看锋芒——敢不敢把一生押在一柄剑上。' },
-  { id: 'dx', seal: '丹', name: '丹霞谷', sub: '丹道一脉 · 炉火顿悟', prose: '谷中丹烟终年不散。丹霞收人，先看心性——炉火守不住，命也难。' },
+  { id: 'dx', seal: '丹', name: '丹霞谷', sub: '丹道一脉 · 炉火顿悟', prose: '谷中丹烟终年不散。丹霞收人，先看心性——守得住一炉火，才守得住一条命。' },
   { id: 'yy', seal: '幽', name: '幽荧殿', sub: '阴修鬼道 · 速成险途', prose: '殿门无匾，只有一盏幽荧。收人不论灵根清浊，只问：你怕不怕黑。' },
   { id: 'xj', seal: '机', name: '玄机楼', sub: '阵器双修 · 机缘光阴', prose: '楼中齿轮昼夜轻鸣。玄机收人，先看手稳——布阵的人，也要敢把自己布进去。' },
   { id: 'sx', seal: '盟', name: '散修盟', sub: '无门无派 · 俸厚脉薄', prose: '坊市角落里的铁令。散修盟不看灵根，只看本事——也看你愿不愿，与一群野修同桌吃饭。' },
-  { id: 'free', seal: '游', name: '无门', sub: '逍遥散修 · 游历机缘更盛', prose: '山门之外，云海翻涌。你也可以谁都不拜——青石作枕，路在脚下。' },
+  { id: 'free', seal: '游', name: '无门', sub: '逍遥散修 · 游历机缘更盛', prose: '山门之外，云海翻涌。你也可以谁都不拜——从此青石作枕，天地为炉。' },
 ];
 
 const BAISHAN_WEI = BAISHAN.filter(b => b.id === 'sx' || b.id === 'free');
@@ -267,7 +267,7 @@ EVENTS.push(
     choices: () => [
       { label: '亲审，不为偏袒', act: () => ({ text: '你把案卷翻到天明，判得不漂亮，却让两边都无话可说。下山时，外门弟子朝你拱手。', fx: { flag: 'peak_duty', xj: 6, gx: 40 } }) },
       { label: '交给执事堂，自去闭关', act: () => ({ text: '你把金令一推：「你们裁。」闭关三月，出关时山门已贴了新榜——你的名字小了一寸，心倒静了。', fx: { flag: 'peak_duty', xj: 3, gx: -20 } }) },
-      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案一角，堂上一下子静了。此后峰会上再没人敢阴阳怪气——只是背后有人说：掌门太锋利，山门也冷了些。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
+      { label: '以剑断案，立威', act: () => ({ text: '你一剑削断公案一角。堂上噤若寒蝉。此后峰会之上，再无人敢虚与委蛇、暗藏机锋——只是有人背后私语：掌门锋芒太盛，山门未免冷薄了些。', fx: { flag: 'peak_duty', xj: -2, wx: 1, gx: 20 } }) },
     ] },
   { id: 'peak_duty_dx', title: '药谷冬疫', seal: '疫', w: 4.5, once: true, rm: [4, 4],
     cond: s => s.sect && s.sect.org === 'dx' && s.sect.rank >= 6 && s.flags.peak_ask && !s.flags.peak_duty,
