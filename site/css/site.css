@@ -143,9 +143,14 @@ a { color: inherit; }
   letter-spacing: .12em;
   text-indent: .12em;
 }
-.go-small{overflow:visible}
-.go-small .ink { inset: -6px -28px -8px -12px; }
-.keep { white-space: nowrap; }
+.go-small .ink { inset: -6px -16px -8px -12px; }
+.keep {
+  display: inline-block;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-break: strict;
+}
 @media (prefers-reduced-motion: no-preference) {
   .go .ink { transition: transform .35s var(--ease); }
   .go:hover .ink { transform: scale(1.04, 1.14); }
@@ -472,7 +477,7 @@ a { color: inherit; }
     border-left: 1px solid var(--line);
   }
   .wrap { width: min(1040px, calc(100% - 72px)); }
-  .top { padding-left: 28px; padding-right: max(48px, calc(28px + env(safe-area-inset-right))); }
+  .top { padding-left: 28px; padding-right: max(56px, calc(36px + env(safe-area-inset-right))); }
 }
 @media (min-width: 900px) {
   body { font-size: 18px; }
