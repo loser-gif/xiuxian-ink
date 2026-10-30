@@ -1004,6 +1004,7 @@ body:not([data-screen=title]) .boat-track{opacity:0;transition:opacity 1s}
 .qi-ink.on{opacity:1}
 .bar-xw.gain .bar-flow::before{animation:flow 1.3s var(--ease-silk) 1}
 .bar-xw.gain .bar-tip{animation:bead 1.3s var(--ease-silk) 1}
+html[data-motion="lite"] .qi-ink,html[data-fx="thin"] .qi-ink{display:none}
 @media (prefers-reduced-motion:reduce){.qi-ink{display:none}.log .entry:last-child{animation:fadeIn .6s ease both!important}}
 /* 开卷下的小字：在活墨上也要清楚 */
 .brush-btn:not(.light):not(#btn-continue) small{opacity:1;color:#f7f0dd;font-size:11.5px;text-shadow:0 0 3px rgba(12,10,8,.9),0 0 8px rgba(12,10,8,.6)}
