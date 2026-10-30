@@ -3,6 +3,7 @@
 const InkGL = (() => {
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
+  const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
   const NOISE = `
     precision highp float;
     float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -455,8 +456,7 @@ const InkGL = (() => {
   }
   let livelyAt = 0, livelyOk = true;
   function lively() {
-    const root = document.documentElement;
-    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return false;
+    if (thinNow()) return false;
     const now = performance.now();
     if (now - livelyAt < 200) return livelyOk;
     livelyAt = now;
@@ -470,8 +470,7 @@ const InkGL = (() => {
   function tick(now) {
     B.raf = 0;
     if (document.hidden) return;
-    const root = document.documentElement;
-    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) return;
+    if (thinNow()) return;
     const prewarm = needsTitlePrewarm();
     if (!prewarm && (titleQuiet() || !lively())) { B.raf = requestAnimationFrame(tick); return; }
     release();
@@ -559,7 +558,7 @@ const InkGL = (() => {
   // host：卷轴纸面；onSink 在墨开始沉入纸中时调用（此时写下日志）
   function qi(host, { cy = .5, onSink, at } = {}) {
     return new Promise(res => {
-      if (reduced() || !qiInit(host)) { onSink && onSink(); return res(false); }
+      if (thinNow() || !qiInit(host)) { onSink && onSink(); return res(false); }
       const cv = Q.cv, gl = Q.gl, P = Q.P;
       const W = host.clientWidth, H = host.clientHeight, k = Math.min(devicePixelRatio || 1, 2) * .4;
       cv.width = Math.max(8, Math.round(W * k)); cv.height = Math.max(8, Math.round(H * k));
@@ -621,16 +620,16 @@ const InkGL = (() => {
       gl.uniform2f(P.U.uRes, cv.width, cv.height); gl.uniform1f(P.U.uT, t); gl.uniform1f(P.U.uK, kk);
       gl.uniform1f(P.U.uState, st); gl.uniform1f(P.U.uSeed, seed); gl.uniform1f(P.U.uD, opt.size || .5);
       draw(gl, P);
-      if (!reduced() && !frozen && !document.hidden) F.raf = requestAnimationFrame(frame);
+      if (!thinNow() && !frozen && !document.hidden) F.raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!F.raf) F.raf = requestAnimationFrame(frame); };
     // 静止画面：减弱动效时，或截图时由 at 指定
-    if (reduced()) frozen = { t: 2000, k: 2000 };
+    if (thinNow()) frozen = { t: 2000, k: 2000 };
     kick();
     const onVis = () => { if (!document.hidden) kick(); };
     document.addEventListener('visibilitychange', onVis);
     return {
-      set(name) { st = FSTATE[name] ?? 0; s0 = performance.now(); frozen = reduced() ? { t: 2000, k: name === 'boom' ? 3000 : 2400 } : null; kick(); },
+      set(name) { st = FSTATE[name] ?? 0; s0 = performance.now(); frozen = thinNow() ? { t: 2000, k: name === 'boom' ? 3000 : 2400 } : null; kick(); },
       at(tMs, kMs) { frozen = { t: tMs, k: kMs }; kick(); },
       stop() { gen = -1; F.gen++; cancelAnimationFrame(F.raf); F.raf = 0; document.removeEventListener('visibilitychange', onVis); cv.width = cv.height = 1; cv.remove(); },
     };
