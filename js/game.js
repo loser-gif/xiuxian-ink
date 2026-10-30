@@ -952,8 +952,8 @@ function newGame(name, r, choice, originId) {
   let sectLine;
   if (free) {
     sectLine = r.lg.id === 'wei'
-      ? `测得伪灵根，各宗门前无立锥之地。你折叠拜山帖，独自往深山里去了——无门无派，也好。`
-      : `测得${lgDesc}。你拜了山帖，却在山门外止步：此生不入任何门户。云海翻涌，像在鼓掌，也像在叹气。`;
+      ? `测得伪灵根，宗门前无立锥之地。你折起拜山帖，往深山去——无门无派，也好。`
+      : `测得${lgDesc}。你拜了山帖，却在山门外止步：此生不入任何门户。云海翻涌，不置可否。`;
   } else if (o) {
     const rank = Core.rankName(S);
     const gf0 = S.gf && GONGFA[S.gf] ? GONGFA[S.gf].name : '入门心法';
@@ -984,7 +984,7 @@ function newGame(name, r, choice, originId) {
     pushLog({ title: '奈何', text: line, tags, cls: 'gold' });
   } else if (legacy) {
     const tags = S._legacyTags || [{ t: '前世残念', c: 'gold' }];
-    pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags, cls: 'gold' });
+    pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑上刻着陌生名字。醒来时，有些道理像早已懂得。', tags, cls: 'gold' });
     const bits = [];
     if (legacy.cave) bits.push('一枚旧钥');
     if (legacy.auxPage) bits.push('半页残卷');
@@ -1077,8 +1077,8 @@ async function openBaishan(roll) {
     conf0.classList.add('dim');
     const h0 = $('#baishan-hint'); if (h0) h0.textContent = '点选一家门户，再投帖';
     const lead = roll.lg.id === 'wei'
-      ? '伪灵根不为大多数宗门所收。帖上只余散修盟与无门两途——选一条，活下去。'
-      : '灵根已定。山海之间，数家门户张帖招徒。一帖既投，便是数年乃至数十年的路——慎择。';
+      ? '伪灵根，多数宗门不收。帖上只余散修盟，与无门——选一条。'
+      : '灵根已定。山下几家门户张着招徒帖。一帖投出，便是数年乃至数十年——慎择。';
     inkWrite($('#baishan-lead'), lead, { immediate: true, step: 22 });
     let selected = null;
     list.forEach((b, i) => {
@@ -1359,7 +1359,7 @@ function render() {
   else if (S.karma && (S.karma.seeds || []).some(k => S.months >= k.due && !S.flags['karma_done_' + k.id])) { msg = '因果将至 · 游历或逢回响'; st.classList.add('zhu'); }
   else if (S.flags && S.flags.tideDue) { msg = '天下有变 · 出山或可遇见'; st.classList.add('zhu'); }
   else if (S.flags && S.flags.guide && (S.acts | 0) < 1) msg = '先吐纳一息，或出山看看';
-  else if ((S.flags && S.flags.cultRun | 0) >= 6) { msg = '闭关已久 · 山外或有机缘'; st.classList.add('zhu'); }
+  else if ((S.flags && S.flags.cultRun | 0) >= 6) { msg = '闭关已久 · 山外或可一走'; st.classList.add('zhu'); }
   else if (S.gf && GONGFA[S.gf].mo) msg = `魔功在身 · ${GONGFA[S.gf].name}`;
   else {
     const bits = [];
@@ -1449,7 +1449,7 @@ function renderSide() {
   const items = Object.entries(S.items).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
   const eqLine = S.eq && S.eq.weapon ? `<span class="sd-row">佩 · ${esc(S.eq.weapon)}</span>` : '';
   $('#sd-bag').innerHTML = (eqLine || items.length) ? `${eqLine}${items.length ? `<ul class="sd-list">${items.slice(0, 4).map(([k, n]) => `<li><span>${esc(k)}</span><i>${cn(n)}</i></li>`).join('')}</ul>` : ''}${items.length > 4 ? `<span class="sd-more">另有${cn(items.length - 4)}种</span>` : ''}`
-    : '<span class="sd-empty">行囊空空</span>';
+    : '<span class="sd-empty">行囊空着</span>';
   const loc = typeof LOCS !== 'undefined' && LOCS.find(l => l.id === S.loc);
   const notes = [];
   if (S.court && S.court.rank >= 0) notes.push(`朝 · ${courtRankName(S)}　兵${cn(S.court.bing)} 民${cn(S.court.min)} 道${cn(S.court.dao)}`);
@@ -1602,7 +1602,7 @@ function act(kind) {
 const GUIDES = [
   { id: 'g1', min: 0, title: '晨课', seal: '息',
     text: '入山第一夜，窗纸被风吹得轻轻响。执事只叮过一句：吐纳，是一季的呼吸；闭关，是一年的灯火。修为走到头时，卷上会浮出一枚朱红的「破境」。',
-    ok: '先去吐纳', okText: '你吸了一口气。丹田里有一点暖，像一粒还没点燃的火星。' },
+    ok: '先去吐纳', okText: '你吸了一口气。丹田里有一点暖。' },
   { id: 'g2', min: 2, title: '旧囊', seal: '囊',
     text: '你摸到袖中那只旧囊。丹药、残卷、兵器，都收在底下那枚「行囊」里——服下，佩上，或只是看看。有些东西不到时候，吃了也无益。',
     ok: '记下了', okText: '你把囊口系紧。东西还在，路也还在。' },
@@ -1622,7 +1622,7 @@ function guideEvent(g) {
     text: () => guideBody(g),
     choices: () => [
       { label: g.ok, sub: '', act: () => ({ text: g.okText, fx: { xj: 1 } }) },
-      { label: '这些我已知', sub: '不再提示', skipAll: true, act: () => ({ text: '你拱了拱手。后头没说完的话，山风替你吹散了。', fx: {} }) },
+      { label: '这些我已知', sub: '不再提示', skipAll: true, act: () => ({ text: '你拱了拱手。后头的话，山风替你收了。', fx: {} }) },
     ],
   };
 }
@@ -1857,7 +1857,7 @@ function resultChip(tags, text) {
   const html = (tags || []).map(x => `<span class="${x.c || ''}">${esc(x.t)}</span>`).join('');
   if (html) return html;
   const body = String(text || '').replace(/\s/g, '');
-  return body ? '<span>有所感</span>' : '<span>无事发生</span>';
+  return body ? '<span>有所感</span>' : '<span>静</span>';
 }
 function choose(ev, c, btn, evText, titleText) {
   const box = $('#ev-choices'); if (box.classList.contains('chosen')) return;
@@ -2317,7 +2317,7 @@ function sectHome() {
 function sectTasks() {
   const w = document.createElement('div'); w.className = 'tasks';
   const ms = Core.ensureMissions(S); save();
-  if (!ms.length) { w.innerHTML = '<div class="empty">执事堂案上暂无新令<br><small>榜一季一换，不妨先闭关或出山</small></div>'; return w; }
+  if (!ms.length) { w.innerHTML = '<div class="empty">执事堂案上暂无新令<br><small>榜一季一换，不妨先闭关，或出山</small></div>'; return w; }
   ms.forEach(mi => {
     const info = Core.missionInfo(S, mi);
     const c = document.createElement('div'); c.className = 'task r' + Math.min(3, Math.floor(info.risk / 0.12));
@@ -2657,7 +2657,7 @@ function bagPage() {
   }
   const keys = Object.keys(S.items).filter(k => S.items[k] > 0);
   if (!keys.length && !(S.eq && S.eq.weapon)) {
-    wrap.insertAdjacentHTML('beforeend', '<div class="empty bag-empty"><b>行囊空空</b><span>唯有清风两袖</span></div>');
+    wrap.insertAdjacentHTML('beforeend', '<div class="empty bag-empty"><b>行囊空着</b><span>袖里只有风</span></div>');
   }
   keys.forEach(k => {
     const it = document.createElement('div'); it.className = 'item';
@@ -3674,7 +3674,7 @@ function openGoalPicker() {
     const conf = $('#goal-confirm'); conf.disabled = true;
     const hint = $('#goal-hint'); if (hint) hint.textContent = '择一愿。闭关时，或可再改';
     let selected = S.life && S.life.goal;
-    inkWrite(lead, '入山之前，先问自己一句。此生所求，不必告诉别人。卷终时，纸会记得你有没有做到。', { immediate: true, step: snappy() ? 8 : 18 });
+    inkWrite(lead, '入山之前，先问自己一句。此生所求，不必告人。卷终时，纸会记得。', { immediate: true, step: snappy() ? 8 : 18 });
     Life.GOALS.forEach((g, i) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'path-opt' + (selected === g.id ? ' on' : '');
@@ -3699,7 +3699,7 @@ function openGoalPicker() {
       pc.classList.add('leave');
       await sleep(snappy() ? 180 : 420);
       pc.hidden = true; pc.className = 'path-cer goal-cer';
-      if (g) pushLog({ title: '此生所求', text: `你在心里写下一行很小的字：${g.name}。${g.hint}`, cls: 'gold' });
+      if (g) pushLog({ title: '此生所求', text: `你在心里落下很小一行：${g.name}。${g.hint}`, cls: 'gold' });
       render(); save();
       resolve(g);
       maybeGuide();
@@ -3925,7 +3925,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=107', 'img/open-glyph.png?v=107', 'img/open-seal-logo.png?v=107'];
+  const urls = ['img/open-plate.png?v=108', 'img/open-glyph.png?v=108', 'img/open-seal-logo.png?v=108'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4552,8 +4552,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=107'),
-      loadInk('img/open-glyph.png?v=107')
+      loadInk('img/open-plate.png?v=108'),
+      loadInk('img/open-glyph.png?v=108')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4591,7 +4591,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=107').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=108').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
