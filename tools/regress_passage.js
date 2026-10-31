@@ -24,7 +24,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
   }
   async function done(p, screen) {
     await p.waitForFunction(screen => document.body.dataset.screen === screen && !document.body.classList.contains('paper-turning'), screen);
-    return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-scene,.paper-word,.paper-guard,.paper-recall').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
+    return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-leave,.paper-scene,.paper-word,.paper-guard,.paper-recall').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
   }
   async function seed(p, name = '顾长生', goal = true) {
     await p.locator('#inp-name').fill(name);
@@ -49,6 +49,9 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
         await p.waitForTimeout(100);
         const snap=await p.evaluate(()=>({copies:document.querySelectorAll('.paper-scene canvas').length,originals:document.querySelectorAll('#scenery canvas').length,dupes:[...document.querySelectorAll('[id]')].map(e=>e.id).filter((id,i,a)=>a.indexOf(id)!==i),mask:getComputedStyle(document.querySelector('.paper-scene')).maskImage,locked:document.querySelector('#app').getAttribute('aria-busy')}));
         check(label+'-scenery-preserved',snap.copies===snap.originals&&snap.copies>0&&!snap.dupes.length&&snap.locked==='true'&&snap.mask.startsWith('url('),{copies:snap.copies,originals:snap.originals,dupes:snap.dupes,locked:snap.locked,masked:snap.mask.startsWith('url(')});
+        await p.waitForFunction(()=>document.body.dataset.screen==='create');
+        const cross=await p.evaluate(()=>{const old=document.querySelector('#scr-title'),next=document.querySelector('#scr-create');return {leave:old.classList.contains('paper-leave'),hidden:old.hidden,nextHidden:next.hidden,bg:getComputedStyle(old).backgroundColor};});
+        check(label+'-overlay-covers-switch',cross.leave&&!cross.hidden&&!cross.nextHidden&&cross.bg!=='rgba(0, 0, 0, 0)',cross);
         const opened=await done(p,'create');
         check(label+'-open-completes',Date.now()-start>=2400&&opened.paper&&!opened.washes&&!opened.leftovers&&!opened.locked,opened);
         await seed(p,w===320?'南宫长生听雨':'南宫听雨');
