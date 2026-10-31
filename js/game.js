@@ -500,6 +500,7 @@ async function paperPassage(id, ready) {
     if (!el || stopped) return;
     const animation = el.animate(frames, { duration, delay, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'both' });
     animations.push(animation);
+    return animation;
   };
   const arrive = (el, delay, duration = 800) => animate(el, [{ opacity: 0 }, { opacity: .22, offset: .35 }, { opacity: .78, offset: .72 }, { opacity: 1 }], duration, delay);
   const switchPage = () => {
@@ -508,6 +509,7 @@ async function paperPassage(id, ready) {
   };
   const guard = document.createElement('div'); guard.className = 'paper-guard'; guard.setAttribute('aria-hidden', 'true');
   const focusWasInside = previous.contains(document.activeElement);
+  const previousOpacity = previous.style.opacity;
   const scenery = $('#scenery'), sceneryStyle = scenery.style.cssText;
   const lookWatch = new MutationObserver(motion);
   document.body.appendChild(guard);
@@ -518,18 +520,35 @@ async function paperPassage(id, ready) {
   $('#app').setAttribute('aria-busy', 'true');
   try {
     if (full) {
-      try { scene = paperScene(); } catch (e) { stopped = true; }
+      try { scene = paperScene(); } catch (e) { /* Keep the basic fade if scenery cannot be copied. */ }
     }
     document.body.classList.add('paper-turning'); document.body.dataset.passage = mode;
     if (scene) {
       scenery.style.setProperty('visibility', 'hidden', 'important');
-      absorb = absorbPaper(scene, total - 150);
+      try { absorb = absorbPaper(scene, total - 150); } catch (e) { /* Opacity still carries the scenery away. */ }
       animate(scene, [{ opacity: 1 }, { opacity: .65, offset: .55 }, { opacity: 0 }], total - 100);
       const ink = previous.querySelector(mode === 'open' ? '#btn-new .bb-ink' : '#btn-continue .bb-ink');
       animate(ink, [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }], 350);
-      animate(previous, [{ opacity: 1 }, { opacity: 0 }], lead + 120);
     }
-    await wait(lead);
+    // Finish the departing screen before setScreen applies display:none. Safari
+    // can miss animation completion; a bounded wait still commits the final state.
+    const departure = animate(previous, [{ opacity: 1 }, { opacity: 0 }], lead + 120);
+    if (departure) {
+      let timeout;
+      try {
+        await Promise.race([
+          departure.finished.catch(() => {}), interrupted,
+          new Promise(resolve => { timeout = setTimeout(resolve, lead + 400); })
+        ]);
+      } finally { clearTimeout(timeout); }
+      previous.style.opacity = '0';
+      departure.cancel();
+      // Two callbacks allow a painted transparent frame before hiding the DOM.
+      await Promise.race([
+        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+        sleep(100), interrupted
+      ]);
+    } else await wait(lead);
     switchPage();
     scenery.style.cssText = sceneryStyle;
     if (!stopped) {
@@ -558,7 +577,10 @@ async function paperPassage(id, ready) {
     }
   } finally {
     switchPage();
+    // Pin the departing layer before cancel removes the WAAPI fill on WebKit.
+    if (scene) scene.style.opacity = '0';
     animations.forEach(a => a.cancel());
+    previous.style.opacity = previousOpacity;
     if (absorb) absorb(); if (recall) recall.remove();
     if (scene) scene.remove(); guard.remove();
     scenery.style.cssText = sceneryStyle;
@@ -3931,7 +3953,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=114', 'img/open-glyph.png?v=114', 'img/open-seal-logo.png?v=114'];
+  const urls = ['img/open-plate.png?v=116', 'img/open-glyph.png?v=116', 'img/open-seal-logo.png?v=116'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4558,8 +4580,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=114'),
-      loadInk('img/open-glyph.png?v=114')
+      loadInk('img/open-plate.png?v=116'),
+      loadInk('img/open-glyph.png?v=116')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4597,7 +4619,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=114').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=116').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
