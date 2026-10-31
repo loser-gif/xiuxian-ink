@@ -4506,3 +4506,18 @@ html[data-theme="night"] #btn-continue small{
 /* v107 · 日志按句意留行；过长的无标点文字仍可在窄屏回行。 */
 #scr-main .entry-text,
 #scr-main .entry-title{word-break:keep-all;overflow-wrap:break-word}
+
+/* v118: keep an opaque departing paper above the incoming WebKit layer. */
+.paper-leave{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:60 !important;
+  margin:0 !important;
+  max-width:none !important;
+  pointer-events:none !important;
+  background:var(--paper);
+}
+body.paper-turning #scr-main{
+  -webkit-transform:translateZ(0);
+  transform:translateZ(0);
+}
