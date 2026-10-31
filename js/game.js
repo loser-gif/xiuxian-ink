@@ -474,12 +474,13 @@ function absorbPaper(layer, duration) {
 async function paperPassage(id, ready) {
   const previous = $('#scr-' + curScreen), next = $('#scr-' + id);
   const mode = id === 'create' ? 'open' : curScreen === 'title' ? 'resume' : 'name';
-  const full = !splashSoft() && !document.hidden && typeof previous.animate === 'function';
-  const total = mode === 'open' ? 2600 : mode === 'resume' ? 1900 : 2100;
-  const lead = mode === 'open' ? 560 : 380;
+  const canFade = !document.hidden && typeof previous.animate === 'function';
+  const full = !splashSoft() && canFade;
+  const total = full ? (mode === 'open' ? 2600 : mode === 'resume' ? 1900 : 2100) : 400;
+  const lead = full ? (mode === 'open' ? 560 : 380) : 60;
   const animations = [], keys = new Set();
   let absorb = null, recall = null;
-  let scene = null, switched = false, stopped = !full, active = true, release;
+  let scene = null, switched = false, stopped = false, active = true, release;
   const interrupted = new Promise(resolve => { release = resolve; });
   const stop = () => { stopped = true; release(); };
   const wait = ms => stopped ? Promise.resolve() : Promise.race([sleep(ms), interrupted]);
@@ -497,7 +498,7 @@ async function paperPassage(id, ready) {
   const keyup = e => { keys.delete(e.code); if (!active && !keys.size) unbindKeys(); };
   const blur = () => { keys.clear(); if (!active) unbindKeys(); else stop(); };
   const animate = (el, frames, duration, delay = 0) => {
-    if (!el || stopped) return;
+    if (!el || stopped || !canFade) return;
     const animation = el.animate(frames, { duration, delay, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'both' });
     animations.push(animation);
     return animation;
@@ -505,11 +506,14 @@ async function paperPassage(id, ready) {
   const arrive = (el, delay, duration = 800) => animate(el, [{ opacity: 0 }, { opacity: .22, offset: .35 }, { opacity: .78, offset: .72 }, { opacity: 1 }], duration, delay);
   const switchPage = () => {
     if (switched) return;
+    // Hide the whole incoming page, including paper and rollers, before render.
+    next.style.opacity = '0';
     switched = true; setScreen(id); if (ready) ready();
   };
   const guard = document.createElement('div'); guard.className = 'paper-guard'; guard.setAttribute('aria-hidden', 'true');
   const focusWasInside = previous.contains(document.activeElement);
   const previousOpacity = previous.style.opacity;
+  const nextOpacity = next.style.opacity;
   const scenery = $('#scenery'), sceneryStyle = scenery.style.cssText;
   const lookWatch = new MutationObserver(motion);
   document.body.appendChild(guard);
@@ -548,18 +552,25 @@ async function paperPassage(id, ready) {
         new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))),
         sleep(100), interrupted
       ]);
-    } else await wait(lead);
+    } else if (canFade) await wait(lead);
     switchPage();
     scenery.style.cssText = sceneryStyle;
-    if (!stopped) {
+    if (!stopped && canFade) {
+      // Let the rendered page settle while the paper is still transparent.
+      await Promise.race([
+        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+        sleep(100), interrupted
+      ]);
+      arrive(next, 0, full ? (mode === 'resume' ? 900 : 800) : 180);
       const opacity = getComputedStyle(scenery).opacity;
-      animate(scenery, [{ opacity: 0 }, { opacity }], total - lead);
-      if (id === 'create') {
+      animate(scenery, [{ opacity: 0 }, { opacity }], full ? total - lead : 180);
+      // Quiet motion keeps only the short whole-page fade.
+      if (full && id === 'create') {
         arrive(next.querySelector('.create-head'), 0, 850);
         arrive(next.querySelector('.create-body'), 240, 1100);
         animate(next.querySelector('.field-line'), [{ opacity: 0 }, { opacity: 1 }], 700, 950);
         arrive(next.querySelector('.create-actions'), 700, 750);
-      } else {
+      } else if (full) {
         arrive(next.querySelector('.hud'), mode === 'resume' ? 260 : 100, 900);
         arrive(next.querySelector('.journal-head'), 0);
         if (mode === 'resume' && S) {
@@ -573,14 +584,17 @@ async function paperPassage(id, ready) {
         entries.forEach((entry, i) => arrive(entry, mode === 'resume' && i === entries.length - 1 ? 30 : 300, 900));
         ['.play-masthead', '.play-tabs', '.side', '.margin-col', '.margin-note', '.status-line', '.trace-note', '.actions', '#btn-break'].forEach(sel => arrive(next.querySelector(sel), sel === '.actions' ? 600 : 420, 650));
       }
-      await wait(total - lead);
+      await wait(full ? total - lead : 180);
     }
   } finally {
     switchPage();
     // Pin the departing layer before cancel removes the WAAPI fill on WebKit.
     if (scene) scene.style.opacity = '0';
+    // Commit the incoming paper before removing WAAPI fill (WebKit).
+    next.style.opacity = '1';
     animations.forEach(a => a.cancel());
     previous.style.opacity = previousOpacity;
+    next.style.opacity = nextOpacity;
     if (absorb) absorb(); if (recall) recall.remove();
     if (scene) scene.remove(); guard.remove();
     scenery.style.cssText = sceneryStyle;
@@ -3953,7 +3967,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=116', 'img/open-glyph.png?v=116', 'img/open-seal-logo.png?v=116'];
+  const urls = ['img/open-plate.png?v=117', 'img/open-glyph.png?v=117', 'img/open-seal-logo.png?v=117'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4580,8 +4594,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=116'),
-      loadInk('img/open-glyph.png?v=116')
+      loadInk('img/open-plate.png?v=117'),
+      loadInk('img/open-glyph.png?v=117')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4619,7 +4633,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=116').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=117').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
