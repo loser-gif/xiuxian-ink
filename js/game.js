@@ -953,6 +953,7 @@ function newGame(name, r, choice, originId) {
     delete S.flags._legacyJoinText;
   }
   pushLog({ text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
+  if (!trial && S.flags.legacyNote) pushLog({ title: '轮回札记', text: S.flags.legacyNote, cls: 'breath' });
   if (legacy && legacy.thread) pushLog({ title: '前世绝笔', text: legacy.thread, cls: 'breath' });
   else if (S.flags && S.flags.threadText) pushLog({ title: '前世绝笔', text: S.flags.threadText, cls: 'breath' });
   save();
@@ -3338,6 +3339,10 @@ function showEnd(kind) {
     longEl.textContent = bio;
     longEl.hidden = !bio.trim();
   }
+  if (!isTrial && rec && rec.bridge && rec.bridge.words && longEl) {
+    longEl.textContent += '\n\n留印「' + rec.bridge.words.seal + '」。' + rec.bridge.words.verse;
+    longEl.hidden = false;
+  }
   const legObj = rec && rec.legacy;
   const carry = [];
   if (legObj) {
@@ -3897,7 +3902,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=132', 'img/open-glyph.png?v=132', 'img/open-seal-logo.png?v=132'];
+  const urls = ['img/open-plate.png?v=133', 'img/open-glyph.png?v=133', 'img/open-seal-logo.png?v=133'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4524,8 +4529,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=132'),
-      loadInk('img/open-glyph.png?v=132')
+      loadInk('img/open-plate.png?v=133'),
+      loadInk('img/open-glyph.png?v=133')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4563,7 +4568,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=132').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=133').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

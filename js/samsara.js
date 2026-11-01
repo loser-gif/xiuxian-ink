@@ -86,6 +86,13 @@ const Samsara = (() => {
   }
 
   /* ---------- 结生遗物 ---------- */
+  function legacyWords(ending) {
+    return ending === 'hongchen'
+      ? { seal: '留灯', verse: '门前的灯还亮着。说是飞升，怎么还听得见人间雨声？' }
+      : ending === 'ascend'
+        ? { seal: '辞山', verse: '山门已远，旧衣上的草籽却还带着。' }
+        : { seal: '余温', verse: '人走后，桌上还留着一只茶盏。后来的人替它拂去了灰。' };
+  }
   function buildLegacy(s, ending) {
     if (!s) return null;
     const leg = { v: 1, ending: ending || s.ending || 'zuohua', name: s.name, age: s.age | 0, realm: s.realm | 0, wx: 0 };
@@ -120,6 +127,7 @@ const Samsara = (() => {
     if (s.life && s.life.goal) leg.goal = s.life.goal;
     const place = (typeof LOC !== 'undefined' && s.loc && LOC[s.loc]) ? LOC[s.loc].name : '旧洞';
     if ((s.realm | 0) >= 1 || (s.age | 0) >= 48) leg.cave = { name: place, modest: (s.realm | 0) < 2 };
+    Object.assign(leg, legacyWords(leg.ending));
     rememberRelics(leg);
     return leg;
   }
@@ -161,6 +169,7 @@ const Samsara = (() => {
     if (!s || !legacy) return [];
     const tags = [];
     s.flags = s.flags || {};
+    if (legacy.verse) s.flags.legacyNote = '旧纸上有一枚「' + (legacy.seal || '余温') + '」印。' + legacy.verse;
     if (legacy.naihe) return applyNaihe(s, legacy, tags);
     s.flags.legacy = 1;
     const wxAdd = Math.min(2, legacy.wx | 0);
@@ -380,6 +389,7 @@ const Samsara = (() => {
       .map(d => ({ role: 'en', id: d.id, name: d.who }));
     return {
       open: 1, name: (s && s.name) || '', ending: ending || '', roadBonds,
+      words: legacyWords(ending),
       mem, page, bond, lives: lives | 0,
     };
   }
@@ -404,6 +414,7 @@ const Samsara = (() => {
       const person = personId ? (b.roadBonds || []).find(p => p.id === personId) : b.bond;
       if (person && person.id) { leg.kind = 'bond'; leg.bond = { role: person.role || 'en', id: person.id, name: person.name || '' }; }
     }
+    Object.assign(leg, b.words || legacyWords(b.ending));
     writeLegacy(leg);
     m.bridge = Object.assign({}, b, { open: 0, chosen: leg.kind });
     saveMeta(m);

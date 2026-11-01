@@ -43,6 +43,7 @@ const AUX_LAYER_CAP = 3;   // 辅修只取前三层之效
 
 /* 装备：凡兵 / 灵器可购；神器仅奇遇 */
 const GEAR = {
+  '扫霜剑': { grade: 0, kind: '途兵', slot: 'weapon', t: { bt: 0.018, qiyu: 0.015 }, desc: '玄锋道的入门途兵。持剑与同阶或更强者交锋四十场，可成百战卒；此后剑仍可用，试阶到此为止。' },
   '精铁短剑': { grade: 0, kind: '凡兵', slot: 'weapon', base: 55, buy: 1, t: { bt: 0.012 },
     desc: '坊市铁匠随手打的短剑，分量尚可。佩在腰间，走路都稳些。' },
   '青钢刃': { grade: 0, kind: '凡兵', slot: 'weapon', base: 88, buy: 1, t: { bt: 0.02 },
