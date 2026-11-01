@@ -3484,8 +3484,13 @@ function applyLook(partial) {
   document.documentElement.dataset.motion = p.motion === 'lite' ? 'lite' : 'full';
   applyPalette();
   const wantThin = p.motion === 'lite' || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (wantThin) document.documentElement.dataset.fx = 'thin';
-  else if (partial && partial.motion === 'full') delete document.documentElement.dataset.fx;
+  if (wantThin) {
+    document.documentElement.dataset.fx = 'thin';
+    delete document.documentElement.dataset.fxAuto;
+  } else if (partial && partial.motion === 'full') {
+    delete document.documentElement.dataset.fx;
+    delete document.documentElement.dataset.fxAuto;
+  }
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', dark ? '#16130f' : '#efe6d3');
   const apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
@@ -3506,7 +3511,7 @@ function openLook() {
     ${row('theme', '昼夜', [['auto', '自动'], ['day', '昼'], ['night', '夜']])}
     ${row('font', '字号', [['sm', '小'], ['md', '中'], ['lg', '大']])}
     ${row('motion', '动效', [['full', '全'], ['lite', '简']])}
-    <p class="look-note">夜墨是深纸与淡墨，卷面仍暖。简则收雾、落花与翻卷。若画面吃力，动效会自己变薄。</p>`;
+    <p class="look-note">夜墨是深纸与淡墨，卷面仍暖。简则收雾、落花与翻卷。若画面吃力，动效会自己变薄，回稳后再复原。</p>`;
   w.addEventListener('click', e => {
     const b = e.target.closest('.look-opt'); if (!b) return;
     const rowEl = b.closest('.look-row');
@@ -3892,7 +3897,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=131', 'img/open-glyph.png?v=131', 'img/open-seal-logo.png?v=131'];
+  const urls = ['img/open-plate.png?v=132', 'img/open-glyph.png?v=132', 'img/open-seal-logo.png?v=132'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4519,8 +4524,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=131'),
-      loadInk('img/open-glyph.png?v=131')
+      loadInk('img/open-plate.png?v=132'),
+      loadInk('img/open-glyph.png?v=132')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4558,7 +4563,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=131').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=132').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
