@@ -4615,3 +4615,26 @@ body.paper-turning #scr-main{
   #scr-main .who-name{font-size:22px}
   #scr-main .hud-top{gap:7px}
 }
+
+/* v126 · 主界面三印常显、去标签、历法行 */
+#scr-main .journal-head h2{font-family:var(--f-body);font-size:15px;font-weight:400;letter-spacing:.06em;line-height:1.6;color:var(--ink3)}
+#scr-main .journal-head h2::after{content:none}
+#scr-main #journal-place{display:none}
+@media (min-width:1000px){
+  #scr-main .hud-seals{display:flex;margin:8px 0 0}
+}
+@media (max-width:999px){
+  body[data-screen=main] #scr-main{grid-template-rows:auto auto minmax(140px,1fr) auto auto}
+  #scr-main .play-tabs{display:none}
+  #scr-main .scroll,#scr-main .side{grid-row:3}
+  #scr-main .status-line{grid-row:4}
+  #scr-main .actions{grid-row:5}
+  #scr-main .hud-top,#scr-main .details-open .hud-top{flex-wrap:nowrap}
+  #scr-main .realm-block{min-width:74px;flex-basis:74px}
+  #scr-main .who{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:4px}
+  #scr-main .who-name{grid-column:1;grid-row:1;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #scr-main .who-sub,#scr-main .who-time{grid-column:1/-1}
+  #scr-main .hud-seals,#scr-main .details-open .hud-seals{display:flex;grid-column:2;grid-row:1;order:0;width:auto;gap:0;margin:0;justify-content:flex-end}
+  #scr-main .hud-seals .menu-seal{width:36px;height:36px;min-width:36px;padding:1px}
+  #scr-main .journal-head h2{font-size:13px;white-space:nowrap;letter-spacing:.02em}
+}
