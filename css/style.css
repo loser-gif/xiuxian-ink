@@ -4124,7 +4124,9 @@ html[data-motion=lite] body.voyage.voyage-live .boat-track,html[data-fx=thin] bo
 .paper-scene{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .paper-guard{position:fixed;inset:0;z-index:70;touch-action:none;background:transparent}
 body.paper-turning #scenery{animation:none!important;transition:none!important}
-body.paper-turning #scr-main .roll-in{animation:none}
+body.paper-turning #scr-main .entry,
+body.paper-turning #scr-main .roll-in,
+body.paper-turning #scr-main .bleed-in{animation:none!important}
 .ch-title:focus,#journal-title:focus{outline:none}
 body[data-screen=create] #scenery{opacity:.18;transform:none;-webkit-mask-image:linear-gradient(transparent 58%,#000 94%);mask-image:linear-gradient(transparent 58%,#000 94%)}
 
