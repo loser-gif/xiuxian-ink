@@ -4639,7 +4639,7 @@ body.paper-turning #scr-main{
   #scr-main .journal-head h2{font-size:13px;white-space:nowrap;letter-spacing:.02em}
 }
 
-/* v128 · 主界面册页四季。四幅笔意叠在卷内，卷首不显这层。远山滤镜不再罩色。 */
+/* v130 · 主界面边角物候。纸心不换色，四季只在四角与右缘。卷首不显这层。 */
 #album{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1;pointer-events:none;visibility:hidden;overflow:hidden}
 #album .leaf{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity 1.05s var(--ease-ink)}
 body[data-screen=main] #album{visibility:visible}
@@ -4648,6 +4648,26 @@ body[data-screen=main][data-season="1"] #album .l1,
 body[data-screen=main][data-season="2"] #album .l2,
 body[data-screen=main][data-season="3"] #album .l3{opacity:1}
 body[data-screen=main]:not([data-season]) #album .l0{opacity:1}
+body[data-screen=main][data-season="0"] #album .l0{animation:cornerBreathSpring 11s ease-in-out infinite alternate}
+body[data-screen=main][data-season="1"] #album .l1{animation:cornerBreathSummer 9.2s ease-in-out infinite alternate}
+body[data-screen=main][data-season="2"] #album .l2{animation:cornerBreathAutumn 12.6s ease-in-out infinite alternate}
+body[data-screen=main][data-season="3"] #album .l3{animation:cornerBreathWinter 14.5s ease-in-out infinite alternate}
+@keyframes cornerBreathSpring{
+  from{transform:translate3d(0,0,0);filter:opacity(.9)}
+  to{transform:translate3d(0.35%,-0.45%,0);filter:opacity(1)}
+}
+@keyframes cornerBreathSummer{
+  from{transform:translate3d(0,0,0);filter:opacity(.88)}
+  to{transform:translate3d(-0.55%,0.22%,0);filter:opacity(1)}
+}
+@keyframes cornerBreathAutumn{
+  from{transform:translate3d(0,0,0);filter:opacity(.9)}
+  to{transform:translate3d(0.22%,0.38%,0);filter:opacity(1)}
+}
+@keyframes cornerBreathWinter{
+  from{transform:translate3d(0,0,0);filter:opacity(.93)}
+  to{transform:translate3d(-0.12%,0.16%,0);filter:opacity(1)}
+}
 #album .sweep{position:absolute;top:-8%;left:0;width:145%;height:116%;opacity:0;pointer-events:none;
   background:linear-gradient(90deg,transparent 0%,rgba(36,32,28,0) 28%,rgba(36,32,28,.18) 44%,rgba(250,246,236,.66) 57%,rgba(36,32,28,.08) 68%,transparent 82%);
   transform:translate3d(-58%,0,0)}
@@ -4660,40 +4680,46 @@ body.album-sweep #album .sweep{animation:albumSweep .9s var(--ease-ink) both}
   100%{opacity:0;transform:translate3d(36%,0,0)}
 }
 #album .breath{pointer-events:none}
-#album .canopy{position:absolute;left:auto;top:-8%;right:-10%;bottom:auto;width:30%;height:116%;opacity:0;pointer-events:none;
+#album .canopy{position:absolute;left:auto;top:-6%;right:-16%;bottom:auto;width:22%;height:108%;opacity:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 70% 78% at 92% 46%, rgba(58,92,68,.16), rgba(58,92,68,.04) 46%, transparent 72%),
-    radial-gradient(ellipse 42% 28% at 96% 14%, rgba(78,112,80,.1), transparent 70%),
-    radial-gradient(ellipse 46% 26% at 94% 88%, rgba(48,78,56,.08), transparent 72%)}
-body[data-screen=main][data-season="1"] #album .canopy{opacity:.85;animation:canopyBreath 8.8s ease-in-out infinite alternate}
+    radial-gradient(ellipse 82% 68% at 98% 40%, rgba(58,92,68,.2), rgba(58,92,68,.05) 40%, transparent 74%),
+    radial-gradient(ellipse 46% 22% at 100% 10%, rgba(78,112,80,.12), transparent 72%),
+    radial-gradient(ellipse 40% 18% at 98% 88%, rgba(48,78,56,.08), transparent 74%)}
+body[data-screen=main][data-season="1"] #album .canopy{opacity:.8;animation:canopyBreath 9.4s ease-in-out infinite alternate}
 html[data-theme="night"] #album .canopy{
   background:
-    radial-gradient(ellipse 70% 78% at 94% 46%, rgba(6,14,10,.42), transparent 72%),
-    radial-gradient(ellipse 36% 22% at 96% 16%, rgba(150,180,156,.08), transparent 70%)}
+    radial-gradient(ellipse 84% 70% at 100% 42%, rgba(10,22,16,.22), transparent 74%),
+    radial-gradient(ellipse 40% 20% at 100% 12%, rgba(156,184,160,.12), transparent 72%)}
 @keyframes canopyBreath{
-  0%{transform:translate3d(0,0,0) scale(1);opacity:.62}
-  100%{transform:translate3d(-2.6%,1.3%,0) scale(1.045);opacity:.92}
+  0%{transform:translate3d(0,0,0) scale(1);opacity:.66}
+  100%{transform:translate3d(-1.1%,0.5%,0) scale(1.018);opacity:.9}
 }
-#album .mist{position:absolute;left:-8%;right:-8%;bottom:0;height:18%;opacity:0;pointer-events:none;
-  background:linear-gradient(180deg,transparent,rgba(236,244,232,.2) 48%,transparent)}
-body[data-screen=main][data-season="0"] #album .mist{opacity:.46;height:14%;
-  background:linear-gradient(180deg,transparent,rgba(246,236,226,.4) 58%,transparent);
-  animation:albumMist 34s ease-in-out infinite alternate}
-body[data-screen=main][data-season="1"] #album .mist{opacity:.48;height:18%;
-  background:linear-gradient(180deg,transparent,rgba(206,222,204,.3) 44%,rgba(206,222,204,.04));
-  animation:albumMist 26s ease-in-out infinite alternate}
-body[data-screen=main][data-season="2"] #album .mist{opacity:.4;height:16%;
-  background:linear-gradient(180deg,transparent,rgba(228,190,142,.26) 52%,transparent);
-  animation:albumMist 38s ease-in-out infinite alternate}
-body[data-screen=main][data-season="3"] #album .mist{opacity:.5;height:16%;
-  background:linear-gradient(180deg,transparent,rgba(232,238,244,.48) 50%,rgba(232,238,244,.08));
+#album .mist{position:absolute;left:auto;right:auto;top:auto;bottom:auto;width:26%;height:22%;opacity:0;pointer-events:none;background:none}
+body[data-screen=main][data-season="0"] #album .mist{
+  top:-8%;right:-8%;width:34%;height:28%;opacity:.62;
+  background:radial-gradient(ellipse at 80% 24%, rgba(206,132,126,.2), rgba(206,132,126,.04) 48%, transparent 72%);
   animation:albumMist 30s ease-in-out infinite alternate}
-html[data-theme="night"] body[data-screen=main] #album .mist{opacity:.22}
-@keyframes albumMist{from{transform:translate3d(-3%,0,0)}to{transform:translate3d(3%,1.5%,0)}}
+body[data-screen=main][data-season="1"] #album .mist{
+  top:4%;right:-12%;width:20%;height:72%;opacity:.4;
+  background:radial-gradient(ellipse at 92% 46%, rgba(78,112,86,.12), transparent 72%);
+  animation:albumMist 24s ease-in-out infinite alternate}
+body[data-screen=main][data-season="2"] #album .mist{
+  left:-8%;bottom:-2%;width:22%;height:18%;opacity:.42;
+  background:radial-gradient(ellipse at 28% 78%, rgba(176,110,58,.18), transparent 72%);
+  animation:albumMist 34s ease-in-out infinite alternate}
+body[data-screen=main][data-season="3"] #album .mist{
+  top:-8%;right:-6%;width:30%;height:24%;opacity:.5;
+  background:radial-gradient(ellipse at 82% 16%, rgba(186,204,216,.28), transparent 70%);
+  animation:albumMist 38s ease-in-out infinite alternate}
+html[data-theme="night"] body[data-screen=main][data-season="0"] #album .mist{opacity:.34}
+html[data-theme="night"] body[data-screen=main][data-season="1"] #album .mist{opacity:.28}
+html[data-theme="night"] body[data-screen=main][data-season="2"] #album .mist{opacity:.26}
+html[data-theme="night"] body[data-screen=main][data-season="3"] #album .mist{opacity:.3}
+@keyframes albumMist{from{transform:translate3d(0,0,0)}to{transform:translate3d(-1.4%,0.9%,0)}}
 body[data-screen=main] #scr-main .play-landscape > *{visibility:hidden}
 body[data-screen=main] #scenery{opacity:0!important;visibility:hidden!important}
 @media (prefers-reduced-motion:reduce){
-  #album .leaf,#album .sweep,#album .mist,#album .canopy{transition:none!important;animation:none!important}
+  #album .leaf,#album .sweep,#album .mist,#album .canopy{transition:none!important;animation:none!important;filter:none!important}
   #album .breath{visibility:hidden}
 }
 html[data-motion="lite"] #album .leaf,
@@ -4703,6 +4729,6 @@ html[data-fx="thin"] #album .mist,
 html[data-motion="lite"] #album .sweep,
 html[data-fx="thin"] #album .sweep,
 html[data-motion="lite"] #album .canopy,
-html[data-fx="thin"] #album .canopy{transition:none!important;animation:none!important}
+html[data-fx="thin"] #album .canopy{transition:none!important;animation:none!important;filter:none!important}
 html[data-motion="lite"] #album .breath,
 html[data-fx="thin"] #album .breath{visibility:hidden}
