@@ -4639,120 +4639,45 @@ body.paper-turning #scr-main{
   #scr-main .journal-head h2{font-size:13px;white-space:nowrap;letter-spacing:.02em}
 }
 
-/* v127 · 主界面四季。只叠在卷内：远峰、日头、雾带、湖色，仍是水墨罩染。卷首不显这层，宣纸变量不改。 */
-#season-field{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1;pointer-events:none;visibility:hidden;opacity:0}
-#season-field i{position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity 1.7s var(--ease-ink)}
-body[data-screen=main] #season-field{visibility:visible;opacity:1}
-body[data-season="0"] #season-field .s0,
-body[data-season="1"] #season-field .s1,
-body[data-season="2"] #season-field .s2,
-body[data-season="3"] #season-field .s3{opacity:1}
-#season-field .s0{
-  background:
-    radial-gradient(circle at 76% 36%, rgba(186,62,50,.58) 0 18px, rgba(186,62,50,.20) 40px, rgba(186,62,50,0) 74px),
-    radial-gradient(circle at 76% 36%, rgba(214,140,110,.16) 0 100px, rgba(214,140,110,0) 160px),
-    radial-gradient(ellipse 26% 14% at 6% 72%, rgba(58,96,72,.20), transparent 72%),
-    radial-gradient(ellipse 32% 16% at 48% 80%, rgba(64,104,78,.16), transparent 74%),
-    radial-gradient(ellipse 24% 13% at 94% 74%, rgba(58,96,72,.18), transparent 72%),
-    linear-gradient(180deg, transparent 52%, rgba(232,242,220,.42) 60%, transparent 70%),
-    linear-gradient(180deg, rgba(206,226,186,.14) 0%, rgba(206,226,186,.08) 22%, rgba(186,214,156,.26) 48%, rgba(168,204,150,.32) 100%);
+/* v128 · 主界面册页四季。四幅笔意叠在卷内，卷首不显这层。远山滤镜不再罩色。 */
+#album{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1;pointer-events:none;visibility:hidden;overflow:hidden}
+#album .leaf{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity 1.05s var(--ease-ink)}
+body[data-screen=main] #album{visibility:visible}
+body[data-screen=main][data-season="0"] #album .l0,
+body[data-screen=main][data-season="1"] #album .l1,
+body[data-screen=main][data-season="2"] #album .l2,
+body[data-screen=main][data-season="3"] #album .l3{opacity:1}
+body[data-screen=main]:not([data-season]) #album .l0{opacity:1}
+#album .sweep{position:absolute;top:-8%;left:0;width:145%;height:116%;opacity:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent 0%,rgba(36,32,28,0) 28%,rgba(36,32,28,.18) 44%,rgba(250,246,236,.66) 57%,rgba(36,32,28,.08) 68%,transparent 82%);
+  transform:translate3d(-58%,0,0)}
+html[data-theme="night"] #album .sweep{
+  background:linear-gradient(90deg,transparent 0%,rgba(232,224,210,0) 30%,rgba(232,224,210,.16) 46%,rgba(18,14,12,.5) 58%,rgba(232,224,210,.08) 70%,transparent 84%)}
+body.album-sweep #album .sweep{animation:albumSweep .9s var(--ease-ink) both}
+@keyframes albumSweep{
+  0%{opacity:0;transform:translate3d(-62%,0,0)}
+  18%{opacity:1}
+  100%{opacity:0;transform:translate3d(36%,0,0)}
 }
-#season-field .s1{
-  background:
-    radial-gradient(circle at 88% 16%, rgba(255,244,224,.88) 0 8px, rgba(255,236,200,.34) 18px, rgba(255,236,200,0) 40px),
-    radial-gradient(circle at 88% 16%, rgba(120,190,186,.20) 0 90px, rgba(120,190,186,0) 160px),
-    radial-gradient(ellipse 34% 20% at 4% 64%, rgba(28,78,88,.28), transparent 72%),
-    radial-gradient(ellipse 40% 22% at 46% 72%, rgba(24,72,84,.24), transparent 74%),
-    radial-gradient(ellipse 30% 18% at 96% 66%, rgba(28,78,88,.26), transparent 72%),
-    linear-gradient(180deg, transparent 40%, rgba(214,236,232,.50) 56%, transparent 74%),
-    linear-gradient(180deg, rgba(176,214,210,.16) 0%, rgba(150,196,198,.12) 20%, rgba(96,168,170,.30) 52%, rgba(64,140,146,.36) 100%);
-}
-#season-field .s2{
-  background:
-    radial-gradient(circle at 70% 40%, rgba(214,96,36,.82) 0 14px, rgba(196,78,32,.36) 30px, rgba(196,78,32,0) 62px),
-    radial-gradient(circle at 70% 40%, rgba(220,150,70,.26) 0 100px, rgba(220,150,70,0) 170px),
-    radial-gradient(ellipse 28% 15% at 8% 70%, rgba(120,72,40,.24), transparent 72%),
-    radial-gradient(ellipse 36% 18% at 52% 78%, rgba(132,78,42,.20), transparent 74%),
-    radial-gradient(ellipse 26% 14% at 92% 72%, rgba(120,72,40,.22), transparent 72%),
-    linear-gradient(180deg, transparent 48%, rgba(244,220,180,.48) 60%, transparent 74%),
-    linear-gradient(180deg, rgba(236,210,170,.16) 0%, rgba(236,206,160,.10) 22%, rgba(214,160,96,.30) 50%, rgba(196,132,72,.36) 100%);
-}
-#season-field .s3{
-  background:
-    radial-gradient(circle at 86% 18%, rgba(248,250,252,.90) 0 12px, rgba(198,214,226,.42) 28px, rgba(198,214,226,0) 58px),
-    radial-gradient(circle at 86% 18%, rgba(170,190,208,.20) 0 80px, rgba(170,190,208,0) 140px),
-    radial-gradient(ellipse 30% 12% at 8% 76%, rgba(78,96,114,.26), transparent 74%),
-    radial-gradient(ellipse 38% 14% at 50% 82%, rgba(86,104,122,.20), transparent 76%),
-    radial-gradient(ellipse 26% 11% at 94% 78%, rgba(78,96,114,.22), transparent 74%),
-    linear-gradient(180deg, transparent 60%, rgba(226,234,242,.48) 70%, transparent 80%),
-    linear-gradient(180deg, rgba(176,196,214,.24) 0%, rgba(186,204,216,.12) 22%, rgba(160,182,200,.34) 54%, rgba(142,166,186,.40) 100%);
-}
-html[data-theme="night"] #season-field .s0{
-  background:
-    radial-gradient(circle at 84% 34%, rgba(214,120,104,.70) 0 9px, rgba(214,120,104,.22) 20px, rgba(214,120,104,0) 44px),
-    radial-gradient(ellipse 26% 14% at 6% 72%, rgba(120,170,110,.30), transparent 72%),
-    radial-gradient(ellipse 32% 16% at 48% 80%, rgba(100,150,96,.22), transparent 74%),
-    radial-gradient(ellipse 24% 13% at 94% 74%, rgba(120,170,110,.24), transparent 72%),
-    linear-gradient(180deg, transparent 54%, rgba(140,180,130,.16) 64%, transparent 76%),
-    linear-gradient(180deg, rgba(70,110,64,.20) 0%, rgba(60,100,58,.12) 24%, rgba(48,90,52,.28) 100%);
-}
-html[data-theme="night"] #season-field .s1{
-  background:
-    radial-gradient(circle at 88% 16%, rgba(230,244,236,.72) 0 7px, rgba(160,210,200,.24) 16px, rgba(160,210,200,0) 36px),
-    radial-gradient(ellipse 34% 20% at 4% 64%, rgba(70,150,156,.32), transparent 72%),
-    radial-gradient(ellipse 40% 22% at 46% 72%, rgba(50,130,140,.26), transparent 74%),
-    radial-gradient(ellipse 30% 18% at 96% 66%, rgba(70,150,156,.28), transparent 72%),
-    linear-gradient(180deg, transparent 42%, rgba(120,180,180,.18) 58%, transparent 76%),
-    linear-gradient(180deg, rgba(30,90,100,.26) 0%, rgba(24,80,96,.16) 22%, rgba(20,70,88,.34) 100%);
-}
-html[data-theme="night"] #season-field .s2{
-  background:
-    radial-gradient(circle at 70% 40%, rgba(232,140,72,.78) 0 12px, rgba(210,110,48,.30) 26px, rgba(210,110,48,0) 54px),
-    radial-gradient(ellipse 28% 15% at 8% 70%, rgba(180,110,60,.30), transparent 72%),
-    radial-gradient(ellipse 36% 18% at 52% 78%, rgba(160,90,48,.24), transparent 74%),
-    radial-gradient(ellipse 26% 14% at 92% 72%, rgba(180,110,60,.26), transparent 72%),
-    linear-gradient(180deg, transparent 50%, rgba(190,130,70,.16) 62%, transparent 76%),
-    linear-gradient(180deg, rgba(120,70,36,.24) 0%, rgba(100,58,30,.14) 22%, rgba(90,48,24,.32) 100%);
-}
-html[data-theme="night"] #season-field .s3{
-  background:
-    radial-gradient(circle at 86% 18%, rgba(236,242,246,.78) 0 6px, rgba(180,200,216,.26) 14px, rgba(180,200,216,0) 32px),
-    radial-gradient(ellipse 30% 12% at 8% 76%, rgba(150,170,186,.26), transparent 74%),
-    radial-gradient(ellipse 38% 14% at 50% 82%, rgba(140,160,176,.18), transparent 76%),
-    radial-gradient(ellipse 26% 11% at 94% 78%, rgba(150,170,186,.20), transparent 74%),
-    linear-gradient(180deg, transparent 64%, rgba(180,196,210,.14) 72%, transparent 82%),
-    linear-gradient(180deg, rgba(110,140,168,.30) 0%, rgba(90,120,150,.16) 22%, rgba(80,112,146,.38) 100%);
-}
-body[data-screen=main] #scenery .mtn{transition:filter 1.7s var(--ease-ink)}
-body[data-screen=main][data-season="0"] #scenery .mtn{filter:sepia(.48) hue-rotate(68deg) saturate(1.45) brightness(1.06)}
-body[data-screen=main][data-season="1"] #scenery .mtn{filter:sepia(.42) hue-rotate(148deg) saturate(1.25) brightness(.9)}
-body[data-screen=main][data-season="2"] #scenery .mtn{filter:sepia(.72) hue-rotate(350deg) saturate(1.4) brightness(1.02)}
-body[data-screen=main][data-season="3"] #scenery .mtn{filter:grayscale(.82) sepia(.18) hue-rotate(176deg) saturate(.72) brightness(1.06)}
-html[data-theme="night"] body[data-screen=main][data-season="0"] #scenery .mtn{filter:sepia(.35) hue-rotate(64deg) saturate(1.2) brightness(1.08)}
-html[data-theme="night"] body[data-screen=main][data-season="1"] #scenery .mtn{filter:sepia(.3) hue-rotate(150deg) saturate(1.15) brightness(1.02)}
-html[data-theme="night"] body[data-screen=main][data-season="2"] #scenery .mtn{filter:sepia(.55) hue-rotate(350deg) saturate(1.25) brightness(1.06)}
-html[data-theme="night"] body[data-screen=main][data-season="3"] #scenery .mtn{filter:grayscale(.7) sepia(.12) hue-rotate(180deg) saturate(.65) brightness(1.1)}
-body[data-screen=main] #scr-main .play-mist,
-body[data-screen=main] #scr-main .play-water{transition:filter 1.7s var(--ease-ink),opacity 1.7s var(--ease-ink),background-color 1.7s var(--ease-ink)}
-body[data-screen=main][data-season="0"] #scr-main .play-mist{filter:sepia(.5) hue-rotate(62deg) saturate(1.6) brightness(1.05);opacity:.34}
-body[data-screen=main][data-season="1"] #scr-main .play-mist{filter:sepia(.35) hue-rotate(140deg) saturate(1.45) brightness(.96);opacity:.5}
-body[data-screen=main][data-season="2"] #scr-main .play-mist{filter:sepia(.65) hue-rotate(350deg) saturate(1.5) brightness(1.02);opacity:.4}
-body[data-screen=main][data-season="3"] #scr-main .play-mist{filter:grayscale(.65) sepia(.2) hue-rotate(170deg) saturate(.7) brightness(1.08);opacity:.28}
-body[data-screen=main][data-season="0"] #scr-main .play-water{background-color:rgba(150,190,140,.65)}
-body[data-screen=main][data-season="1"] #scr-main .play-water{background-color:rgba(70,150,156,.7)}
-body[data-screen=main][data-season="2"] #scr-main .play-water{background-color:rgba(196,140,70,.7)}
-body[data-screen=main][data-season="3"] #scr-main .play-water{background-color:rgba(168,184,196,.7)}
+#album .mist{position:absolute;left:-8%;right:-8%;bottom:0;height:18%;opacity:0;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(236,244,232,.2) 48%,transparent)}
+body[data-screen=main][data-season="0"] #album .mist{opacity:.5;height:12%;
+  background:linear-gradient(180deg,transparent,rgba(246,241,230,.42) 60%,transparent)}
+body[data-screen=main][data-season="1"] #album .mist{opacity:.8;height:28%;
+  background:linear-gradient(180deg,transparent,rgba(210,224,208,.4) 46%,rgba(210,224,208,.06));
+  animation:albumMist 26s ease-in-out infinite alternate}
+body[data-screen=main][data-season="3"] #album .mist{opacity:.62;height:16%;
+  background:linear-gradient(180deg,transparent,rgba(236,240,244,.55) 52%,rgba(236,240,244,.1))}
+html[data-theme="night"] body[data-screen=main] #album .mist{opacity:.28}
+@keyframes albumMist{from{transform:translate3d(-2%,0,0)}to{transform:translate3d(2%,1%,0)}}
+body[data-screen=main] #scr-main .play-landscape > *{visibility:hidden}
+body[data-screen=main] #scenery{opacity:0!important;visibility:hidden!important}
 @media (prefers-reduced-motion:reduce){
-  #season-field i,
-  body[data-screen=main] #scenery .mtn,
-  body[data-screen=main] #scr-main .play-mist,
-  body[data-screen=main] #scr-main .play-water{transition:none}
+  #album .leaf,#album .sweep,#album .mist{transition:none;animation:none}
 }
-html[data-motion="lite"] #season-field i,
-html[data-fx="thin"] #season-field i,
-html[data-motion="lite"] body[data-screen=main] #scenery .mtn,
-html[data-fx="thin"] body[data-screen=main] #scenery .mtn,
-html[data-motion="lite"] body[data-screen=main] #scr-main .play-mist,
-html[data-fx="thin"] body[data-screen=main] #scr-main .play-mist,
-html[data-motion="lite"] body[data-screen=main] #scr-main .play-water,
-html[data-fx="thin"] body[data-screen=main] #scr-main .play-water{transition:none}
+html[data-motion="lite"] #album .leaf,
+html[data-fx="thin"] #album .leaf,
+html[data-motion="lite"] #album .mist,
+html[data-fx="thin"] #album .mist,
+html[data-motion="lite"] #album .sweep,
+html[data-fx="thin"] #album .sweep{transition:none;animation:none}

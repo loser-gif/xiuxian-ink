@@ -314,7 +314,7 @@ const Wallpaper = (() => {
     M.last = now; M.time += dt; paintMain(dt);
   }
   function syncMain() {
-    const on = !!M.cv && !document.hidden && document.body.dataset.screen === 'main' && !thinNow();
+    const on = !!M.cv && !document.getElementById('album') && !document.hidden && document.body.dataset.screen === 'main' && !thinNow();
     document.documentElement.dataset.liveWallpaper = on ? 'on' : 'off';
     if (!on) { if (M.raf) cancelAnimationFrame(M.raf); M.raf = 0; M.last = 0; return; }
     if (M.w !== innerWidth || M.h !== innerHeight) buildMain();
