@@ -1811,7 +1811,7 @@ html[data-theme="night"] :focus-visible{outline-color:rgba(243,234,214,.88)}
 .audio-btn:hover{opacity:1}.audio-btn:active{transform:scale(.94)}
 .audio-btn.muted{opacity:.42;color:var(--ink4);filter:grayscale(.35)}
 .audio-btn .audio-lab{transform:translateY(1px)}
-.audio-vol{display:none;width:88px;height:28px;accent-color:#6a5a48;opacity:.75;cursor:pointer}
+.audio-vol{display:none;width:88px;height:28px;opacity:.75;cursor:pointer}
 @media (hover:hover) and (pointer:fine){
   #audio-dock:hover .audio-vol,#audio-dock:focus-within .audio-vol{display:block}
   .audio-vol{display:none}
@@ -4573,3 +4573,13 @@ body.paper-turning #scr-main{
   70%{background-position:24% 76%;opacity:1}
   100%{background-position:0% 100%;opacity:0}
 }
+
+/* v124 · 细墨音量：透明热区保留原高，轨道与墨点分别落笔。 */
+.audio-vol{-webkit-appearance:none;appearance:none;background:transparent;padding:0;border:0;border-radius:0}
+.audio-vol::-webkit-slider-runnable-track{height:2px;border:0;border-radius:1px;background:var(--ink3);opacity:.55}
+.audio-vol::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;margin-top:-5px;border:0;border-radius:50%;background:var(--ink);box-shadow:0 0 1px var(--ink3)}
+.audio-vol::-moz-range-track{height:2px;border:0;border-radius:1px;background:var(--ink3);opacity:.55}
+.audio-vol::-moz-range-progress{height:2px;border:0;border-radius:1px;background:var(--ink3);opacity:.55}
+.audio-vol::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:var(--ink);box-shadow:0 0 1px var(--ink3)}
+.audio-vol:focus-visible{outline:1px solid var(--ink3);outline-offset:2px}
+.audio-vol:disabled{cursor:default}
