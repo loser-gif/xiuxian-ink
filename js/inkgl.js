@@ -3,7 +3,8 @@
 const InkGL = (() => {
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
-  const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
+  const userReduced = () => reduced() || document.documentElement.dataset.motion === 'lite';
+  const thinNow = () => userReduced() || document.documentElement.dataset.fx === 'thin';
   const NOISE = `
     precision highp float;
     float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -564,9 +565,14 @@ const InkGL = (() => {
     return true;
   }
   // host：卷轴纸面；onSink 在墨开始沉入纸中时调用（此时写下日志）
-  function qi(host, { cy = .5, onSink, at } = {}) {
+  async function qi(host, opt) {
+    if (Q.finish) Q.finish();
+    FX.busyFx(true);
+    try { return await qiPlay(host, opt); } finally { FX.busyFx(false); }
+  }
+  function qiPlay(host, { cy = .5, onSink, at } = {}) {
     return new Promise(res => {
-      if (thinNow() || !qiInit(host)) { onSink && onSink(); return res(false); }
+      if (userReduced() || !qiInit(host)) { onSink && onSink(); return res(false); }
       const cv = Q.cv, gl = Q.gl, P = Q.P;
       const W = host.clientWidth, H = host.clientHeight, k = Math.min(devicePixelRatio || 1, 2) * .4;
       cv.width = Math.max(8, Math.round(W * k)); cv.height = Math.max(8, Math.round(H * k));
@@ -574,18 +580,28 @@ const InkGL = (() => {
       cv.classList.add('on');
       const seed = at != null ? 3.3 : Math.random() * 6 + 1, t0 = at != null ? performance.now() - at * 1000 : performance.now(), D = 1.8;
       const Rr = Math.min(.12, (W / H) * .2);            // 圆相半径（卷高为单位），窄屏自适应
-      let sunk = false; const gen = Q.gen = (Q.gen || 0) + 1;
+      let sunk = false, ended = false;
+      const finish = (snapshot = false) => {
+        if (ended) return;
+        ended = true;
+        if (Q.finish === finish) { Q.finish = null; if (!snapshot) cv.classList.remove('on'); }
+        try { if (!snapshot && !sunk) { sunk = true; onSink && onSink(); } } finally { res(true); }
+      };
+      Q.finish = finish;
+      const gen = Q.gen = (Q.gen || 0) + 1;
       const frame = now => {
-        if (gen !== Q.gen) { if (!sunk) { sunk = true; onSink && onSink(); } return res(true); }   // 被新一次吐纳接替
-        const t = (now - t0) / 1000;
-        if (!sunk && t >= 1.1) { sunk = true; onSink && onSink(); }
-        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-        if (t < D) {
-          gl.useProgram(P.p);
-          gl.uniform2f(P.U.uRes, cv.width, cv.height); gl.uniform2f(P.U.uC, cv.width / 2, cv.height * (1 - cy));
-          gl.uniform1f(P.U.uT, t); gl.uniform1f(P.U.uSeed, seed); gl.uniform1f(P.U.uR, Rr);
-          draw(gl, P); if (at == null) requestAnimationFrame(frame); else res(true);
-        } else { cv.classList.remove('on'); res(true); }
+        if (ended || gen !== Q.gen) { finish(); return; }   // 被新一次吐纳接替
+        try {
+          const t = (now - t0) / 1000;
+          if (!sunk && t >= 1.1) { sunk = true; onSink && onSink(); }
+          gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+          if (t < D) {
+            gl.useProgram(P.p);
+            gl.uniform2f(P.U.uRes, cv.width, cv.height); gl.uniform2f(P.U.uC, cv.width / 2, cv.height * (1 - cy));
+            gl.uniform1f(P.U.uT, t); gl.uniform1f(P.U.uSeed, seed); gl.uniform1f(P.U.uR, Rr);
+            draw(gl, P); if (at == null) requestAnimationFrame(frame); else finish(true);
+          } else finish();
+        } catch (e) { finish(); }
       };
       requestAnimationFrame(frame);
     });

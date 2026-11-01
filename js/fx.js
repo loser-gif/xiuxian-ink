@@ -3,7 +3,8 @@
 const FX = (() => {
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
-  const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
+  const userReduced = () => reduced() || document.documentElement.dataset.motion === 'lite';
+  const thinNow = () => userReduced() || document.documentElement.dataset.fx === 'thin';
   const cheapFx = () => document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite';
   const coarsePhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -240,12 +241,22 @@ const FX = (() => {
     if (W.gold && W.gold.length) { c.setTransform(D, 0, 0, D, 0, 0); c.globalAlpha = 1; }
   }
 
-  /* 低帧率连续两段即把动效收薄；「全」可在纸墨里再打开 */
-  let fpsLast = 0, fpsN = 0, fpsBad = 0, fpsArmed = false;
+  /* 环境低帧两段收薄，回稳三段恢复；一次性重动效不参与测帧。 */
+  let fpsLast = 0, fpsN = 0, fpsBad = 0, fpsGood = 0, fpsArmed = false, fxBusy = 0;
+  function busyFx(on) {
+    fxBusy = Math.max(0, fxBusy + (on ? 1 : -1));
+    fpsLast = 0; fpsN = 0; fpsBad = 0; fpsGood = 0;
+  }
+  async function duringFx(play) {
+    busyFx(true);
+    try { return await play(); } finally { busyFx(false); }
+  }
   function fpsTick(t) {
     if (!fpsArmed) return;
     requestAnimationFrame(fpsTick);
-    if (document.hidden) { fpsLast = 0; fpsN = 0; return; }
+    if (document.hidden || fxBusy || userReduced()) {
+      fpsLast = 0; fpsN = 0; fpsBad = 0; fpsGood = 0; return;
+    }
     if (!fpsLast) { fpsLast = t; return; }
     fpsN++;
     const span = t - fpsLast;
@@ -253,15 +264,24 @@ const FX = (() => {
     const fps = fpsN * 1000 / span;
     fpsLast = t; fpsN = 0;
     const root = document.documentElement;
-    if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin' || reduced()) { fpsBad = 0; return; }
-    if (fps < 40) {
-      fpsBad++;
-      if (fpsBad >= 2) {
-        root.dataset.fx = 'thin';
-        syncMotion();
-        if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
-      }
-    } else fpsBad = 0;
+    if (root.dataset.fxAuto === '1') {
+      fpsBad = 0;
+      fpsGood = fps >= 48 ? fpsGood + 1 : 0;
+      if (fpsGood < 3) return;
+      delete root.dataset.fx;
+      delete root.dataset.fxAuto;
+      fpsGood = 0;
+    } else {
+      fpsGood = 0;
+      if (root.dataset.fx === 'thin') { fpsBad = 0; return; }
+      fpsBad = fps < 40 ? fpsBad + 1 : 0;
+      if (fpsBad < 2) return;
+      root.dataset.fx = 'thin';
+      root.dataset.fxAuto = '1';
+      fpsBad = 0;
+    }
+    syncMotion();
+    if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
   }
   function armFps() {
     if (fpsArmed || reduced()) return;
@@ -297,11 +317,16 @@ const FX = (() => {
       const x1 = Math.max(P.x + P.w, bounds[0] + bounds[2]), y1 = Math.max(P.y + P.h, bounds[1] + bounds[3]);
       if (x0 < P.x || y0 < P.y || x1 > P.x + P.w || y1 > P.y + P.h) pBounds([x0, y0, x1 - x0, y1 - y0]);
     }
-    P.list.push(sys); if (!P.raf) P.raf = requestAnimationFrame(pTick);
+    busyFx(true); P.list.push(sys); if (!P.raf) P.raf = requestAnimationFrame(pTick);
   }
   function pTick(t) {
     const c = P.c; c.setTransform(DPR, 0, 0, DPR, -P.x * DPR, -P.y * DPR); c.clearRect(P.x, P.y, P.w, P.h);
-    P.list = P.list.filter(s => { if (!s.t0) s.t0 = t; return s.draw(c, (t - s.t0) / 1000) !== false; });
+    P.list = P.list.filter(s => {
+      let alive = false;
+      try { if (!s.t0) s.t0 = t; alive = s.draw(c, (t - s.t0) / 1000) !== false; return alive; }
+      catch (e) { console.warn('FX particle stopped:', e); return false; }
+      finally { if (!alive) busyFx(false); }
+    });
     if (P.list.length) P.raf = requestAnimationFrame(pTick); else { P.raf = 0; c.clearRect(P.x, P.y, P.w, P.h); }
   }
   const easeIn = x => x * x * x, easeOut = x => 1 - Math.pow(1 - x, 3);
@@ -315,7 +340,7 @@ const FX = (() => {
     c.fillStyle = g; c.fillRect(0, 0, 48, 48); return (mote = cv);
   }
   function qiSwirl(cx, cy, done) {
-    if (reduced()) { done && done(); return; }
+    if (userReduced()) { done && done(); return; }
     const img = moteSprite();
     const N = 26, parts = Array.from({ length: N }, (_, i) => ({ a: (i / N) * 6.283 + rnd(-.2, .2), r: rnd(150, 260), d: rnd(0, .25), s: rnd(3.5, 7), w: rnd(2.4, 3.2) }));
     const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -349,7 +374,7 @@ const FX = (() => {
   }
   // 破境成功：金箔碎片缓缓升腾、翻转时闪光
   function goldMotes(cx, cy, n = 34) {
-    if (reduced()) return;
+    if (userReduced()) return;
     const parts = Array.from({ length: n }, () => {
       const k = 3 + Math.floor(rnd(0, 3)), pts = Array.from({ length: k }, (_, i) => { const a = i / k * 6.283 + rnd(-.4, .4), r = rnd(.6, 1); return [Math.cos(a) * r, Math.sin(a) * r]; });
       return { x: cx + rnd(-150, 150), y: cy + rnd(-30, 190), vy: rnd(-34, -12), vx: rnd(-8, 8), s: rnd(2.2, 5.2), d: rnd(0, 2.2), ph: rnd(0, 6.28), spin: rnd(1.2, 3.2), rot: rnd(0, 6.28), life: rnd(3, 4.8), pts };
@@ -373,8 +398,9 @@ const FX = (() => {
   }
 
   /* ---------- 闭关：洞府渐暗 ---------- */
-  async function cave() {
-    if (reduced()) return;
+  function cave(...args) { return duringFx(() => cavePlay(...args)); }
+  async function cavePlay() {
+    if (userReduced()) return;
     const el = $('#cave'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
     await sleep(2350); el.classList.remove('on');
   }
@@ -388,8 +414,9 @@ const FX = (() => {
     g.addColorStop(0, 'rgba(24,23,26,1)'); g.addColorStop(.55, 'rgba(24,23,26,.85)'); g.addColorStop(.8, 'rgba(30,32,40,.25)'); g.addColorStop(1, 'rgba(30,32,40,0)');
     c.fillStyle = g; c.fillRect(0, 0, 64, 64); return (stampSprite.c = cv);
   }
-  function inkPath() {
-    if (reduced()) return Promise.resolve();
+  function inkPath(...args) { return duringFx(() => inkPathPlay(...args)); }
+  function inkPathPlay() {
+    if (userReduced()) return Promise.resolve();
     const host = $('.scroll-paper'); if (!host) return Promise.resolve();
     if (!pathCv) { pathCv = document.createElement('canvas'); pathCv.className = 'path-ink'; pathCv.setAttribute('aria-hidden', 'true'); }
     if (pathCv.parentNode !== host) host.insertBefore(pathCv, host.querySelector('.log'));
@@ -770,7 +797,8 @@ const FX = (() => {
       anim.finished.then(finish).catch(finish);
     });
   }
-  async function wash(swap) {
+  function wash(...args) { return duringFx(() => washPlay(...args)); }
+  async function washPlay(swap) {
     const u = $('#wash');
     if (!u) { await swap(); return; }
     if (washBusy) { await swap(); return; }
@@ -780,7 +808,7 @@ const FX = (() => {
       const ae = document.activeElement;
       if (ae && ae.blur && ae !== document.body) ae.blur();
       u.classList.add('on');
-      if (reduced()) {
+      if (userReduced()) {
         const f = u.querySelector('.wash-full');
         await fadeEl(f, 0, 1, 250, gate);
         await swap();
@@ -810,9 +838,10 @@ const FX = (() => {
     const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
     return x - Math.floor(x);
   }
-  function brushSweep(opt) {
+  function brushSweep(...args) { return duringFx(() => brushSweepPlay(...args)); }
+  function brushSweepPlay(opt) {
     opt = opt || {};
-    if (reduced()) return Promise.resolve();
+    if (userReduced()) return Promise.resolve();
     const host = opt.host;
     if (!host) return Promise.resolve();
     const thin = opt.thin != null ? !!opt.thin : cheapFx();
@@ -1090,7 +1119,7 @@ const FX = (() => {
 
   /* ---------- iOS 按压态 ---------- */
   function bloomAt(x, y) {
-    if (x == null || y == null || thinNow()) return;
+    if (x == null || y == null || userReduced()) return;
     const b = document.createElement('i');
     b.className = 'ink-bloom';
     b.style.left = x + 'px'; b.style.top = y + 'px';
@@ -1107,5 +1136,5 @@ const FX = (() => {
     ['pointerup', 'pointercancel', 'pointerleave', 'blur'].forEach(ev => window.addEventListener(ev, off, { passive: true }));
   }
 
-  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, brushSweep, titleDrop, initPress, bloomAt, reduced, syncMotion, thinNow };
+  return { vtext, initParallax, requestTilt, setSeason, setGold, qiSwirl, goldMotes, cave, inkPath, wash, brushSweep, titleDrop, initPress, bloomAt, reduced, userReduced, busyFx, syncMotion, thinNow };
 })();
