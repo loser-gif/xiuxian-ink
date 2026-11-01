@@ -528,6 +528,13 @@ async function paperPassage(id, ready) {
   const previousOpacity = previous.style.opacity;
   const nextOpacity = next.style.opacity;
   const scenery = $('#scenery'), sceneryStyle = scenery.style.cssText;
+  let sceneryTarget = null;
+  const readSceneryTarget = () => {
+    scenery.style.removeProperty('opacity');
+    const opacity = parseFloat(getComputedStyle(scenery).opacity);
+    scenery.style.opacity = '0';
+    return Number.isFinite(opacity) ? opacity : 0;
+  };
   const lookWatch = new MutationObserver(motion);
   document.body.appendChild(guard);
   window.addEventListener('keydown', keydown, true); window.addEventListener('keyup', keyup, true); window.addEventListener('blur', blur);
@@ -551,6 +558,7 @@ async function paperPassage(id, ready) {
     switchPage();
     scenery.style.cssText = sceneryStyle;
     scenery.style.opacity = '0';
+    sceneryTarget = readSceneryTarget();
     if (!stopped && canFade) {
       // Let the rendered page settle while the paper is still transparent.
       await Promise.race([
@@ -559,8 +567,7 @@ async function paperPassage(id, ready) {
       ]);
       animate(previous, [{ opacity: 1 }, { opacity: 0 }], fadeMs);
       arrive(next, 0, fadeMs);
-      const opacity = id === 'main' ? .42 : id === 'create' ? .5 : 1;
-      animate(scenery, [{ opacity: 0 }, { opacity }], full ? total - lead : fadeMs);
+      animate(scenery, [{ opacity: 0 }, { opacity: sceneryTarget }], full ? total - lead : fadeMs);
       // Quiet motion keeps only the short whole-page fade.
       if (full && id === 'create') {
         arrive(next.querySelector('.create-head'), 0, 850);
@@ -589,6 +596,9 @@ async function paperPassage(id, ready) {
     if (scene) scene.style.opacity = '0';
     // Commit the incoming paper before removing WAAPI fill (WebKit).
     next.style.opacity = '1';
+    // Pin the CSS landscape target before cancel removes its WAAPI fill.
+    if (sceneryTarget === null) sceneryTarget = readSceneryTarget();
+    scenery.style.opacity = String(sceneryTarget);
     animations.forEach(a => a.cancel());
     previous.classList.remove('paper-leave');
     previous.hidden = true;
@@ -3966,7 +3976,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=119', 'img/open-glyph.png?v=119', 'img/open-seal-logo.png?v=119'];
+  const urls = ['img/open-plate.png?v=120', 'img/open-glyph.png?v=120', 'img/open-seal-logo.png?v=120'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4593,8 +4603,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=119'),
-      loadInk('img/open-glyph.png?v=119')
+      loadInk('img/open-plate.png?v=120'),
+      loadInk('img/open-glyph.png?v=120')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4632,7 +4642,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=119').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=120').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
