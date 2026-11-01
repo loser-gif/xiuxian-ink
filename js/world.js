@@ -481,3 +481,49 @@ EVENTS.push(
 );
 LOC_EV.xuewu.push('shen_di'); LOC_EV.heifeng.push('shen_di'); EV_LOC.shen_di = ['xuewu', 'heifeng'];
 LOC_EV.gufu.push('shen_yan'); LOC_EV.yunhai.push('shen_yan'); EV_LOC.shen_yan = ['gufu', 'yunhai'];
+
+/* v133 · 两处旧痕。记下才续得上；错身而过，也是一生。 */
+[
+  { key: 'xi', loc: 'taohua', title: '溪边旧刻', lines: [
+    '溪边有块伏倒的石头，水退后露出半行字：“今年仍在此。”你蹲下擦去青苔，下面还有一道旧水线。',
+    '你又到溪边。那道水线已经干了，石背却有小字：“不必等我，花开便走。”落款磨尽了。你坐了一会，把这句记在纸上。'
+  ] },
+  { key: 'dong', loc: 'gufu', title: '洞口扫叶', lines: [
+    '洞口积着落叶，门后靠一把秃扫帚。墙上小字写着：“出关先扫叶。”你扫开半条路，才见石缝里还夹着残纸。',
+    '再来时，叶子又满了。残纸上只剩一句：“闭关三十载，漏雨处还在。”你补了洞口那片瓦，没有往深处去。'
+  ] }
+].forEach(chain => {
+  chain.lines.forEach((line, step) => {
+    const key = 'clue_' + chain.key;
+    EVENTS.push({
+      id: key + '_' + step, title: chain.title, w: 5, once: true,
+      cond: s => s.loc === chain.loc && (s.flags[key] || 0) === step && (!step || (s.flags['visit_' + chain.loc] || 0) > (s.flags[key + '_visit'] || 0)),
+      text: () => line,
+      choices: () => [
+        { label: step ? '收好这一句' : '留一笔记认', act: s => {
+          s.flags[key] = step + 1; s.flags[key + '_visit'] = s.flags['visit_' + chain.loc] || 0;
+          s.marks.push({ t: chain.title, y: s.age | 0, d: line });
+          return { text: step ? '旧事没有说尽。你把纸折好，收回囊中。' : '你记住了地方。下回路过，可以再看一眼。', fx: { xj: 1 } };
+        } },
+        { label: '赶路去', act: s => { s.flags[key] = -1; return { text: '你没有停步。身后的旧痕，留给后来的人。', fx: {} }; } }
+      ]
+    });
+    LOC_EV[chain.loc].push(key + '_' + step);
+    EV_LOC[key + '_' + step] = [chain.loc];
+  });
+});
+
+EVENTS.push({
+  id: 'xuanfeng_forge', title: '炉前执锐', w: 7, rm: [0, 1], once: false,
+  cond: s => s.loc === 'yunyue' && !s.flags.liudao && ((s.realm === 0 && s.stage >= 6) || s.realm === 1),
+  text: () => '巷底有人打铁，炉边没有招牌。老师傅看你虎口，说：“想走玄锋道，先自己锻一柄兵器。六道各有去处，执了这一锐，就不兼别途。”他拨出一块铁，等你回话。',
+  choices: s => [
+    { label: '添炭锻剑', sub: '灵石六十 · 一月', disabled: s.ls < 60, act: s => {
+      s.flags.liudao = { way: 'xuanfeng', stage: 'zhirui', weapon: '扫霜剑', fights: 0 };
+      s.marks.push({ t: '执锐客', y: s.age | 0, d: '在云岳坊亲手锻成扫霜剑，入玄锋道。持此兵与同阶或更强者交锋四十场，再看剑上的痕。' });
+      return { text: '你添炭、抡锤，直到天黑。师傅替剑开了刃：“执锐客，先学握稳。四十场交锋后，再看看它。”剑收入行囊，须自己佩上。', fx: { ls: -60, lsRaw: true, gear: '扫霜剑', time: 1 } };
+    } },
+    { label: '改日再来', act: () => ({ text: '师傅点点头，仍旧打铁。你走出巷子，手心还觉着热。', fx: {} }) }
+  ]
+});
+LOC_EV.yunyue.push('xuanfeng_forge'); EV_LOC.xuanfeng_forge = ['yunyue'];

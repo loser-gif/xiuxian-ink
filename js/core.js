@@ -36,6 +36,9 @@ const Core = (() => {
     if (fb) parts.push({ t: fb, w: 1, spd: 1 });
     if (s.eq && s.eq.weapon && typeof GEAR !== 'undefined' && GEAR[s.eq.weapon])
       parts.push({ t: GEAR[s.eq.weapon].t || {}, w: 1, spd: 1 });
+    const way = s.flags && s.flags.liudao;
+    if (way && way.stage === 'baizhan' && s.eq && s.eq.weapon === way.weapon)
+      parts.push({ t: { bt: 0.008 }, w: 1, spd: 0 });
     // 宗门气运
     if (typeof orgTraitParts === 'function') {
       const ot = orgTraitParts(s);
@@ -447,9 +450,27 @@ const Core = (() => {
   }
 
   /* ---------- 行动 ---------- */
+  // 物候只轻推原有行动，不另设一套修行刻度。
+  const seasonOf = s => Math.floor((s.months % 12) / 3);
+  function seasonPlay(s) {
+    const n = seasonOf(s);
+    return { n, spread: n === 0 ? 0.1 : 0.2, retreat: n === 2 ? 1.03 : 1 };
+  }
+  function seasonNote(s, emit, n) {
+    const key = Math.floor(s.months / 12) * 4 + n;
+    if (!emit || s.flags.seasonSaid === key || Math.random() > 0.12) return;
+    s.flags.seasonSaid = key;
+    emit({ text: ['春雨收住，呼吸也比往日匀些。', '暑气未退，山路上的消息多，险事也多。', '秋窗少声，正好把一口气养足。', '山径落霜，往来的人少了。'][n], cls: 'breath' });
+  }
+  function seasonWeight(s, e) {
+    const n = seasonOf(s), risk = e.seasonRisk || ['wolf', 'bandit', 'heifeng', 'xueyu', 'thunder', 'furnace'].includes(e.id);
+    return risk ? (n === 1 ? 1.1 : n === 3 ? 0.9 : 1) : (n === 3 ? 1.03 : 1);
+  }
   function tuna(s, emit) {
     const r = REALMS[s.realm], mul = gainMul(s), tags = [];
-    const g = unit(s) * K.tunaGain * (0.9 + Math.random() * 0.2) * mul * gfSpeed(s);
+    const season = seasonPlay(s);
+    seasonNote(s, emit, season.n);
+    const g = unit(s) * K.tunaGain * (1 - season.spread / 2 + Math.random() * season.spread) * mul * gfSpeed(s);
     const ups = bottleneck(s) ? (tags.push({ t: '瓶颈难破，修为难进' }), []) : addXw(s, g, tags);
     practice(s, 1, null, emit);
     moTick(s, 0, tags, emit);
@@ -477,6 +498,8 @@ const Core = (() => {
   }
   function biguan(s, emit) {
     const r = REALMS[s.realm], mul = gainMul(s), tags = [];
+    const season = seasonPlay(s);
+    seasonNote(s, emit, season.n);
     const cfXm = typeof courtFriction === 'function' ? courtFriction(s).xinmo : 1;
     const L = s.loop;
     let pXm = clamp(0.06 + (50 - s.xj) / 400, 0.02, 0.22) * gt(s, 'xinmo', 1) * cfXm;
@@ -503,7 +526,7 @@ const Core = (() => {
         s.xj = clamp(s.xj - 6, 0, 100); tags.push({ t: '心境 −6', c: 'down' });
       }
     } else {
-      let g = unit(s) * K.biguanGain * (0.88 + Math.random() * 0.24) * mul * gfSpeed(s) * caveMul(s);
+      let g = unit(s) * K.biguanGain * (0.88 + Math.random() * 0.24) * mul * gfSpeed(s) * caveMul(s) * season.retreat;
       if (roll > 1 - pDw) { g *= 1.6; text += pick(TEXT.dunwu); cls = 'gold'; if (Math.random() < 0.25 && s.wx < 10) { s.wx++; tags.push({ t: '悟性 +1', c: 'up' }); } }
       if (bottleneck(s)) tags.push({ t: '瓶颈难破，修为难进' }); else ups = addXw(s, g, tags);
       const xg = 1 + gt(s, 'xjGain', 0); s.xj = clamp(s.xj + xg, 0, 100);
@@ -550,7 +573,7 @@ const Core = (() => {
     if (!pool.length) pool = EVENTS.filter(ok);
     if (!pool.length) pool = EVENTS.filter(e => eventOk(s, e));
     // 未见过的更易遇到；见得越多越稀；本境界专属的略受青睐
-    const wt = e => (e.wf ? e.wf(s) : e.w) * (s.seen[e.id] ? 1 / (1 + s.seen[e.id] * 1.2) : 1.8) * (e.rm ? 1.3 : 1) * (wmul ? wmul(e) : 1);
+    const wt = e => (e.wf ? e.wf(s) : e.w) * (s.seen[e.id] ? 1 / (1 + s.seen[e.id] * 1.2) : 1.8) * (e.rm ? 1.3 : 1) * (wmul ? wmul(e) : 1) * seasonWeight(s, e);
     let tot = pool.reduce((a, e) => a + wt(e), 0), x = Math.random() * tot, ev = pool[0];
     for (const e of pool) { if ((x -= wt(e)) < 0) { ev = e; break; } }
     s.recent = [...recent, ev.id].slice(-8);
@@ -999,7 +1022,7 @@ const Core = (() => {
   function newState(name, r, legacy) {
     const s = { v: SAVE_V, name, lg: { id: r.lg.id, name: r.lg.name, mult: r.lg.mult, bt: r.lg.bt, sect: r.lg.sect }, lgEls: r.els,
       wx: r.wx, xj: 50, luck: r.luck, ls: 20, realm: 0, stage: 0, xw: 0, months: 16 * 12, lifeBonus: 0,
-      inj: 0, buff: null, items: {}, flags: {}, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
+      inj: 0, buff: null, items: {}, flags: { liudao: null }, fails: 0, events: 0, log: [], warned: {}, dead: false, ascended: false, bnLogged: false,
       gf: null, gfs: {}, aux: [], fabao: null, eq: { weapon: null }, path: { daoji: null, danwen: [], faxiang: null, wendao: null, jiewen: null },
       loop: emptyLoop(),
       seen: {}, recent: [], acts: 0, ending: null, marks: [], trail: [], played: 0,
@@ -1120,6 +1143,7 @@ const Core = (() => {
     s.court = s.court || (typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 });
     s.karma = s.karma || (typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] });
     s.seen = s.seen || {}; s.recent = s.recent || []; s.warned = s.warned || {}; s.flags = s.flags || {};
+    if (s.flags.liudao == null) s.flags.liudao = null;
     s.marks = Array.isArray(s.marks) ? s.marks : [];
     s.trail = Array.isArray(s.trail) ? s.trail : [];
     if (typeof s.played !== 'number') s.played = Math.round((s.acts || 0) * 6500);
@@ -1213,6 +1237,10 @@ const Core = (() => {
     else read = '与你相仿';
     return { exact: !hidden, realm, rough, read, gap };
   }
+  function xuanfengEdge(s) {
+    const way = s.flags && s.flags.liudao;
+    return way && way.way === 'xuanfeng' && s.eq && s.eq.weapon === way.weapon ? (way.stage === 'baizhan' ? 0.015 : 0.008) : 0;
+  }
   function oddsWord(s, base) {
     const f = foe(s);
     const gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
@@ -1220,7 +1248,7 @@ const Core = (() => {
     let p;
     if (dr >= 2) p = 0.92;
     else if (dr === 1) p = 0.78;
-    else p = clamp((+base || 0.5) + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
+    else p = clamp((+base || 0.5) + xuanfengEdge(s) + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
     if (p >= 0.75) return '胜算较高';
     if (p >= 0.58) return '多半能胜';
     if (p >= 0.45) return '胜负五五';
@@ -1296,13 +1324,23 @@ const Core = (() => {
     const f = (s.evFoe && !o.reroll) ? foe(s) : (o.foe ? rollFoe(s, o.foe) : foe(s));
     const dr = s.realm - f.realm, gap = lvl(s.realm, s.stage) - lvl(f.realm, f.stage);
     const nm = o.name || '对手', lsK = REALMS[f.realm].lsScale / REALMS[s.realm].lsScale;
+    const way = s.flags.liudao;
+    let wayNote = '';
+    if (way && way.way === 'xuanfeng' && s.eq.weapon === way.weapon && gap <= 0 && way.stage === 'zhirui') {
+      way.fights++;
+      if (way.fights >= 40) {
+        way.stage = 'baizhan';
+        wayNote = '四十场交锋过去，剑上添了旧痕。你已是玄锋道百战卒；往后的路，尚无人指点。';
+        s.marks.push({ t: '百战卒', d: wayNote, y: s.age | 0 });
+      } else if (way.fights % 10 === 0) wayNote = '途兵又添几处旧痕，已历交锋' + cn(way.fights) + '场。';
+    }
     const meta = { gap: +gap.toFixed(2), dr, foe: foeStr(s, f) };
     if (dr >= 2) return { text: (o.crush || pick(TEXT.crush)).replace(/\{f\}/g, nm), fx: { ...scaleFx(o.win.fx, 0, lsK), ...(o.crushFx || {}) }, fight: { ...meta, tier: 'crush' } };
     if (dr === 1) return { text: (o.dominant || pick(TEXT.dominant)).replace(/\{f\}/g, nm) + (o.dominantTail ? o.dominantTail : ''), fx: scaleFx(o.win.fx, 0.25, lsK), fight: { ...meta, tier: 'dominant' } };
-    const p = clamp(o.base + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
+    const p = clamp(o.base + xuanfengEdge(s) + clamp(gap * 0.6, -0.3, 0.3), 0.05, 0.95);
     const won = Math.random() < p;
     const r = won ? o.win : o.lose;
-    return { text: fnv(r.text, s), fx: r.fx, fight: { ...meta, tier: won ? 'win' : 'lose', p: +p.toFixed(2) } };
+    return { text: fnv(r.text, s) + wayNote, fx: r.fx, fight: { ...meta, tier: won ? 'win' : 'lose', p: +p.toFixed(2) } };
   }
 
   /* ---------- 宗门 ---------- */
@@ -1365,7 +1403,17 @@ const Core = (() => {
     const first = !n.met; n.met = true;
     if (typeof People !== 'undefined') People.touch(s, id);
     if (n.absolute) { n.a = -100; return; }
+    const before = n.a;
     n.a = clamp(n.a + d, -100, 100);
+    if (Math.abs(n.a - before) >= 8) {
+      const key = 'renqing_' + id + (d > 0 ? '_good' : '_bad');
+      if (s.flags[key] == null || s.months - s.flags[key] >= 24) {
+        s.flags[key] = s.months;
+        const line = NPCS[id].name + (d > 0 ? '把这回的情分记下了。再见时，话可以少说几句。' : '没有再接话。有些事过了，见面仍隔着一层。');
+        s.marks.push({ t: '人情半页', d: line, y: s.age | 0 });
+        if (tags) tags.push({ t: line, c: 'breath' });
+      }
+    }
     if (first && typeof Life !== 'undefined' && Life.meet) Life.meet(s, NPCS[id].name, '初见');
     if (tags && d) tags.push({ t: `${NPCS[id].name} ${d > 0 ? '情谊 +' + d : '情谊 −' + (-d)}`, c: d > 0 ? 'up' : 'down' });
     else if (tags && first) tags.push({ t: `结识${NPCS[id].name}`, c: 'up' });

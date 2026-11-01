@@ -89,6 +89,7 @@ const Jianghu = (() => {
     const m = travelMonths(s, to), tags = [], from = s.loc, duration = Core.timeMonths(s, m);
     Core.passTime(s, m, emit);
     s.loc = to;
+    if (!s.dead) s.flags['visit_' + to] = (s.flags['visit_' + to] || 0) + 1;
     if (!s.dead) recordTrail(s, from, to);
     if (typeof Loop !== 'undefined' && Loop.arrive) Loop.arrive(s, emit);
     if (!s.dead) gather(s, to, tags);

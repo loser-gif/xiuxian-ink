@@ -464,3 +464,14 @@ const DUEL_INTRO = {
 
 /* v0.11：既有任务暂归青冥；百家另册见 baijia.js */
 MISSIONS.forEach(m => { if (!m.orgs) m.orgs = ['qm']; });
+
+EVENTS.push({
+  id: 'renqing_whisper', title: '檐下闲话', w: 2, once: true,
+  wf: s => Object.keys(s.npc).some(id => Core.npcAlive(s, id) && s.npc[id].met && s.npc[id].a >= 60) ? 2.2 : 2,
+  cond: s => !!(s.sect && s.sect.org) && Object.keys(s.npc).some(id => Core.npcAlive(s, id) && s.npc[id].met && Math.abs(s.npc[id].a) >= 45),
+  text: s => {
+    const id = Object.keys(s.npc).find(id => Core.npcAlive(s, id) && s.npc[id].met && Math.abs(s.npc[id].a) >= 45);
+    return '檐下两个同门说起' + NPCS[id].name + (s.npc[id].a >= 45 ? '，说你这人遇事肯伸手，托一桩差事也放心。' : '，见你过来，话便收住了。旧日那点嫌隙，原来还有人记着。') + '一人换了话头：“坊里有个旁门执锐的，飞升门前却留下了。谁知道为了什么。”雨声大起来，后半句没听清。';
+  },
+  choices: s => [{ label: '借檐避一阵雨', act: () => ({ text: '你掸去袖上的水，没有追问。人情和修行，都不是一句话说得清的。', fx: { xj: 1 } }) }]
+});
