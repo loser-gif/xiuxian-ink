@@ -493,9 +493,10 @@ async function paperPassage(id, ready) {
     previous.classList.add('paper-peel');
     if (!stopped && canFade) {
       animate(previous, [
-        { transform: 'perspective(1400px) translate3d(0,0,0) rotate(0deg) rotateY(0deg) skewY(0deg) scale(1)', opacity: 1 },
-        { transform: 'perspective(1400px) translate3d(9%,-7%,0) rotate(7deg) rotateY(-7deg) skewY(-2deg) scale(.97)', opacity: .92, offset: .3 },
-        { transform: 'perspective(1400px) translate3d(52%,-44%,0) rotate(21deg) rotateY(-16deg) skewY(-4deg) scale(.8)', opacity: 0 }
+        { transform: 'perspective(1400px) rotate(0deg) rotateY(0deg) scaleX(1)', clipPath: 'polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 100%)', opacity: 1 },
+        { transform: 'perspective(1400px) rotate(-2deg) rotateY(-18deg) scaleX(.98)', clipPath: 'polygon(0% 0%,100% 0%,100% 100%,45% 100%,0% 55%)', opacity: 1, offset: .3 },
+        { transform: 'perspective(1400px) rotate(-4deg) rotateY(-38deg) scaleX(.95)', clipPath: 'polygon(52% 0%,100% 0%,100% 48%,100% 48%,52% 0%)', opacity: .94, offset: .7 },
+        { transform: 'perspective(1400px) rotate(-5deg) rotateY(-55deg) scaleX(.92)', clipPath: 'polygon(100% 0%,100% 0%,100% 0%,100% 0%,100% 0%)', opacity: 0 }
       ], peelMs);
     } else if (!stopped) {
       previous.classList.add('paper-peel-css');
@@ -3887,7 +3888,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=122', 'img/open-glyph.png?v=122', 'img/open-seal-logo.png?v=122'];
+  const urls = ['img/open-plate.png?v=123', 'img/open-glyph.png?v=123', 'img/open-seal-logo.png?v=123'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4514,8 +4515,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=122'),
-      loadInk('img/open-glyph.png?v=122')
+      loadInk('img/open-plate.png?v=123'),
+      loadInk('img/open-glyph.png?v=123')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4553,7 +4554,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=122').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=123').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

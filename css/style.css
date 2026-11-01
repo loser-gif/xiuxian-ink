@@ -4524,10 +4524,10 @@ body.paper-turning #scr-main{
   transform:translateZ(0);
 }
 
-/* v122: textured paper, a shaded curled edge and a lifted cast shadow. */
+/* v123: fixed corner, diagonal fold and inward rotation; no page translation. */
 .paper-leave.paper-peel{
   transform-origin:100% 0;
-  will-change:transform,opacity;
+  will-change:transform,opacity,clip-path;
   -webkit-backface-visibility:hidden;
   backface-visibility:hidden;
   transition:none !important;
@@ -4553,12 +4553,23 @@ body.paper-turning #scr-main{
   inset:0;
   border-radius:inherit;
   pointer-events:none;
-  background:linear-gradient(35deg,rgba(58,40,21,.16),rgba(255,249,230,.20) 2%,transparent 8%);
+  background:linear-gradient(45deg,transparent 36%,rgba(58,40,21,.12) 46%,rgba(58,40,21,.32) 49%,rgba(255,249,230,.78) 50%,rgba(255,249,230,.26) 54%,transparent 64%);
+  background-size:200% 200%;
+  animation:paper-fold-shade var(--peel-ms,240ms) cubic-bezier(.22,.61,.36,1) both;
+  z-index:1;
   box-shadow:inset 1px -1px 0 rgba(73,51,29,.32);
 }
 .paper-leave.paper-peel-css{animation:paper-corner-peel var(--peel-ms,240ms) cubic-bezier(.22,.61,.36,1) both !important}
 @keyframes paper-corner-peel{
-  0%{transform:perspective(1400px) translate3d(0,0,0) rotate(0deg) rotateY(0deg) skewY(0deg) scale(1);opacity:1}
-  30%{transform:perspective(1400px) translate3d(9%,-7%,0) rotate(7deg) rotateY(-7deg) skewY(-2deg) scale(.97);opacity:.92}
-  100%{transform:perspective(1400px) translate3d(52%,-44%,0) rotate(21deg) rotateY(-16deg) skewY(-4deg) scale(.8);opacity:0}
+  0%{transform:perspective(1400px) rotate(0deg) rotateY(0deg) scaleX(1);clip-path:polygon(0% 0%,100% 0%,100% 100%,0% 100%,0% 100%);opacity:1}
+  30%{transform:perspective(1400px) rotate(-2deg) rotateY(-18deg) scaleX(.98);clip-path:polygon(0% 0%,100% 0%,100% 100%,45% 100%,0% 55%);opacity:1}
+  70%{transform:perspective(1400px) rotate(-4deg) rotateY(-38deg) scaleX(.95);clip-path:polygon(52% 0%,100% 0%,100% 48%,100% 48%,52% 0%);opacity:.94}
+  100%{transform:perspective(1400px) rotate(-5deg) rotateY(-55deg) scaleX(.92);clip-path:polygon(100% 0%,100% 0%,100% 0%,100% 0%,100% 0%);opacity:0}
+}
+
+@keyframes paper-fold-shade{
+  0%{background-position:100% 0%;opacity:0}
+  30%{background-position:78% 22%;opacity:1}
+  70%{background-position:24% 76%;opacity:1}
+  100%{background-position:0% 100%;opacity:0}
 }
