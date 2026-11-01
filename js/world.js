@@ -508,12 +508,14 @@ LOC_EV.gufu.push('shen_yan'); LOC_EV.yunhai.push('shen_yan'); EV_LOC.shen_yan = 
         { label: '赶路去', act: s => { s.flags[key] = -1; return { text: '你没有停步。身后的旧痕，留给后来的人。', fx: {} }; } }
       ]
     });
+    LOC_EV[chain.loc].push(key + '_' + step);
+    EV_LOC[key + '_' + step] = [chain.loc];
   });
 });
 
 EVENTS.push({
   id: 'xuanfeng_forge', title: '炉前执锐', w: 7, rm: [0, 1], once: false,
-  cond: s => s.loc === 'yunyue' && !s.flags.liudao && (s.realm === 1 || s.stage >= 6),
+  cond: s => s.loc === 'yunyue' && !s.flags.liudao && ((s.realm === 0 && s.stage >= 6) || s.realm === 1),
   text: () => '巷底有人打铁，炉边没有招牌。老师傅看你虎口，说：“想走玄锋道，先自己锻一柄兵器。六道各有去处，执了这一锐，就不兼别途。”他拨出一块铁，等你回话。',
   choices: s => [
     { label: '添炭锻剑', sub: '灵石六十 · 一月', disabled: s.ls < 60, act: s => {
@@ -524,3 +526,4 @@ EVENTS.push({
     { label: '改日再来', act: () => ({ text: '师傅点点头，仍旧打铁。你走出巷子，手心还觉着热。', fx: {} }) }
   ]
 });
+LOC_EV.yunyue.push('xuanfeng_forge'); EV_LOC.xuanfeng_forge = ['yunyue'];

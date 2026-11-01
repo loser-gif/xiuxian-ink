@@ -186,7 +186,11 @@ function makeJHUI(G) {
   async function goEvent(to, local) {
     let tr = null; const gt = [];
     if (!local) tr = await travelAnim(to);
-    else { Core.passTime(G.S, J.travelMonths(G.S, to), pushLog); if (!G.S.dead) J.gather(G.S, to, gt); }
+    else {
+      Core.passTime(G.S, J.travelMonths(G.S, to), pushLog);
+      if (!G.S.dead) G.S.flags['visit_' + to] = (G.S.flags['visit_' + to] || 0) + 1;
+      if (!G.S.dead) J.gather(G.S, to, gt);
+    }
     if (G.S.dead) { await closeMap(); return afterDeath(); }
     const ev = J.pickAt(G.S, to); render(); save();
     await closeMap(true);
