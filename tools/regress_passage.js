@@ -24,7 +24,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
   }
   async function done(p, screen) {
     await p.waitForFunction(screen => document.body.dataset.screen === screen && !document.body.classList.contains('paper-turning'), screen);
-    return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-leave,.paper-scene,.paper-word,.paper-guard,.paper-recall').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
+    return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-leave,.paper-peel,.paper-peel-css,.paper-scene,.paper-word,.paper-guard,.paper-recall').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
   }
   async function seed(p, name = '顾长生', goal = true) {
     await p.locator('#inp-name').fill(name);
@@ -47,25 +47,26 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
         const label=w+'-'+theme;
         const start=Date.now();await p.locator('#btn-new').click();
         await p.waitForTimeout(100);
-        const snap=await p.evaluate(()=>({copies:document.querySelectorAll('.paper-scene canvas').length,originals:document.querySelectorAll('#scenery canvas').length,dupes:[...document.querySelectorAll('[id]')].map(e=>e.id).filter((id,i,a)=>a.indexOf(id)!==i),mask:getComputedStyle(document.querySelector('.paper-scene')).maskImage,locked:document.querySelector('#app').getAttribute('aria-busy')}));
-        check(label+'-scenery-preserved',snap.copies===snap.originals&&snap.copies>0&&!snap.dupes.length&&snap.locked==='true'&&snap.mask.startsWith('url('),{copies:snap.copies,originals:snap.originals,dupes:snap.dupes,locked:snap.locked,masked:snap.mask.startsWith('url(')});
+        const snap=await p.evaluate(()=>({copies:document.querySelectorAll('.paper-scene').length,peel:!!document.querySelector('.paper-leave.paper-peel'),locked:document.querySelector('#app').getAttribute('aria-busy'),opacity:getComputedStyle(document.querySelector('#scr-create')).opacity,scenery:parseFloat(getComputedStyle(document.querySelector('#scenery')).opacity)}));
+        check(label+'-peel-over-steady-page',!snap.copies&&snap.peel&&snap.locked==='true'&&snap.opacity==='1'&&Math.abs(snap.scenery-.18)<.03,snap);
         await p.waitForFunction(()=>document.body.dataset.screen==='create');
         const cross=await p.evaluate(()=>{const old=document.querySelector('#scr-title'),next=document.querySelector('#scr-create');return {leave:old.classList.contains('paper-leave'),hidden:old.hidden,nextHidden:next.hidden,bg:getComputedStyle(old).backgroundColor};});
         check(label+'-overlay-covers-switch',cross.leave&&!cross.hidden&&!cross.nextHidden&&cross.bg!=='rgba(0, 0, 0, 0)',cross);
         const opened=await done(p,'create');
-        check(label+'-open-completes',Date.now()-start>=2400&&opened.paper&&!opened.washes&&!opened.leftovers&&!opened.locked,opened);
+        check(label+'-open-completes',Date.now()-start>=650&&Date.now()-start<1800&&opened.paper&&!opened.washes&&!opened.leftovers&&!opened.locked,opened);
         await seed(p,w===320?'南宫长生听雨':'南宫听雨');
         const named=await done(p,'main');
         check(label+'-name-enters',named.paper&&!named.washes&&!named.leftovers&&await p.locator('#h-name').textContent()===(w===320?'南宫长生听雨':'南宫听雨'),named);
         await menu(p);
-        await p.evaluate(()=>{window.__flight=[];window.__sampleFlight=setInterval(()=>{if(document.body.dataset.screen!=='main')return;const es=['#h-name','#h-realm','#journal-title','#log'].map(s=>document.querySelector(s));__flight.push({rects:es.map(e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height].map(v=>Math.round(v*10)/10);}),ghosts:document.querySelectorAll('.paper-word').length,recall:!!document.querySelector('.paper-recall')});},30);});
+        await p.evaluate(()=>{window.__sceneryAnimations=0;const nativeAnimate=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(this.id==='scenery'&&JSON.stringify(frames).includes('opacity'))__sceneryAnimations++;return nativeAnimate.call(this,frames,options);};window.__flight=[];window.__sampleFlight=setInterval(()=>{if(document.body.dataset.screen!=='main')return;const es=['#h-name','#h-realm','#journal-title','#log'].map(s=>document.querySelector(s));__flight.push({rects:es.map(e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height].map(v=>Math.round(v*10)/10);}),scenery:parseFloat(getComputedStyle(document.querySelector('#scenery')).opacity),main:getComputedStyle(document.querySelector('#scr-main')).opacity,ghosts:document.querySelectorAll('.paper-word').length,recall:!!document.querySelector('.paper-recall')});},30);});
         await p.locator('#btn-continue').click();
-        if(w===390||w===1440){await p.waitForTimeout(750);await p.screenshot({path:path.join(out,'resume-mid-'+label+'.jpg'),type:'jpeg',quality:82});}
+        if(w===390||w===1440){await p.waitForTimeout(280);await p.screenshot({path:path.join(out,'resume-mid-'+label+'.jpg'),type:'jpeg',quality:82});}
         const resumed=await done(p,'main');
-        const state=await p.evaluate(()=>{clearInterval(__sampleFlight);return{flight:__flight,age:__moxian.S.age,name:__moxian.S.name,version:__moxian.S.v,width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,logAtEnd:document.querySelector('#log').scrollHeight-document.querySelector('#log').scrollTop-document.querySelector('#log').clientHeight<2};});
+        const state=await p.evaluate(()=>{clearInterval(__sampleFlight);return{sceneryAnimations:__sceneryAnimations,scenery:parseFloat(getComputedStyle(document.querySelector('#scenery')).opacity),flight:__flight,age:__moxian.S.age,name:__moxian.S.name,version:__moxian.S.v,width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,logAtEnd:document.querySelector('#log').scrollHeight-document.querySelector('#log').scrollTop-document.querySelector('#log').clientHeight<2};});
         check(label+'-resume-clean',resumed.paper&&!resumed.leftovers&&!resumed.locked&&state.version===16&&state.age===16&&state.logAtEnd&&state.width<=w&&state.height<=h,{resumed,state});
+        check(label+'-scenery-never-animates',state.sceneryAnimations===0&&Math.abs(state.scenery-.22)<.03&&state.flight.every(f=>Math.abs(f.scenery-.22)<.03&&f.main==='1'),{animations:state.sceneryAnimations,opacity:state.scenery,samples:state.flight.length});
         const fixed=state.flight.length>5&&state.flight.every(f=>!f.ghosts&&JSON.stringify(f.rects)===JSON.stringify(state.flight[0].rects));
-        check(label+'-ink-stays-in-place',fixed&&state.flight.some(f=>f.recall),{samples:state.flight.length,fixed,recall:state.flight.some(f=>f.recall)});
+        check(label+'-ink-stays-in-place',fixed,{samples:state.flight.length,fixed,recall:state.flight.some(f=>f.recall)});
         if(w===390||w===440||w===1440)await p.screenshot({path:path.join(out,'main-'+label+'.jpg'),type:'jpeg',quality:82});
         await ctx.close();
       }
@@ -86,7 +87,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
       const s=await done(p,'create');check('interrupt-'+reason,!s.leftovers&&!s.locked&&s.paper,s);await ctx.close();
     }
     const {ctx,p}=await make();await p.locator('#btn-new').click();await done(p,'create');await seed(p,'守卷人',false);
-    await p.waitForTimeout(900);check('goal-waits-for-name-arrival',await p.locator('#goal-cer').isHidden());await done(p,'main');await p.locator('#goal-cer').waitFor();
+    await p.waitForTimeout(100);check('goal-waits-for-name-arrival',await p.locator('#goal-cer').isHidden());await done(p,'main');await p.locator('#goal-cer').waitFor();
     check('goal-appears-after-arrival',!await p.evaluate(()=>document.body.classList.contains('paper-turning')));
     await p.evaluate(()=>{Life.setGoal(__moxian.S,'wendao',false);__moxian.save();});await menu(p);
     const before=await p.evaluate(()=>{const s=Slots.readActive();return {log:JSON.stringify(s.log),age:s.age,months:s.months};});
