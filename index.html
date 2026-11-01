@@ -58,7 +58,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
 </style>
 <script>
 (function () {
-  var EXPECT = 'moxian-v125';
+  var EXPECT = 'moxian-v126';
   var pending = '';
   function showFail(kind) {
     var box = document.getElementById('boot-fail');
@@ -131,7 +131,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     track(reg.waiting);
     reg.addEventListener('updatefound', function () { track(reg.installing); });
   }
-  navigator.serviceWorker.register('./sw.js?v=125').then(armWorker).catch(function () {});
+  navigator.serviceWorker.register('./sw.js?v=126').then(armWorker).catch(function () {});
   var reloading = false;
   function playing() {
     var screen = document.body && document.body.getAttribute('data-screen');
@@ -163,17 +163,17 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   });
 })();
 </script>
-<link rel="manifest" href="manifest.webmanifest?v=125">
-<link rel="icon" href="icon.svg?v=125" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=125">
-<link rel="preload" href="img/open-plate.png?v=125" as="image">
-<link rel="preload" href="img/open-glyph.png?v=125" as="image">
-<link rel="preload" href="img/open-seal-logo.png?v=125" as="image">
-<link rel="preload" href="fonts/wenkai-game.woff2?v=125" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/mashanzheng.woff2?v=125" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=125">
-<link rel="stylesheet" href="css/style.css?v=125">
-<link rel="stylesheet" href="css/idle.css?v=125">
+<link rel="manifest" href="manifest.webmanifest?v=126">
+<link rel="icon" href="icon.svg?v=126" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png?v=126">
+<link rel="preload" href="img/open-plate.png?v=126" as="image">
+<link rel="preload" href="img/open-glyph.png?v=126" as="image">
+<link rel="preload" href="img/open-seal-logo.png?v=126" as="image">
+<link rel="preload" href="fonts/wenkai-game.woff2?v=126" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/mashanzheng.woff2?v=126" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=126">
+<link rel="stylesheet" href="css/style.css?v=126">
+<link rel="stylesheet" href="css/idle.css?v=126">
 </head>
 <body class="ink-await">
 <div id="boot-fail" hidden>
@@ -221,11 +221,11 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
  </div>
  <div id="tod"><i class="tod-dawn"></i><i class="tod-dusk"></i></div>
  <div id="realm-scape" aria-hidden="true">
-  <picture><source srcset="img/realm-0.avif?v=125" type="image/avif"><source srcset="img/realm-0.webp?v=125" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=125" alt="" decoding="async" width="720" height="404"></picture>
-  <picture><source srcset="img/realm-1.avif?v=125" type="image/avif"><source srcset="img/realm-1.webp?v=125" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=125" alt="" decoding="async" width="720" height="336"></picture>
-  <picture><source srcset="img/realm-2.avif?v=125" type="image/avif"><source srcset="img/realm-2.webp?v=125" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=125" alt="" decoding="async" width="720" height="405"></picture>
-  <picture><source srcset="img/realm-3.avif?v=125" type="image/avif"><source srcset="img/realm-3.webp?v=125" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=125" alt="" decoding="async" width="720" height="401"></picture>
-  <picture><source srcset="img/realm-4.avif?v=125" type="image/avif"><source srcset="img/realm-4.webp?v=125" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=125" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-0.avif?v=126" type="image/avif"><source srcset="img/realm-0.webp?v=126" type="image/webp"><img class="ra ra-0" src="img/realm-0.png?v=126" alt="" decoding="async" width="720" height="404"></picture>
+  <picture><source srcset="img/realm-1.avif?v=126" type="image/avif"><source srcset="img/realm-1.webp?v=126" type="image/webp"><img class="ra ra-1" src="img/realm-1.png?v=126" alt="" decoding="async" width="720" height="336"></picture>
+  <picture><source srcset="img/realm-2.avif?v=126" type="image/avif"><source srcset="img/realm-2.webp?v=126" type="image/webp"><img class="ra ra-2" src="img/realm-2.png?v=126" alt="" decoding="async" width="720" height="405"></picture>
+  <picture><source srcset="img/realm-3.avif?v=126" type="image/avif"><source srcset="img/realm-3.webp?v=126" type="image/webp"><img class="ra ra-3" src="img/realm-3.png?v=126" alt="" decoding="async" width="720" height="401"></picture>
+  <picture><source srcset="img/realm-4.avif?v=126" type="image/avif"><source srcset="img/realm-4.webp?v=126" type="image/webp"><img class="ra ra-4" src="img/realm-4.png?v=126" alt="" decoding="async" width="720" height="405"></picture>
  </div>
  <div id="season-veil" aria-hidden="true"></div>
 </div>
@@ -365,15 +365,15 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
         </div>
         <div class="who">
           <div class="who-name" id="h-name">无名</div>
+          <div class="hud-seals">
+            <button class="menu-seal sect-seal" id="btn-sect" aria-label="宗门"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="44" fill="#1b1814"/><circle cx="50" cy="50" r="36" fill="none" stroke="#f3ead6" stroke-width="2.5" opacity=".7"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font" id="sect-seal-t">宗</text></g></svg></button>
+            <button class="menu-seal cult-seal" id="btn-cult" aria-label="修持"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#1b1814"/><rect x="14" y="14" width="72" height="72" rx="3" fill="none" stroke="#f3ead6" stroke-width="2.2" opacity=".75"/><text x="50" y="68" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font">修</text></g></svg></button>
+            <button class="menu-seal" id="btn-menu" aria-label="卷首"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font">卷</text></g></svg></button>
+          </div>
           <div class="who-sub" id="h-sub">外门弟子 · 三灵根</div>
           <div class="who-time" id="h-time"></div>
         </div>
         <button id="hud-toggle" class="hud-toggle" aria-label="展开人物详情" aria-expanded="false"><span aria-hidden="true"></span></button>
-        <div class="hud-seals">
-          <button class="menu-seal sect-seal" id="btn-sect" aria-label="宗门"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="44" fill="#1b1814"/><circle cx="50" cy="50" r="36" fill="none" stroke="#f3ead6" stroke-width="2.5" opacity=".7"/><text x="50" y="67" text-anchor="middle" font-size="46" fill="#f3ead6" class="seal-font" id="sect-seal-t">宗</text></g></svg></button>
-          <button class="menu-seal cult-seal" id="btn-cult" aria-label="修持"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#1b1814"/><rect x="14" y="14" width="72" height="72" rx="3" fill="none" stroke="#f3ead6" stroke-width="2.2" opacity=".75"/><text x="50" y="68" text-anchor="middle" font-size="48" fill="#f3ead6" class="seal-font">修</text></g></svg></button>
-          <button class="menu-seal" id="btn-menu" aria-label="卷首"><svg viewBox="0 0 100 100"><g filter="url(#f-seal)"><rect x="6" y="6" width="88" height="88" rx="10" fill="#b3302a"/><text x="50" y="68" text-anchor="middle" font-size="52" fill="#f3ead6" class="seal-font">卷</text></g></svg></button>
-        </div>
       </div>
       <p class="next-line" id="next-line">下一层 二层 · 小境自升 · 下一境 筑基</p>
       <div class="bars">
@@ -408,7 +408,7 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
     <div class="scroll">
       <div class="roller roller-top"></div>
       <div class="scroll-paper">
-        <header class="journal-head"><h2 id="journal-title">修行录</h2><p id="journal-place"></p></header>
+        <header class="journal-head"><h2 id="journal-title">大衍历</h2><p id="journal-place"></p></header>
         <div class="juan-head" id="juan-head" aria-hidden="true">
           <div class="season-wash" aria-hidden="true"></div>
         </div>
@@ -671,43 +671,43 @@ html[data-theme="night"] #boot-retry{background:#9c4038;color:#f6f0e2}
   </div>
 </div>
 
-<script src="js/data.js?v=125"></script>
-<script src="js/gongfa.js?v=125"></script>
-<script src="js/gear.js?v=125"></script>
-<script src="js/story.js?v=125"></script>
-<script src="js/sect.js?v=125"></script>
-<script src="js/baijia.js?v=125"></script>
-<script src="js/world.js?v=125"></script>
-<script src="js/tianxia.js?v=125"></script>
-<script src="js/karma.js?v=125"></script>
-<script src="js/life.js?v=125"></script>
-<script src="js/juan.js?v=125"></script>
-<script src="js/path.js?v=125"></script>
-<script src="js/core.js?v=125"></script>
-<script src="js/loops.js?v=125"></script>
-<script src="js/codec.js?v=125"></script>
-<script src="js/slots.js?v=125"></script>
-<script src="js/samsara.js?v=125"></script>
-<script src="js/jianghu.js?v=125"></script>
-<script src="js/folio.js?v=125"></script>
-<script src="js/arts.js?v=125"></script>
-<script src="js/people.js?v=125"></script>
-<script src="js/redworld.js?v=125"></script>
-<script src="js/ink.js?v=125"></script>
-<script src="js/ding.js?v=125"></script>
-<script src="js/map.js?v=125"></script>
-<script src="js/audio.js?v=125"></script>
-<script src="js/fx.js?v=125"></script>
-<script src="js/btfx.js?v=125"></script>
-<script src="js/fabaoart.js?v=125"></script>
-<script src="js/wallpaper.js?v=125"></script>
-<script src="js/inkgl.js?v=125"></script>
-<script src="js/jhui.js?v=125"></script>
-<script src="js/scrollart.js?v=125"></script>
-<script src="js/portraits.js?v=125"></script>
-<script src="js/notices.js?v=125"></script>
-<script src="js/game.js?v=125"></script>
+<script src="js/data.js?v=126"></script>
+<script src="js/gongfa.js?v=126"></script>
+<script src="js/gear.js?v=126"></script>
+<script src="js/story.js?v=126"></script>
+<script src="js/sect.js?v=126"></script>
+<script src="js/baijia.js?v=126"></script>
+<script src="js/world.js?v=126"></script>
+<script src="js/tianxia.js?v=126"></script>
+<script src="js/karma.js?v=126"></script>
+<script src="js/life.js?v=126"></script>
+<script src="js/juan.js?v=126"></script>
+<script src="js/path.js?v=126"></script>
+<script src="js/core.js?v=126"></script>
+<script src="js/loops.js?v=126"></script>
+<script src="js/codec.js?v=126"></script>
+<script src="js/slots.js?v=126"></script>
+<script src="js/samsara.js?v=126"></script>
+<script src="js/jianghu.js?v=126"></script>
+<script src="js/folio.js?v=126"></script>
+<script src="js/arts.js?v=126"></script>
+<script src="js/people.js?v=126"></script>
+<script src="js/redworld.js?v=126"></script>
+<script src="js/ink.js?v=126"></script>
+<script src="js/ding.js?v=126"></script>
+<script src="js/map.js?v=126"></script>
+<script src="js/audio.js?v=126"></script>
+<script src="js/fx.js?v=126"></script>
+<script src="js/btfx.js?v=126"></script>
+<script src="js/fabaoart.js?v=126"></script>
+<script src="js/wallpaper.js?v=126"></script>
+<script src="js/inkgl.js?v=126"></script>
+<script src="js/jhui.js?v=126"></script>
+<script src="js/scrollart.js?v=126"></script>
+<script src="js/portraits.js?v=126"></script>
+<script src="js/notices.js?v=126"></script>
+<script src="js/game.js?v=126"></script>
 <div id="idle" class="idle" hidden></div>
-<script src="js/idle.js?v=125"></script>
+<script src="js/idle.js?v=126"></script>
 </body>
 </html>

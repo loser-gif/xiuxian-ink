@@ -1294,7 +1294,10 @@ function render() {
   setText('#dur-biguan', cnDur(Math.round(bgMonths)) + (trial && bgMonths > trial.left ? ' · 越期' : ''));
   stackAside($('#margin-when'), timeLabel());
   const locNow = typeof LOC !== 'undefined' && S.loc && LOC[S.loc] ? LOC[S.loc].name : '山中';
-  setText('#journal-place', locNow);
+  const calYear = 3721 + Math.max(0, (S.age|0) - 16);
+  const calSeason = ['春','夏','秋','冬'][season];
+  setText('#journal-title', `大衍历${calYear}年 · ${locNow} · ${calSeason}`);
+  setText('#journal-place', '');
   stackAside($('#margin-where'), locNow);
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
   const bagLab = S.eq && S.eq.weapon ? (cnt ? `佩·${cn(cnt)}` : '佩') : (cnt ? `${cn(cnt)}物` : '空');
@@ -2838,6 +2841,7 @@ function openMenu() {
   w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
     <button class="menu-item" data-m="shop">铺子<small>开铺 · 上货 · 一季一结</small></button>
     <button class="menu-item" data-m="sex">此身<small>称呼 · 道侣心意</small></button>
+    <button class="menu-item" data-m="trace">行迹<small>因果 · 此生印记</small></button>
     <button class="menu-item" data-m="annals">平生<small>逐年 · 所遇 · 所求</small></button>
     <button class="menu-item" data-m="look">纸墨<small>昼夜 · 字号 · 动效</small></button>
     <button class="menu-item" data-m="resume">继续修行</button>
@@ -2852,6 +2856,7 @@ function openMenu() {
     const btn = e.target.closest('[data-m]'); if (!btn) return;
     const m = btn.dataset.m;
     if (m === 'slots') { await closeSheet(); openSlots(); return; }
+    if (m === 'trace') { await closeSheet(); openTraceSheet(); return; }
     if (m === 'annals') { await closeSheet(); openAnnals(); return; }
     if (m === 'shop') { await closeSheet(); openShop(); return; }
     if (m === 'sex') { await closeSheet(); openSexSheet(); return; }
@@ -3711,7 +3716,6 @@ $('#hud-toggle').onclick = () => {
 function setPlayPage(page) {
   if (!['log', 'cult', 'sect', 'trace'].includes(page)) return;
   $('#scr-main').dataset.page = page;
-  setText('#journal-title', { log: '修行录', cult: '修持', sect: '宗门', trace: '行迹' }[page]);
   $$('.play-tabs button').forEach(b => {
     const selected = b.dataset.page === page;
     b.setAttribute('aria-selected', String(selected)); b.tabIndex = selected ? 0 : -1;
@@ -3888,7 +3892,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=125', 'img/open-glyph.png?v=125', 'img/open-seal-logo.png?v=125'];
+  const urls = ['img/open-plate.png?v=126', 'img/open-glyph.png?v=126', 'img/open-seal-logo.png?v=126'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4515,8 +4519,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=125'),
-      loadInk('img/open-glyph.png?v=125')
+      loadInk('img/open-plate.png?v=126'),
+      loadInk('img/open-glyph.png?v=126')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4554,7 +4558,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=125').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=126').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
