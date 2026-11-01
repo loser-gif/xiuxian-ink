@@ -4583,3 +4583,35 @@ body.paper-turning #scr-main{
 .audio-vol::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:var(--ink);box-shadow:0 0 1px var(--ink3)}
 .audio-vol:focus-visible{outline:1px solid var(--ink3);outline-offset:2px}
 .audio-vol:disabled{cursor:default}
+
+/* v125 · 掌机头顶压缩、修行录透气 */
+@media (max-width:999px) and (orientation:portrait){
+  #scr-main .hud{padding-top:0;max-height:36vh;max-height:36dvh}
+  #scr-main .hud-top{gap:8px}
+  #scr-main .realm-block{min-height:54px}
+  #scr-main .realm-name{font-size:39px}
+  #scr-main .who{padding-left:10px}
+  #scr-main .who-name{font-size:23px}
+  #scr-main .who-time{margin-top:3px;line-height:1.4}
+  #scr-main .hud-toggle{top:5px;min-width:44px;min-height:44px}
+  #scr-main .bars{margin-top:3px;gap:3px}
+  #scr-main .bar{grid-template-rows:13px 9px}
+  #scr-main .bar-track,#scr-main .incense{height:9px}
+  #scr-main .chips{margin-top:3px;padding:3px 0;gap:4px 10px}
+  #scr-main .journal-head{padding:2px 8px 6px}
+  #scr-main .journal-head h2{font-size:23px}
+  #scr-main .entry{margin-bottom:25px}
+  #scr-main #log .entry-followed{margin-bottom:9px}
+  #scr-main .entry-time{margin-bottom:9px}
+  #scr-main .entry-title{margin-bottom:8px}
+  #scr-main #log .entry-text{line-height:1.95}
+  #scr-main .actions{padding-top:2px}
+  #scr-main .act{height:60px;min-height:44px}
+  #scr-main .act-t{font-size:25px}
+  #scr-main .act small{margin-top:4px}
+}
+@media (max-width:399px) and (orientation:portrait){
+  #scr-main .realm-name{font-size:38px}
+  #scr-main .who-name{font-size:22px}
+  #scr-main .hud-top{gap:7px}
+}
