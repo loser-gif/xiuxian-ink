@@ -422,66 +422,15 @@ function setScreen(id, keep) {
 }
 let lastTap = null;
 document.addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]; }, { passive: true, capture: true });
-// Freeze only the departing scenery. The paper canvas stays alive throughout.
-// Computed styles and canvas pixels preserve the current camera, season and phone layout.
-function paperScene() {
-  const source = $('#scenery'), copy = source.cloneNode(true);
-  const originals = [source, ...source.querySelectorAll('*')];
-  const copies = [copy, ...copy.querySelectorAll('*')];
-  originals.forEach((node, i) => {
-    const dest = copies[i], style = getComputedStyle(node);
-    dest.removeAttribute('id'); dest.removeAttribute('class');
-    dest.style.cssText = Array.from(style, key => key + ':' + style.getPropertyValue(key) + ';').join('');
-    dest.style.setProperty('animation', 'none', 'important');
-    dest.style.setProperty('transition', 'none', 'important');
-    if (node.tagName === 'CANVAS' && node.width && node.height) dest.getContext('2d').drawImage(node, 0, 0);
-  });
-  const layer = document.createElement('div');
-  layer.className = 'paper-scene'; layer.setAttribute('aria-hidden', 'true');
-  layer.appendChild(copy); document.body.appendChild(layer);
-  return layer;
-}
-// A small, feathered mask lets the existing paper show through the old scenery.
-// Its uneven edge is generated once; no new texture or full-screen bitmap is needed.
-function absorbPaper(layer, duration) {
-  if (!window.CSS || !(CSS.supports('mask-image', 'linear-gradient(black,transparent)') || CSS.supports('-webkit-mask-image', 'linear-gradient(black,transparent)'))) return () => {};
-  const canvas = document.createElement('canvas'); canvas.width = 160; canvas.height = 100;
-  const ctx = canvas.getContext('2d'); if (!ctx) return () => {};
-  const pixels = ctx.createImageData(160, 100), distance = new Float32Array(16000);
-  for (let y = 0; y < 100; y++) for (let x = 0; x < 160; x++) {
-    const dx = (x / 159 - .51) / .67, dy = (y / 99 - .43) / .77, a = Math.atan2(dy, dx);
-    distance[y * 160 + x] = Math.hypot(dx, dy) * (1 + .07 * Math.sin(a * 3) + .045 * Math.sin(a * 7 + 1.2) + .025 * Math.cos(a * 11));
-  }
-  let raf = 0, last = -100, finished = false; const start = performance.now();
-  const tick = now => {
-    if (finished) return;
-    const p = Math.min(1, (now - start) / duration);
-    if (now - last >= 33 || p === 1) {
-      last = now; const radius = - .4 + 2 * p * p * (3 - 2 * p);
-      for (let i = 0; i < distance.length; i++) {
-        const a = Math.max(0, Math.min(1, (distance[i] - radius) / .42 + .5));
-        pixels.data[i * 4 + 3] = Math.round(255 * a * a * (3 - 2 * a));
-      }
-      ctx.putImageData(pixels, 0, 0);
-      const mask = 'url(' + canvas.toDataURL() + ')';
-      layer.style.webkitMaskImage = mask; layer.style.maskImage = mask;
-    }
-    if (p < 1) raf = requestAnimationFrame(tick);
-  };
-  tick(start);
-  return () => { finished = true; cancelAnimationFrame(raf); };
-}
+// Lift only the departing paper; the incoming UI and landscape stay at rest.
 async function paperPassage(id, ready) {
   const previous = $('#scr-' + curScreen), next = $('#scr-' + id);
   const mode = id === 'create' ? 'open' : curScreen === 'title' ? 'resume' : 'name';
   const canFade = !document.hidden && typeof previous.animate === 'function';
   const full = !splashSoft() && canFade;
-  const fadeMs = full ? (mode === 'resume' ? 900 : 800) : 300;
-  const total = full ? (mode === 'open' ? 2600 : mode === 'resume' ? 1900 : 2100) : 400;
-  const lead = full ? (mode === 'open' ? 560 : 380) : 60;
+  const peelMs = full ? 760 : 240;
   const animations = [], keys = new Set();
-  let absorb = null, recall = null;
-  let scene = null, switched = false, stopped = false, active = true, release;
+  let switched = false, stopped = false, active = true, release;
   const interrupted = new Promise(resolve => { release = resolve; });
   const stop = () => { stopped = true; release(); };
   const wait = ms => stopped ? Promise.resolve() : Promise.race([sleep(ms), interrupted]);
@@ -504,24 +453,17 @@ async function paperPassage(id, ready) {
     animations.push(animation);
     return animation;
   };
-  const arrive = (el, delay, duration = 800) => animate(el, [{ opacity: 0 }, { opacity: .22, offset: .35 }, { opacity: .78, offset: .72 }, { opacity: 1 }], duration, delay);
   const switchPage = () => {
     if (switched) return;
-    // Hide the whole incoming page, including paper and rollers, before render.
-    next.style.opacity = '0';
-    // L1: retain the live departing screen above the incoming page.
-    if (canFade) {
-      previous.classList.add('paper-leave');
-      previous.style.opacity = '1';
-      // Keep the frozen landscape on the departing opaque paper too.
-      if (scene) {
-        scene.style.zIndex = '-1';
-        previous.insertBefore(scene, previous.firstChild);
-      }
-    }
-    switched = true; setScreen(id, canFade ? previous : null);
-    void next.offsetWidth;
+    // Render the incoming paper at rest beneath the departing opaque sheet.
+    next.style.opacity = '1';
+    previous.classList.add('paper-leave');
+    previous.style.opacity = '1';
+    switched = true; setScreen(id, previous);
     if (ready) ready();
+    scenery.style.cssText = sceneryStyle;
+    sceneryTarget = readSceneryTarget();
+    scenery.style.opacity = String(sceneryTarget);
   };
   const guard = document.createElement('div'); guard.className = 'paper-guard'; guard.setAttribute('aria-hidden', 'true');
   const focusWasInside = previous.contains(document.activeElement);
@@ -530,9 +472,10 @@ async function paperPassage(id, ready) {
   const scenery = $('#scenery'), sceneryStyle = scenery.style.cssText;
   let sceneryTarget = null;
   const readSceneryTarget = () => {
+    const inlineOpacity = scenery.style.opacity;
     scenery.style.removeProperty('opacity');
     const opacity = parseFloat(getComputedStyle(scenery).opacity);
-    scenery.style.opacity = '0';
+    scenery.style.opacity = inlineOpacity;
     return Number.isFinite(opacity) ? opacity : 0;
   };
   const lookWatch = new MutationObserver(motion);
@@ -543,69 +486,37 @@ async function paperPassage(id, ready) {
   lookWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion', 'data-fx'] });
   $('#app').setAttribute('aria-busy', 'true');
   try {
-    if (full) {
-      try { scene = paperScene(); } catch (e) { /* Keep the basic fade if scenery cannot be copied. */ }
-    }
     document.body.classList.add('paper-turning'); document.body.dataset.passage = mode;
-    if (scene) {
-      scenery.style.setProperty('visibility', 'hidden', 'important');
-      try { absorb = absorbPaper(scene, total - 150); } catch (e) { /* Opacity still carries the scenery away. */ }
-      animate(scene, [{ opacity: 1 }, { opacity: .65, offset: .55 }, { opacity: 0 }], total - 100);
-      const ink = previous.querySelector(mode === 'open' ? '#btn-new .bb-ink' : '#btn-continue .bb-ink');
-      animate(ink, [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }], 350);
-    }
-    if (canFade) await wait(lead);
     switchPage();
-    scenery.style.cssText = sceneryStyle;
-    scenery.style.opacity = '0';
-    sceneryTarget = readSceneryTarget();
+    // Only the old sheet moves. The new UI and landscape are already at rest.
+    previous.style.setProperty('--peel-ms', peelMs + 'ms');
+    previous.classList.add('paper-peel');
     if (!stopped && canFade) {
-      // Let the rendered page settle while the paper is still transparent.
-      await Promise.race([
-        new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-        sleep(100), interrupted
-      ]);
-      animate(previous, [{ opacity: 1 }, { opacity: 0 }], fadeMs);
-      arrive(next, 0, fadeMs);
-      animate(scenery, [{ opacity: 0 }, { opacity: sceneryTarget }], full ? total - lead : fadeMs);
-      // Quiet motion keeps only the short whole-page fade.
-      if (full && id === 'create') {
-        arrive(next.querySelector('.create-head'), 0, 850);
-        arrive(next.querySelector('.create-body'), 240, 1100);
-        animate(next.querySelector('.field-line'), [{ opacity: 0 }, { opacity: 1 }], 700, 950);
-        arrive(next.querySelector('.create-actions'), 700, 750);
-      } else if (full) {
-        arrive(next.querySelector('.hud'), mode === 'resume' ? 260 : 100, 900);
-        arrive(next.querySelector('.journal-head'), 0);
-        if (mode === 'resume' && S) {
-          const last = S.log[S.log.length - 1];
-          recall = document.createElement('span'); recall.className = 'paper-recall'; recall.setAttribute('aria-hidden', 'true');
-          recall.textContent = last && last.time || timeLabel();
-          next.querySelector('.journal-head').appendChild(recall);
-          animate(recall, [{ opacity: 0 }, { opacity: .8, offset: .3 }, { opacity: .8, offset: .72 }, { opacity: 0 }], total - lead);
-        }
-        const entries = [...next.querySelectorAll('#log > *')];
-        entries.forEach((entry, i) => arrive(entry, mode === 'resume' && i === entries.length - 1 ? 30 : 300, 900));
-        ['.play-masthead', '.play-tabs', '.side', '.margin-col', '.margin-note', '.status-line', '.trace-note', '.actions', '#btn-break'].forEach(sel => arrive(next.querySelector(sel), sel === '.actions' ? 600 : 420, 650));
-      }
-      await wait(Math.max(fadeMs, full ? total - lead : fadeMs));
+      animate(previous, [
+        { transform: 'translate3d(0,0,0) rotate(0deg) scale(1)', opacity: 1 },
+        { transform: 'translate3d(8%,-6%,0) rotate(5deg) scale(.97)', opacity: .92, offset: .3 },
+        { transform: 'translate3d(48%,-40%,0) rotate(16deg) scale(.8)', opacity: 0 }
+      ], peelMs);
+    } else if (!stopped) {
+      previous.classList.add('paper-peel-css');
     }
+    await wait(peelMs);
   } finally {
     switchPage();
-    // Pin the departing layer before cancel removes the WAAPI fill on WebKit.
-    if (scene) scene.style.opacity = '0';
+    // Hide the old sheet before removing its animation fill on WebKit.
+    previous.style.opacity = '0';
     // Commit the incoming paper before removing WAAPI fill (WebKit).
     next.style.opacity = '1';
-    // Pin the CSS landscape target before cancel removes its WAAPI fill.
+    // The landscape never animates; keep the CSS target pinned through cleanup.
     if (sceneryTarget === null) sceneryTarget = readSceneryTarget();
     scenery.style.opacity = String(sceneryTarget);
     animations.forEach(a => a.cancel());
-    previous.classList.remove('paper-leave');
+    previous.classList.remove('paper-leave', 'paper-peel', 'paper-peel-css');
+    previous.style.removeProperty('--peel-ms');
     previous.hidden = true;
     previous.style.opacity = previousOpacity;
     next.style.opacity = nextOpacity;
-    if (absorb) absorb(); if (recall) recall.remove();
-    if (scene) scene.remove(); guard.remove();
+    guard.remove();
     scenery.style.cssText = sceneryStyle;
     document.body.classList.remove('paper-turning'); delete document.body.dataset.passage;
     $('#app').removeAttribute('aria-busy'); active = false;
@@ -3976,7 +3887,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=120', 'img/open-glyph.png?v=120', 'img/open-seal-logo.png?v=120'];
+  const urls = ['img/open-plate.png?v=121', 'img/open-glyph.png?v=121', 'img/open-seal-logo.png?v=121'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4603,8 +4514,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=120'),
-      loadInk('img/open-glyph.png?v=120')
+      loadInk('img/open-plate.png?v=121'),
+      loadInk('img/open-glyph.png?v=121')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4642,7 +4553,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=120').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=121').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
