@@ -1742,7 +1742,7 @@ function openEvent(ev) {
   let choices = ev.choices(S);
   if (typeof Loop !== 'undefined' && Loop.dress) choices = Loop.dress(choices, ev, S);
   choices.forEach((c, i) => {
-    const b = document.createElement('button'); b.className = 'choice'; b.disabled = !!c.disabled;
+    const b = document.createElement('button'); b.className = 'choice' + (c.odds != null ? ' choice-odds' : ''); b.disabled = !!c.disabled;
     b._choice = c;
     b.style.animationDelay = (startAt + i * 120) + 'ms';
     b.innerHTML = `<span></span><small></small>`; b.firstChild.textContent = c.label; b.lastChild.textContent = choiceSub(c, S);
@@ -3902,7 +3902,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=134', 'img/open-glyph.png?v=134', 'img/open-seal-logo.png?v=134'];
+  const urls = ['img/open-plate.png?v=135', 'img/open-glyph.png?v=135', 'img/open-seal-logo.png?v=135'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4502,8 +4502,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=134'),
-      loadInk('img/open-glyph.png?v=134')
+      loadInk('img/open-plate.png?v=135'),
+      loadInk('img/open-glyph.png?v=135')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4541,7 +4541,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=134').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=135').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

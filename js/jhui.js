@@ -100,7 +100,7 @@ function makeJHUI(G) {
       const tag = document.createElement('button'); tag.className = 'map-tag' + (l.id === sel ? ' sel' : '') + (G.S.realm < l.rm ? ' locked' : '');
       tag.dataset.id = l.id; tag.style.left = x + '%'; tag.style.top = ly + '%';
       const mjOpenHere = l.mj && J.mjOpen(G.S, l.mj), auc = l.market && aucWindow();
-      tag.innerHTML = `<span class="tag-slip">${vtext(l.name)}</span><span class="tag-seal">${l.seal}</span>${mjOpenHere ? '<span class="tag-flag">秘境</span>' : ''}${auc ? '<span class="tag-flag gold">拍卖</span>' : ''}`;
+      tag.innerHTML = `<span class="tag-slip">${vtext(l.name)}</span>${mjOpenHere ? '<span class="tag-flag">秘境</span>' : ''}${auc ? '<span class="tag-flag gold">拍卖</span>' : ''}`;
       tag.onclick = () => { if (mapBusy) return; sel = l.id; box.querySelectorAll('.map-tag').forEach(t => t.classList.toggle('sel', t.dataset.id === sel)); if (typeof MoAudio !== 'undefined') MoAudio.setPlace(sel); renderCard(); centerOn(sel, true); };
       box.appendChild(tag);
       const pt = document.createElement('i'); pt.className = 'map-pt' + (walked.includes(i) || walked.includes(i - 1) ? ' walked' : ''); pt.style.left = x + '%'; pt.style.top = y + '%'; box.appendChild(pt);
@@ -617,7 +617,7 @@ function makeJHUI(G) {
     const mjEv = { id: 'mj:' + nd.t, title: nd.t };
     if (typeof Loop !== 'undefined' && Loop.dress) list = Loop.dress(list, mjEv, G.S);
     list.forEach((c, i) => {
-      const b = document.createElement('button'); b.className = 'choice';
+      const b = document.createElement('button'); b.className = 'choice' + (c.odds != null ? ' choice-odds' : '');
       const short = c.ling && d.ling + c.ling < 0;
       b.disabled = !!c.disabled || short;
       b._choice = c;
