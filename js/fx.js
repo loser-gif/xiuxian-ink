@@ -6,7 +6,9 @@ const FX = (() => {
   const userReduced = () => reduced() || document.documentElement.dataset.motion === 'lite';
   const thinNow = () => userReduced() || document.documentElement.dataset.fx === 'thin';
   const cheapFx = () => document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite';
-  const coarsePhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  // Draw budget: coarse pointer AND short side <1000; large touch desktops use desktop density.
+  const DRAW_PHONE_SHORT = 1000;
+  const coarsePhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < DRAW_PHONE_SHORT);
   const DPR = Math.min(window.devicePixelRatio || 1, 2);
   const $ = s => document.querySelector(s);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -256,8 +258,12 @@ const FX = (() => {
   }
   function fpsTick(t) {
     if (!fpsArmed) return;
+    if (document.hidden || userReduced()) {
+      fpsArmed = false;
+      fpsLast = 0; fpsN = 0; fpsBad = 0; fpsGood = 0; return;
+    }
     requestAnimationFrame(fpsTick);
-    if (document.hidden || fxBusy || userReduced()) {
+    if (fxBusy) {
       fpsLast = 0; fpsN = 0; fpsBad = 0; fpsGood = 0; return;
     }
     if (!fpsLast) { fpsLast = t; return; }
@@ -287,14 +293,20 @@ const FX = (() => {
     if (typeof Wallpaper !== 'undefined' && Wallpaper.syncMotion) Wallpaper.syncMotion();
   }
   function armFps() {
-    if (fpsArmed || reduced()) return;
+    if (fpsArmed || document.hidden || userReduced()) return;
     fpsArmed = true;
     requestAnimationFrame(fpsTick);
   }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) armFps(); });
+  if (RM) {
+    const wakeFps = function () { armFps(); };
+    if (RM.addEventListener) RM.addEventListener('change', wakeFps);
+    else RM.addListener(wakeFps);
+  }
   function syncMotion() {
+    armFps(); // Auto-thin must keep sampling for recovery, even when weather stops.
     if (!seasonHidden() && W.season >= 0) setSeason(W.season);
     if (seasonHidden() || thinNow()) { haltWeather(); return; }
-    armFps();
     if (W.season >= 0 && W.cv) {
       fitParts();
       if (!W.raf && !document.hidden) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
