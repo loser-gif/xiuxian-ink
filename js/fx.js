@@ -174,9 +174,13 @@ const FX = (() => {
     W.raf = 0; W.parts = []; W.gold = [];
     if (W.c && W.w) { W.c.setTransform(1, 0, 0, 1, 0, 0); W.c.clearRect(0, 0, W.cv.width, W.cv.height); }
   }
+  function seasonHidden() {
+    return document.body.dataset.screen === 'main' && document.documentElement.dataset.seasonPlate === 'off';
+  }
   function setSeason(s) {
+    if (seasonHidden()) { W.season = s; haltWeather(); return; }
     if (thinNow()) { haltWeather(); return; }
-    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !thinNow() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
+    if (!W.cv) { W.cv = $('#weather'); W.c = W.cv.getContext('2d'); resizeWeather(); addEventListener('resize', resizeWeather); document.addEventListener('visibilitychange', () => { if (!document.hidden && !seasonHidden() && !thinNow() && !W.raf && W.season >= 0) { W.last = 0; W.raf = requestAnimationFrame(wTick); } }); }
     armFps();
     let n = partN(s);
     if (document.body.dataset.screen === 'title') n = Math.min(n, 4);
@@ -201,7 +205,7 @@ const FX = (() => {
     return performance.now() - goSeen < 900;
   }
   function wTick(t) {
-    if (thinNow()) { haltWeather(); return; }
+    if (seasonHidden() || thinNow()) { haltWeather(); return; }
     if (document.hidden) { W.raf = 0; return; }
     W.raf = requestAnimationFrame(wTick);
     if (introBusy()) return;
@@ -289,7 +293,8 @@ const FX = (() => {
     requestAnimationFrame(fpsTick);
   }
   function syncMotion() {
-    if (thinNow()) { haltWeather(); return; }
+    if (!seasonHidden() && W.season >= 0) setSeason(W.season);
+    if (seasonHidden() || thinNow()) { haltWeather(); return; }
     armFps();
     if (W.season >= 0 && W.cv) {
       fitParts();

@@ -582,7 +582,11 @@ const Album = (() => {
     return { w: Math.max(2, Math.round(vw * k)), h: Math.max(2, Math.round(vh * k)) };
   }
 
+  function enabled() {
+    return document.documentElement.dataset.seasonPlate !== 'off';
+  }
   function paintAll() {
+    if (!enabled()) return;
     const N = night();
     const sz = sizeOf();
     const key = sz.w + 'x' + sz.h + (N ? 'n' : 'd');
@@ -607,7 +611,7 @@ const Album = (() => {
   }
 
   function sweep() {
-    if (thin()) return;
+    if (!enabled() || thin()) return;
     if (document.body.dataset.screen !== 'main') return;
     document.body.classList.remove('album-sweep');
     void document.body.offsetWidth;
@@ -621,7 +625,7 @@ const Album = (() => {
     return n >= 0 && n <= 3 ? n : 0;
   }
   function alive() {
-    return document.body.dataset.screen === 'main' && !document.hidden && !thin();
+    return enabled() && document.body.dataset.screen === 'main' && !document.hidden && !thin();
   }
   function edgeFade(x, y) {
     if (y > 0.76 && x > 0.12 && x < 0.88) return 0;
@@ -796,6 +800,13 @@ const Album = (() => {
   }
 
   function sync() {
+    if (!enabled()) {
+      stopBreath();
+      clearTimeout(sweepTimer);
+      document.body.classList.remove('album-sweep');
+      seenSeason = null;
+      return;
+    }
     paintAll();
     const season = document.body.dataset.season;
     if (seenSeason !== null && season !== seenSeason) sweep();
@@ -807,7 +818,7 @@ const Album = (() => {
     sync();
     const mo = new MutationObserver(sync);
     mo.observe(document.body, { attributes: true, attributeFilter: ['data-season', 'data-screen'] });
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-motion', 'data-fx'] });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-motion', 'data-fx', 'data-season-plate'] });
     addEventListener('resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () { paintedKey = ''; paintAll(); }, 160);
