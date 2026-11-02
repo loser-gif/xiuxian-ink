@@ -3480,13 +3480,14 @@ function applyPalette() {
 function applyLook(partial) {
   const prev = readLook();
   const prevTheme = document.documentElement.dataset.theme || '';
-  const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, prev, partial || {});
-  try { localStorage.setItem(LOOK_KEY, JSON.stringify({ theme: p.theme, font: p.font, motion: p.motion })); } catch (e) {}
+  const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full', seasonPlate: 'on' }, prev, partial || {});
+  try { localStorage.setItem(LOOK_KEY, JSON.stringify({ theme: p.theme, font: p.font, motion: p.motion, seasonPlate: p.seasonPlate === 'off' ? 'off' : 'on' })); } catch (e) {}
   const dark = p.theme === 'night' || (p.theme !== 'day' && matchMedia('(prefers-color-scheme: dark)').matches);
   const nextTheme = dark ? 'night' : 'day';
   document.documentElement.dataset.theme = nextTheme;
   document.documentElement.dataset.font = (p.font === 'lg' || p.font === 'sm') ? p.font : 'md';
   document.documentElement.dataset.motion = p.motion === 'lite' ? 'lite' : 'full';
+  document.documentElement.dataset.seasonPlate = p.seasonPlate === 'off' ? 'off' : 'on';
   applyPalette();
   const wantThin = p.motion === 'lite' || matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (wantThin) {
@@ -3508,7 +3509,7 @@ function applyLook(partial) {
   if (prevTheme !== nextTheme) drawMountains(true, { yield: prevTheme !== '' });
 }
 function openLook() {
-  const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full' }, readLook());
+  const p = Object.assign({ theme: 'auto', font: 'md', motion: 'full', seasonPlate: 'on' }, readLook());
   const w = document.createElement('div');
   w.className = 'look-sheet';
   const row = (k, label, opts) => `<div class="look-row" data-k="${k}"><b>${label}</b><div class="look-opts">${opts.map(([id, name]) => `<button type="button" class="look-opt${p[k] === id ? ' on' : ''}" data-v="${id}">${name}</button>`).join('')}</div></div>`;
@@ -3516,7 +3517,8 @@ function openLook() {
     ${row('theme', '昼夜', [['auto', '自动'], ['day', '昼'], ['night', '夜']])}
     ${row('font', '字号', [['sm', '小'], ['md', '中'], ['lg', '大']])}
     ${row('motion', '动效', [['full', '全'], ['lite', '简']])}
-    <p class="look-note">夜墨是深纸与淡墨，卷面仍暖。简则收雾、落花与翻卷。若画面吃力，动效会自己变薄，回稳后再复原。</p>`;
+    ${row('seasonPlate', '四季册景', [['on', '开'], ['off', '关']])}
+    <p class="look-note">夜墨是深纸与淡墨，卷面仍暖。简则收雾、落花与翻卷。若画面吃力，动效会自己变薄，回稳后再复原。四季册景关上，主卷回默认纸景，历法季名仍在。</p>`;
   w.addEventListener('click', e => {
     const b = e.target.closest('.look-opt'); if (!b) return;
     const rowEl = b.closest('.look-row');
@@ -3902,7 +3904,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=136', 'img/open-glyph.png?v=136', 'img/open-seal-logo.png?v=136'];
+  const urls = ['img/open-plate.png?v=137', 'img/open-glyph.png?v=137', 'img/open-seal-logo.png?v=137'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4502,8 +4504,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=136'),
-      loadInk('img/open-glyph.png?v=136')
+      loadInk('img/open-plate.png?v=137'),
+      loadInk('img/open-glyph.png?v=137')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4541,7 +4543,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=136').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=137').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
