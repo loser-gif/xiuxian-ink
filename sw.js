@@ -1,24 +1,24 @@
 /* 墨仙录 · 离线壳。网络优先；坏响应不入库、也不当作样式或脚本交出去。版本不符则自愈。 */
 'use strict';
-var CACHE = 'moxian-v137';
+var CACHE = 'moxian-v138';
 var PRECACHE = [
   './',
   './index.html',
-  './css/style.css?v=137',
-  './css/fonts.css?v=137',
-  './css/idle.css?v=137',
-  './manifest.webmanifest?v=137',
+  './css/style.css?v=138',
+  './css/fonts.css?v=138',
+  './css/idle.css?v=138',
+  './manifest.webmanifest?v=138',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
   './icon.svg',
-  './img/season-plate-0.webp?v=137',
-  './img/season-plate-1.webp?v=137',
-  './img/season-plate-2.webp?v=137',
-  './img/season-plate-3.webp?v=137',
-  './img/open-plate.png?v=137',
-  './img/open-glyph.png?v=137',
-  './img/open-seal-logo.png?v=137',
+  './img/season-plate-0.webp?v=138',
+  './img/season-plate-1.webp?v=138',
+  './img/season-plate-2.webp?v=138',
+  './img/season-plate-3.webp?v=138',
+  './img/open-plate.png?v=138',
+  './img/open-glyph.png?v=138',
+  './img/open-seal-logo.png?v=138',
 ];
 
 function kindOf(url, req) {

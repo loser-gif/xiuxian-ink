@@ -320,30 +320,30 @@ const Life = (() => {
 
   /* ---------- 喘息 ---------- */
   const VIGNETTES = [
-    { id: 'v_qi', where: 'any', title: '山间对弈', text: '山腰一块平石，棋已摆好，人却不在。你坐下，替那空位落了一子。风把松针吹进棋盘，你未拿掉。下到中盘，你把最后一子握在手里，未落下。' },
-    { id: 'v_qin', where: 'any', title: '雨夜查漏', text: '入夜雨大，顶上石缝滴水。你把蒲团往旁挪了半尺，取陶盆接在底下。随后盘膝，行了一遍小周天。耳边滴答不绝，丹田气息如常。' },
-    { id: 'v_xin', where: 'any', title: '旧友来信', text: '信是托人带到山门的，纸边磨毛了。开头写「见字如晤」，后面三行都是天气，末了才说：你还在就好。没有地址。你把信压在砚下。' },
+    { id: 'v_qi', where: 'road', title: '山间对弈', text: '山腰一块平石，棋已摆好，人却不在。你坐下，替那空位落了一子。风把松针吹进棋盘，你未拿掉。下到中盘，你把最后一子握在手里，未落下。' },
+    { id: 'v_qin', where: 'cave', title: '雨夜查漏', text: '入夜雨大，顶上石缝滴水。你把蒲团往旁挪了半尺，取陶盆接在底下。随后盘膝，行了一遍小周天。耳边滴答不绝，丹田气息如常。' },
+    { id: 'v_xin', where: 'cave', title: '旧友来信', text: '信是托人带到山门的，纸边磨毛了。开头写「见字如晤」，后面三行都是天气，末了才说：你还在就好。没有地址。你把信压在砚下。' },
     { id: 'v_xi', where: 'cave', title: '溪边洗砚', text: '你把砚拿到溪边洗。墨沉下去，又浮上来。洗到水清，手在冷水里多停了一会儿，方才拎起砚台。' },
     { id: 'v_yun', where: 'road', title: '看云', text: '路上没有人。云从东峰移到西峰，走得慢。你靠着枯树站了一盏茶的工夫，把要办的事忘了半件，又自己想起来。随后便下山去。' },
-    { id: 'v_song', where: 'any', title: '听松', text: '松涛来时，你正在吐纳间隙里发呆。风过一层，松针便响一层。听罢，继续行气。' },
+    { id: 'v_song', where: 'cave', title: '听松', text: '松涛来时，你正在吐纳间隙里发呆。风过一层，松针便响一层。听罢，继续行气。' },
     { id: 'v_cha', where: 'road', title: '茶摊', text: '岔路口一个茶摊，摊主是个不爱说话的老人。茶粗，杯子缺了口。你喝完，把一枚最小的灵石压在杯下。老人摇头，把灵石推回来，又给你续了半杯。' },
     { id: 'v_yue', where: 'cave', title: '月下独酌', text: '月好，你只倒了一小杯。酒入喉是热的，杯沿是凉的。洞外虫子叫了两声，你把酒饮尽。' },
     { id: 'v_xue', where: 'cave', title: '雪夜补衣', text: '雪把窗纸映白。袖口裂了一线，你就着灯补。针脚歪歪扭扭。补完咬断线头，吹灯歇下。' },
     { id: 'v_yu', where: 'road', title: '船头看鱼', text: '渡船很慢。鱼在船头影子里翻白，又沉下去。舟子问你去哪一岸，你指了对岸。舟子横桨，船头缓缓拨开水面。' },
     { id: 'v_jing', where: 'cave', title: '灯下抄经', text: '你抄了半页经。灯花爆了一下，笔尖顿住，纸上洇开一个墨点。' },
     { id: 'v_zhong', where: 'road', title: '山寺午钟', text: '午钟从远处庙里传来，一下，又一下。你数到第七下便数乱了。你在石阶上坐到钟声散尽，膝盖上落了一层细灰。' },
-    { id: 'v_cao', where: 'any', title: '与童子斗草', text: '山门外两个童子斗草，见你便要你做裁判。你蹲下去看了片刻，替他们分了胜负。童子散去，你把断草拂下石阶。' },
+    { id: 'v_cao', where: 'road', title: '与童子斗草', text: '山门外两个童子斗草，见你便要你做裁判。你蹲下去看了片刻，替他们分了胜负。童子散去，你把断草拂下石阶。' },
     { id: 'v_ye', where: 'road', title: '一片落叶', text: '一片叶子落在你掌心，脉络还清楚。你举起来对着天看了看，又放回路上。' },
     { id: 'v_deng', where: 'road', title: '渡口等船', text: '船不来。你在渡口石桩上坐着，看对岸的灯一盏盏亮起。有人问你等谁，你说等船。那人笑了笑，把自己的斗笠借你。船来时，斗笠的主人已经走了。' },
-    { id: 'v_di', where: 'any', title: '雾中闻笛', text: '雾厚，看不见路。笛声从雾的另一头来，短短两声。你用指节在剑鞘上应了两下。笛声转了个弯，近了一近，又远了。你收剑入鞘，继续赶路。' },
+    { id: 'v_di', where: 'road', title: '雾中闻笛', text: '雾厚，看不见路。笛声从雾的另一头来，短短两声。你用指节在剑鞘上应了两下。笛声转了个弯，近了一近，又远了。你收剑入鞘，继续赶路。' },
     { id: 'v_shu', where: 'cave', title: '晒书', text: '你把受潮的书页摊在石上晒。蚂蚁爬过一行字，你未赶。日头偏西，你把书收起，拍去页间尘土。' },
-    { id: 'v_he', where: 'any', title: '洞口扫叶', text: '落叶封了洞口。你取帚扫去，石阶重见，旧年久坐的浅痕未消。弃帚盘膝，就着冷石行气片刻，丹田渐温。' },
+    { id: 'v_he', where: 'cave', title: '洞口扫叶', text: '落叶封了洞口。你取帚扫去，石阶重见，旧年久坐的浅痕未消。弃帚盘膝，就着冷石行气片刻，丹田渐温。' },
     { id: 'v_e_yu', where: 'cave', early: 1, title: '檐雨', text: '雨落在石阶上，一级一级。你坐着听，未去数。' },
     { id: 'v_e_lu', where: 'cave', early: 1, title: '炉边', text: '炭只剩一小块。你把手搁在炉沿上，指尖微温。炭火渐暗，你收回手。' },
     { id: 'v_e_pu', where: 'cave', early: 1, title: '旧蒲团', text: '蒲团边磨出了线。你把它翻了个面，又坐下。线头扎了一下膝盖。' },
     { id: 'v_e_chong', where: 'cave', early: 1, title: '虫声', text: '洞外虫子叫得很齐。你跟着拍子吐了一口气。虫声忽乱，你收心吐纳，不再去听。' },
     { id: 'v_e_deng', where: 'cave', early: 1, title: '灯花', text: '灯花爆了一下。爆完，灯更暗了。你未挑灯芯，就着暗光，把剩下一行读完。' },
-    { id: 'v_e_song', where: 'any', early: 1, title: '松烟', text: '松烟从山下炊处飘上来，淡，不成片。你吸进一点，又吐掉。吐掉时，分得清哪一口是烟，哪一口是灵气。你阖门入定。' },
+    { id: 'v_e_song', where: 'cave', early: 1, title: '松烟', text: '松烟从山下炊处飘上来，淡，不成片。你吸进一点，又吐掉。吐掉时，分得清哪一口是烟，哪一口是灵气。你阖门入定。' },
     { id: 'v_e_wu', where: 'tuna', early: 1, title: '晨雾', text: '雾还没散。你在洞口站着，袖子一点点变潮。你转身回洞，关上石门。' },
     { id: 'v_e_quan', where: 'tuna', early: 1, title: '泉眼', text: '泉眼比昨天宽了一指。你蹲下去看，水里有下巴，没有眼睛——雾遮了上半张脸。你未把水搅开。' },
     { id: 'v_e_jing', where: 'tuna', early: 1, title: '半页', text: '你翻开经，只读了半页。半页里有一个字写歪了。你未改。' },
@@ -363,13 +363,12 @@ const Life = (() => {
   function vignetteText(v, s) { return typeof v.text === 'function' ? v.text(s) : v.text; }
   function pull(s, where, early) {
     const life = L(s);
-    const ok = v => !life.seenV.includes(v.id) && (v.where === 'any' || v.where === where);
-    let pool = VIGNETTES.filter(v => ok(v) && (!early || v.early));
-    if (early && !pool.length) pool = VIGNETTES.filter(ok);
+    const ok = v => !life.seenV.includes(v.id) && v.where === where;
+    const pool = VIGNETTES.filter(v => ok(v) && (!early || v.early));
     if (!pool.length) return null;
     const v = pool[Math.floor(Math.random() * pool.length)];
-    life.seenV.push(v.id);
     const text = vignetteText(v, s);
+    life.seenV.push(v.id);
     // 全文交给随后的日志。这里再截一笔，平生会把同一件事记成一长一短两行。
     return { title: v.title, text, id: v.id };
   }
