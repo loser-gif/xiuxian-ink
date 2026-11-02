@@ -1,6 +1,8 @@
 /* 墨仙录 · 活墨：一个共享 WebGL 着色器，渲染会呼吸、会洇开的湿墨（按钮墨团）与全屏墨染（转场/破境） */
 'use strict';
 const InkGL = (() => {
+  // Draw budget: coarse pointer AND short side <1000; large touch desktops use desktop density.
+  const DRAW_PHONE_SHORT = 1000;
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
   const userReduced = () => reduced() || document.documentElement.dataset.motion === 'lite';
@@ -487,7 +489,8 @@ const InkGL = (() => {
     if (!vis.length) return;
     B.raf = requestAnimationFrame(tick);
     const surging = vis.some(b => Math.abs(b.surge - b.surgeT) > .002);
-    const stride = matchMedia('(pointer: coarse)').matches ? 6 : 3;
+    const phone = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < DRAW_PHONE_SHORT);
+    const stride = phone ? 6 : 3;
     if (!prewarm && !surging && (++B.frame % stride)) return;
     const t = (now - B.t0) / 1000;
     for (const b of vis) {

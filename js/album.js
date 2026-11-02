@@ -38,9 +38,11 @@ const Album = (() => {
     if (root.dataset.motion === 'lite' || root.dataset.fx === 'thin') return true;
     return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
+  // Draw budget: coarse pointer AND short side <1000; large touch desktops use desktop density.
+  const DRAW_PHONE_SHORT = 1000;
   function phone() {
     const vw = innerWidth || 2, vh = innerHeight || 2;
-    return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(vw, vh) < 1000);
+    return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(vw, vh) < DRAW_PHONE_SHORT);
   }
   function rgba(rgb, a) {
     return 'rgba(' + (rgb[0] | 0) + ',' + (rgb[1] | 0) + ',' + (rgb[2] | 0) + ',' + a + ')';
@@ -585,29 +587,37 @@ const Album = (() => {
   function enabled() {
     return document.documentElement.dataset.seasonPlate !== 'off';
   }
+  // Per-season keys let a season change synchronously fill its target before sweep.
+  const seasonKeys = ['', '', '', ''];
+  let paintJob = 0;
   function paintAll() {
     if (!enabled()) return;
-    const N = night();
-    const sz = sizeOf();
+    const N = night(), sz = sizeOf();
     const key = sz.w + 'x' + sz.h + (N ? 'n' : 'd');
+    function paint(i) {
+      if (seasonKeys[i] === key) return;
+      const cv = leaves[i], ink = inks[i];
+      if (cv) { cv.width = sz.w; cv.height = sz.h; paintLeaf(cv, i, N); }
+      if (ink) { ink.width = sz.w; ink.height = sz.h; paintInk(ink, i, N); }
+      seasonKeys[i] = key;
+    }
+    paint(seasonIndex());
     if (key === paintedKey) return;
     paintedKey = key;
-    for (let i = 0; i < 4; i++) {
-      const cv = leaves[i];
-      if (!cv) continue;
-      cv.width = sz.w;
-      cv.height = sz.h;
-      paintLeaf(cv, i, N);
-      const ink = inks[i];
-      if (!ink) continue;
-      ink.width = sz.w;
-      ink.height = sz.h;
-      paintInk(ink, i, N);
+    const job = ++paintJob;
+    if (breath) { breath.width = sz.w; breath.height = sz.h; }
+    const pending = [0, 1, 2, 3].filter(function (i) { return seasonKeys[i] !== key; });
+    function later() {
+      // Obsolete theme/size jobs must never overwrite the latest canvases.
+      if (job !== paintJob || !enabled()) return;
+      if (pending.length) paint(pending.shift());
+      if (pending.length) defer();
     }
-    if (breath) {
-      breath.width = sz.w;
-      breath.height = sz.h;
+    function defer() {
+      if (window.requestIdleCallback) window.requestIdleCallback(later, { timeout: 500 });
+      else setTimeout(later, 0);
     }
+    if (pending.length) defer();
   }
 
   function sweep() {

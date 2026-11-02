@@ -5,7 +5,9 @@ const Wallpaper = (() => {
   const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   const reduced = () => !!(RM && RM.matches);
   const thinNow = () => reduced() || document.documentElement.dataset.motion === 'lite' || document.documentElement.dataset.fx === 'thin';
-  const coarse = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 1000);
+  // Draw budget: coarse pointer AND short side <1000; large touch desktops use desktop density.
+  const DRAW_PHONE_SHORT = 1000;
+  const coarse = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < DRAW_PHONE_SHORT);
   function fogN(n) {
     let m = coarse() ? 0.5 : 1;
     if (document.documentElement.dataset.fx === 'thin' || document.documentElement.dataset.motion === 'lite') m *= 0.45;
@@ -321,6 +323,8 @@ const Wallpaper = (() => {
     if (!M.raf) { M.last = 0; M.raf = requestAnimationFrame(mainTick); }
   }
   function initMain() {
+    // Album replaces the old main water/boat; title scenery still uses build().
+    if (document.getElementById('album')) { syncMain(); return; }
     const host = $('.play-landscape'); if (!host) return;
     const add = (tag, cls) => { const el = document.createElement(tag); el.className = cls; host.appendChild(el); return el; };
     M.cv = add('canvas', 'play-mist'); M.c = M.cv.getContext('2d');
