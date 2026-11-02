@@ -3902,7 +3902,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=133', 'img/open-glyph.png?v=133', 'img/open-seal-logo.png?v=133'];
+  const urls = ['img/open-plate.png?v=134', 'img/open-glyph.png?v=134', 'img/open-seal-logo.png?v=134'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4125,7 +4125,10 @@ function splashWait() {
     };
     const setHole = (cx, cy, r) => {
       const rr = r < 1 ? 1 : r;
-      const edge = rr - Math.min(140, Math.max(18, rr * .16));
+      // 掌上揭幕留宽羽边，水纹经过题字与朱印时逐渐淡开。
+      const portrait = innerWidth < 700 && innerHeight > innerWidth;
+      const feather = portrait ? Math.min(240, Math.max(48, rr * .32)) : Math.min(140, Math.max(18, rr * .16));
+      const edge = rr - feather;
       const mask = 'radial-gradient(circle ' + rr.toFixed(2) + 'px at ' + cx.toFixed(2) + 'px ' + cy.toFixed(2) + 'px, rgba(255,255,255,0) ' + (edge < 0 ? 0 : edge).toFixed(2) + 'px, #fff ' + rr.toFixed(2) + 'px)';
       el.style.webkitMaskImage = mask;
       el.style.maskImage = mask;
@@ -4182,9 +4185,8 @@ function splashWait() {
       if (board) {
         const rct = board.getBoundingClientRect();
         if (rct.width > 2) {
-          const portrait = innerWidth < 700 && innerHeight > innerWidth;
-          ox = rct.left + rct.width * (portrait ? .58 : .66);
-          oy = rct.top + rct.height * (portrait ? .83 : .72);
+          ox = rct.left + rct.width * .66;
+          oy = rct.top + rct.height * .72;
         }
       }
       const shift = Math.min(48, window.innerWidth * 0.05);
@@ -4344,7 +4346,7 @@ function splashWait() {
     let brushH = 0;
     let brushDpr = 1;
     let plateImg = null;
-    let glyphImg = null, sourcePlate = null, sourceGlyph = null, portrait = false;
+    let glyphImg = null, sourcePlate = null, sourceGlyph = null;
     let brushPts = null;
     let brushCursor = 0;
     let paintDone = false;
@@ -4399,19 +4401,6 @@ function splashWait() {
         }
         segs.push({ pts: pts, weight: weight });
       };
-      if (portrait) {
-        pushLine(W * .14, H * .10, W * .85, H * .10, H * .09, 36, 'h', 1.1);
-        for (let k = 0; k < 4; k++) {
-          const y = .20 + k * .165;
-          pushLine(W * .59, H * y, W * .59, H * (y + .155), W * .17, 45, 'v', 1.7);
-          segs.push({pts:[{axis:'box',x0:W*.4,y0:H*y,x1:W*.79,y1:H*(y+.16),ink:1}],weight:.08});
-        }
-        pushLine(W * .02, H * .57, W * .30, H * .57, H * .07, 20, 'h', .5);
-        pushLine(W * .12, H * .925, W * .88, H * .925, H * .04, 30, 'h', .7);
-        const out = [], total = segs.reduce((n, seg) => n + seg.weight, 0); let at = 0;
-        segs.forEach(seg => { seg.pts.forEach((p, i) => { p.t = (at + seg.weight * (i + 1) / seg.pts.length) / total; out.push(p); }); at += seg.weight; });
-        return out;
-      }
       const arcN = 28;
       const arcPts = [];
       for (let i = 0; i <= arcN; i++) {
@@ -4490,26 +4479,10 @@ function splashWait() {
       }
       raf = requestAnimationFrame(framePaint);
     };
-    // 竖屏重排原题额的四字与淡景，保留同一笔迹，不缩成一条小横幅。
+    // 横竖屏共用原横板与笔迹，画布始终跟随题额比例。
     const arrangeArt = () => {
-      portrait = innerWidth < 700 && innerHeight > innerWidth;
-      if (!portrait || !sourcePlate || !sourceGlyph) { plateImg = sourcePlate; glyphImg = sourceGlyph; return; }
-      const artH = Math.round(600 * brushH / brushW);
-      const layer = () => { const c = document.createElement('canvas'); c.width = 600; c.height = artH; return c; };
-      plateImg = layer(); glyphImg = layer();
-      const pc = plateImg.getContext('2d'), gc = glyphImg.getContext('2d');
-      const crop = (ctx, img, x, y, w, h, dx, dy, dw, dh) => {
-        const scale = Math.min(dw * 600 / (w * img.width), dh * artH / (h * img.height));
-        const width = w * img.width * scale, height = h * img.height * scale;
-        ctx.drawImage(img, x * img.width, y * img.height, w * img.width, h * img.height, dx * 600 + (dw * 600 - width) / 2, dy * artH, width, height);
-      };
-      crop(pc, sourcePlate, .34, 0, .34, .34, .14, .025, .72, .144);
-      crop(pc, sourcePlate, .09, .4, .20, .27, .02, .52, .28, .076);
-      crop(pc, sourcePlate, .29, .74, .44, .16, .12, .90, .76, .048);
-      [[.2855,.3958],[.3915,.5067],[.5012,.6011],[.6011,.7181]].forEach((range, k) => {
-        const width = (range[1] - range[0]) * sourceGlyph.width / (.52 * sourceGlyph.height) * artH * .155;
-        gc.drawImage(sourceGlyph, range[0] * sourceGlyph.width, .28 * sourceGlyph.height, (range[1] - range[0]) * sourceGlyph.width, .52 * sourceGlyph.height, 354 - width / 2, artH * (.20 + k * .165), width, artH * .155);
-      });
+      plateImg = sourcePlate;
+      glyphImg = sourceGlyph;
     };
     const sizeBrush = () => {
       const box = el.querySelector('.splash-board').getBoundingClientRect();
@@ -4529,8 +4502,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=133'),
-      loadInk('img/open-glyph.png?v=133')
+      loadInk('img/open-plate.png?v=134'),
+      loadInk('img/open-glyph.png?v=134')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4568,7 +4541,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=133').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=134').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
