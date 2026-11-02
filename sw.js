@@ -1,24 +1,69 @@
 /* 墨仙录 · 离线壳。网络优先；坏响应不入库、也不当作样式或脚本交出去。版本不符则自愈。 */
 'use strict';
-var CACHE = 'moxian-v138';
-var PRECACHE = [
+var CACHE = 'moxian-v139';
+// Complete offline shell; large seasonal plates are best-effort extras.
+var PRECACHE_REQUIRED = [
   './',
   './index.html',
-  './css/style.css?v=138',
-  './css/fonts.css?v=138',
-  './css/idle.css?v=138',
-  './manifest.webmanifest?v=138',
-  './icon-180.png',
-  './icon-192.png',
-  './icon-512.png',
-  './icon.svg',
-  './img/season-plate-0.webp?v=138',
-  './img/season-plate-1.webp?v=138',
-  './img/season-plate-2.webp?v=138',
-  './img/season-plate-3.webp?v=138',
-  './img/open-plate.png?v=138',
-  './img/open-glyph.png?v=138',
-  './img/open-seal-logo.png?v=138',
+  './css/style.css?v=139',
+  './css/fonts.css?v=139',
+  './css/idle.css?v=139',
+  './manifest.webmanifest?v=139',
+  './icon-180.png?v=139',
+  './icon-192.png?v=139',
+  './icon-512.png?v=139',
+  './icon.svg?v=139',
+  './js/data.js?v=139',
+  './js/gongfa.js?v=139',
+  './js/gear.js?v=139',
+  './js/story.js?v=139',
+  './js/sect.js?v=139',
+  './js/baijia.js?v=139',
+  './js/world.js?v=139',
+  './js/tianxia.js?v=139',
+  './js/karma.js?v=139',
+  './js/life.js?v=139',
+  './js/juan.js?v=139',
+  './js/path.js?v=139',
+  './js/core.js?v=139',
+  './js/loops.js?v=139',
+  './js/codec.js?v=139',
+  './js/slots.js?v=139',
+  './js/samsara.js?v=139',
+  './js/jianghu.js?v=139',
+  './js/folio.js?v=139',
+  './js/arts.js?v=139',
+  './js/people.js?v=139',
+  './js/redworld.js?v=139',
+  './js/ink.js?v=139',
+  './js/ding.js?v=139',
+  './js/map.js?v=139',
+  './js/audio.js?v=139',
+  './js/fx.js?v=139',
+  './js/btfx.js?v=139',
+  './js/fabaoart.js?v=139',
+  './js/wallpaper.js?v=139',
+  './js/album.js?v=139',
+  './js/inkgl.js?v=139',
+  './js/jhui.js?v=139',
+  './js/scrollart.js?v=139',
+  './js/portraits.js?v=139',
+  './js/notices.js?v=139',
+  './js/game.js?v=139',
+  './js/idle.js?v=139',
+  './fonts/wenkai-game.woff2?v=139',
+  './fonts/wenkai-extra.woff2?v=139',
+  './fonts/mashanzheng.woff2?v=139',
+  './fonts/cao.woff2?v=139',
+  './img/open-plate.png?v=139',
+  './img/open-glyph.png?v=139',
+  './img/open-seal-logo.png?v=139',
+];
+var PRECACHE_OPTIONAL = [
+  './img/season-plate-0.webp?v=139',
+  './img/season-plate-1.webp?v=139',
+  './img/season-plate-2.webp?v=139',
+  './img/season-plate-3.webp?v=139',
 ];
 
 function kindOf(url, req) {
@@ -73,15 +118,27 @@ function shell(cache) {
   return cache.match('./index.html').then(function (hit) { return hit || cache.match('./'); });
 }
 
+function precache(cache, url) {
+  return fetch(new Request(url, { cache: 'reload' })).then(function (res) {
+    var abs = new URL(url, self.location.href);
+    var kind = (url === './' || /index\.html$/i.test(abs.pathname)) ? 'html' : kindOf(abs, { mode: '', destination: '' });
+    return acceptable(res, kind).then(function (ok) {
+      if (!ok) throw new Error('Invalid offline shell response: ' + url);
+      return cache.put(url, res);
+    });
+  });
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(caches.open(CACHE).then(function (cache) {
-    return Promise.all(PRECACHE.map(function (url) {
-      return fetch(new Request(url, { cache: 'reload' })).then(function (res) {
-        var abs = new URL(url, self.location.href);
-        var kind = (url === './' || /index\.html$/i.test(abs.pathname)) ? 'html' : kindOf(abs, { mode: '', destination: '' });
-        return acceptable(res, kind).then(function (ok) { if (ok) return cache.put(url, res); });
-      }).catch(function () {});
-    }));
+    // Reject installation if any required fetch, validation or cache write fails.
+    return Promise.all(PRECACHE_REQUIRED.map(function (url) {
+      return precache(cache, url);
+    })).then(function () {
+      return Promise.all(PRECACHE_OPTIONAL.map(function (url) {
+        return precache(cache, url).catch(function () {});
+      }));
+    });
   }));
 });
 

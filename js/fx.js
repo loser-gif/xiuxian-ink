@@ -210,7 +210,6 @@ const FX = (() => {
     W.raf = requestAnimationFrame(wTick);
     if (introBusy()) return;
     W.frame = (W.frame || 0) + 1;
-    if (thinNow() && (W.frame & 1)) return;
     const dt = W.last ? Math.min(0.05, (t - W.last) / 1000) : 0.016; W.last = t;
     const c = W.c, D = W.k || DPR, s = W.season, time = t / 1000; c.clearRect(0, 0, W.w, W.h);
     const wind = Math.sin(time * 0.23) * 8 + Math.sin(time * 0.071) * 5;
@@ -298,7 +297,6 @@ const FX = (() => {
     armFps();
     if (W.season >= 0 && W.cv) {
       fitParts();
-      if (W.gold && thinNow()) W.gold.length = Math.min(W.gold.length, 3);
       if (!W.raf && !document.hidden) { W.last = 0; W.raf = requestAnimationFrame(wTick); }
     }
   }
