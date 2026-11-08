@@ -262,22 +262,23 @@ function inkWrite(el, text, opt = {}) {
   const pauseScale = text.length > 140 ? 0.62 : 1;
   let delay = start;
   let count = 0;
+  const closeInk = !!opt.closeInk;
+  let closeKey = lastSent;
+  if (closeInk) {
+    while (closeKey > 0 && bareLen(sentences[closeKey]) < 2) closeKey--;
+  }
   sentences.forEach((sentence, si) => {
     const units = splitUnits(sentence);
     const bare = bareLen(sentence);
-    let key = lastSent;
-    while (key > 0 && bareLen(sentences[key]) < 2) key--;
+    // 普通正文一句一色。起笔不再单字发枯，标点跟本句走。
+    // 收句浓墨只在显式要求时加在最后一句；很短的独句、带叹号的短句仍算强调。
     const dense = sentences.length === 1
       ? bare > 0 && bare <= 16
-      : (si === key || (/！/.test(sentence) && bare >= 2 && bare <= 20));
-    units.forEach((u, ui) => {
+      : ((closeInk && si === closeKey) || (/！/.test(sentence) && bare >= 2 && bare <= 20));
+    units.forEach(u => {
       const sp = document.createElement('span');
       sp.className = 'ink-ch';
-      if (cadence) {
-        if (dense) sp.classList.add('ink-dense');
-        else if (ui === 0) sp.classList.add('ink-dry');
-        else if (/[。！？，、；：…][”’》」]*$/.test(u)) sp.classList.add('ink-press');
-      }
+      if (cadence && dense) sp.classList.add('ink-dense');
       sp.textContent = u;
       const jitter = cadence && !quiet ? ((u.charCodeAt(0) * 17) % 11) : 0;
       sp.style.animationDelay = (quiet ? 0 : delay) + 'ms';
@@ -1830,7 +1831,7 @@ function choose(ev, c, btn, evText, titleText) {
   const out = $('#ev-result');
   const p = document.createElement('p'); p.className = 'r-text'; out.appendChild(p);
   const shown = voice(res.text);
-  const d = inkWrite(p, shown, { immediate: true, step: 20, cadence: true });
+  const d = inkWrite(p, shown, { immediate: true, step: 20, cadence: true, closeInk: true });
   const tg = document.createElement('div'); tg.className = 'entry-tags'; tg.style.opacity = 0;
   tg.innerHTML = res.prelude ? '<span>斗法将起</span>' : resultChip(tags, shown);
   out.appendChild(tg);
@@ -3904,7 +3905,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=140', 'img/open-glyph.png?v=140', 'img/open-seal-logo.png?v=140'];
+  const urls = ['img/open-plate.png?v=141', 'img/open-glyph.png?v=141', 'img/open-seal-logo.png?v=141'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4504,8 +4505,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=140'),
-      loadInk('img/open-glyph.png?v=140')
+      loadInk('img/open-plate.png?v=141'),
+      loadInk('img/open-glyph.png?v=141')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4543,7 +4544,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=140').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=141').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
