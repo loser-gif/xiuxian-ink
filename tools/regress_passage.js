@@ -22,6 +22,12 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
     await p.evaluate(() => { window.__paper = document.querySelector('#paper canvas'); window.__paperWashes = 0; const old = FX.wash; FX.wash = (...args) => { __paperWashes++; return old(...args); }; });
     return {ctx,p};
   }
+  async function skipXiantu(p) {
+    const frame = p.frameLocator('#xiantu-host iframe');
+    await frame.locator('#start').click({ timeout: 15000 });
+    await frame.locator('#skip').click();
+    await p.waitForFunction(() => document.body.dataset.screen === 'create' && !document.getElementById('xiantu-host'));
+  }
   async function done(p, screen) {
     await p.waitForFunction(screen => document.body.dataset.screen === screen && !document.body.classList.contains('paper-turning'), screen);
     return p.evaluate(() => ({ paper: __paper === document.querySelector('#paper canvas'), washes: __paperWashes, leftovers: document.querySelectorAll('.paper-leave,.paper-peel,.paper-peel-css,.paper-scene,.paper-word,.paper-guard,.paper-recall').length, locked: document.querySelector('#app').hasAttribute('aria-busy'), focus: document.activeElement.id || document.activeElement.className }));
@@ -46,14 +52,13 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
         const {ctx,p}=await make(w,h,theme);
         const label=w+'-'+theme;
         const start=Date.now();await p.locator('#btn-new').click();
-        await p.waitForTimeout(100);
-        const snap=await p.evaluate(()=>({copies:document.querySelectorAll('.paper-scene').length,peel:!!document.querySelector('.paper-leave.paper-peel'),locked:document.querySelector('#app').getAttribute('aria-busy'),opacity:getComputedStyle(document.querySelector('#scr-create')).opacity,scenery:parseFloat(getComputedStyle(document.querySelector('#scenery')).opacity)}));
-        check(label+'-peel-over-steady-page',!snap.copies&&snap.peel&&snap.locked==='true'&&snap.opacity==='1'&&Math.abs(snap.scenery-.18)<.03,snap);
-        await p.waitForFunction(()=>document.body.dataset.screen==='create');
-        const cross=await p.evaluate(()=>{const old=document.querySelector('#scr-title'),next=document.querySelector('#scr-create');return {leave:old.classList.contains('paper-leave'),hidden:old.hidden,nextHidden:next.hidden,bg:getComputedStyle(old).backgroundColor};});
-        check(label+'-overlay-covers-switch',cross.leave&&!cross.hidden&&!cross.nextHidden&&cross.bg!=='rgba(0, 0, 0, 0)',cross);
+        await p.waitForFunction(()=>!!document.getElementById('xiantu-host'));
+        check(label+'-opening-before-create', await p.evaluate(()=>document.body.dataset.screen==='title' && !!document.getElementById('xiantu-host')));
+        await skipXiantu(p);
+        const cross=await p.evaluate(()=>{const old=document.querySelector('#scr-title'),next=document.querySelector('#scr-create');return {hidden:old.hidden,nextHidden:next.hidden,host:!!document.getElementById('xiantu-host'),turning:document.body.classList.contains('paper-turning')};});
+        check(label+'-create-after-opening',cross.hidden&&!cross.nextHidden&&!cross.host&&!cross.turning,cross);
         const opened=await done(p,'create');
-        check(label+'-open-completes',Date.now()-start>=650&&Date.now()-start<1800&&opened.paper&&!opened.washes&&!opened.leftovers&&!opened.locked,opened);
+        check(label+'-open-completes',Date.now()-start<8000&&opened.paper&&!opened.washes&&!opened.leftovers&&!opened.locked,opened);
         await seed(p,w===320?'南宫长生听雨':'南宫听雨');
         const named=await done(p,'main');
         check(label+'-name-enters',named.paper&&!named.washes&&!named.leftovers&&await p.locator('#h-name').textContent()===(w===320?'南宫长生听雨':'南宫听雨'),named);
@@ -72,13 +77,13 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
       }
     }
     for (const opt of [{reduce:true},{lite:true},{noAnimate:true}]) {
-      const {ctx,p}=await make(390,844,'day',opt);const start=Date.now();await p.locator('#btn-new').click();const s=await done(p,'create');
-      check('quiet-'+Object.keys(opt)[0],Date.now()-start<1200&&!s.leftovers&&!s.locked,s);await ctx.close();
+      const {ctx,p}=await make(390,844,'day',opt);const start=Date.now();await p.locator('#btn-new').click();await skipXiantu(p);const s=await done(p,'create');
+      check('quiet-'+Object.keys(opt)[0],Date.now()-start<8000&&!s.leftovers&&!s.locked,s);await ctx.close();
     }
     for (const reason of ['escape','resize','hidden','reduce','lite','snapshot-failure']) {
       const {ctx,p}=await make();
       if(reason==='snapshot-failure')await p.evaluate(()=>{const old=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(source,...args){if(source instanceof HTMLCanvasElement&&source.closest('#scenery')&&!this.canvas.isConnected&&this.canvas.style.animationName==='none'){CanvasRenderingContext2D.prototype.drawImage=old;throw Error('test unavailable snapshot');}return old.call(this,source,...args);};});
-      await p.locator('#btn-new').click();await p.waitForTimeout(120);
+      await p.locator('#btn-new').click();await skipXiantu(p);await p.waitForTimeout(120);
       if(reason==='escape')await p.keyboard.press('Escape');
       if(reason==='resize')await p.setViewportSize({width:390,height:844});
       if(reason==='hidden')await p.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
@@ -86,7 +91,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); if (
       if(reason==='lite')await p.evaluate(()=>__moxian.applyLook({motion:'lite'}));
       const s=await done(p,'create');check('interrupt-'+reason,!s.leftovers&&!s.locked&&s.paper,s);await ctx.close();
     }
-    const {ctx,p}=await make();await p.locator('#btn-new').click();await done(p,'create');await seed(p,'守卷人',false);
+    const {ctx,p}=await make();await p.locator('#btn-new').click();await skipXiantu(p);await done(p,'create');await seed(p,'守卷人',false);
     await p.waitForTimeout(100);check('goal-waits-for-name-arrival',await p.locator('#goal-cer').isHidden());await done(p,'main');await p.locator('#goal-cer').waitFor();
     check('goal-appears-after-arrival',!await p.evaluate(()=>document.body.classList.contains('paper-turning')));
     await p.evaluate(()=>{Life.setGoal(__moxian.S,'wendao',false);__moxian.save();});await menu(p);

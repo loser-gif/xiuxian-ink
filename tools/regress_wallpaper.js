@@ -31,7 +31,7 @@ async function frozen(p, label) {
     const p = await ctx.newPage(); p.on('pageerror', e => errors.push(e.message));
     await p.goto(url, { waitUntil: 'domcontentloaded' });
     await p.waitForFunction(() => window.__moxian && document.body.classList.contains('voyage-live'));
-    await p.waitForTimeout(6000); await p.screenshot({path:path.join(out,'menu-desktop.jpg'),type:'jpeg',quality:88}); await p.evaluate(()=>{window.__paperAtMenu=document.querySelector('#paper canvas');}); await p.locator('#btn-new').click(); await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
+    await p.waitForTimeout(6000); await p.screenshot({path:path.join(out,'menu-desktop.jpg'),type:'jpeg',quality:88}); await p.evaluate(()=>{window.__paperAtMenu=document.querySelector('#paper canvas');}); await p.locator('#btn-new').click(); await p.frameLocator('#xiantu-host iframe').locator('#start').click(); await p.frameLocator('#xiantu-host iframe').locator('#skip').click(); await p.locator('#inp-name').waitFor(); await p.waitForFunction(() => !document.body.classList.contains('paper-turning'));
     await p.evaluate(() => {
       __moxian.newGame('山水客', { lg: LINGGEN.find(x => x.id === 'san'), els: ['金', '木', '火'], wx: 5, luck: 1 }, { id: 'dx' }, 'qingshi');
       __moxian.S.flags.guide = 0; Life.setGoal(__moxian.S, 'wendao', false); __moxian.render(); __moxian.save();

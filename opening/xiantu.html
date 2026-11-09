@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>纸上仙途 · 一念上山 · 古画淡彩 v4 · 性别与成长</title><style>
+:root{color-scheme:light;--ink:#302b25;--paper:#f5ecd9;--red:#964b35}
+@font-face{font-family:"MoWen";src:url("../fonts/wenkai-game.woff2?v=142") format("woff2");font-display:swap}
+@font-face{font-family:"MoWen";src:url("../fonts/wenkai-extra.woff2?v=142") format("woff2");font-display:swap}
+@font-face{font-family:"MoShu";src:url("../fonts/mashanzheng.woff2?v=142") format("woff2");font-display:swap}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5ecd9;color:var(--ink);font-family:"MoWen","Songti SC","STSong","Noto Serif CJK SC","SimSun",serif}button,input{font:inherit}button{color:var(--ink);background:#f3ead7;border:1px solid #746448;padding:10px 16px;cursor:pointer}button:focus-visible{outline:3px solid #964b35;outline-offset:4px}button:hover{background:#fff9ec}#stage{position:relative;width:100%;height:100%;height:100dvh;isolation:isolate}canvas{display:block;width:100%;height:100%}.top{position:absolute;top:max(20px,env(safe-area-inset-top));left:24px;right:24px;display:flex;justify-content:space-between;align-items:flex-start;z-index:5}.mark{display:flex;flex-direction:column;align-items:center;font-size:23px;font-weight:bold;font-family:"MoShu","MoWen","Songti SC",serif}.mark i{font-style:normal;line-height:1.08;letter-spacing:0}.seal{display:inline-block;background:var(--red);color:#f4dfb8;font-size:12px;letter-spacing:2px;padding:7px 4px;margin-top:12px;font-weight:normal}.controls{display:flex;gap:8px}.controls button{font-size:13px;padding:8px 11px;background:#f3ead7de}#chapter{position:absolute;top:96px;right:28px;font-size:14px;display:flex;flex-direction:column;align-items:center}#chapter i{font-style:normal;line-height:1.2}#chapter i.sp{height:.45em}.caption{position:absolute;bottom:11%;left:5%;right:5%;text-align:center;pointer-events:none}.caption span{display:inline-block;max-width:600px;background:#f7efdf;padding:12px 22px;font-size:clamp(17px,2.2vw,22px);line-height:1.8;box-shadow:0 0 26px 10px #f7efdf}.caption small{display:block;color:#744f36;font-size:12px;letter-spacing:4px}.progress{position:absolute;bottom:0;height:3px;background:#964b35;width:0}.veil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#f5ecd945}.panel{text-align:center;padding:30px 25px;background:#f7efdfed;box-shadow:0 0 70px 25px #f7efdfb0;max-width:440px;width:88%}.eyebrow{font-size:12px;letter-spacing:6px;color:#765b3b}h1{font-size:48px;letter-spacing:10px;margin:20px 0 16px;font-weight:normal}p{line-height:1.9;font-size:15px}#start{margin-top:18px;min-width:150px;background:#383329;color:#faf3e3}small.note{display:block;font-size:11px;line-height:1.8;margin-top:16px;color:#735e44}.hidden{display:none!important}#end{background:#f5ecd938;align-items:flex-end;padding-bottom:8%}#end .panel{padding:22px}#end h2{font-size:29px;font-weight:normal;letter-spacing:5px;margin:10px}label{display:block;text-align:left;font-size:12px;margin:12px 0}input{display:block;width:100%;margin-top:6px;padding:9px;border:0;border-bottom:1px solid #8c7757;background:#e7deca;color:#645841;opacity:1;-webkit-text-fill-color:#645841}#end p{margin:8px 0;font-size:13px}@media(max-height:600px){#end{padding-bottom:3%}#end .panel{max-width:620px;padding:15px}#end label{display:inline-block;width:45%;margin:5px}#end h2{font-size:23px}.caption{bottom:7%}h1{font-size:35px}.top{top:12px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* The painting retains a bounded, deliberate desktop frame. */
+body{background:#d4ccbb}#stage{max-width:1440px;margin:auto;box-shadow:0 0 90px #57472b55}.top{left:max(20px,env(safe-area-inset-left));right:max(20px,env(safe-area-inset-right));top:max(16px,env(safe-area-inset-top))}.controls button{min-width:56px;min-height:48px}.caption{bottom:max(6%,calc(env(safe-area-inset-bottom) + 22px));left:max(5%,env(safe-area-inset-left));right:max(5%,env(safe-area-inset-right))}.caption span{background:#faf4e6;box-shadow:0 0 20px 8px #faf4e6e8;color:#302b25;line-height:1.95;max-width:640px}.caption small{color:#302b25;letter-spacing:3px}#end{padding-bottom:max(4%,env(safe-area-inset-bottom));overflow:auto}button{min-height:48px}.panel{max-height:95%;overflow:auto}#chapter{top:105px}@media(max-width:480px){.mark{font-size:19px}.caption span{padding:9px 14px;font-size:17px}.panel{padding:22px 18px}#end .panel{padding:15px}#end h2{font-size:25px}}@media(max-height:500px){.caption{bottom:max(10px,env(safe-area-inset-bottom))}.caption span{font-size:16px;padding:4px 14px}.caption small{display:inline;margin-right:12px}.top{top:max(8px,env(safe-area-inset-top))}.mark{font-size:17px}#chapter{display:none}#end .panel{max-width:660px}#end label{width:44%;margin:4px 2%}#end p{margin:4px}}
+
+#intro{background:transparent;align-items:flex-end;padding-bottom:max(4%,env(safe-area-inset-bottom))}#intro .panel{padding:14px 20px;max-width:500px;background:#faf4e6ed}#intro h1{font-size:30px;margin:8px}#intro p{margin:5px}.choices{display:flex;gap:12px;justify-content:center}.choices button{min-width:110px;border-color:#b9ac94;color:#675e50}.choices button[aria-pressed="true"]{color:#302b25;border:2px solid #655d4b;background:#e5e8de;font-weight:bold}#start{margin-top:10px}small.note{margin-top:8px}#end .panel{max-width:480px}@media(max-height:500px){#intro{flex-direction:column;justify-content:flex-end;align-items:center;padding:6px}#intro .panel{width:min(520px,80%);max-height:none;overflow:visible;padding:6px 12px}#intro .eyebrow,#intro p,#intro .note{display:none}#intro h1{font-size:20px;margin:0 0 4px;letter-spacing:4px}.choices button{min-width:88px;padding:4px 8px}#start{margin-top:4px}}
+</style></head><body><main id="stage"><canvas id="art" aria-label="古画淡彩山路：行人上山、扶车、空阶与开启的山门"></canvas><div class="top"><div class="mark"><i>纸</i><i>上</i><i>仙</i><i>途</i><span class="seal">一念</span></div><div class="controls"><button id="back" type="button">返回</button><button id="mute" type="button" aria-pressed="false">静音</button><button id="skip" type="button">略过</button></div></div><div id="chapter">雨霁 · 山行</div><div class="caption" aria-live="polite"><span id="subtitle"></span></div><div class="progress" id="progress"></div><div class="veil" id="intro"><div class="panel"><div class="eyebrow">纸上仙途 · 序章</div><h1>一念上山</h1><p>山路在前，选定此行的身影。</p><div class="choices" role="group" aria-label="此行身影"><button id="male" type="button" aria-pressed="true">男 · 已选</button><button id="female" type="button" aria-pressed="false">女</button></div><button id="start" type="button">启程</button><small class="note">古画淡彩 · 约五十二秒 · 启程后才有声音<br>只点选身影，不会开始</small></div></div><div class="veil hidden" id="end"><div class="panel"><div class="eyebrow">山门已开</div><h2>此念，从何而来</h2><p>山门已开，静候你的回答。</p><p>姓名、所求与出身，留在下一页。</p><button id="replay" type="button">重新选择</button></div></div></main><script>
+'use strict';
+if (!Element.prototype.replaceChildren) {
+  Element.prototype.replaceChildren = function () {
+    while (this.firstChild) this.removeChild(this.firstChild);
+    for (var i = 0; i < arguments.length; i++) this.appendChild(arguments[i]);
+  };
+}
+const canvas=document.querySelector('#art'),ctx=canvas.getContext('2d'),$=s=>document.querySelector(s);
+const DURATION=52, reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let gender="male",elapsed=0,runId=0,emitted=false,raf=0,hiddenPaused=false,destroyed=false,left=false;
+let W=600,H=900,scale=1,t=-10,started=false,playing=false,muted=false,last=0,audio=null,master=null,nextSound=0,subtitleKey='',endReason=null;
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), lerp=(a,b,p)=>a+(b-a)*p, ease=p=>{p=clamp(p);return p*p*(3-2*p)}, span=(a,b)=>ease((t-a)/(b-a));
+let seed=34;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+const paper=document.createElement('canvas');paper.width=360;paper.height=360;let pc=paper.getContext('2d');pc.fillStyle='#f5ecd9';pc.fillRect(0,0,360,360);for(let i=0;i<19000;i++){pc.fillStyle=rand()>.5?'rgba(104,87,57,.035)':'rgba(255,253,242,.18)';pc.fillRect(rand()*360,rand()*360,rand()*2+.3,rand()*2+.3)}
+function resize(){let r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);canvas.width=r.width*d;canvas.height=r.height*d;H=900;W=900*r.width/r.height;scale=canvas.height/900}addEventListener('resize',resize);resize();
+function line(points,color='#38342d',width=2){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke()}
+function shape(points,fill='#d5bd93',stroke='#3d382f',width=2){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
+function ellipse(x,y,rx,ry,fill){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill()}
+function brush(points,color='#686655',width=1){ctx.save();line(points,color,Math.min(width*.48,1.5));if(width>3)line(points.map(([x,y])=>[x+.7,y+.5]),'#a3937660',.45);ctx.restore()}
+
+
+
+
+function cartState(){const load=span(12,16),release=span(16,18.8);return {x:-52+release*90,y:100-release*24-load*3*(1-release),release,load,rotation:release*3.33+Math.sin(t*8)*.025*load*(1-release)}}
+
+
+
+function cartGroup(){const c=cartState();ellipse(-67,118,106,21,'#b3a08344');person(52+c.release*90,110-c.release*24,.83,t>16&&t<19?t*5:0,'elder',t<19?1:0);helper(c);cart(c.x,c.y,c.release);
+// Foreground mud masks the buried bottom rim until the wheel climbs out.
+shape([[-89,113],[-78,110],[-64,114],[-52,109],[-43,112],[-26,110],[-17,133],[-96,137]],'#c6b192',null);brush([[-98,126],[-68,129],[-35,126]],'#95836b',2);
+mudDetail();if(t>16&&t<18.8){const p=span(16,18.8);for(let i=0;i<5;i++)ellipse(-47+i*8+p*8,127-Math.sin(p*Math.PI)*8,2,1,'#786144')}
+}
+
+function sweeper(x,y){ctx.save();ctx.translate(x,y);let moving=t<30.8,angle=moving?Math.sin(t*3)*(reduced?.05:.22):0;person(0,0,.9,0,'disciple',moving?0:.4);ctx.save();ctx.translate(-18,-54);ctx.rotate(angle);brush([[0,-10],[-23,58]],'#645033',4);for(let i=0;i<12;i++)line([[-23,44],[-47+i*3,72+Math.sin(i)*3]],'#8c754c',1.5);ctx.restore();line([[-18,-60],[-24,-40]],'#4b4537',4);if(moving)for(let i=0;i<14;i++){let p=(t*.7+i/14)%1;ellipse(-30-p*65,10-Math.sin(p*Math.PI)*12,1+p*2,.7,'#87785b55')}ctx.restore()}
+function closeup(){ctx.save();ctx.fillStyle=ctx.createPattern(paper,'repeat');ctx.fillRect(0,0,W,H);mountain(W*.27,540,W*.7,250,.09);mountain(W*.87,470,W*.6,300,.08);const zoom=Math.min(2.35,(W-28)/340);ctx.translate(W/2+20,510);ctx.scale(zoom,zoom);ctx.translate(25,-85);mudDetail();cartGroup();ctx.restore()}
+function draw(){if(!started){drawSelection();return}if(t<0){drawGrowth();return}ctx.setTransform(scale,0,0,scale,0,0);ctx.fillStyle=ctx.createPattern(paper,'repeat');ctx.fillRect(0,0,W,H);let cam=t<7?lerp(0,-260,span(0,7)):t<22?lerp(-260,-480,span(7,9)):lerp(-480,-1250,span(22,29));let center=W/2;
+if(reduced)cam=t<7?0:t<22?-480:-1250;
+for(let i=0;i<7;i++)mountain(center+(i-3)*210,410-cam*.1+(i%2)*80,380,270+(i%3)*80,.12+(i%2)*.05);
+ctx.save();ctx.translate(center,-cam);shape([[-W,1150],[-W,-400],[-190,-600],[-70,-680],[-95,-380],[-165,-100],[-110,180],[-180,440],[-90,740],[20,1150]],'#abbdb52b',null);shape([[W,1150],[W,-900],[240,-820],[130,-700],[95,-400],[170,-80],[120,240],[210,510],[170,900]],'#b1bdb12c',null);
+// A single continuous winding trail and stone stairway joins all four scenes.
+shape([[-230,1100],[-125,720],[-165,470],[-95,180],[-130,-40],[-85,-290],[-120,-640],[120,-640],[85,-290],[35,-40],[60,180],[0,470],[80,720],[250,1100]],'#e9dfc9',null);
+brush([[-230,1100],[-125,720],[-165,470],[-95,180],[-130,-40],[-85,-290],[-120,-640]],'#6e705547',2);brush([[250,1100],[80,720],[0,470],[60,180],[35,-40],[85,-290],[120,-640]],'#6e705547',2);
+scenery();pine(-230,440,1.4);pine(200,-290,1.6);pine(-220,-640,1.2);pine(290,920,1.7);
+gate(span(39,41.8));
+if(t<22){for(let i=0;i<8;i++){let yy=510-i*90-t*(t<7?20:42),xx=(i%2?-58:35)+Math.sin(i*4)*15; if(yy>-660)person(xx,yy,.65+(i%3)*.05,reduced?t*3:t*6+i,'seeker')}}
+if(t>=9.2&&t<22)cartGroup();else {const c=cartState();cart(c.x,c.y,c.release);person(52+c.release*90,110-c.release*24,.83,0,'elder',0)}
+if(t<9.2){const hx=lerp(-10,-151,span(7,9.2)),hy=t<7?700-t*65:lerp(245,123,span(7,9.2));person(hx,hy,1.03,t*6,'hero')}
+else if(t>=22){person(lerp(-32,43,span(22,29)),lerp(99,-550,span(22,29)),1.03,t<29?t*6:0,'hero')}
+sweeper(-65,-589);ctx.restore();
+// Drifting translucent mist is scenery only; text stays opaque.
+for(let i=0;i<3;i++){let yy=250+i*230-cam*.06,dx=reduced?0:Math.sin(t*.16+i)*40;let grad=ctx.createLinearGradient(0,yy-35,0,yy+45);grad.addColorStop(0,'#f5efdf00');grad.addColorStop(.5,'#f5efdf4a');grad.addColorStop(1,'#f5efdf00');ctx.fillStyle=grad;ctx.fillRect(dx-80,yy-35,W+160,80)}
+if(t>=12.2&&t<16.9)closeup();
+if(!started){ctx.fillStyle='#f5ecd922';ctx.fillRect(0,0,W,H)} }
+// v3 original programmatic drawing. Geometry, not image overlays.
+const C={ink:'#514d43',faint:'#8c887771',paper:'#f5ecd9',skin:'#dfc7a3',robe:'#e0d2b9',blue:'#aababa',ochre:'#c5a785'};
+function path(d,fill=null,stroke=C.ink,w=.8){ctx.beginPath();for(const c of d){const [op,...p]=c;ctx[op](...p)}if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke()}}
+const M=(...p)=>['moveTo',...p],L=(...p)=>['lineTo',...p],B=(...p)=>['bezierCurveTo',...p],Q=(...p)=>['quadraticCurveTo',...p],Z=()=>['closePath'];
+function contour(points,fill=C.robe,w=.75){shape(points,fill,C.ink,w)}
+function folds(lines,color=C.faint,w=.6){for(const p of lines)line(p,color,w)}
+function mountain(x,y,w,h,alpha){ctx.save();ctx.globalAlpha=Math.min(.68,alpha*1.2);ctx.translate(x,y);ctx.scale(w/300,h/260);const wash=ctx.createLinearGradient(0,-260,0,0);wash.addColorStop(0,'#aabdb8');wash.addColorStop(.65,'#b8c6c17a');wash.addColorStop(1,'#f5ecd900');
+path([M(-150,0),Q(-125,-61,-106,-98),L(-88,-105),Q(-68,-178,-38,-183),L(-29,-204),Q(-22,-231,-10,-228),L(-3,-248),Q(8,-257,17,-239),L(25,-241),L(31,-218),Q(40,-229,48,-215),L(51,-197),Q(65,-190,67,-177),L(77,-171),Q(80,-161,82,-157),L(93,-107),Q(129,-79,150,0),Z()],wash,null,.8);
+path([M(-107,-99),Q(-57,-144,-38,-183),Q(-42,-118,-61,-66),L(-21,-16),M(0,-260),Q(-20,-158,10,-106),L(0,-56),M(43,-225),Q(27,-145,76,-96)],null,'#929f96',1.2);
+for(let i=0;i<110;i++){let a=(i*47%231)-115,b=-(i*31%149)-20;path([M(a,b),Q(a+9,b-24,a+14,b-40),M(a+3,b-6),L(a+12,b-18)],null,i%4?'#8a958a66':'#ba9e7844',.65)}
+for(let i=0;i<50;i++)ellipse((i*29%200)-100,-(i*17%108)-20,6+i%5,2,'#8c9d8b44');ctx.restore()}
+function pine(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+path([M(-7,0),Q(-15,-60,2,-104),Q(16,-141,6,-186),L(12,-188),Q(26,-146,9,-100),Q(-7,-49,2,0),Z()],'#c9bfaa',C.ink,.9);
+for(let j=0;j<5;j++){let yy=-65-j*25,dir=j%2?1:-1,end=dir*(54+j*3);path([M(4,yy+8),Q(dir*22,yy-14,end,yy-18),M(3,yy+2),Q(dir*30,yy-18,end+dir*8,yy-21)],null,C.ink,.9);
+for(let k=0;k<7;k++){let px=dir*(18+k*7),py=yy-19-Math.sin(k*1.3)*5;for(let leaf=0;leaf<5;leaf++)ellipse(px-8+leaf*4,py-4-Math.sin(leaf)*3,6,3,'#8a9c7e20');for(let n=0;n<13;n++){let a=-Math.PI+n*Math.PI/12;line([[px,py],[px+Math.cos(a)*(9+k%3),py+Math.sin(a)*7]],'#68786b9c',.55)}ellipse(px,py,7,2,'#a2ad8a32')}}
+for(let i=0;i<13;i++)line([[-3+Math.sin(i)*5,-i*13],[1+Math.sin(i)*5,-i*13-8]],'#7d766b',.55);ctx.restore()}
+function head(x,y,elder=false,back=false,female=false){ctx.save();ctx.translate(x,y);ctx.scale(.74,.78);
+path([M(-8,-9),Q(0,-16,8,-9),L(10,-3),L(back?10:13,0),L(10,2),Q(10,11,3,12),L(-5,9),Q(-11,2,-8,-9),Z()],C.skin,C.ink,.65);
+path([M(-9,2),Q(-16,-15,-3,-17),Q(7,-18,10,-8),Q(0,-12,-5,-5),L(-6,3),Z()],elder?'#c9c4b6':'#5e5b50',C.ink,.7);
+ellipse(-3,-20,5,3,elder?'#d2cbb9':'#5e5b50');line([[-10,-18],[5,-20]],C.ink,.6);
+for(let i=0;i<5;i++)path([M(-10+i*3,-7),Q(-12+i*3,-14,-4+i*2,-16)],null,elder?'#868275':'#aaa18a',.4);
+if(back){path([M(-9,-8),Q(1,-15,9,-8),L(9,4),Q(1,10,-8,5),Z()],elder?'#b6b0a1':'#666156',C.ink,.5);for(let i=0;i<5;i++)path([M(-6+i*3,-9),Q(-8+i*3,-2,-5+i*3,5)],null,'#aaa18a',.4)}
+if(female){path([M(-6,-18),Q(-18,-15,-12,5),Q(-14,17,-5,28)],null,'#5e5b50',3);line([[-10,-16],[-18,-12],[-15,-2]],'#859d99',1.8)}
+if(!back){line([[6,-2],[9,-2]],C.ink,.65);path([M(3,6),Q(6,7,9,5)],null,C.ink,.5);if(elder){path([M(-1,4),Q(4,8,10,5),Q(12,19,1,27),Q(3,14,-3,11)],'#e4dcc9','#928b7a',.5);for(let i=0;i<3;i++)line([[2+i*2,9],[3+i,21-i]],'#a69d89',.4)}}ctx.restore()}
+function shoe(x,y,dir=1){path([M(x-5,y-4),Q(x+4,y-6,x+7,y-1),L(x+12*dir,y+2),Q(x+4,y+5,x-7,y+2),Z()],'#c7b899',C.ink,.7);for(let i=0;i<4;i++)line([[x-4+i*3,y-3],[x-2+i*3,y+2]],'#797362',.5)}
+function person(x,y,s,phase=0,kind='seeker',action=0){ctx.save();ctx.translate(x,y);ctx.scale(s,s);const elder=kind==='elder',hero=kind==='hero',disciple=kind==='disciple',walk=Math.sin(phase)*(reduced?1.1:4),cloth=hero?(gender==='female'?C.blue:C.robe):elder?'#b9a38d':disciple?'#c3d0ca':'#d1ccbb';
+ellipse(0,3,21,3,'#9c94792a');
+contour([[-13,-31],[-1,-30],[-3,-15],[-10-walk,-4],[-17-walk,-5]],'#c2b79f');contour([[2,-30],[15,-29],[12,-13],[14+walk,-3],[5+walk,-3]],'#c2b79f');shoe(-13-walk,0,-1);shoe(10+walk,0);
+path([M(-8,-83),Q(-21,-77,-24,-62),L(-30,-48),Q(-24,-41,-17,-45),L(-15,-34),L(-22,-17),Q(-9,-11,0,-16),L(6,-12),L(24,-19),Q(13,-46,17,-62),Q(13,-80,7,-83),Z()],cloth,C.ink,.85);
+path([M(-8,-82),Q(-5,-66,5,-57),L(11,-76),M(-6,-79),L(7,-62),M(-17,-69),Q(-9,-61,-15,-47),M(-21,-57),L(-26,-49),M(-12,-40),Q(-11,-27,-17,-19),M(-4,-38),L(-6,-20),M(3,-39),Q(9,-28,16,-20),M(10,-45),L(15,-35)],null,'#807c6e',.65);
+contour([[-16,-45],[16,-44],[15,-40],[-15,-41]],'#858d89',.5);path([M(9,-41),Q(18,-30,18,-16),L(13,-20),L(12,-9),Q(10,-30,6,-41)],'#858d89',C.ink,.5);
+if(elder){ctx.save();ctx.translate(0,-95);ctx.scale(-1,1);head(0,0,true,false);ctx.restore()}else head(0,-95,false,hero||!disciple,hero&&gender==='female');for(let i=0;i<5;i++)path([M(-9+i*5,-37),Q(-12+i*6,-29,-14+i*7,-20)],null,'#9c958178',.45);
+if(kind==='seeker'){path([M(-21,-99),Q(-7,-106,0,-116),Q(9,-108,23,-101),Q(3,-96,-21,-99),Z()],'#d4c2a2',C.ink,.6);for(let i=-14;i<18;i+=6)line([[0,-113],[i,-100]],'#9d9279',.4);line([[23,-61],[25,2]],'#85735a',1.8);line([[23,-61],[25,2]],'#d3be9b',.7)}
+if(hero){path([M(-12,-78),Q(0,-63,13,-47)],null,'#7d7562',2);contour([[6,-72],[20,-68],[24,-54],[19,-46],[5,-49],[2,-61]],'#c5b48f',.7);folds([[[6,-68],[16,-59],[20,-52]],[[5,-54],[17,-56]],[[10,-68],[9,-60],[18,-61]]]);}
+if(action&&elder){path([M(10,-73),Q(26,-65,28,-48),L(17,-44),L(10,-57)],cloth,C.ink,.8);path([M(21,-47),L(19,-31),L(2,-28)],null,C.ink,5);path([M(21,-47),L(19,-31),L(2,-28)],null,C.skin,3.7)}
+ctx.restore()}
+function wheel(x,y,r,rot){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.beginPath();ctx.ellipse(0,0,r*.82,r,0,0,Math.PI*2);ctx.strokeStyle='#756752';ctx.lineWidth=6;ctx.stroke();ctx.strokeStyle='#c5b291';ctx.lineWidth=3.8;ctx.stroke();for(let i=0;i<10;i++){let a=i*Math.PI/5;line([[0,0],[Math.cos(a)*r*.76,Math.sin(a)*r*.94]],'#665e50',2.7);line([[1,0],[Math.cos(a)*r*.76+1,Math.sin(a)*r*.94]],'#b6a385',1.2)}ctx.beginPath();ctx.ellipse(0,0,r*.82+2,r+2,0,0,Math.PI*2);ctx.strokeStyle=C.ink;ctx.lineWidth=.6;ctx.stroke();ellipse(0,0,5,6,'#85735b');ellipse(0,0,2,3,'#c8b28f');ctx.restore()}
+function cart(x,y,p){ctx.save();ctx.translate(x,y);
+contour([[-49,-37],[108,-31],[116,-27],[-49,-30]],'#b49b77');contour([[-42,-30],[106,-18],[110,-14],[-41,-23]],'#b49b77');
+contour([[-61,-59],[48,-55],[53,-22],[-55,-27]],'#c1ab87');
+for(let i=0;i<4;i++){let yy=-54+i*8;path([M(-56,yy),Q(-7,yy+4,48,yy+3)],null,'#81735d',.6);for(let k=0;k<3;k++)path([M(-51+k*29,yy+3),Q(-41+k*29,yy+1,-29+k*29,yy+5)],null,'#938169',.45)}
+for(let i=0;i<11;i++){let xx=-55+(i%3)*7, yy=-64-Math.floor(i/3)*8, len=93+(i%4)*4;
+path([M(xx,yy-4),Q(xx+len/2,yy-7,xx+len,yy-5),L(xx+len+2,yy+2),Q(xx+len/2,yy+1,xx,yy+4),Z()],i%2?'#bc9e75':'#cfb994',C.ink,.65);
+ellipse(xx,yy,4.7,5,'#e0c9a2');ctx.beginPath();ctx.ellipse(xx,yy,3.1,3.9,0,0,Math.PI*2);ctx.strokeStyle='#97866a';ctx.lineWidth=.5;ctx.stroke();for(let k=0;k<3;k++)path([M(xx+9,yy-2+k*2),Q(xx+36,yy-4+k*2,xx+len-5,yy-2+k*2)],null,'#89765d88',.5)}
+for(let xx of [-30,26]){path([M(xx-6,-89),Q(xx+8,-73,xx+10,-27)],null,'#796e55',3.2);path([M(xx-7,-89),Q(xx+6,-73,xx+9,-27)],null,'#d9c6a0',1.6);for(let k=0;k<10;k++)line([[xx+k*.8,-83+k*5],[xx+3+k*.8,-81+k*5]],'#958367',.5)}
+for(let xx of [-53,41])contour([[xx,-59],[xx+5,-59],[xx+6,-23],[xx+1,-24]],'#a88f6c',.6);
+wheel(0,-12,27,cartState().rotation);ctx.restore()}
+function limb(p,w=7){line(p,C.ink,w+.9);line(p,C.skin,w);line(p.map(([x,y])=>[x-1,y]),'#bca386',.5)}
+function helper(c){const bend=span(9.2,11.6)*(1-span(19,20.8)),push=c.release,hx=-151+push*90,hy=123-push*24;
+const pelvis=[hx+8*bend,hy-39+13*bend],shoulder=[hx+29*bend+5*c.load,hy-79+30*bend];const stride=t>16&&t<19?Math.sin((t-16)*7)*5:0;
+const [px,py]=pelvis,[sx,sy]=shoulder;
+ellipse(hx,hy+3,29,3,'#a4967435');
+contour([[px-9,py-2],[px+3,py+5],[hx-14-stride,hy-17],[hx-19,hy-4],[hx-26,hy-5],[hx-25-stride,hy-22]],'#c5b99f');
+contour([[px+4,py],[px+15,py+4],[hx+29+stride,hy-21],[hx+22,hy-3],[hx+13,hy-3],[hx+17+stride,hy-22]],'#c8bda7');shoe(hx-22,hy,-1);shoe(hx+18,hy);
+path([M(sx-12,sy-4),Q(sx+3,sy-8,sx+13,sy+3),Q(px+11,py-5,px+22,py+14),L(px+9,py+17),L(px+4,py+13),L(px-20,py+18),Q(px-13,py-1,sx-12,sy-4),Z()],(gender==='female'?C.blue:C.robe),C.ink,.85);
+path([M(sx-7,sy+4),Q(sx-7,sy+19,px-10,py+12),M(sx+4,sy+7),L(px+4,py-3),M(px-8,py+4),L(px-14,py+12),M(px+5,py+4),L(px+13,py+13)],null,'#938673',.7);
+line([[px-14,py],[px+13,py+3]],'#747e7a',3);path([M(px-10,py+2),Q(px-16,py+18,px-26,py+27),L(px-24,py+17),L(px-29,py+20),Q(px-18,py+6,px-15,py)],'#7f8983',C.ink,.5);
+for(let i=0;i<6;i++)path([M(sx-7+i*2,sy+9),Q(sx-11+i*3,sy+21,px-13+i*4,py+9)],null,'#96897788',.45);head(sx-4,sy-15,false,true,gender==='female');
+path([M(sx-12,sy),L(sx+4,sy+25)],null,'#80715b',2);
+contour([[sx-18,sy+4],[sx-3,sy+9],[sx-7,sy+27],[sx-23,sy+22]],'#c7b68f',.6);folds([[[sx-17,sy+8],[sx-9,sy+15],[sx-20,sy+19]],[[sx-21,sy+14],[sx-6,sy+17]]]);
+const hand=[lerp(hx+14,c.x-28,bend),lerp(hy-41,c.y-35,bend)],elbow=[sx+15,sy+24];
+limb([elbow,hand],5);path([M(sx+7,sy+1),Q(sx+24,sy+9,sx+23,sy+23),L(sx+13,sy+29),Q(sx+6,sy+14,sx+1,sy+12)],(gender==='female'?C.blue:C.robe),C.ink,.7);folds([[[sx+9,sy+10],[sx+17,sy+22]],[[sx+13,sy+10],[sx+20,sy+20]]]);
+for(let i=0;i<4;i++)line([[hand[0]-1+i,hand[1]-2],[hand[0]+2+i,hand[1]+3]],'#80715d',.5);
+limb([[sx-8,sy+19],[sx+4,sy+29],[hand[0]-7,hand[1]+3]],4);
+}
+function gate(open){ctx.save();ctx.translate(0,-660);
+contour([[-154,35],[-151,-141],[-134,-141],[-132,35]],'#d0ae94');contour([[133,35],[134,-141],[151,-141],[154,35]],'#d0ae94');
+for(let x of [-143,143]){contour([[x-15,22],[x+14,22],[x+18,36],[x-18,36]],'#bbbcae');line([[x-4,-136],[x-4,20]],'#a18b78',.7)}
+contour([[-144,-134],[144,-134],[144,-116],[-144,-116]],'#c4aa8b');
+path([M(-180,-148),Q(-154,-143,-135,-177),Q(0,-162,135,-177),Q(154,-143,180,-148),L(170,-138),Q(0,-147,-170,-138),Z()],'#acb6b0',C.ink,1);
+path([M(-140,-179),Q(0,-167,140,-179),M(-174,-143),Q(0,-151,174,-143)],null,C.ink,1.1);
+for(let i=-126;i<132;i+=9)path([M(i,-174+(1-Math.abs(i)/140)*7),Q(i*1.13,-157,i*1.24,-144)],null,'#6d7871',.65);
+for(let x=-126;x<132;x+=18){path([M(x,-135),L(x+4,-126),L(x+10,-135)],null,'#877c67',1)}
+shape([[-130,-115],[130,-115],[130,24],[-130,24]],'#aebbb22b',null);mountain(0,30,150,120,.17);
+for(let side of [-1,1]){let outer=side*129,inner=side*(3+open*114);contour([[outer,-115],[inner,-115+open*13],[inner,26-open*5],[outer,26]],'#c2b59b',.8);for(let k=1;k<7;k++){let xx=lerp(outer,inner,k/7);line([[xx,-110],[xx,22]],'#8e8775',.6)}for(let yy of [-89,3])line([[outer,yy],[inner,yy+open*4]],'#887c66',1.8);ellipse(lerp(outer,inner,.84),-40,2.5,4,'#6e6a5b')}
+contour([[-42,-134],[42,-134],[42,-113],[-42,-113]],'#747e74');ctx.fillStyle='#f2e7cc';ctx.font='13px serif';ctx.textAlign='center';ctx.fillText('问 心',0,-119);ctx.restore()}
+function rock(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);contour([[-23,7],[-18,-9],[-7,-19],[9,-17],[24,-3],[19,8]],'#c3c5b6',.6);folds([[[-18,-8],[-6,-6],[9,-16]],[[-6,-6],[0,6]],[[9,-16],[12,-4],[21,-1]]],'#929887',.6);ctx.restore()}
+function scenery(){
+for(let i=0;i<29;i++){let yy=-610+i*25,half=114-i*1.2;contour([[-half,yy+Math.sin(i)*2],[half*.2,yy-1],[half*.24,yy+1],[half*.28,yy-2],[half,yy-2],[half-2,yy+4],[half+1,yy+7],[-half*.4,yy+8],[-half*.45,yy+6],[-half*.5,yy+9],[-half-1,yy+10]],i%3?'#d4d1bc':'#c2c7b8',.55);folds([[[-half+5,yy+4],[half-6,yy+2]],[[half*.3,yy],[half*.3-3,yy+6]]],'#8c948377',.55)}
+for(let i=0;i<48;i++){let yy=1000-i*37,xx=(i%2?-1:1)*(139+Math.sin(i*3)*48);rock(xx,yy,.5+i%3*.2);for(let k=0;k<4;k++){let a=k*.65;path([M(xx,yy),Q(xx-8+k*6,yy-13,xx-17+k*10,yy-20+Math.sin(a)*8)],null,'#8a9275',.65)}}
+for(let i=0;i<90;i++){let yy=170+i*9,xx=-140+(i*67%260);line([[xx,yy],[xx+8+i%7,yy-1]],i%3?'#baaa8c77':'#fbf5e6',.7)}
+}
+
+function mudDetail(){for(let i=0;i<65;i++){let x=-179+(i*47%309),y=117+(i*17%37);path([M(x,y),Q(x+4,y-2,x+12+i%7,y-1)],null,i%3?'#a88f6d80':'#fbf4e4',.65);if(i%4===0)ellipse(x,y,2.5,1,'#9a876b66')}for(let i=0;i<8;i++)rock(-177+i*43,155+i%3*4,.15+i%2*.08)}
+
+// Growth uses the same ink geometry, costume and bundle as the mountain acts.
+function wash(){ctx.setTransform(scale,0,0,scale,0,0);ctx.fillStyle=ctx.createPattern(paper,'repeat');ctx.fillRect(0,0,W,H);mountain(W*.3,440,W*.7,260,.12);mountain(W*.78,390,W*.6,280,.16)}
+function drawSelection(){wash();const keep=gender;const pxH=canvas.clientHeight||900;const wideShort=pxH>0&&pxH<520;const size=wideShort?Math.min(1.45,W/220):Math.min(2.5,W/170);const y=wideShort?H*.4:H*.54;for(const [i,g] of ['male','female'].entries()){gender=g;ctx.save();ctx.globalAlpha=g===keep?1:.48;person(W*(i?.67:.33),y,size,0,'hero');ctx.restore()}gender=keep;}
+function homeFrame(){line([[W*.12,640],[W*.12,340],[W*.72,340],[W*.72,640]],'#998b71',2);path([M(W*.06,340),Q(W*.4,290,W*.82,340)],null,C.ink,1);line([[W*.05,650],[W*.9,650]],'#b7aa90',1)}
+function drawGrowth(){wash();const beat=Math.min(3,Math.floor((t+10)/2.5)),p=((t+10)%2.5)/2.5;const x=W*.45,s=Math.min(2.2,W/180);homeFrame();ctx.save();ctx.translate(x,610);ctx.scale(s,s);
+if(beat===0){ // Swaddled infant and a small hand grasping a finger; no portrait.
+path([M(-46,-52),Q(-40,-90,0,-90),Q(40,-90,46,-52),Q(25,-18,-14,-9),Q(-38,-18,-46,-52),Z()],gender==='female'?C.blue:C.robe,C.ink,.8);
+folds([[[-40,-55],[24,-23]],[[-30,-70],[35,-45]],[[-28,-31],[27,-61]]]);limb([[68,-95],[32,-77],[12,-60]],7);ellipse(10,-59,7,6,C.skin);for(let i=0;i<4;i++)path([M(7+i*2,-65),Q(1+i*2,-59,9+i*2,-55)],null,C.ink,.7);
+}else if(beat===1){person(-4,0,.67,0,'hero');limb([[7,-45],[22,-59]],2); // child under eaves, looking toward distant immortal
+ctx.save();ctx.translate(77,-156);person(0,0,.22,0,'disciple');path([M(-10,1),Q(0,5,15,0)],null,'#aababa',2);ctx.restore();
+}else if(beat===2){person(-8,0,.85,0,'hero');line([[-35,-46],[36,-47]],'#8d795d',2);for(const xx of [-32,30]){path([M(xx-10,-30),L(xx+10,-30),L(xx+7,-12),L(xx-7,-12),Z()],'#c9b690',C.ink,.7);line([[xx,-46],[xx,-30]],C.ink,.8)}
+}else{const opening=ease((p-.35)/.65),move=reduced?0:opening*18;person(move,0,1,0,'hero');contour([[45,-118],[84,-113],[84,0],[45+opening*22,-5]],'#c8baa0',.8);if(p<.35){limb([[move-17,-56],[move+9,-57]],4);line([[move+9,-57],[move+17,-61]],C.ink,.8)}else limb([[move+12,-64],[45+opening*22,-59]],4);}
+ctx.restore();}
+const growthCaptions=[[-10,-7.5,'初时','襁褓中，握住一只手。'],[-7.5,-5,'幼年','檐下，望见远山的仙人。'],[-5,-2.5,'少年','劳作间，抬头望向山路。'],[-2.5,0,'成年','收好行囊，推门而出。']];
+const captions=[ [0,4,'雨后初晴','山门今日收徒。'],[4,7,'行人','快些，莫误了时辰。'],[7,10.2,'半山 · 泥泞','前面的人都赶去了。'],[10.2,13.5,'你','老人家，别急。我来抬。'],[13.5,19.4,'','你托起车轴，与老人一同将车推出泥坑。'],[19.4,22.2,'老人','多谢你……快上山吧。'],[22.2,26,'','再抬头时，山道已空。'],[26,30.6,'山门 · 扫阶声','只剩一名弟子，扫着雨后的石阶。'],[30.6,33.2,'你','还来得及么？'],[34,35.8,'守门弟子','来得及。'],[36.5,40.5,'守门弟子','先说说，你为何上山？'] ];
+function fillCol(el,text){if(!el||el.dataset.t===text)return;el.dataset.t=text;while(el.firstChild)el.removeChild(el.firstChild);for(let i=0;i<text.length;i++){const ch=text.charAt(i);const node=document.createElement('i');if(ch===' ')node.className='sp';else node.textContent=ch;el.appendChild(node)}}
+function leave(){if(destroyed||left||emitted)return;left=true;playing=false;hiddenPaused=false;cancelFrame();closeAudio();const payload=Object.freeze({type:'xiantu-opening:dismiss',version:1,runId:runId,started:!!started});if(typeof window.onXiantuOpeningDismiss==='function'){try{window.onXiantuOpeningDismiss(payload)}catch(error){console.error('Dismiss hook failed',error)}return}left=false;reset()}
+function ui(){let c=[...growthCaptions,...captions].find(c=>t>=c[0]&&t<c[1]);let key=c?String(c[0]):'end';if(key!==subtitleKey){subtitleKey=key;$('#subtitle').replaceChildren();if(c){let sm=document.createElement('small');sm.textContent=c[2];$('#subtitle').append(sm,document.createTextNode(c[3]))}}$('.caption').classList.toggle('hidden',!started||t>=42);fillCol($('#chapter'),t<0?'岁序 · 启程':t<7?'雨霁 · 山行':t<22?'半山 · 一念':t<30.6?'空阶 · 叩门':'山门 · 问心');$('#progress').style.width=elapsed/DURATION*100+'%'}
+// Every source, filter and envelope belongs to a tracked voice, including oscillators.
+const voices=new Set(),audioEvents=[];let audioEpoch=0,sceneAudio=-1,ambientNext=0;
+const cues=[];for(let v=.6;v<9.2;v+=.53)cues.push([v,'step']);
+for(let v=22.3;v<29;v+=.54)cues.push([v,'step']);
+for(let v=26;v<30.6;v+=1.05)cues.push([v,'sweep']);
+[[11.6,'brace'],[12.7,'strain'],[14.2,'strain'],[15.6,'strain'],[16.15,'release'],[17.1,'wheel'],[18,'wheel'],[39,'gate']].forEach(x=>cues.push(x));cues.sort((a,b)=>a[0]-b[0]);let cueIndex=0;
+function initAudio(){if(audio)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;try{audio=new AC();master=audio.createGain();master.gain.value=0;master.connect(audio.destination)}catch(e){audio=null}}
+function gainTo(value){if(!master)return;const now=audio.currentTime;const p=master.gain;if(p.cancelAndHoldAtTime)p.cancelAndHoldAtTime(now);else {p.cancelScheduledValues(now);p.setValueAtTime(p.value,now)}p.linearRampToValueAtTime(value,now+.08)}
+function cleanup(){audioEpoch++;for(const v of [...voices]){v.s.onended=null;try{v.s.stop()}catch(e){}v.s.disconnect();v.filter.disconnect();v.g.disconnect();voices.delete(v)}}
+function closeAudio(){cleanup();const old=audio;audio=null;if(master){master.disconnect();master=null}if(old)old.close().catch(()=>{})}
+function voice(type,osc=false){if(!audio||audio.state!=='running'||muted||!playing)return;
+const dur={rain:1.6,step:.13,brace:.2,strain:.55,release:.36,wheel:.4,sweep:.58,gate:2.1}[type],now=audio.currentTime;
+const source=osc?audio.createOscillator():audio.createBufferSource(),g=audio.createGain(),filter=audio.createBiquadFilter();
+if(osc){source.type='triangle';source.frequency.setValueAtTime(type==='gate'?62:110,now);source.frequency.exponentialRampToValueAtTime(type==='gate'?37:68,now+dur)}else {const n=Math.ceil(audio.sampleRate*dur),buf=audio.createBuffer(1,n,audio.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*.3;source.buffer=buf}
+filter.type='lowpass';filter.frequency.value={rain:1500,step:260,brace:220,strain:430,release:800,wheel:550,sweep:1900,gate:180}[type];
+const level=osc?.035:type==='rain'?.055:type==='sweep'?.18:.3;
+g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(level,now+.025);g.gain.exponentialRampToValueAtTime(.0001,now+dur-.015);g.gain.linearRampToValueAtTime(0,now+dur);
+source.connect(filter);filter.connect(g);g.connect(master);const v={s:source,g,filter};voices.add(v);source.onended=()=>{source.disconnect();filter.disconnect();g.disconnect();voices.delete(v)};source.start(now);source.stop(now+dur);}
+function sound(type){audioEvents.push({time:+t.toFixed(2),type});if(audioEvents.length>160)audioEvents.shift();voice(type);if(type==='strain'||type==='gate')voice(type,true)}
+function tickAudio(){const scene=t<7?0:t<22?1:t<30.6?2:3;if(scene!==sceneAudio){sceneAudio=scene;gainTo(muted?0:[.5,.55,.42,.28][scene])}
+while(cueIndex<cues.length&&cues[cueIndex][0]<=t){const cue=cues[cueIndex++];if(t-cue[0]<.18)sound(cue[1])}
+if(t>=ambientNext){if(t<30.6)sound('rain');ambientNext=t+1.25}}
+function cancelFrame(){if(raf)cancelAnimationFrame(raf);raf=0}
+function schedule(){if(playing&&!document.hidden&&!raf)raf=requestAnimationFrame(frame)}
+function finish(reason){if(!started||emitted||destroyed||left)return;elapsed=DURATION;t=42;playing=false;hiddenPaused=false;emitted=true;endReason=reason;cancelFrame();closeAudio();$('#end').classList.remove('hidden');$('#intro').classList.add('hidden');$('#skip').disabled=true;ui();draw();const payload=Object.freeze({type:'xiantu-opening:complete',version:1,runId,gender,status:reason});if(typeof window.onXiantuOpeningComplete==='function'){try{window.onXiantuOpeningComplete(payload)}catch(error){console.error('Completion hook failed',error)}}}
+function begin(){if(playing||destroyed||started||left)return;closeAudio();initAudio();runId++;emitted=false;started=true;playing=true;elapsed=0;t=-10;cueIndex=0;ambientNext=0;sceneAudio=-1;audioEvents.length=0;endReason=null;last=performance.now();if(audio&&!muted)audio.resume().catch(()=>{});$('#intro').classList.add('hidden');$('#end').classList.add('hidden');$('#skip').disabled=false;ui();draw();schedule()}
+function reset(){cancelFrame();closeAudio();playing=false;started=false;hiddenPaused=false;elapsed=0;t=-10;subtitleKey='';$('#intro').classList.remove('hidden');$('#end').classList.add('hidden');$('#skip').disabled=true;ui();draw();$('#start').focus()}
+function select(g){if(started)return;gender=g;for(const value of ['male','female']){const b=$('#'+value);b.setAttribute('aria-pressed',String(value===g));b.textContent=(value==='male'?'男':'女')+(value===g?' · 已选':'')}draw()}
+$('#male').onclick=()=>select('male');$('#female').onclick=()=>select('female');$('#start').onclick=begin;$('#replay').onclick=reset;$('#skip').onclick=()=>finish('skipped');$('#back').onclick=leave;$('#skip').disabled=true;
+$('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'开声':'静音';$('#mute').setAttribute('aria-pressed',String(muted));if(muted){gainTo(0);cleanup()}else if(playing&&!document.hidden){initAudio();if(audio)audio.resume().catch(()=>{});sceneAudio=-1}};
+function frame(now){raf=0;if(!playing||document.hidden)return;elapsed+=Math.max(0,Math.min((now-last)/1000,.1));t=elapsed-10;last=now;if(elapsed>=DURATION-1e-8)finish('completed');else{if(t>=0)tickAudio();ui();draw();schedule()}}
+function visibility(){if(document.hidden){hiddenPaused=playing;cancelFrame();cleanup();if(audio)audio.suspend().catch(()=>{})}else if(hiddenPaused&&playing){hiddenPaused=false;last=performance.now();sceneAudio=-1;if(audio&&!muted)audio.resume().catch(()=>{});schedule()}}
+document.addEventListener('visibilitychange',visibility);
+function redraw(){if(!destroyed)draw()}
+addEventListener('resize',redraw);
+function destroy(){if(destroyed)return;destroyed=true;playing=false;cancelFrame();closeAudio();document.removeEventListener('visibilitychange',visibility);removeEventListener('resize',resize);removeEventListener('resize',redraw);removeEventListener('pagehide',destroy);for(const id of ['male','female','start','replay','skip','mute','back'])$('#'+id).onclick=null}
+addEventListener('pagehide',destroy);
+window.xiantuOpening=Object.freeze({destroy});
+Object.defineProperty(window,'demoDebug',{get:()=>Object.freeze({time:Number(elapsed.toFixed(3)),actTime:t,duration:DURATION,gender,runId,playing,started,muted,reducedMotion:reduced,hiddenPaused,scene:t<0?'growth':t<7?1:t<22?2:t<30.6?3:4,shot:t<0?'growth-'+Math.floor((t+10)/2.5):t>=12.2&&t<16.9?'wheel-and-hands':'mountain-road',cartProgress:cartState().release,gateOpen:span(39,41.8),audioState:audio?.state||'not-created',activeSources:voices.size,audioEvents:audioEvents.map(e=>({...e})),endReason,subtitle:$('#subtitle').textContent}),configurable:false});
+ui();draw();
+</script></body></html>
