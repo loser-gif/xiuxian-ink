@@ -105,7 +105,26 @@ async function ink(page) {
     check('cancel-no-create', afterCancel.screen === 'title' && afterCancel.slots === 0 && afterCancel.audio === 'off', afterCancel);
 
     await openPrologue(page);
+    await page.evaluate(() => { window.__minggeFxFrames = 0; });
     await press(page, '#mg-ok');
+    await new Promise(r => setTimeout(r, 120));
+    const stageStyle = await page.evaluate(() => {
+      const p = document.querySelector('#mingge .mg-body p');
+      const cs = getComputedStyle(p);
+      const nodes = [...p.childNodes].map(n => n.nodeType === 1 ? getComputedStyle(n).opacity : 'text');
+      return {
+        color: cs.color,
+        opacity: cs.opacity,
+        fontSize: cs.fontSize,
+        nodes: nodes,
+        frames: window.__minggeFxFrames || 0,
+        ink: document.getElementById('mingge').classList.contains('is-ink'),
+        choices: document.querySelectorAll('#mingge .mg-opt').length,
+      };
+    });
+    fs.writeFileSync(path.join(OUT, 'computed-style.json'), JSON.stringify(stageStyle, null, 2));
+    check('stage-ink-and-ink-color', stageStyle.color === 'rgb(74, 67, 58)' && stageStyle.opacity === '1' && stageStyle.frames > 0 && stageStyle.choices === 2 && stageStyle.nodes.every(n => n === 'text' || n === '1'), stageStyle);
+    await shot(page, 'desktop-stage-ink');
     await pick(page, '是个男孩');
     await press(page, '#mg-back');
     const sexBack = await page.evaluate(() => {
@@ -152,8 +171,16 @@ async function ink(page) {
       };
     });
     check('seal-once', state.seals === 1 && state.created === 1 && state.name === '沈试', state);
-    check('male-effects', state.sex === 'm' && state.origin === 'hanmen' && state.life === 19 && state.sword === 1 && state.els[0] === '火' && state.fox && state.on === 1 && (state.org === 'qm' || state.org === 'sx'), state);
-    check('log-has-ming', state.log.indexOf('命册') >= 0);
+    check('male-effects', state.sex === 'm' && state.origin === 'hanmen' && state.life === 0 && state.sword === 1 && state.els[0] === '火' && state.fox && state.on === 1 && (state.org === 'qm' || state.org === 'sx'), state);
+    check('log-has-ming', state.log.indexOf('命册') >= 0 && state.log.indexOf('小伤不入骨') >= 0 && state.log.indexOf('体魄可挡一层伤') >= 0, state.log);
+    await page.evaluate(() => window.__moxian.openEvent('ming_qian'));
+    await page.waitForFunction(() => (document.getElementById('ev-title').textContent || '').indexOf('元阳') >= 0);
+    const qianUi = await page.evaluate(() => ({
+      title: document.getElementById('ev-title').textContent,
+      choices: [...document.querySelectorAll('#ev-choices button')].map(b => b.textContent),
+    }));
+    check('qian-ui', qianUi.title.indexOf('元阳') >= 0 && qianUi.choices.some(t => t.indexOf('双修') >= 0), qianUi);
+    await page.evaluate(() => { const m = document.getElementById('modal'); if (m) m.hidden = true; });
     if (await page.$('#goal-opts .path-opt')) {
       await press(page, '#goal-opts .path-opt');
       await press(page, '#goal-confirm');
@@ -221,10 +248,20 @@ async function ink(page) {
         sex: s.who.sex, origin: s.origin, ls: s.ls, shen: s.ming.shen, dust: s.ming.dust,
         fabao: s.fabao && s.fabao.name, life: s.lifeBonus, el: s.lgEls[0], free: s.sect.free,
         lei: s.ming.leiTried, ok: s.ming.leiOk, id: s.lg.id, inj: s.inj,
+        lifeSpan: s.lifespan, dustDue: s.ming.dustDue, lifted: s.ming.dustLifted,
       };
     });
-    check('female-effects', female.sex === 'f' && female.origin === 'shijia' && female.ls === 108 && female.shen === 8 && female.dust === 1 && female.fabao && female.life === -20 && female.free === true, female);
+    check('female-effects', female.sex === 'f' && female.origin === 'shijia' && female.ls === 108 && female.shen === 8 && female.dust === 1 && female.fabao && female.life === 0 && female.free === true, female);
     check('lei-applied', female.lei === 1 && ((female.ok === 1 && female.id === 'yi' && female.el === '雷' && female.inj === 0) || (female.ok === 0 && female.inj === 2)), female);
+    check('female-dust-cap', female.lifeSpan === 80 && female.dustDue === 80, female);
+    await page.evaluate(() => window.__moxian.openEvent('ming_kun'));
+    await page.waitForFunction(() => (document.getElementById('ev-title').textContent || '').indexOf('坤灵') >= 0);
+    const kunUi = await page.evaluate(() => ({
+      title: document.getElementById('ev-title').textContent,
+      choices: [...document.querySelectorAll('#ev-choices button')].map(b => b.textContent),
+    }));
+    check('kun-ui', kunUi.choices.some(t => t.indexOf('听她讲') >= 0), kunUi);
+    await page.evaluate(() => { const m = document.getElementById('modal'); if (m) m.hidden = true; });
 
     await boot(page);
     await press(page, '#btn-trial');
@@ -258,6 +295,15 @@ async function ink(page) {
       return { hidden: !fx || getComputedStyle(fx).display === 'none' || fx.hidden, text: p.textContent, color: getComputedStyle(p).color };
     });
     check('reduced-readable', reduced.hidden && reduced.text.indexOf('落墨成命') >= 0 && reduced.color === 'rgb(74, 67, 58)', reduced);
+    await page.evaluate(() => { window.__minggeFxFrames = 0; });
+    await press(page, '#mg-ok');
+    const reducedStep = await page.evaluate(() => ({
+      frames: window.__minggeFxFrames || 0,
+      choices: document.querySelectorAll('#mingge .mg-opt').length,
+      color: getComputedStyle(document.querySelector('#mingge .mg-body p')).color,
+      opacity: getComputedStyle(document.querySelector('#mingge .mg-body p')).opacity,
+    }));
+    check('reduced-does-not-skip-choice', reducedStep.frames === 0 && reducedStep.choices === 2 && reducedStep.opacity === '1' && reducedStep.color === 'rgb(74, 67, 58)', reducedStep);
     await shot(page, 'reduced-birth');
     await leavePrologue(page);
 

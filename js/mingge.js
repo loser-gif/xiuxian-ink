@@ -131,10 +131,7 @@ const Mingge = (() => {
     if (d.grab === 'jade') luckAdd += 5;
     if (gold === 'fuxing') luckAdd += 3;
     let lifeAdd = 0;
-    if (d.sex === 'm') lifeAdd += 4;
-    if (d.grab === 'sword') lifeAdd += 15;
     if (gold === 'qihai') lifeAdd += 12;
-    if (d.path === 'dust') lifeAdd -= 20;
     let xjAdd = 0;
     if (d.six === 'pill') xjAdd += 8;
     if (d.ten === 'watch') xjAdd += 4;
@@ -148,7 +145,7 @@ const Mingge = (() => {
     const shen = (d.sex === 'f' ? 3 : 0) + (d.ten === 'watch' ? 5 : 0) + (gold === 'lingjue' ? 4 : 0);
     const tipo = d.grab === 'sword' ? 6 : 0;
     const shenfa = d.six === 'run' ? 5 : 0;
-    const qixue = (d.sex === 'm' ? 4 : 0) + (d.grab === 'sword' ? 15 : 0);
+    const qixue = d.sex === 'm' ? 1 : 0;
     const wxFinal = clamp(base.wx + wxAdd + legacyWx(), 1, 10);
     const tier = band(lg, wxFinal, d, gold);
     const free = d.path !== 'sect';
@@ -178,7 +175,7 @@ const Mingge = (() => {
   }
   function pathLine(d, r) {
     if (d.path === 'rogue') return '散修。仇家悬赏，后山有一座不示人的洞';
-    if (d.path === 'dust') return '红尘残宝。寿元被天道盯着';
+    if (d.path === 'dust') return '红尘残宝。炼气寿元止于八十，筑基或本命祭炼后松开';
     const o = (typeof ORGS !== 'undefined' && ORGS[r.org]) ? ORGS[r.org] : null;
     const name = o ? o.name : '宗门';
     const word = rankWord(r.org, r.tier);
@@ -205,7 +202,10 @@ const Mingge = (() => {
     lines.push('灵根 ' + r.els.join('') + r.lg.name);
     if (r.wxAdd) lines.push('悟性 ' + signed(r.wxAdd));
     if (r.luckAdd) lines.push('气运 ' + signed(r.luckAdd));
-    if (r.lifeAdd) lines.push('寿元 ' + signed(r.lifeAdd) + '年');
+    if (r.lifeAdd) lines.push('气海延寿 ' + signed(r.lifeAdd) + '年');
+    if (d.sex === 'm') lines.push('小伤不入骨');
+    if (d.grab === 'sword') lines.push('体魄可挡一层伤');
+    if (d.path === 'dust') lines.push('炼气见到八十岁。筑基，或本命祭炼到第二阶，注视松开');
     if (r.xjAdd) lines.push('心境 ' + signed(r.xjAdd));
     if (r.injAdd) lines.push('暗伤 ' + r.injAdd);
     if (r.shen) lines.push('神识 ' + r.shen);
@@ -282,6 +282,7 @@ const Mingge = (() => {
       org: r.org || '', gold: r.gold || '',
       leiOk: r.lei && r.lei.ok ? 1 : 0, leiTried: d.root === 'lei' ? 1 : 0,
       shen: r.shen, tipo: r.tipo, gengu: r.gengu, shenfa: r.shenfa, qixue: r.qixue,
+      dustDue: d.path === 'dust' ? 80 : 0, dustLifted: 0,
       fuyuan: d.grab === 'jade' ? 5 : 0,
       study: d.grab === 'almanac' ? 1 : 0, clean: d.six === 'pill' ? 1 : 0, swift: d.six === 'run' ? 1 : 0,
       fire: d.root === 'fire' ? 1 : 0, water: d.root === 'water' ? 1 : 0,
@@ -325,7 +326,9 @@ const Mingge = (() => {
     if (m.qinchuan) bits.push('测灵破格，记为亲传');
     else if (m.path === 'sect') bits.push('测灵入门');
     if (m.bounty) bits.push('仇家的画影已经贴出去了');
-    if (m.dust) bits.push('本命物还残着，寿元却先紧了');
+    if (m.qixue) bits.push('小伤不入骨');
+    if ((m.tipo | 0) >= 6) bits.push('体魄可挡一层伤');
+    if (m.dust) bits.push('炼气寿元止于八十。筑基或本命祭炼后松开');
     return [
       { title: '命册', text: m.verse || '', cls: 'gold' },
       { title: '入册', text: bits.join('。') + '。', cls: 'sys' },

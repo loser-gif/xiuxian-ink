@@ -4807,7 +4807,10 @@ body.mingge-open{overflow:hidden}
   position:absolute;left:14%;top:18%;width:148px;height:148px;border-radius:50%;pointer-events:none;z-index:0;
   background:radial-gradient(circle,rgba(179,48,42,.26),rgba(179,48,42,0) 70%);
 }
-.mingge:not(.is-birth) .mg-lamp,.mingge:not(.is-birth) .mg-fx{display:none}
+.mingge:not(.is-birth) .mg-lamp{display:none}
+.mingge:not(.is-birth):not(.is-ink) .mg-fx{display:none}
+.mingge.is-ink .mg-fx{display:block}
+.mingge .mg-body p{opacity:1}
 .mingge.is-quiet .mg-fx{display:none}
 .mingge .mg-sheet{
   position:relative;z-index:1;box-sizing:border-box;

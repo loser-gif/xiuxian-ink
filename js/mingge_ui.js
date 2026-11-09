@@ -12,6 +12,7 @@ const MinggeUI = (() => {
   let opened = null;
   let resolveOpen = null;
   let raf = 0;
+  let rafInk = 0;
   let rain = null;
   let onKey = null;
   let onVis = null;
@@ -72,6 +73,50 @@ const MinggeUI = (() => {
   }
   function stopFx() {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }
+  function stopTurnInk() {
+    if (rafInk) { cancelAnimationFrame(rafInk); rafInk = 0; }
+    if (root) root.classList.remove('is-ink');
+  }
+  function playTurnInk() {
+    if (motionOff() || !root || step === 'birth') return;
+    const cv = document.getElementById('mg-fx');
+    if (!cv) return;
+    stopTurnInk();
+    root.classList.add('is-ink');
+    cv.hidden = false;
+    const ctx = cv.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = root.clientWidth || 320;
+    const h = root.clientHeight || 480;
+    cv.width = Math.max(1, Math.floor(w * dpr));
+    cv.height = Math.max(1, Math.floor(h * dpr));
+    cv.style.width = w + 'px';
+    cv.style.height = h + 'px';
+    let frame = 0;
+    const total = 16;
+    const tick = () => {
+      if (!root || !root.classList.contains('is-ink')) { rafInk = 0; return; }
+      frame++;
+      window.__minggeFxFrames = (window.__minggeFxFrames || 0) + 1;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const p = frame / total;
+      const y = cv.height * 0.22;
+      ctx.strokeStyle = 'rgba(74,67,58,' + (0.45 * (1 - p * 0.85)).toFixed(3) + ')';
+      ctx.lineWidth = 2.5 * dpr;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cv.width * 0.1, y);
+      ctx.quadraticCurveTo(cv.width * 0.45, y - 18 * dpr, cv.width * (0.12 + 0.76 * p), y + 6 * dpr);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(74,67,58,' + (0.16 * (1 - p)).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(cv.width * (0.18 + 0.5 * p), y, (10 + 16 * (1 - p)) * dpr, 0, Math.PI * 2);
+      ctx.fill();
+      if (frame < total) rafInk = requestAnimationFrame(tick);
+      else stopTurnInk();
+    };
+    rafInk = requestAnimationFrame(tick);
   }
   function startFx() {
     stopFx();
@@ -154,12 +199,12 @@ const MinggeUI = (() => {
   }
   function optsFor() {
     if (step === 'sex') return [
-      ['m', '是个男孩', '元阳之体。气血稍后微增。'],
+      ['m', '是个男孩', '元阳之体。小伤不入骨。'],
       ['f', '是个女孩', '坤灵之体。神识稍后微增。'],
     ];
     if (step === 'grab') return [
       ['jade', '抓住古玉', '商贾世家。灵石与福缘。'],
-      ['sword', '抓住断剑', '寒门将门。剑篇、气血、根骨。'],
+      ['sword', '抓住断剑', '寒门将门。剑篇、体魄、根骨。'],
       ['almanac', '抓住黄历', '书香算命。悟性与修习。'],
       ['air', '抓了一把空气', '道胎弃婴。身无分文，一项先天。'],
     ];
@@ -183,7 +228,7 @@ const MinggeUI = (() => {
       return [
         ['sect', '升仙大会', '测灵入宗。' + (g === 'sect' ? '与你此前所行更近。' : '')],
         ['rogue', '满门祸起', '散修、悬赏、隐洞。' + (g === 'rogue' ? '与你此前所行更近。' : '')],
-        ['dust', '红尘奇遇', '残宝，寿元见压。' + (g === 'dust' ? '与你此前所行更近。' : '')],
+        ['dust', '红尘奇遇', '残宝。炼气见到八十，筑基后松开。' + (g === 'dust' ? '与你此前所行更近。' : '')],
       ];
     }
     if (step === 'gate') {
@@ -327,6 +372,7 @@ const MinggeUI = (() => {
     const note = $('#mg-note');
     if (note) note.textContent = '';
     render();
+    playTurnInk();
     const ok = $('#mg-ok');
     if (step === 'book') {
       const input = document.getElementById('mg-name');
@@ -393,6 +439,7 @@ const MinggeUI = (() => {
   }
   function cleanup(ok) {
     stopFx();
+    stopTurnInk();
     stopRain();
     if (onKey) { window.removeEventListener('keydown', onKey, true); onKey = null; }
     if (onVis) { document.removeEventListener('visibilitychange', onVis); onVis = null; }
