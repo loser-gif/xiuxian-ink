@@ -73,6 +73,7 @@ Object.assign(PILLS, {
   '古剑残片': { desc: '上古之剑的碎片，剑意犹存，割手。', kind: 'mat' },
   '鲛珠': { desc: '鲛人泣泪所化，夜里自生微光。', kind: 'mat' },
   '龙鳞': { desc: '一片巴掌大的逆鳞，坚逾精金。', kind: 'mat' },
+  '百年狐皮': { desc: '十年前那只灵狐的皮。披上能挡一点寒，心口却不暖和。', kind: 'mat' },
 });
 // 物价：base 为灵石，tier 为物品品阶（按 lsScale 折算）；rel 表示随买者境界折算
 const ITEM_VAL = {
@@ -80,7 +81,7 @@ const ITEM_VAL = {
   '筑基丹': { base: 120, tier: 0 }, '凝元丹': { base: 140, tier: 1 }, '化婴丹': { base: 160, tier: 2 }, '问神丹': { base: 180, tier: 3 }, '渡厄符': { base: 200, tier: 4 },
   '青叶草': { base: 3, tier: 0 }, '宁神花': { base: 5, tier: 0 }, '赤阳花': { base: 6, tier: 0 }, '紫云芝': { base: 6, tier: 1 }, '龙血藤': { base: 7, tier: 2 },
   '血菩提': { base: 8, tier: 2 }, '雪莲': { base: 7, tier: 3 }, '九叶灵芝': { base: 9, tier: 4 },
-  '妖丹': { base: 12, rel: 1 }, '火精石': { base: 14, tier: 2 }, '寒铁': { base: 10, tier: 1 }, '古剑残片': { base: 12, tier: 2 }, '鲛珠': { base: 12, tier: 3 }, '龙鳞': { base: 14, tier: 3 },
+  '妖丹': { base: 12, rel: 1 }, '火精石': { base: 14, tier: 2 }, '寒铁': { base: 10, tier: 1 }, '古剑残片': { base: 12, tier: 2 }, '鲛珠': { base: 12, tier: 3 }, '龙鳞': { base: 14, tier: 3 }, '百年狐皮': { base: 70, tier: 0 },
   '精铁短剑': { base: 55, rel: 1 }, '青钢刃': { base: 88, rel: 1 }, '寒铁枪': { base: 240, tier: 1 }, '赤焰环': { base: 260, tier: 1 }, '碧水尺': { base: 230, tier: 1 },
 };
 

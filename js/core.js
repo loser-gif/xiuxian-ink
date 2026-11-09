@@ -21,6 +21,23 @@ const Core = (() => {
 
   /* ---------- 基础 ---------- */
   function gf(s) { return s.gf ? GONGFA[s.gf] : null; }
+  // 命格绘卷只在 s.ming.on 时叠一层。没有这份命格的旧档与模拟局不受影响。
+  function mingTrait(s) {
+    const m = s && s.ming;
+    if (!m || !m.on) return null;
+    const t = {};
+    if (m.fire) t.bt = (t.bt || 0) + 0.02;
+    if (m.dust && (s.realm | 0) === 0) t.bt = (t.bt || 0) - 0.03;
+    if (m.water) t.life = (t.life || 0) + 0.03;
+    if (m.study) t.spd = 1.06;
+    if (m.clean) t.xinmo = 0.94;
+    if (m.swift) t.time = 0.97;
+    if (m.coat && s.items && (s.items['百年狐皮'] | 0) > 0) {
+      t.life = (t.life || 0) + 0.03;
+      t.xinmo = t.xinmo ? Math.round(t.xinmo * 0.92 * 1000) / 1000 : 0.92;
+    }
+    return Object.keys(t).length ? { t: t, w: 1, spd: 1 } : null;
+  }
   // 主修完整生效；辅修仅取前 AUX_LAYER_CAP 层、且不参与 spd 主乘法（只给微量）
   function traitBag(s) {
     const parts = [];
@@ -52,6 +69,8 @@ const Core = (() => {
       if (s.path.wendao && PATH_TABLE.wendao[s.path.wendao]) parts.push({ t: PATH_TABLE.wendao[s.path.wendao].t || {}, w: 1, spd: 1 });
       if (s.path.jiewen && PATH_TABLE.jiewen[s.path.jiewen]) parts.push({ t: PATH_TABLE.jiewen[s.path.jiewen].t || {}, w: 1, spd: 1 });
     }
+    const mingPart = mingTrait(s);
+    if (mingPart) parts.push(mingPart);
     return parts;
   }
   function gt(s, key, dflt) {
@@ -419,7 +438,10 @@ const Core = (() => {
   }
   function soakInj(s, n) {
     if (!(n > 0)) return 0;
-    if (s.loop && s.loop.ti > 0) return Math.max(0, n - 1);
+    let cut = 0;
+    if (s.loop && s.loop.ti > 0) cut += 1;
+    if (s.ming && s.ming.on && (s.ming.tipo | 0) >= 6) cut += 1;
+    if (cut) return Math.max(0, n - cut);
     return incenseInj(s, n);
   }
   function incenseInj(s, n) {
@@ -1152,6 +1174,7 @@ const Core = (() => {
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
     if (typeof s.xwBank !== 'number') s.xwBank = 0;
     if (typeof Folio !== 'undefined' && Folio.ensure) Folio.ensure(s);
+    if (typeof Mingge !== 'undefined' && Mingge.ensure) Mingge.ensure(s);
     if (!s.loop) s.loop = emptyLoop();
     if (typeof Loop !== 'undefined' && Loop.ensure) Loop.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;

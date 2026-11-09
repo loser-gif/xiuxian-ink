@@ -222,7 +222,7 @@ const Wallpaper = (() => {
   }
   function tick(now) {
     A.raf = 0;
-    if (document.hidden || document.body.dataset.screen !== 'title') return;
+    if (document.hidden || document.body.dataset.screen !== 'title' || document.body.classList.contains('mingge-open')) return;
     if (reduced() || document.documentElement.dataset.motion === 'lite') return;
     A.raf = requestAnimationFrame(tick);
     if (++A.frame % 2) return;                 // 30fps 足够：雾很慢，且画布被放大柔化
@@ -233,7 +233,7 @@ const Wallpaper = (() => {
   function start() {
     if (reduced() || document.documentElement.dataset.motion === 'lite') return;
     if (!document.body.classList.contains('go') || document.body.classList.contains('hold')) return;
-    if (document.body.dataset.screen !== 'title') return;
+    if (document.body.dataset.screen !== 'title' || document.body.classList.contains('mingge-open')) return;
     if (!A.raf && A.layers.length) { A.last = 0; A.raf = requestAnimationFrame(tick); }
   }
   function kick(ms) {

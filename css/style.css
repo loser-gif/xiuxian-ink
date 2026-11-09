@@ -4794,3 +4794,88 @@ html[data-season-plate="off"] body[data-screen=main] .season-wash{
 @media (prefers-reduced-motion:reduce){
   .xiantu-host.is-leaving{transition:none}
 }
+
+/* v143 命格绘卷。宣纸、深墨、朱红只做印。不靠插画。 */
+.mingge{
+  position:fixed;inset:0;z-index:80;overflow:auto;
+  background:#efe6d3;color:#4a433a;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+body.mingge-open{overflow:hidden}
+.mingge .mg-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.mingge .mg-lamp{
+  position:absolute;left:14%;top:18%;width:148px;height:148px;border-radius:50%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,rgba(179,48,42,.26),rgba(179,48,42,0) 70%);
+}
+.mingge:not(.is-birth) .mg-lamp,.mingge:not(.is-birth) .mg-fx{display:none}
+.mingge.is-quiet .mg-fx{display:none}
+.mingge .mg-sheet{
+  position:relative;z-index:1;box-sizing:border-box;
+  width:min(40rem,100%);margin:0 auto;padding:28px 22px 36px;
+}
+.mingge .mg-side{position:absolute;right:8px;top:28px;color:#4a433a}
+.mingge .mg-chap{
+  margin:0 0 12px;font-family:MoShu,MoWen,serif;font-size:28px;letter-spacing:.2em;color:#1b1814;font-weight:400;
+}
+.mingge .mg-body p,.mingge .mg-verse,.mingge .mg-line,.mingge .mg-note,.mingge .mg-opt,.mingge .mg-opt b,.mingge .mg-opt small,.mingge .mg-name,.mingge .mg-mate{
+  color:#4a433a;
+}
+.mingge .mg-body p{margin:0 0 .8em;font-size:17px;line-height:1.75}
+.mingge .mg-verse{margin:0 0 12px;font-size:17px;line-height:1.75;color:#1b1814}
+.mingge .mg-line{margin:0 0 4px;font-size:15px;line-height:1.6}
+.mingge .mg-note{min-height:1.4em;margin:8px 0;font-size:14px;line-height:1.5}
+.mingge .mg-opt{
+  display:block;width:100%;text-align:left;box-sizing:border-box;
+  min-height:44px;margin:0 0 8px;padding:10px 12px;
+  background:#efe6d3;border:1px solid rgba(74,67,58,.4);border-radius:0;
+  font:inherit;color:#4a433a;
+}
+.mingge .mg-opt b{display:block;font-weight:400;font-size:17px;letter-spacing:.06em}
+.mingge .mg-opt small{display:block;margin-top:2px;font-size:14px;line-height:1.45}
+.mingge .mg-opt.on{border-color:#b3302a;box-shadow:inset 3px 0 0 #b3302a}
+.mingge .mg-opt.is-block{border-style:dashed}
+.mingge .mg-book[hidden],.mingge .mg-fx[hidden]{display:none}
+.mingge .mg-name{display:flex;align-items:center;gap:8px;margin:14px 0 8px}
+.mingge .mg-name input{
+  flex:1;min-width:0;min-height:44px;border:0;border-bottom:1px solid #4a433a;
+  background:transparent;color:#4a433a;font:inherit;font-size:18px;border-radius:0;
+}
+.mingge .mg-mate{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px}
+.mingge .mg-mini{
+  min-height:44px;min-width:44px;padding:0 12px;background:#efe6d3;color:#4a433a;
+  border:1px solid rgba(74,67,58,.4);font:inherit;font-size:16px;
+}
+.mingge .mg-mini.on{border-color:#b3302a;box-shadow:inset 0 -2px 0 #b3302a}
+.mingge .mg-bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.mingge .mg-btn{
+  flex:1 1 30%;min-height:44px;padding:8px 10px;background:#efe6d3;color:#4a433a;
+  border:1px solid rgba(74,67,58,.45);font:inherit;font-size:16px;letter-spacing:.12em;
+}
+.mingge .mg-ok{flex:1 1 100%;min-height:48px}
+.mingge .mg-seal{border-color:#b3302a}
+.mingge .mg-seal::before{
+  content:'印';display:inline-block;margin-right:8px;width:1.6em;line-height:1.6em;text-align:center;
+  color:#f6f0e4;background:#b3302a;
+}
+.mingge.is-sealing .mg-seal::before{transform:scale(1)}
+html[data-theme="night"] .mingge,
+html[data-theme="night"] .mingge button,
+html[data-theme="night"] .mingge input,
+html[data-theme="night"] .mingge p,
+html[data-theme="night"] .mingge b,
+html[data-theme="night"] .mingge small{color:#4a433a}
+html[data-theme="night"] .mingge button,
+html[data-theme="night"] .mingge .mg-opt{background:#efe6d3}
+html[data-theme="night"] .mingge{background:#efe6d3}
+html[data-theme="night"] .mingge .mg-seal::before{color:#f6f0e4;background:#b3302a}
+@media (max-width:720px){
+  .mingge .mg-side{display:none}
+  .mingge .mg-sheet{padding:22px 16px 28px}
+}
+@media (min-width:900px){
+  .mingge .mg-sheet{padding:56px 72px 64px}
+}
+@media (prefers-reduced-motion:reduce){
+  .mingge,.mingge *{animation:none;transition:none}
+  .mingge .mg-fx{display:none}
+}

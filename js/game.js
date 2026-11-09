@@ -674,18 +674,20 @@ function initTitle() {
     const go = async () => {
       try {
         if (!(await pickSlotForNew(false, true))) return;
-        const played = await playXiantuOpening();
-        if (!played || !played.ok) {
-          if (played && played.reason === 'fail') {
-            clearOpeningSex();
-            if (typeof Slots !== 'undefined' && window.__slotTarget != null) Slots.setActive(window.__slotTarget);
-            revealCreate();
-          } else window.__slotTarget = null;
+        if (typeof MinggeUI === 'undefined' || !MinggeUI.open) {
+          window.__slotTarget = null;
+          clearOpeningSex();
           return;
         }
-        if (typeof Slots !== 'undefined' && window.__slotTarget != null) Slots.setActive(window.__slotTarget);
-        applyOpeningSex(played.gender);
-        revealCreate();
+        const played = await MinggeUI.open();
+        if (!played || !played.ok) {
+          window.__slotTarget = null;
+          clearOpeningSex();
+        }
+      } catch (err) {
+        window.__slotTarget = null;
+        clearOpeningSex();
+        if (typeof console !== 'undefined') console.error(err);
       } finally {
         newLifeLock = false;
       }
@@ -736,7 +738,7 @@ let xiantuGen = 0;
 let xiantuCurrent = null;
 let newLifeLock = false;
 window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
-const XIANTU_URL = 'opening/xiantu.html?v=142';
+const XIANTU_URL = 'opening/xiantu.html?v=143';
 
 function xiantuValid(result) {
   if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
@@ -1083,6 +1085,8 @@ function initCreate() {
 }
 
 function newGame(name, r, choice, originId) {
+  const mingDraft = r && r.ming;
+  if (mingDraft && mingDraft._created) return;
   const trial = !!window.__trialStart;
   let legacy = null;
   if (!trial) {
@@ -1100,6 +1104,7 @@ function newGame(name, r, choice, originId) {
     Folio.setWho(S, w.sex || 'm', w.mate || 'any');
     Folio.boot(S);
   }
+  if (!trial && mingDraft && typeof Mingge !== 'undefined') Mingge.apply(S, mingDraft);
   if (typeof Slots !== 'undefined') {
     const slot = window.__slotTarget != null ? window.__slotTarget : (Slots.firstEmpty() >= 0 ? Slots.firstEmpty() : Slots.newestIndex());
     window.__slotTarget = null;
@@ -1138,6 +1143,9 @@ function newGame(name, r, choice, originId) {
     pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
   }
   pushLog({ text: sectLine });
+  if (!trial && S.ming && S.ming.on && typeof Mingge !== 'undefined' && Mingge.logs) {
+    Mingge.logs(S).forEach(row => pushLog(row));
+  }
   if (legacy && legacy.naihe && legacy.kind && legacy.kind !== 'none') {
     const tags = S._legacyTags || [{ t: '奈何', c: 'gold' }];
     const line = legacy.kind === 'page'
@@ -1164,6 +1172,7 @@ function newGame(name, r, choice, originId) {
   if (legacy && legacy.thread) pushLog({ title: '前世绝笔', text: legacy.thread, cls: 'breath' });
   else if (S.flags && S.flags.threadText) pushLog({ title: '前世绝笔', text: S.flags.threadText, cls: 'breath' });
   save();
+  if (mingDraft) mingDraft._created = 1;
   const started = S;
   enterMain(false).then(() => {
     if (!trial) setTimeout(() => { if (S === started && curScreen === 'main' && !(S.life && S.life.goal)) openGoalPicker(); }, 450);
@@ -1185,7 +1194,7 @@ function paintLunhuiSeal() {
 async function openOrigin() {
   const all = (typeof Juan !== 'undefined' && Juan.ORIGINS) ? Juan.ORIGINS : null;
   const meta = (typeof Samsara !== 'undefined' && Samsara.loadMeta) ? Samsara.loadMeta() : null;
-  const list = all ? all.filter(o => !o.need || (meta && meta.boons && meta.boons[o.need])) : null;
+  const list = all ? all.filter(o => !o.prologue && (!o.need || (meta && meta.boons && meta.boons[o.need]))) : null;
   const pc = $('#origin-cer');
   if (!pc || !list || !list.length) return 'qingshi';
   return new Promise(resolve => {
@@ -4111,7 +4120,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=142', 'img/open-glyph.png?v=142', 'img/open-seal-logo.png?v=142'];
+  const urls = ['img/open-plate.png?v=143', 'img/open-glyph.png?v=143', 'img/open-seal-logo.png?v=143'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4711,8 +4720,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=142'),
-      loadInk('img/open-glyph.png?v=142')
+      loadInk('img/open-plate.png?v=143'),
+      loadInk('img/open-glyph.png?v=143')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4750,7 +4759,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=142').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=143').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
