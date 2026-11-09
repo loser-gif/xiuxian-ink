@@ -666,12 +666,29 @@ function initTitle() {
       initTitle();
     };
   }
-  $('#btn-new').onclick = async () => {
+  $('#btn-new').onclick = () => {
+    if (newLifeLock) return;
+    newLifeLock = true;
     FX.requestTilt();
     window.__trialStart = false;
     const go = async () => {
-      if (!(await pickSlotForNew(false))) return;
-      resetCreate(); unrollTo('create');
+      try {
+        if (!(await pickSlotForNew(false, true))) return;
+        const played = await playXiantuOpening();
+        if (!played || !played.ok) {
+          if (played && played.reason === 'fail') {
+            clearOpeningSex();
+            if (typeof Slots !== 'undefined' && window.__slotTarget != null) Slots.setActive(window.__slotTarget);
+            revealCreate();
+          } else window.__slotTarget = null;
+          return;
+        }
+        if (typeof Slots !== 'undefined' && window.__slotTarget != null) Slots.setActive(window.__slotTarget);
+        applyOpeningSex(played.gender);
+        revealCreate();
+      } finally {
+        newLifeLock = false;
+      }
     };
     if (typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) { openNaihe(go); return; }
     go();
@@ -685,6 +702,7 @@ function initTitle() {
       if (!ok) return;
       if (!(await pickSlotForNew(true))) return;
       window.__trialStart = true;
+      clearOpeningSex();
       resetCreate(); unrollTo('create');
     };
   }
@@ -700,7 +718,7 @@ function initTitle() {
   }
 }
 
-async function pickSlotForNew(trial) {
+async function pickSlotForNew(trial, deferActivate) {
   if (typeof Slots === 'undefined') return true;
   let i = Slots.firstEmpty();
   if (i < 0) {
@@ -709,8 +727,194 @@ async function pickSlotForNew(trial) {
     i = Slots.newestIndex();
   }
   window.__slotTarget = i;
-  Slots.setActive(i);
+  if (!deferActivate) Slots.setActive(i);
   return true;
+}
+
+/* 一念上山。只拦在新开一卷之前；续卷与试炼不经过。不写存档，不抬 SAVE_V。 */
+let xiantuGen = 0;
+let xiantuCurrent = null;
+let newLifeLock = false;
+window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
+const XIANTU_URL = 'opening/xiantu.html?v=142';
+
+function xiantuValid(result) {
+  if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
+  if (result.gender !== 'male' && result.gender !== 'female') return false;
+  if (result.status !== 'completed' && result.status !== 'skipped') return false;
+  const id = result.runId;
+  return typeof id === 'number' && id >= 1 && id === (id | 0);
+}
+function applyOpeningSex(gender) {
+  const sex = gender === 'female' ? 'f' : 'm';
+  window.__openingSex = sex;
+  window.__who = window.__who || { sex: 'm', mate: 'any' };
+  if (window.__who.mate !== 'm' && window.__who.mate !== 'f' && window.__who.mate !== 'any') window.__who.mate = 'any';
+  window.__who.sex = sex;
+}
+function clearOpeningSex() { window.__openingSex = null; }
+function paintWhoPick() {
+  const pick = document.getElementById('who-pick');
+  if (!pick) return;
+  const locked = window.__openingSex === 'm' || window.__openingSex === 'f';
+  pick.classList.toggle('sex-locked', locked);
+  const fixed = pick.querySelector('.who-fixed');
+  if (fixed) {
+    fixed.hidden = !locked;
+    fixed.textContent = window.__openingSex === 'f' ? '女' : '男';
+  }
+  const who = window.__who || { sex: 'm', mate: 'any' };
+  pick.querySelectorAll('[data-k]').forEach(b => {
+    b.classList.toggle('on', who[b.dataset.k] === b.dataset.v);
+  });
+}
+function focusCreate() {
+  const name = document.getElementById('inp-name');
+  if (name) name.focus({ preventScroll: true });
+}
+function revealCreate() {
+  resetCreate();
+  setScreen('create');
+  const host = document.getElementById('xiantu-host');
+  let gone = false;
+  const done = () => {
+    if (gone) return;
+    gone = true;
+    document.body.classList.remove('xiantu-open');
+    if (host && host.parentNode) host.remove();
+    focusCreate();
+  };
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!host || reduced) { done(); return; }
+  host.classList.add('is-leaving');
+  host.addEventListener('transitionend', done);
+  setTimeout(done, 520);
+}
+function playXiantuOpening() {
+  if (xiantuCurrent) return xiantuCurrent;
+  const gen = ++xiantuGen;
+  const seen = {};
+  let settled = false;
+  let host = null;
+  let frame = null;
+  let timer = 0;
+  let onPageShow = null;
+  let onKey = null;
+  const dropHandlers = child => {
+    if (!child) return;
+    try { child.onXiantuOpeningComplete = null; } catch (e) {}
+    try { child.onXiantuOpeningDismiss = null; } catch (e2) {}
+  };
+  const destroyChild = () => {
+    const child = frame && frame.contentWindow;
+    dropHandlers(child);
+    try { if (child && child.xiantuOpening && child.xiantuOpening.destroy) child.xiantuOpening.destroy(); } catch (e) {}
+  };
+  const detach = () => {
+    if (timer) { clearTimeout(timer); timer = 0; }
+    if (onPageShow) { window.removeEventListener('pageshow', onPageShow); onPageShow = null; }
+    if (onKey) { window.removeEventListener('keydown', onKey, true); onKey = null; }
+  };
+  const removeHost = () => {
+    detach();
+    document.body.classList.remove('xiantu-open');
+    if (host && host.parentNode) host.remove();
+    host = null;
+    frame = null;
+  };
+  const promise = new Promise(resolve => {
+    const settle = (kind, result) => {
+      if (settled || gen !== xiantuGen) {
+        window.__xiantuStats.ignored++;
+        return;
+      }
+      settled = true;
+      let snap = null;
+      try { snap = frame && frame.contentWindow && frame.contentWindow.demoDebug; } catch (e) {}
+      try {
+        const end = frame && frame.contentDocument && frame.contentDocument.getElementById('end');
+        if (end) end.classList.add('hidden');
+      } catch (e2) {}
+      destroyChild();
+      detach();
+      window.__xiantuLast = {
+        kind: kind,
+        gender: result && result.gender ? result.gender : '',
+        status: result && result.status ? result.status : '',
+        runId: result && result.runId ? result.runId : 0,
+        audioState: snap && snap.audioState ? snap.audioState : '',
+        sources: snap && typeof snap.activeSources === 'number' ? snap.activeSources : 0
+      };
+      if (kind === 'done') {
+        window.__xiantuStats.arrivals++;
+        resolve({ ok: true, gender: result.gender, status: result.status, runId: result.runId });
+        return;
+      }
+      if (kind === 'dismiss') window.__xiantuStats.dismisses++;
+      else window.__xiantuStats.fails++;
+      removeHost();
+      if (curScreen === 'title' && typeof MoAudio !== 'undefined' && MoAudio.startAmbient) MoAudio.startAmbient('title');
+      resolve({ ok: false, reason: kind });
+    };
+    host = document.createElement('div');
+    host.id = 'xiantu-host';
+    host.className = 'xiantu-host';
+    frame = document.createElement('iframe');
+    frame.className = 'xiantu-frame';
+    frame.title = '纸上仙途 · 一念上山';
+    frame.setAttribute('aria-label', '一念上山');
+    host.appendChild(frame);
+    document.body.appendChild(host);
+    document.body.classList.add('xiantu-open');
+    if (typeof MoAudio !== 'undefined' && MoAudio.startAmbient) MoAudio.startAmbient('off');
+    const arm = () => {
+      if (settled || gen !== xiantuGen) return;
+      const child = frame.contentWindow;
+      if (!child || !child.xiantuOpening) { settle('fail', null); return; }
+      child.onXiantuOpeningComplete = result => {
+        if (settled || gen !== xiantuGen) { window.__xiantuStats.ignored++; return; }
+        if (!xiantuValid(result) || seen[result.runId]) { window.__xiantuStats.ignored++; return; }
+        seen[result.runId] = 1;
+        settle('done', result);
+      };
+      child.onXiantuOpeningDismiss = () => {
+        if (settled || gen !== xiantuGen) { window.__xiantuStats.ignored++; return; }
+        settle('dismiss', null);
+      };
+      host.classList.add('ready');
+      if (timer) { clearTimeout(timer); timer = 0; }
+    };
+    frame.onload = () => {
+      if (settled || gen !== xiantuGen) return;
+      let href = '';
+      try { href = frame.contentWindow.location.href; } catch (e) { return; }
+      if (!href || href.indexOf('xiantu.html') < 0) return;
+      Object.keys(seen).forEach(k => { delete seen[k]; });
+      arm();
+    };
+    onPageShow = ev => {
+      if (!ev.persisted || settled || gen !== xiantuGen || !frame) return;
+      let alive = false;
+      try { alive = !!(frame.contentWindow && frame.contentWindow.xiantuOpening); } catch (e) { alive = false; }
+      if (alive) return;
+      host.classList.remove('ready');
+      frame.src = XIANTU_URL;
+    };
+    onKey = e => {
+      if (e.key !== 'Escape' || e.metaKey || e.ctrlKey || e.altKey || settled || gen !== xiantuGen) return;
+      e.preventDefault();
+      e.stopPropagation();
+      settle('dismiss', null);
+    };
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('keydown', onKey, true);
+    timer = setTimeout(() => { if (!settled && gen === xiantuGen) settle('fail', null); }, 12000);
+    frame.src = XIANTU_URL;
+  });
+  xiantuCurrent = promise;
+  const clear = () => { if (xiantuCurrent === promise) xiantuCurrent = null; };
+  promise.then(clear, clear);
+  return promise;
 }
 
 /* ================= 试炼入局笺 ================= */
@@ -784,6 +988,7 @@ function resetCreate() {
     ban.hidden = !trial;
     ban.textContent = trial ? '金丹二十载：年四十，灵石一百二十。先择道基与丹纹，二十载内达到金丹中期，达标即收卷，不入轮回簿。' : '';
   }
+  paintWhoPick();
   $('#inp-name').value = '';
   $('#lg-name').textContent = ''; $('#lg-stats').textContent = '';
   const f = $('#lg-flavor'); f.textContent = trial ? '灵根随你。入局之后，已是金丹初期。' : '以指触石，可知灵根。'; f.className = 'lg-flavor dim';
@@ -870,6 +1075,7 @@ function initCreate() {
     pick.addEventListener('click', e => {
       const b = e.target.closest('[data-k]'); if (!b) return;
       const k = b.dataset.k, v = b.dataset.v;
+      if (k === 'sex' && (window.__openingSex === 'm' || window.__openingSex === 'f')) return;
       window.__who[k] = v;
       pick.querySelectorAll(`[data-k="${k}"]`).forEach(x => x.classList.toggle('on', x === b));
     });
@@ -2880,7 +3086,7 @@ function openMenu() {
     if (m === 'reset' && await inkConfirm('焚去此卷，前尘尽忘。', '焚卷', true)) {
       if (typeof Slots !== 'undefined') Slots.clear(Slots.loadBox().active);
       else localStorage.removeItem(SAVE_KEY);
-      S = null; resetCreate(); unrollTo('create');
+      S = null; clearOpeningSex(); resetCreate(); unrollTo('create');
     }
   };
   openSheet('卷首', w);
@@ -3369,7 +3575,7 @@ function showEnd(kind) {
       window.__trialStart = false;
       if (kept) toast('前卷留在存档里');
       else if (typeof Slots !== 'undefined') window.__slotTarget = Slots.newestIndex();
-      resetCreate(); initTitle(); unrollTo('create');
+      clearOpeningSex(); resetCreate(); initTitle(); unrollTo('create');
     };
     if (!isTrial && kind !== 'ascend' && typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) {
       e.hidden = true;
@@ -3408,7 +3614,7 @@ function showTrialEnd() {
     if (!(await pickSlotForNew(true))) return;
     end.hidden = true; S = null; busy = false;
     window.__trialStart = true;
-    resetCreate(); initTitle(); unrollTo('create');
+    clearOpeningSex(); resetCreate(); initTitle(); unrollTo('create');
   };
   $('#btn-end-atlas').onclick = () => openAtlasSheet();
   if (typeof Samsara !== 'undefined') {
@@ -3905,7 +4111,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=141', 'img/open-glyph.png?v=141', 'img/open-seal-logo.png?v=141'];
+  const urls = ['img/open-plate.png?v=142', 'img/open-glyph.png?v=142', 'img/open-seal-logo.png?v=142'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4505,8 +4711,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=141'),
-      loadInk('img/open-glyph.png?v=141')
+      loadInk('img/open-plate.png?v=142'),
+      loadInk('img/open-glyph.png?v=142')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4544,7 +4750,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=141').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=142').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }

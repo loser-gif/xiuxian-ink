@@ -38,6 +38,8 @@ async function rect(page, selector) {
 }
 async function fixture(page) {
   await page.locator('#btn-new').click();
+  await page.frameLocator('#xiantu-host iframe').locator('#start').click();
+  await page.frameLocator('#xiantu-host iframe').locator('#skip').click();
   await page.locator('#inp-name').waitFor();
   await page.evaluate(() => {
     __moxian.newGame('验收客', { lg: LINGGEN.find(x => x.id === 'san'), els: ['金', '木', '火'], wx: 5, luck: 1 }, { id: 'dx' }, 'qingshi');
