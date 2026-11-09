@@ -21,6 +21,23 @@ const Core = (() => {
 
   /* ---------- 基础 ---------- */
   function gf(s) { return s.gf ? GONGFA[s.gf] : null; }
+  // 命格绘卷只在 s.ming.on 时叠一层。没有这份命格的旧档与模拟局不受影响。
+  function mingTrait(s) {
+    const m = s && s.ming;
+    if (!m || !m.on) return null;
+    const t = {};
+    if (m.fire) t.bt = (t.bt || 0) + 0.02;
+    if (m.dust && !m.dustLifted && (s.realm | 0) === 0) t.bt = (t.bt || 0) - 0.06;
+    if (m.water) t.life = (t.life || 0) + 0.03;
+    if (m.study) t.spd = 1.06;
+    if (m.clean) t.xinmo = 0.94;
+    if (m.swift) t.time = 0.97;
+    if (m.coat && s.items && (s.items['百年狐皮'] | 0) > 0) {
+      t.life = (t.life || 0) + 0.03;
+      t.xinmo = t.xinmo ? Math.round(t.xinmo * 0.92 * 1000) / 1000 : 0.92;
+    }
+    return Object.keys(t).length ? { t: t, w: 1, spd: 1 } : null;
+  }
   // 主修完整生效；辅修仅取前 AUX_LAYER_CAP 层、且不参与 spd 主乘法（只给微量）
   function traitBag(s) {
     const parts = [];
@@ -52,6 +69,8 @@ const Core = (() => {
       if (s.path.wendao && PATH_TABLE.wendao[s.path.wendao]) parts.push({ t: PATH_TABLE.wendao[s.path.wendao].t || {}, w: 1, spd: 1 });
       if (s.path.jiewen && PATH_TABLE.jiewen[s.path.jiewen]) parts.push({ t: PATH_TABLE.jiewen[s.path.jiewen].t || {}, w: 1, spd: 1 });
     }
+    const mingPart = mingTrait(s);
+    if (mingPart) parts.push(mingPart);
     return parts;
   }
   function gt(s, key, dflt) {
@@ -77,7 +96,11 @@ const Core = (() => {
   }
   function sync(s) {
     s.age = Math.floor(s.months / 12);
-    s.lifespan = Math.round(REALMS[s.realm].life * K.lifeMul[s.realm] * (K.rootLife[s.lg.id] || 1) * (1 + gt(s, 'life', 0)) + s.lifeBonus);
+    const m = s.ming;
+    if (m && m.on && m.dust && !m.dustLifted && ((s.realm | 0) >= 1 || (s.fabao && (s.fabao.stage | 0) >= 2))) m.dustLifted = 1;
+    let life = Math.round(REALMS[s.realm].life * K.lifeMul[s.realm] * (K.rootLife[s.lg.id] || 1) * (1 + gt(s, 'life', 0)) + s.lifeBonus);
+    if (m && m.on && m.dust && !m.dustLifted && (s.realm | 0) === 0 && (m.dustDue | 0) > 0) life = Math.min(life, m.dustDue | 0);
+    s.lifespan = life;
   }
   const req = s => Math.round(REALMS[s.realm].scale * REALMS[s.realm].reqBase * K.reqMul[s.realm] * (1 + REALMS[s.realm].reqGrow * s.stage));
   const unit = s => 100 * REALMS[s.realm].scale * s.lg.mult * (1 + (s.wx - 5) * 0.06);
@@ -404,6 +427,10 @@ const Core = (() => {
     if (left <= span * 0.05 && !s.warned['95' + k] && left > 0) { s.warned['95' + k] = 1; emit && emit({ text: TEXT.old95, cls: 'warn' }); }
     else if (left <= span * 0.2 && !s.warned['80' + k] && left > 0) { s.warned['80' + k] = 1; emit && emit({ text: TEXT.old80, cls: 'warn' }); }
     if (s.flags && s.flags.zhenCarve && s.loc === 'xuewu' && typeof Loop !== 'undefined' && Loop.arrive) Loop.arrive(s, emit);
+    if (s.ming && s.ming.on && s.ming.dust && !s.ming.dustLifted && (s.realm | 0) === 0 && (s.ming.dustDue | 0) > 0 && s.age >= (s.ming.dustDue | 0) - 8 && !s.warned.mingDust) {
+      s.warned.mingDust = 1;
+      emit && emit({ title: '天劫注视', text: '炼气这一程，寿元比寻常更短。筑基，或把本命祭炼到第二阶，注视才会松开。', cls: 'warn' });
+    }
     if (s.age >= s.lifespan && !s.dead) { s.dead = true; s.ending = 'zuohua'; }
     if (!s.dead) sectTick(s, emit);
     if (!s.dead && typeof Jianghu !== 'undefined') Jianghu.tick(s, emit);
@@ -419,8 +446,13 @@ const Core = (() => {
   }
   function soakInj(s, n) {
     if (!(n > 0)) return 0;
-    if (s.loop && s.loop.ti > 0) return Math.max(0, n - 1);
-    return incenseInj(s, n);
+    let left = n;
+    if (s.loop && s.loop.ti > 0) left = Math.max(0, left - 1);
+    if (s.ming && s.ming.on && (s.ming.tipo | 0) >= 6) left = Math.max(0, left - 1);
+    if (left === n && left === 1 && s.ming && s.ming.on && s.ming.sex === 'm' && (s.ming.qixue | 0) > 0) left = 0;
+    if (left <= 0) return 0;
+    if (left === n) return incenseInj(s, left);
+    return left;
   }
   function incenseInj(s, n) {
     if (n > 0 && n <= 1 && s.shop && s.shop.shield) { s.shop.shield = 0; return 0; }
@@ -1152,6 +1184,7 @@ const Core = (() => {
     if (typeof Juan !== 'undefined' && Juan.ensure) Juan.ensure(s);
     if (typeof s.xwBank !== 'number') s.xwBank = 0;
     if (typeof Folio !== 'undefined' && Folio.ensure) Folio.ensure(s);
+    if (typeof Mingge !== 'undefined' && Mingge.ensure) Mingge.ensure(s);
     if (!s.loop) s.loop = emptyLoop();
     if (typeof Loop !== 'undefined' && Loop.ensure) Loop.ensure(s);
     if (s.bond && s.bond.lost && s.karma && s.karma.mate && s.npc && s.npc[s.karma.mate]) s.npc[s.karma.mate].dead = 1;

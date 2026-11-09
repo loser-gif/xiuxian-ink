@@ -63,15 +63,16 @@ const KARMA_HINT = {
   court_grace: '京畿百姓唱起一支无名小调，调子里有你当年开仓的影子。',
   xiang_fan: '识海中法相忽然不稳，像一面镜子裂了纹。这不是回首，是相裂将至。',
   shen_lamp: '有个夜行人来借一盏灯，你想起沈无灯托付的那一程。',
+  ming_bounty: '城门口的画影图形还没揭。有人按着你的眉眼在找。',
 };
 const KARMA_NAME = {
   su_vow: '灯约', su_aid: '道侣之约', lu_foe: '同辈剑意', wen_foe: '折扇旧怨',
   hei_echo: '夜路血煞', tu_return: '弟子归来', court_echo: '朝案', court_grace: '开仓', xiang_fan: '相裂',
-  shen_lamp: '传灯之约',
+  shen_lamp: '传灯之约', ming_bounty: '仇家悬赏',
 };
 const DEED_HINT = {
   ahe: '崖边', shengu: '伤药', qingzhen: '镇疫', zhouwan: '茶债', fox: '伤狐',
-  linzhao: '碎壶', beggar: '一口饭', qiuniang: '渡口', zhaoheng: '路费', aman: '猎户',
+  linzhao: '碎壶', beggar: '一口饭', qiuniang: '渡口', zhaoheng: '路费', aman: '猎户', mingfox: '狐报',
 };
 function karmaTraces(s, limit = 6) {
   if (!s) return [];
