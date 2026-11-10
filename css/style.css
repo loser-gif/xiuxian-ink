@@ -4882,3 +4882,48 @@ html[data-theme="night"] .mingge .mg-seal::before{color:#f6f0e4;background:#b330
   .mingge,.mingge *{animation:none;transition:none}
   .mingge .mg-fx{display:none}
 }
+
+/* v144: cropped cloth/hand paper theatre; reading is never timed. */
+.village-screen{--ink:#28271f;position:fixed;inset:0;z-index:9000;background:#e8dfca;color:var(--ink);display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);overflow:auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.village-frame{align-self:center;overflow:hidden;position:relative}.village-art{display:block;width:100%;height:auto;max-height:90vh}.village-copy{padding:clamp(20px,4vw,65px);align-self:center;line-height:1.9}.village-copy h2{font-family:MoShu,serif;font-weight:400;font-size:28px}.village-copy p{color:#28271f}.v-choices,.v-navigation{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.village-screen button{font:inherit;color:#302b22;border:1px solid #a99a80;background:#ece2cc;border-radius:4px;padding:10px 14px;min-height:44px;cursor:pointer;text-align:left}.village-screen button.on{border-color:#9c392e;box-shadow:inset 3px 0 #9c392e}.village-screen button:focus-visible{outline:3px solid #9c392e;outline-offset:2px}.v-controls{grid-column:1/-1;display:flex;justify-content:center;flex-wrap:wrap;gap:8px;padding:12px}.v-controls button{font-size:14px}.v-effect{min-height:2em;font-size:15px}
+.v-work,.v-warm,.v-eyes,.v-rain,.v-outside{display:none}.v-camera,.v-tray,.v-hand,.v-book,.v-page,.v-wood,.v-pouch,.v-rope{transform-box:fill-box;transform-origin:center}.v-page{transform-origin:left}.village-screen[data-scene=birth] .v-eyes{display:block}.village-screen[data-scene=birth] .v-tray,.village-screen[data-scene=birth] .v-table{visibility:hidden}.v-rare .v-warm{display:block}.village-screen:not([data-scene=birth]) .v-parent{transform:translateY(-110px)}.village-screen:not([data-scene=birth]) .v-father{opacity:.6}.village-screen[data-scene=rain] .v-rain,.village-screen[data-scene=leave] .v-outside,.village-screen[data-scene=rain] .v-outside{display:block}.village-screen[data-scene=leave] .v-room,.village-screen[data-scene=rain] .v-room{display:none}.village-screen[data-scene=six] .v-work,.village-screen[data-scene=nine] .v-work,.village-screen[data-scene=rain] .v-work,.village-screen[data-scene=leave] .v-work{display:block}.v-work>*{display:none}.village-screen[data-action=farm] .v-basket,.village-screen[data-action=carry] .v-basket,.village-screen[data-action=craft] .v-ruler,.village-screen[data-action=tools] .v-ruler,.village-screen[data-action=rope] .v-rope,.village-screen[data-scene=leave] .v-rope,.village-screen[data-action=soup] .v-soup,.village-screen[data-action=count] .v-letter,.village-screen[data-action=letter] .v-letter,.village-screen[data-action=observe] .v-leaf{display:block}.village-screen[data-scene=rain] .v-tray{opacity:.2}.village-screen[data-scene=six] .v-tray,.village-screen[data-scene=nine] .v-tray{opacity:.6}.village-tasks{display:grid;gap:10px;padding:18px;color:#28271f;background:#eee3cd}.village-tasks button{min-height:44px;padding:10px;font:inherit;background:transparent;border:1px solid #a99a80;color:inherit}.village-tasks p{line-height:1.8}
+@media(max-width:760px){.village-screen{display:block}.village-frame{position:relative;width:100%;max-height:39vh;overflow:hidden}.village-art{max-height:39vh}.village-copy{padding:14px 22px}.village-copy h2{margin:6px 0}.village-copy p{margin:8px 0}.v-choices{gap:8px}.v-choices button{flex:1 1 44%;font-size:15px}.v-controls{padding-bottom:calc(12px + env(safe-area-inset-bottom))}}
+
+.village-screen[data-scene=leave] .v-bag,.village-screen[data-action=money] .v-money{display:block}.v-fingers{transform-box:fill-box;transform-origin:left bottom}
+
+.village-screen:not([data-scene=grab]):not([data-scene=birth]) .v-wood,.village-screen:not([data-scene=grab]):not([data-scene=birth]) .v-pouch{visibility:hidden}.village-screen[data-keep=wood] .v-wood,.village-screen[data-keep=pouch] .v-pouch{visibility:visible!important}
+
+/* All theatre motion is owned by VillageUI's finite WA timeline. */
+.village-screen button:disabled{opacity:.5;cursor:default}
+.v-contact{transform-box:view-box;transform-origin:0 0}.v-contact-hand{display:block!important}
+.v-infant-grip,.v-shelter,.v-adults,.v-chest,.v-schoolbag,.v-lamp,.v-windboard,.v-booktag,.v-swordcore,.v-bead,.v-bag-tie,.v-knot,.v-rope-end{display:none}
+.village-screen[data-scene=birth] .v-rain,.village-screen[data-scene=birth] .v-lamp,.village-screen[data-scene=nine] .v-lamp,.village-screen[data-scene=clue] .v-lamp,.village-screen[data-scene=rain] .v-lamp{display:block}
+.village-screen[data-scene=rain] .v-shelter,.village-screen[data-scene=rain] .v-adults,.village-screen[data-action=soup] .v-windboard{display:block}
+.village-screen.v-acted .v-hand{display:none}.village-screen[data-scene=birth].v-acted .v-infant-grip{display:block}
+.v-infant-fingers{transform-box:view-box;transform-origin:510px 350px}.v-flame{transform-box:fill-box;transform-origin:center bottom}
+.village-screen.v-stow .v-chest,.village-screen[data-action=school] .v-schoolbag{display:block}.v-chest-lid{transform-box:fill-box;transform-origin:left bottom}
+.village-screen[data-scene=leave] .v-work,.village-screen[data-scene=leave] .v-bag,.village-screen[data-scene=leave] .v-bag-tie{display:block}
+.village-screen[data-scene=leave][data-action=booktag] .v-booktag,.village-screen[data-scene=leave][data-action=swordcore] .v-swordcore,.village-screen[data-scene=leave][data-action=bead] .v-bead{display:block}
+.village-screen[data-action=rope] .v-knot,.village-screen[data-action=rope] .v-rope-end{display:block}
+.v-work .v-contact{display:block}.v-contact .v-money,.v-contact .v-letter,.v-contact .v-ruler,.v-contact .v-basket,.v-contact .v-soup{display:block}
+.village-screen[data-scene=clue][data-clue=swordcore] .v-work,.village-screen[data-scene=clue][data-clue=swordcore] .v-ruler{display:block}
+
+.v-housework,.v-book-seam,.v-handle-crack{display:none}
+.village-screen[data-scene=six][data-action=school] .v-housework,.village-screen[data-scene=clue][data-clue=booktag] .v-book-seam,.village-screen[data-scene=clue][data-clue=swordcore] .v-handle-crack{display:block}
+.v-chicken{transform-box:fill-box;transform-origin:right center}
+
+.v-child-shirt,.v-stalks,.v-plank,.v-sandstone{display:none}
+.village-screen[data-scene=six]:not(.v-acted) .v-child-shirt,.village-screen[data-action=farm] .v-stalks,.village-screen[data-action=craft] .v-plank,.village-screen[data-action=craft] .v-sandstone{display:block}
+.v-contact .v-schoolbag{display:block}
+
+.v-stove{display:none}.village-screen[data-scene=rain] .v-stove{display:block}
+
+.v-needle{display:none}.village-screen[data-scene=clue][data-clue=booktag] .v-needle,.village-screen[data-scene=clue][data-clue=swordcore] .v-sandstone,.village-screen[data-scene=clue][data-clue=bead] .v-bead{display:block}
+
+/* A committed creation can retry opening its saved slot after a UI failure. */
+.creation-recovery {
+  --ink:#1b1814;position:fixed;top:0;right:0;bottom:0;left:0;z-index:10000;
+  background:var(--paper,#efe6d3);color:var(--ink);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;text-align:center;
+}
+.creation-recovery .brush-btn { margin-top:24px; }

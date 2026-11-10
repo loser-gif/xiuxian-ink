@@ -9,6 +9,7 @@
 
   let ctx = null, master = null, ambBus = null, sfxBus = null, unlocked = false;
   let amb = { mode: 'off', place: null, season: 0, nodes: [], gain: null, fire: null };
+  let openingQuiet = false;
   let duck = 1, hidden = false, uiLast = 0;
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(pref)); } catch (e) {} }
@@ -28,7 +29,7 @@
 
   function applyGain(instant) {
     if (!master) return;
-    const v = (pref.muted || hidden || !unlocked) ? 0 : pref.vol * duck;
+    const v = (pref.muted || hidden || openingQuiet || !unlocked) ? 0 : pref.vol * duck;
     const g = master.gain, t = ctx.currentTime;
     g.cancelScheduledValues(t);
     if (instant) g.value = v;
@@ -430,6 +431,7 @@
     document.addEventListener(ev, unlockOnce, { once: true, capture: true, passive: true }));
 
   global.MoAudio = {
+    setOpeningQuiet(on) { openingQuiet = !!on; applyGain(false); },
     unlock, play, uiTap, startAmbient, setPlace, setSeason,
     setMuted, setVol, isMuted: () => !!pref.muted, isUnlocked: () => unlocked,
     vol: () => pref.vol, mountUI, syncUI,

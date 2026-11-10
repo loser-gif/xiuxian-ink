@@ -1,6 +1,47 @@
-/* 墨仙录 · 轮回与仙途志。进度只写 moxian.meta，不进存档槽。 */
+/* 墨仙录 · 轮回与仙途志。moxian.meta remains the compatibility mirror. */
 'use strict';
 const Samsara = (() => {
+  // New-character preparation stages only this module's writes, never the global storage API.
+  // Aborting (including quota failure on the slot) discards atlas/legacy/meta changes.
+  let pendingCreation = null;
+  let creationReadError = null;
+  const creationStorage = {
+    getItem(k) {
+      if (pendingCreation && creationReadError) throw creationReadError;
+      try { return pendingCreation && pendingCreation.has(k) ? pendingCreation.get(k) : readEffect(k); }
+      catch (e) { if (pendingCreation) creationReadError = e; throw e; }
+    },
+    setItem(k,v) { if (pendingCreation) pendingCreation.set(k,String(v)); else writeEffect(k,String(v)); },
+    removeItem(k) { if (pendingCreation) pendingCreation.set(k,null); else writeEffect(k,null); }
+  };
+  function beginCreation() {
+    if (pendingCreation) throw Error('creation in progress');
+    creationReadError = null;
+    pendingCreation = new Map();
+  }
+  function readEffect(k) {
+    return typeof Slots !== 'undefined' ? Slots.readEffect(k) : localStorage.getItem(k);
+  }
+  function writeEffect(k,v) {
+    if (typeof Slots !== 'undefined') Slots.writeEffect(k,v);
+    else if (v === null) localStorage.removeItem(k);
+    else localStorage.setItem(k,v);
+  }
+  function creationEffects() {
+    if (!pendingCreation) throw Error('no creation in progress');
+    // Legacy callers may catch read errors and use display defaults. Such defaults
+    // must never authorize a creation, even if storage recovers in this call.
+    if (creationReadError) throw creationReadError;
+    const effects = {};
+    [META_KEY, LEGACY_KEY].forEach(k => { effects[k] = creationStorage.getItem(k); });
+    return effects;
+  }
+  function endCreation(commit) {
+    pendingCreation=null;
+    creationReadError=null;
+    // No second commit: the slot envelope already contains the current authority.
+    if (commit) { readEffect(META_KEY); readEffect(LEGACY_KEY); }
+  }
   const META_KEY = 'moxian.meta';
   const LEGACY_KEY = 'moxian.legacy';
   const META_V = 1;
@@ -28,9 +69,9 @@ const Samsara = (() => {
     };
   }
 
-  function loadMeta() {
+  function loadMeta(strict = false) {
     try {
-      const m = JSON.parse(localStorage.getItem(META_KEY) || 'null');
+      const m = JSON.parse(creationStorage.getItem(META_KEY) || 'null');
       if (!m || typeof m !== 'object') return emptyMeta();
       m.atlas = m.atlas || emptyAtlas();
       for (const k of ['daoji', 'faxiang', 'shenqi', 'ending', 'danwen', 'encounter', 'gongfa', 'person']) m.atlas[k] = m.atlas[k] || {};
@@ -50,11 +91,11 @@ const Samsara = (() => {
         saveMeta(m);
       } else if (grantBoons(m)) saveMeta(m);
       return m;
-    } catch (e) { return emptyMeta(); }
+    } catch (e) { if (strict) throw e; return emptyMeta(); }
   }
 
-  function saveMeta(m) {
-    try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  function saveMeta(m, strict = false) {
+    try { creationStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) { if (strict) throw e; }
   }
 
   function todayKey() {
@@ -149,18 +190,20 @@ const Samsara = (() => {
     if (leg.auxPage) markRelic('page', leg.auxPage);
   }
 
-  function writeLegacy(leg) {
+  function writeLegacy(leg, strict = false) {
     if (!leg) return;
-    try { localStorage.setItem(LEGACY_KEY, JSON.stringify(leg)); } catch (e) {}
+    try { creationStorage.setItem(LEGACY_KEY, JSON.stringify(leg)); } catch (e) { if (strict) throw e; }
   }
 
-  function peekLegacy() {
-    try { return JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null'); } catch (e) { return null; }
+  function peekLegacy(strict = false) {
+    try { return JSON.parse(creationStorage.getItem(LEGACY_KEY) || 'null'); } catch (e) { if (strict) throw e; return null; }
   }
 
   function consumeLegacy() {
-    const leg = peekLegacy();
-    try { localStorage.removeItem(LEGACY_KEY); } catch (e) {}
+    // Consumption needs a successful source read; peekLegacy's display fallback
+    // is not evidence that no inheritance exists (also outside staged creation).
+    const leg = JSON.parse(creationStorage.getItem(LEGACY_KEY) || 'null');
+    try { creationStorage.removeItem(LEGACY_KEY); } catch (e) {}
     return leg;
   }
 
@@ -288,7 +331,7 @@ const Samsara = (() => {
 
   /* ---------- 结生记账 ---------- */
   function recordLife(s, ending, shortLine) {
-    const m = loadMeta();
+    const m = loadMeta(true);
     m.lives = (m.lives | 0) + 1;
     unlockAtlas(m, s, ending);
     const long = epitaphLong(s, ending, shortLine);
@@ -394,19 +437,20 @@ const Samsara = (() => {
     };
   }
 
-  function bridgeOpen() {
-    const b = loadMeta().bridge;
+  function bridgeOpen(strict = false) {
+    const b = loadMeta(strict).bridge;
     return !!(b && b.open);
   }
   function dismissBridge() {
-    const m = loadMeta();
+    const m = loadMeta(true);
     if (!m.bridge || !m.bridge.open) return;
     m.bridge = Object.assign({}, m.bridge, { open: 0, chosen: 'ascend' });
     saveMeta(m);
   }
-  function chooseNaihe(kind, personId) {
-    const m = loadMeta();
+  function chooseNaihe(kind, personId, strictWrite = false) {
+    const m = loadMeta(true);
     const b = m.bridge || {};
+    if (!b.open) return peekLegacy(true);
     const leg = { v: 2, naihe: 1, kind: 'none' };
     if (kind === 'mem') { leg.kind = 'mem'; leg.wx = 1; leg.el = (b.mem && b.mem.el) || ''; }
     else if (kind === 'page' && b.page && b.page.id) { leg.kind = 'page'; leg.page = b.page.id; }
@@ -415,9 +459,9 @@ const Samsara = (() => {
       if (person && person.id) { leg.kind = 'bond'; leg.bond = { role: person.role || 'en', id: person.id, name: person.name || '' }; }
     }
     Object.assign(leg, b.words || legacyWords(b.ending));
-    writeLegacy(leg);
+    writeLegacy(leg, strictWrite);
     m.bridge = Object.assign({}, b, { open: 0, chosen: leg.kind });
-    saveMeta(m);
+    saveMeta(m, strictWrite);
     return leg;
   }
 
@@ -482,8 +526,8 @@ const Samsara = (() => {
     (m.epitaphs || []).forEach(ep => { if (ep && ep.ending) m.atlas.ending[ep.ending] = m.atlas.ending[ep.ending] || 1; });
     try {
       if (typeof localStorage === 'undefined' || !localStorage) return;
-      take(JSON.parse(localStorage.getItem('moxian.v1') || 'null'));
-      const box = JSON.parse(localStorage.getItem('moxian.slots') || 'null');
+      take(JSON.parse(creationStorage.getItem('moxian.v1') || 'null'));
+      const box = JSON.parse(creationStorage.getItem('moxian.slots') || 'null');
       const slots = box && box.slots;
       if (Array.isArray(slots)) slots.forEach(sl => take(sl && sl.data));
     } catch (e) {}
@@ -641,7 +685,7 @@ const Samsara = (() => {
   }
 
     return {
-    META_KEY, LEGACY_KEY, loadMeta, saveMeta, emptyMeta,
+    beginCreation, endCreation, creationEffects, META_KEY, LEGACY_KEY, loadMeta, saveMeta, emptyMeta,
     buildLegacy, writeLegacy, peekLegacy, consumeLegacy, applyLegacy,
     recordLife, epitaphLong, unlockAtlas,
     daojiAffinity, onJoinOrg, applyCourtMark, courtLegacyBoost,

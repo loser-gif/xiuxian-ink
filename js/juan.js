@@ -12,6 +12,7 @@ const Juan = (() => {
   const DISC_NAMES = ['江小舟', '叶迟', '秦晚', '顾衡', '沈糯', '闻小禾'];
 
   const ORIGINS = [
+    { id: 'village', name: '普通村民之子', seal: '村', prologue: true, lean: '无', intro: '村中长大，年方十六。父母仍在老树下送行。', prose: '读过的字、做过的活，都留在手上。', flags: [] },
     { id: 'qingshi', name: '青石镇少年', seal: '镇', lean: '归隐',
       intro: '青石镇人氏，年方十六。镇口老槐还认得你的脚步。',
       prose: '青石板、老槐、说书人。你从凡尘最普通的一页里走出来。',
