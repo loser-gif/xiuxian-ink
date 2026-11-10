@@ -444,15 +444,14 @@ const Core = (() => {
     if (s.buff) { m *= s.buff.mul; if (--s.buff.n <= 0) s.buff = null; }
     return m;
   }
-  function soakInj(s, n) {
+  function soakInj(s, n, ordinary) {
     if (!(n > 0)) return 0;
     let left = n;
     if (s.loop && s.loop.ti > 0) left = Math.max(0, left - 1);
     if (s.ming && s.ming.on && (s.ming.tipo | 0) >= 6) left = Math.max(0, left - 1);
     if (left === n && left === 1 && s.ming && s.ming.on && s.ming.sex === 'm' && (s.ming.qixue | 0) > 0) left = 0;
-    if (left <= 0) return 0;
-    if (left === n) return incenseInj(s, left);
-    return left;
+    if (left === n) left = incenseInj(s, left);
+    return ordinary && typeof Village !== 'undefined' ? Village.injury(s, n, left) : left;
   }
   function incenseInj(s, n) {
     if (n > 0 && n <= 1 && s.shop && s.shop.shield) { s.shop.shield = 0; return 0; }
@@ -499,11 +498,19 @@ const Core = (() => {
     return risk ? (n === 1 ? 1.1 : n === 3 ? 0.9 : 1) : (n === 3 ? 1.03 : 1);
   }
   function tuna(s, emit) {
+    // Snapshot before gainMul heals injury / consumes a buff. Never call it twice.
+    let villagePenalty = (s.inj > 0 ? .5 : 1) * (s.buff ? Math.min(1, Math.max(0, s.buff.mul)) : 1);
+    villagePenalty *= Math.min(1, s.gf && GONGFA[s.gf] ? gfMatch(s,s.gf) : K.noGf) * Math.min(1,courtSpd(s));
+    traitBag(s).forEach(p => { if(p.t.spd != null && p.t.spd < 1) villagePenalty *= Math.max(0,1+(p.t.spd-1)*(p.spd != null ? p.spd : p.w)); });
+    const villageBase = Math.max(0, Math.round(unit(s) * K.tunaGain * villagePenalty));
     const r = REALMS[s.realm], mul = gainMul(s), tags = [];
     const season = seasonPlay(s);
     seasonNote(s, emit, season.n);
     const g = unit(s) * K.tunaGain * (1 - season.spread / 2 + Math.random() * season.spread) * mul * gfSpeed(s);
+    const villageSuccess = !bottleneck(s) && !s.dead;
+
     const ups = bottleneck(s) ? (tags.push({ t: '瓶颈难破，修为难进' }), []) : addXw(s, g, tags);
+
     practice(s, 1, null, emit);
     moTick(s, 0, tags, emit);
     const months = timeMonths(s, r.T * K.tunaMonths);
@@ -511,6 +518,7 @@ const Core = (() => {
     fabaoFeed(s, 1, emit);
     gearTick(s, emit);
     checkXj(s, emit);
+    if (typeof Village !== 'undefined') Village.breathing(s, villageBase, villageSuccess && !s.dead && !s.ascended, amount => { if (bottleneck(s)) return false; ups.push(...addXw(s, amount, tags)); return true; });
     s.acts++;
     return { text: pick(TEXT.tuna).replace('{d}', cnDur(Math.round(months))), tags, ups };
   }
@@ -681,7 +689,7 @@ const Core = (() => {
     if (fx.xj) { const b = s.xj; s.xj = clamp(s.xj + fx.xj, 0, 100); const d = s.xj - b; if (d) tags.push({ t: `心境 ${d > 0 ? '+' : '−'}${Math.abs(d)}`, c: d > 0 ? 'up' : 'down' }); }
     if (fx.wx) { const b = s.wx; s.wx = clamp(s.wx + fx.wx, 1, 10); if (s.wx !== b) tags.push({ t: `悟性 ${fx.wx > 0 ? '+' : '−'}${Math.abs(s.wx - b)}`, c: fx.wx > 0 ? 'up' : 'down' }); }
     if (fx.luck) s.luck = clamp(s.luck + fx.luck, -5, 10);
-    if (fx.inj) { const v = soakInj(s, fx.inj); if (v) { s.inj += v; tags.push({ t: '负伤', c: 'down' }); } }
+    if (fx.inj) { const v = soakInj(s, fx.inj, true); if (v) { s.inj += v; tags.push({ t: '负伤', c: 'down' }); } }
     if (fx.item) for (const [k, n] of Object.entries(fx.item)) {
       s.items[k] = Math.max(0, (s.items[k] || 0) + n); if (!s.items[k]) delete s.items[k];
       tags.push(n > 0 ? { t: `得${k}${n > 1 ? '×' + n : ''}`, c: 'up' } : { t: `失${k}`, c: 'down' });

@@ -332,8 +332,12 @@ function tickPlayed() {
 function save() {
   if (!S) return;
   tickPlayed();
-  if (typeof Slots !== 'undefined') Slots.writeActive(S);
-  else { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+  if (typeof Slots !== 'undefined') return !!Slots.writeActive(S);
+  try {
+    const encoded = JSON.stringify(S);
+    localStorage.setItem(SAVE_KEY, encoded);
+    return localStorage.getItem(SAVE_KEY) === encoded;
+  } catch (e) { return false; }
 }
 function load() {
   try {
@@ -667,6 +671,7 @@ function initTitle() {
     };
   }
   $('#btn-new').onclick = () => {
+    if (window.__resumeCreated) return window.__resumeCreated();
     if (newLifeLock) return;
     newLifeLock = true;
     FX.requestTilt();
@@ -674,25 +679,34 @@ function initTitle() {
     const go = async () => {
       try {
         if (!(await pickSlotForNew(false, true))) return;
-        if (typeof MinggeUI === 'undefined' || !MinggeUI.open) {
-          window.__slotTarget = null;
-          clearOpeningSex();
-          return;
-        }
-        const played = await MinggeUI.open();
-        if (!played || !played.ok) {
-          window.__slotTarget = null;
-          clearOpeningSex();
-        }
+        const meta = typeof Samsara !== 'undefined' ? Samsara.loadMeta(true) : JSON.parse(Slots.readEffect('moxian.meta') || '{}');
+        const legacy = typeof Samsara !== 'undefined' && Samsara.peekLegacy ? Samsara.peekLegacy(true) : JSON.parse(Slots.readEffect(LEGACY_KEY) || 'null');
+        if (meta.bridge && meta.bridge.open) throw Error('pending bridge choice');
+        if (meta.lives > 0 || legacy) { clearOpeningSex(); resetCreate(); unrollTo('create'); return; }
+        const played = await VillageUI.open();
+        if (played && played.ok) {
+          window.__villageDraft = played.draft;
+          applyOpeningSex(played.draft.sex === 'f' ? 'female' : 'male');
+          resetCreate(); unrollTo('create');
+        } else { window.__slotTarget = null; clearOpeningSex(); }
+
       } catch (err) {
         window.__slotTarget = null;
         clearOpeningSex();
+        toast('开卷未成，请稍后重试');
         if (typeof console !== 'undefined') console.error(err);
       } finally {
         newLifeLock = false;
       }
     };
-    if (typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) { openNaihe(go); return; }
+    try {
+      const bridge = typeof Samsara !== 'undefined' ? Samsara.bridgeOpen(true) : (JSON.parse(Slots.readEffect('moxian.meta') || '{}').bridge || {}).open;
+      if (bridge) { openNaihe(go, () => { newLifeLock = false; }); return; }
+    } catch (e) {
+      newLifeLock = false;
+      toast('开卷未成，请稍后重试');
+      return;
+    }
     go();
   };
   const btnTrial = $('#btn-trial');
@@ -723,13 +737,8 @@ function initTitle() {
 async function pickSlotForNew(trial, deferActivate) {
   if (typeof Slots === 'undefined') return true;
   let i = Slots.firstEmpty();
-  if (i < 0) {
-    const ok = await inkConfirm(trial ? '三卷皆满。试炼将覆盖最近一卷。' : '三卷皆满。另开将覆盖最近一卷。', trial ? '试炼' : '覆盖', true);
-    if (!ok) return false;
-    i = Slots.newestIndex();
-  }
+  if (i < 0) { toast('三卷皆满，请先在存档中自行整理空卷。'); return false; }
   window.__slotTarget = i;
-  if (!deferActivate) Slots.setActive(i);
   return true;
 }
 
@@ -738,7 +747,7 @@ let xiantuGen = 0;
 let xiantuCurrent = null;
 let newLifeLock = false;
 window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
-const XIANTU_URL = 'opening/xiantu.html?v=143';
+const XIANTU_URL = 'opening/xiantu.html?v=144';
 
 function xiantuValid(result) {
   if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
@@ -754,7 +763,7 @@ function applyOpeningSex(gender) {
   if (window.__who.mate !== 'm' && window.__who.mate !== 'f' && window.__who.mate !== 'any') window.__who.mate = 'any';
   window.__who.sex = sex;
 }
-function clearOpeningSex() { window.__openingSex = null; }
+function clearOpeningSex() { window.__openingSex = null; window.__villageDraft = null; }
 function paintWhoPick() {
   const pick = document.getElementById('who-pick');
   if (!pick) return;
@@ -1057,13 +1066,20 @@ async function doTest() {
   else { btn.setAttribute('aria-label', '天意已定'); $('#stone-hint').textContent = '天意已定'; }
 }
 function initCreate() {
+  $('#btn-create-back').onclick = async () => {
+    if (window.__villageDraft) {
+      const result = await VillageUI.open();
+      if(result.ok) { window.__villageDraft=result.draft; applyOpeningSex(result.draft.sex==='f'?'female':'male'); paintWhoPick(); }
+      else { clearOpeningSex(); initTitle(); unrollTo('title'); }
+    } else { clearOpeningSex(); initTitle(); unrollTo('title'); }
+  };
   $('#btn-randname').onclick = () => { $('#inp-name').value = randName(); };
   $('#btn-test').onclick = () => { if (testing || $('#btn-test').disabled) return; if (roll) { if (rerolls <= 0) return; rerolls--; } doTest(); };
   $('#btn-start').onclick = async () => {
     if (!roll) return;
     let name = $('#inp-name').value.trim().replace(/\s+/g, '');
     if (!name) { name = randName(); $('#inp-name').value = name; }
-    const origin = await openOrigin();
+    const origin = window.__villageDraft ? 'village' : await openOrigin();
     if (!origin) return;
     const choice = await openBaishan(roll);
     if (!choice) return;
@@ -1085,36 +1101,89 @@ function initCreate() {
 }
 
 function newGame(name, r, choice, originId) {
-  const mingDraft = r && r.ming;
+  if (window.__resumeCreated) return window.__resumeCreated();
+  const villageDraft = window.__villageDraft;
+  if (r && (r._created || r._villageCreated)) return;
+  if (villageDraft && (villageDraft._created || !Village.valid(villageDraft))) return;
+  const mingDraft = !villageDraft && r && r.ming;
   if (mingDraft && mingDraft._created) return;
   const trial = !!window.__trialStart;
-  let legacy = null;
+  const staged = typeof Samsara !== 'undefined' && Samsara.beginCreation;
+  let committed = null, recovery = null, entering = false;
+  function savedFallback() {
+    const message = committed && committed.uncertain
+      ? '新卷存档待核实，请稍后续卷。'
+      : '新卷已存，入卷未成。请续卷，或刷新后续卷。';
+    window.__resumeCreated = () => resumeCreated(true);
+    toast(message);
+    if (recovery) return;
+    recovery = document.createElement('div');
+    recovery.setAttribute('role', 'alertdialog');
+    recovery.setAttribute('aria-label', message);
+    recovery.setAttribute('aria-modal', 'true');
+    recovery.className = 'creation-recovery';
+    const text = document.createElement('p'); text.textContent = message;
+    const retry = document.createElement('button'); retry.className = 'brush-btn'; retry.textContent = '续卷';
+    retry.onclick = () => resumeCreated(true);
+    recovery.appendChild(text); recovery.appendChild(retry); document.body.appendChild(recovery);
+    retry.focus();
+  }
+  function resumeCreated(retry) {
+    if (entering) return;
+    entering = true;
+    try {
+      // Read the committed slot on retry; never call Core.newState/consumeLegacy again.
+      if (retry) {
+        if (committed.uncertain) {
+          const box = JSON.parse(localStorage.getItem(Slots.KEY) || 'null');
+          const slot = box && box.slots && box.slots[committed.index];
+          if (!slot || JSON.stringify(slot.data) !== JSON.stringify(S)) throw Error('saved slot unverified');
+          committed.uncertain = false;
+        }
+        const saved = Slots.read(committed.index);
+        if (!saved) throw Error('saved slot unavailable');
+        S = saved;
+        if (villageDraft) VillageUI.clear();
+      }
+      const started = S;
+      return Promise.resolve(enterMain(!!retry)).then(() => {
+        if (recovery) { recovery.remove(); recovery = null; }
+        window.__resumeCreated = null;
+        if (!trial) setTimeout(() => { if (S === started && curScreen === 'main' && !(S.life && S.life.goal)) openGoalPicker(); }, 450);
+      }).catch(savedFallback).finally(() => { entering = false; });
+    } catch (e) { entering = false; savedFallback(); }
+  }
+  try {
+  if (staged) Samsara.beginCreation();
   if (!trial) {
-    if (typeof Samsara !== 'undefined' && Samsara.consumeLegacy) legacy = Samsara.consumeLegacy();
-    else { try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {} }
+    const meta = typeof Samsara !== 'undefined' ? Samsara.loadMeta(true) : JSON.parse(Slots.readEffect('moxian.meta') || '{}');
+    if (meta.bridge && meta.bridge.open) throw Error('pending bridge choice');
+  }
+  let legacy = null;
+  if (!trial && !villageDraft) {
+    if (staged) legacy = Samsara.consumeLegacy();
+    else { legacy = JSON.parse(Slots.readEffect(LEGACY_KEY) || 'null'); }
   }
   const orgId = choice && choice.id !== 'free' ? choice.id : null;
   const free = !!(choice && choice.id === 'free');
-  window.__trialStart = false;
   const rr = Object.assign({}, r, { org: orgId, free, trial, origin: originId || 'qingshi' });
-  S = Core.newState(name, rr, legacy);
-  if (!trial && typeof Samsara !== 'undefined' && Samsara.loadMeta) S.flags.lives = Samsara.loadMeta().lives | 0;
+  const candidate = Core.newState(name, rr, legacy);
+  if (villageDraft && !trial) {
+    Village.apply(candidate, villageDraft);
+    candidate.who = { sex: villageDraft.sex, mate: (window.__who || {}).mate || 'any' };
+  }
+
+  if (!trial && typeof Samsara !== 'undefined' && Samsara.loadMeta) candidate.flags.lives = Samsara.loadMeta().lives | 0;
   if (typeof Folio !== 'undefined') {
     const w = window.__who || {};
-    Folio.setWho(S, w.sex || 'm', w.mate || 'any');
-    Folio.boot(S);
+    Folio.setWho(candidate, villageDraft ? villageDraft.sex : w.sex || 'm', w.mate || 'any');
+    Folio.boot(candidate);
   }
-  if (!trial && mingDraft && typeof Mingge !== 'undefined') Mingge.apply(S, mingDraft);
-  if (typeof Slots !== 'undefined') {
-    const slot = window.__slotTarget != null ? window.__slotTarget : (Slots.firstEmpty() >= 0 ? Slots.firstEmpty() : Slots.newestIndex());
-    window.__slotTarget = null;
-    Slots.setActive(slot);
-  }
-  playTick = Date.now();
+  if (!trial && mingDraft && typeof Mingge !== 'undefined') Mingge.apply(candidate, mingDraft);
   if (!trial && typeof Samsara !== 'undefined') {
     const meta = Samsara.loadMeta();
     const firstLife = !legacy && !(meta.guide) && !(meta.lives > 0);
-    if (firstLife) S.flags.guide = 1;
+    if (firstLife) candidate.flags.guide = 1;
   }
   const lgDesc = (r.lg.id === 'wei' ? '' : r.els.join('')) + r.lg.name;
   const o = orgId && ORGS[orgId];
@@ -1124,59 +1193,81 @@ function newGame(name, r, choice, originId) {
       ? `测得伪灵根，各宗门前无立锥之地。你折叠拜山帖，独自往深山里去了——无门无派，也好。`
       : `测得${lgDesc}。你拜了山帖，却在山门外止步：此生不入任何门户。云海翻涌，像在鼓掌，也像在叹气。`;
   } else if (o) {
-    const rank = Core.rankName(S);
-    const gf0 = S.gf && GONGFA[S.gf] ? GONGFA[S.gf].name : '入门心法';
+    const rank = Core.rankName(candidate);
+    const gf0 = candidate.gf && GONGFA[candidate.gf] ? GONGFA[candidate.gf].name : '入门心法';
     sectLine = `测得${lgDesc}。你投帖${o.name}，赐下${rank}名分，领了腰牌与一卷《${gf0}》。${o.trait || ''}`;
   } else {
     sectLine = `测得${lgDesc}。山门之内，尘埃落定。`;
   }
-  const who = (typeof Juan !== 'undefined' && Juan.originName) ? Juan.originName(S) : '青石镇少年';
+  const who = (typeof Juan !== 'undefined' && Juan.originName) ? Juan.originName(candidate) : '青石镇少年';
   if (trial) {
-    pushLog({
+    appendInitialLog(candidate, {
       title: '试炼',
       text: `今日试炼：以金丹初期之身入局。出身${who}，名${name}，年四十，随身灵石一百二十。先择道基与丹纹，二十载内达到金丹中期，达标即收卷。行动完整结算，超过期限才达标不计成功；此局不入轮回簿，可解锁图鉴。`,
       cls: 'gold',
       tags: [{ t: '金丹初期', c: 'gold' }, { t: '二十载', c: 'gold' }]
     });
   } else {
-    const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(S) : ('你名' + name + '，青石镇人氏，年方十\u2060六。');
-    pushLog({ text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
+    const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(candidate) : ('你名' + name + '，青石镇人氏，年方十\u2060六。');
+    appendInitialLog(candidate, { text: `大衍历三千七百二十一年，春。天下开山收徒。${line}`, cls: 'sys' });
   }
-  pushLog({ text: sectLine });
-  if (!trial && S.ming && S.ming.on && typeof Mingge !== 'undefined' && Mingge.logs) {
-    Mingge.logs(S).forEach(row => pushLog(row));
+  appendInitialLog(candidate, { text: sectLine });
+  if (!trial && candidate.ming && candidate.ming.on && typeof Mingge !== 'undefined' && Mingge.logs) {
+    Mingge.logs(candidate).forEach(row => appendInitialLog(candidate, row));
   }
   if (legacy && legacy.naihe && legacy.kind && legacy.kind !== 'none') {
-    const tags = S._legacyTags || [{ t: '奈何', c: 'gold' }];
+    const tags = candidate._legacyTags || [{ t: '奈何', c: 'gold' }];
     const line = legacy.kind === 'page'
       ? '行囊底上多了一卷残页，字缺了半边。它还不成主修，要等你自己把它走成一条路。'
       : legacy.kind === 'bond'
         ? '有一个名字在心里停了一停。不是这世认识的，却像会在路上遇见。'
         : '入山那夜，你梦见一条很浅的河。醒来后，有些道理像在骨头里。';
-    pushLog({ title: '奈何', text: line, tags, cls: 'gold' });
+    appendInitialLog(candidate, { title: '奈何', text: line, tags, cls: 'gold' });
   } else if (legacy) {
-    const tags = S._legacyTags || [{ t: '前世残念', c: 'gold' }];
-    pushLog({ text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags, cls: 'gold' });
+    const tags = candidate._legacyTags || [{ t: '前世残念', c: 'gold' }];
+    appendInitialLog(candidate, { text: '入山那夜，你梦见一柄断剑沉在云海深处，剑身上刻着一个陌生的名字。醒来时，许多道理竟像早已懂得。', tags, cls: 'gold' });
     const bits = [];
     if (legacy.cave) bits.push('一枚旧钥');
     if (legacy.auxPage) bits.push('半页残卷');
     if (legacy.canhun) bits.push('一声旧器的鸣');
-    if (bits.length) pushLog({ title: '轮回', text: `除了那些说不清的道理，你还带着${bits.join('、')}。它们会在该出现的时候出现。`, cls: 'breath' });
+    if (bits.length) appendInitialLog(candidate, { title: '轮回', text: `除了那些说不清的道理，你还带着${bits.join('、')}。它们会在该出现的时候出现。`, cls: 'breath' });
   }
-  if (S.flags && S.flags._legacyJoinText) {
-    pushLog({ text: S.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
-    delete S.flags._legacyJoinText;
+  if (candidate.flags && candidate.flags._legacyJoinText) {
+    appendInitialLog(candidate, { text: candidate.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
+    delete candidate.flags._legacyJoinText;
   }
-  pushLog({ text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
-  if (!trial && S.flags.legacyNote) pushLog({ title: '轮回札记', text: S.flags.legacyNote, cls: 'breath' });
-  if (legacy && legacy.thread) pushLog({ title: '前世绝笔', text: legacy.thread, cls: 'breath' });
-  else if (S.flags && S.flags.threadText) pushLog({ title: '前世绝笔', text: S.flags.threadText, cls: 'breath' });
-  save();
+  appendInitialLog(candidate, { text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
+  if (!trial && candidate.flags.legacyNote) appendInitialLog(candidate, { title: '轮回札记', text: candidate.flags.legacyNote, cls: 'breath' });
+  if (legacy && legacy.thread) appendInitialLog(candidate, { title: '前世绝笔', text: legacy.thread, cls: 'breath' });
+  else if (candidate.flags && candidate.flags.threadText) appendInitialLog(candidate, { title: '前世绝笔', text: candidate.flags.threadText, cls: 'breath' });
+  const target = window.__slotTarget;
+  const effects = staged ? Samsara.creationEffects() : legacy ? {
+    'moxian.meta': Slots.readEffect('moxian.meta'), 'moxian.legacy': null
+  } : null;
+  const result = Slots.createEmpty(target, candidate, effects);
+  if (!result.ok) { toast(result.err); return; }
+  // The persistence boundary precedes every fallible UI/mirror operation.
+  committed = result;
+  S = candidate;
+  if (r) r._created = true;
+  if (villageDraft) { villageDraft._created = true; if (r) r._villageCreated = true; }
   if (mingDraft) mingDraft._created = 1;
-  const started = S;
-  enterMain(false).then(() => {
-    if (!trial) setTimeout(() => { if (S === started && curScreen === 'main' && !(S.life && S.life.goal)) openGoalPicker(); }, 450);
-  });
+  window.__villageDraft = null;
+  window.__openingSex = null;
+  window.__trialStart = false;
+  window.__slotTarget = null;
+  playTick = Date.now();
+  if (result.uncertain || result.readUnavailable) { savedFallback(); return; }
+  if (staged) Samsara.endCreation(true);
+  else if (legacy) Slots.readEffect(LEGACY_KEY);
+  if (villageDraft) VillageUI.clear();
+  return resumeCreated(false);
+  } catch (e) {
+    if (committed) savedFallback();
+    else toast('开卷未成，请稍后重试');
+  } finally {
+    if (staged) { try { Samsara.endCreation(false); } catch (e) { /* Commit status is already settled. */ } }
+  }
 }
 
 function paintLunhuiSeal() {
@@ -1314,20 +1405,23 @@ function clipMark(text) {
   if (i >= 6 && i <= 28) return t.slice(0, i);
   return t.length > 24 ? t.slice(0, 24) : t;
 }
-function noteMark(e) {
-  if (!S || !e || !e.title || e.guide) return;
-  S.marks = S.marks || [];
-  const last = S.marks[S.marks.length - 1];
+function noteMark(e, state = S) {
+  if (!state || !e || !e.title || e.guide) return;
+  state.marks = state.marks || [];
+  const last = state.marks[state.marks.length - 1];
   if (last && last.t === e.title) return;
-  S.marks.push({ t: e.title, y: S.age | 0, c: e.cls || '', d: clipMark(e.text) });
-  if (S.marks.length > 24) S.marks.splice(0, S.marks.length - 24);
-  if (typeof Life !== 'undefined' && Life.note) Life.note(S, { y: S.age | 0, t: e.title, d: clipMark(e.text), k: e.cls || '' });
+  state.marks.push({ t: e.title, y: state.age | 0, c: e.cls || '', d: clipMark(e.text) });
+  if (state.marks.length > 24) state.marks.splice(0, state.marks.length - 24);
+  if (typeof Life !== 'undefined' && Life.note) Life.note(state, { y: state.age | 0, t: e.title, d: clipMark(e.text), k: e.cls || '' });
+}
+function appendInitialLog(state, e) {
+  e.time = Core.timeLabel(state);
+  if (typeof Juan !== 'undefined' && Juan.onLog) Juan.onLog(state, e);
+  noteMark(e, state);
+  state.log.push(e); if (state.log.length > 60) state.log.splice(0, state.log.length - 60);
 }
 function pushLog(e) {
-  e.time = timeLabel();
-  if (typeof Juan !== 'undefined' && Juan.onLog) Juan.onLog(S, e);
-  noteMark(e);
-  S.log.push(e); if (S.log.length > 60) S.log.splice(0, S.log.length - 60);
+  appendInitialLog(S, e);
   if (curScreen === 'main' && !document.getElementById('scr-main').hidden) {
     renderEntry(e, true); scrollLog();
     if (e.colo) renderSeals();
@@ -2791,6 +2885,10 @@ function openBag(tab = 'bag') {
   wrap.innerHTML = `<div class="bag-lead">丹药 · 佩器 · 杂物<span>服用后不关卷</span></div><button type="button" class="bag-shop">${shopBit} · 去铺子</button><div class="tab-body bag-body"></div>`;
   const shopBtn = wrap.querySelector('.bag-shop');
   if (shopBtn) shopBtn.onclick = async () => { await closeSheet(); openShop(); };
+  if (S.village) {
+    const villageButton = document.createElement('button'); villageButton.className = 'bag-shop';
+    villageButton.textContent = '村中旧事 · 镇上差事与温养'; villageButton.onclick = openVillageTasks; wrap.prepend(villageButton);
+  }
   const body = wrap.querySelector('.tab-body');
   const show = () => {
     $('#sheet-title').textContent = '行囊';
@@ -3093,9 +3191,18 @@ function openMenu() {
       render(); save(); setTimeout(() => showEnd('guiyin'), 900);
     }
     if (m === 'reset' && await inkConfirm('焚去此卷，前尘尽忘。', '焚卷', true)) {
-      if (typeof Slots !== 'undefined') Slots.clear(Slots.loadBox().active);
-      else localStorage.removeItem(SAVE_KEY);
-      S = null; clearOpeningSex(); resetCreate(); unrollTo('create');
+      const reset = () => {
+        if (typeof Slots !== 'undefined') Slots.clear(Slots.loadBox().active);
+        else localStorage.removeItem(SAVE_KEY);
+        S = null; clearOpeningSex(); resetCreate(); unrollTo('create');
+      };
+      let meta;
+      try {
+        meta = typeof Samsara !== 'undefined' ? Samsara.loadMeta(true)
+          : JSON.parse((typeof Slots !== 'undefined' ? Slots.readEffect('moxian.meta') : localStorage.getItem('moxian.meta')) || '{}');
+      } catch (err) { toast('开卷未成，请稍后重试'); return; }
+      if (meta.bridge && meta.bridge.open) openNaihe(reset);
+      else reset();
     }
   };
   openSheet('卷首', w);
@@ -3151,11 +3258,10 @@ function openSlots() {
       if (!data) { toast('此卷是空的'); return; }
       if ((data.dead || data.ascended) && !(data.flags && data.flags.trial)) { toast('此卷已终，可导出，不能续'); return; }
       if (S && !S.dead && !(await inkConfirm('转去另一卷？当前卷已随手存好。', '读入'))) return;
-      save();
-      Slots.setActive(sel);
+      if (S && save() === false) { toast('存档未写入，请稍后重试'); return; }
       // Read the selected snapshot, not a slot that save() may just have overwritten.
+      if (!Slots.write(sel, data)) { toast('存档未写入，请稍后重试'); return; }
       S = data;
-      Slots.write(sel, S);
       if (!S) { toast('此卷读不开'); return; }
       playTick = Date.now();
       await closeSheet();
@@ -3167,7 +3273,7 @@ function openSlots() {
       if (!S || S.dead || S.ascended) { toast('没有可存的卷'); return; }
       const box = Slots.loadBox();
       if (box.slots[sel] && sel !== box.active && !(await inkConfirm('覆上这一卷？', '存入', true))) return;
-      Slots.write(sel, S);
+      if (!Slots.write(sel, S)) { toast('存档未写入，请稍后重试'); return; }
       toast('已存入第' + cn(sel + 1) + '卷');
       paint();
       return;
@@ -3207,7 +3313,7 @@ function openSlots() {
         if (!data || !data.name) { toast('此码不是一卷可续的人生'); return; }
         const box = Slots.loadBox();
         if (box.slots[sel] && !(await inkConfirm(`写入第${cn(sel + 1)}卷，原卷将被盖住。`, '导入', true))) return;
-        Slots.write(sel, data);
+        if (!Slots.write(sel, data)) { toast('存档未写入，请稍后重试'); return; }
         toast('已导入 · ' + data.name);
         // Replacing the active scroll ends the in-memory life too: visibility/unload
         // autosaves must not write that old life over the imported snapshot.
@@ -3285,12 +3391,25 @@ function gfHintLine(g) {
   return depth + '，' + el + '。';
 }
 function openNaihe(done) {
+  const cancel = arguments[1];
   const box = $('#naihe');
-  if (!box || typeof Samsara === 'undefined' || !Samsara.bridgeOpen || !Samsara.bridgeOpen()) {
-    if (done) done();
-    return;
-  }
-  const b = Samsara.loadMeta().bridge || {};
+  const fail = () => { if (cancel) cancel(); toast('开卷未成，请稍后重试'); };
+  let b;
+  try {
+    const meta = typeof Samsara !== 'undefined' ? Samsara.loadMeta(true) : JSON.parse(Slots.readEffect('moxian.meta') || '{}');
+    b = meta.bridge;
+    if (!b || !b.open) { return Promise.resolve(done && done()).catch(fail); }
+    if (!box || typeof Samsara === 'undefined' || !Samsara.chooseNaihe) throw Error('bridge unavailable');
+  } catch (e) { fail(); return; }
+  // Reopening replaces the previous callbacks; stale buttons cannot complete a new sheet.
+  const session = {};
+  box._naiheSession = session;
+  let finished = false;
+  const active = () => !finished && box._naiheSession === session;
+  const finish = async () => {
+    finished = true; box.hidden = true;
+    try { if (done) await done(); } catch (e) { fail(); }
+  };
   const lead = $('#naihe-lead');
   const opts = $('#naihe-opts');
   if (lead) {
@@ -3308,10 +3427,12 @@ function openNaihe(done) {
       btn.querySelector('.naihe-seal').textContent = seal;
       btn.querySelector('b').textContent = title;
       btn.querySelector('em').textContent = prose;
-      btn.onclick = () => {
-        if (Samsara.chooseNaihe) Samsara.chooseNaihe(kind, personId);
-        box.hidden = true;
-        if (done) done();
+      btn.onclick = async () => {
+        if (!active()) return;
+        try {
+          Samsara.chooseNaihe(kind, personId, true);
+          await finish();
+        } catch (e) { toast('开卷未成，请稍后重试'); }
       };
       opts.appendChild(btn);
     };
@@ -3325,6 +3446,14 @@ function openNaihe(done) {
     (b.roadBonds || []).forEach(p => add('bond', '缘', '记住' + p.name, '一段路上因果。下世仍认这个名字，只重逢，不带修为与属性。', p.id));
     add('none', '空', '什么都不带', '把这一世放下。桥下的水不记名字。');
   }
+  const back = document.createElement('button');
+  back.type = 'button'; back.className = 'naihe-opt'; back.textContent = '返回';
+  back.onclick = () => {
+    if (!active()) return;
+    finished = true; box.hidden = true;
+    if (cancel) cancel();
+  };
+  if (opts) opts.appendChild(back);
   box.hidden = false;
 }
 function openAtlasSheet(startTab) {
@@ -3495,7 +3624,8 @@ function showEnd(kind) {
   const composed = (typeof Life !== 'undefined' && Life.compose) ? Life.compose(S, kind, T[1]) : null;
   const recLine = composed ? [T[1], composed.juebi, composed.variant, composed.judge].filter(Boolean).join('') : T[1];
   const isTrial = !!(S.flags && S.flags.trial);
-  let rec = null;
+  let rec = null, recordFailed = false, dismissFailed = false;
+  try {
   if (typeof Samsara !== 'undefined' && Samsara.recordLife) {
     if (isTrial) {
       const m = Samsara.loadMeta();
@@ -3506,6 +3636,7 @@ function showEnd(kind) {
       rec = Samsara.recordLife(S, kind, recLine);
     }
   }
+  } catch (err) { recordFailed = true; toast('开卷未成，请稍后重试'); }
   const epitaph = composed
     ? composed.juebi + (endTail && composed.juebi.indexOf(endTail) < 0 ? endTail : '')
     : T[1];
@@ -3574,10 +3705,18 @@ function showEnd(kind) {
     ? '<span class="end-legacy">此世已毕，可开下一世</span>'
     : (carry.length ? `<span class="end-legacy">来世可承 · ${carry.join(' · ')}</span>`
       : (isTrial ? '<span class="end-legacy">试炼局 · 不入轮回簿</span>' : '<span class="end-legacy">奈何桥上，只许带一样</span>'));
-  if (kind === 'ascend' && typeof Samsara !== 'undefined' && Samsara.dismissBridge) Samsara.dismissBridge();
+  if (!recordFailed && kind === 'ascend' && typeof Samsara !== 'undefined' && Samsara.dismissBridge) {
+    try { Samsara.dismissBridge(); } catch (err) { dismissFailed = true; toast('开卷未成，请稍后重试'); }
+  }
   $('#end-stats').innerHTML = leg;
   save();
   $('#btn-reborn').onclick = async () => {
+    if (recordFailed) { showEnd(kind); return; }
+    if (!S) return;
+    if (dismissFailed) {
+      try { Samsara.dismissBridge(); dismissFailed = false; }
+      catch (err) { toast('开卷未成，请稍后重试'); return; }
+    }
     const proceed = () => {
       const kept = typeof Slots !== 'undefined' && Slots.firstEmpty() >= 0;
       e.hidden = true; S = null;
@@ -3586,12 +3725,16 @@ function showEnd(kind) {
       else if (typeof Slots !== 'undefined') window.__slotTarget = Slots.newestIndex();
       clearOpeningSex(); resetCreate(); initTitle(); unrollTo('create');
     };
-    if (!isTrial && kind !== 'ascend' && typeof Samsara !== 'undefined' && Samsara.bridgeOpen && Samsara.bridgeOpen()) {
-      e.hidden = true;
-      openNaihe(proceed);
-      return;
-    }
-    proceed();
+    try {
+      if (!isTrial) {
+        const meta = typeof Samsara !== 'undefined' ? Samsara.loadMeta(true) : JSON.parse(Slots.readEffect('moxian.meta') || '{}');
+        if (meta.bridge && meta.bridge.open) {
+          openNaihe(proceed, () => { e.hidden = false; });
+          return;
+        }
+      }
+      proceed();
+    } catch (err) { toast('开卷未成，请稍后重试'); }
   };
   const btnAtlasEnd = $('#btn-end-atlas');
   if (btnAtlasEnd) btnAtlasEnd.onclick = () => openAtlasSheet();
@@ -4120,7 +4263,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=143', 'img/open-glyph.png?v=143', 'img/open-seal-logo.png?v=143'];
+  const urls = ['img/open-plate.png?v=144', 'img/open-glyph.png?v=144', 'img/open-seal-logo.png?v=144'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4720,8 +4863,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=143'),
-      loadInk('img/open-glyph.png?v=143')
+      loadInk('img/open-plate.png?v=144'),
+      loadInk('img/open-glyph.png?v=144')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4759,7 +4902,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=143').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=144').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -4829,3 +4972,23 @@ Promise.all([
 
 window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openShop, openSexSheet, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openNaihe, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, Loop: typeof Loop !== 'undefined' ? Loop : null, openGoalPicker, openAnnals, openLook, applyLook };
 })();
+
+function openVillageTasks() {
+  if (!S || !S.village) return;
+  const wrap = document.createElement('div'); wrap.className = 'village-tasks';
+  const draw = () => {
+    const v = S.village; wrap.innerHTML = '';
+    const p = document.createElement('p');
+    p.textContent = Village.talents[v.talent-1] + '：' + Village.effects[v.talent-1] + '\n普通材料 '+v.material+' · 药布 '+v.medicine+' · 筹备 '+v.coupons+' · '+(v.tools?'自有工具':'镇上可借工具')+'。器物入门 '+v.art.toFixed(2)+'/100。'+(v.goal?'首个普通目标已完成。':'先完成送米、交信或修补，安顿下来。')+(v.relic?'旧物：'+(v.awake?'已醒':'封存')+'；成功吐纳 '+v.breaths+'/10。':'')+(v.relic==='bead'&&v.awake?'储息 '+v.stored.toFixed(2)+' / '+(v.capacity||'下一次基础产出')+'。'+(v.release?'已约下次吐纳释放。':'储满后可手动约下次吐纳释放。'):'');
+    wrap.appendChild(p);
+    const counter={2:['injury','耐劳'],3:['craft','省料'],4:['clue','察微'],6:['gather','识采']}[v.talent];
+    const counts=document.createElement('p'); counts.textContent=(counter?counter[1]+'余次 '+Village.left(v,counter[0])+'。':'')+(v.relic==='booktag'?'铜签返料余次 '+Village.left(v,'booktag'):v.relic==='swordcore'?'铁芯维护余次 '+Village.left(v,'maintenance'):'')+(v.relic&&!v.awake?'（封存中，尚不生效）':'');wrap.appendChild(counts);
+    const rows = [['job','乡邻的普通差事：送米，一月，得二灵石'],['gather','山脚采集：一月，通常得一份普通材料，遇雨无出产'],['supply','补给：一灵石换一份普通材料'],['basic','免费研读基础功法：一月，四进度'],['basicPaid','临帖研读：一月、一份材料，五进度'],['art','读器物图谱：一月，四进度；学满可制基础工具'],['repair','镇上匠人修补委托：一月，二份材料，自有工具另用一份维护；借工具得三灵石，自有工具得五灵石'],['explore','探查山脚两条小路'],['heal','药布包扎：一份，伤势减一']];
+    if(v.route==='letter'&&!v.letterDone)rows.unshift(['letter','赴先生旧识之约：交信并送米，一月，得二灵石']);
+    if(v.relic&&!v.awake)rows.push(['awaken',v.relic==='booktag'?'请抄书人辨纹：学会基础功法后，一月，固定解封':v.relic==='swordcore'?'旧铁芯：完成修补委托便能嵌回工具':'祭炼小珠：十次成功吐纳、普通目标、一份材料，固定成功']);
+    if(v.relic==='bead'&&v.awake)rows.push(['release',v.release?'取消下次放息':'储满后，约下一次基础吐纳放息']);
+    if(v.coupons)rows.push(['coupon:money','筹备换一灵石'],['coupon:material','筹备换一份普通材料'],['coupon:medicine','筹备换一份药布']);
+    if(v.explore){const clue=document.createElement('p');clue.textContent=v.explore.text;wrap.appendChild(clue);rows.length=0;rows.push(['ridge','走高坡'],['bank','沿岸走'],['retreat','折返']);}
+    rows.forEach(row=>{const b=document.createElement('button');b.textContent=row[1];b.onclick=()=>{const out=Village.action(S,row[0],pushLog);if(out.err){toast(out.err);return;}pushLog({title:'村中旧事',text:out.text});save();render();if(S.dead||S.ascended){closeSheet();checkEnd();return;}draw();};wrap.appendChild(b);});
+  };draw();wrap._refresh=draw;openSheet('村中旧事',wrap);
+}

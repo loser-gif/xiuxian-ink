@@ -41,7 +41,13 @@ const Slots = (() => {
   }
 
   function saveBox(box) {
-    try { localStorage.setItem(KEY, JSON.stringify(box)); } catch (e) {}
+    try {
+      // A failed initial read must never authorize a blind replacement.
+      localStorage.getItem(KEY);
+      const encoded = JSON.stringify(box);
+      localStorage.setItem(KEY, encoded);
+      return localStorage.getItem(KEY) === encoded;
+    } catch (e) { return false; }
   }
 
   function normalize(box) {
@@ -53,33 +59,32 @@ const Slots = (() => {
     return box;
   }
 
-  function adoptLegacy(box) {
-    let raw = null;
-    try { raw = localStorage.getItem(LEGACY); } catch (e) {}
-    if (!raw) return box;
+  function adoptLegacy(box, persist = true) {
+    // Never remove the sole source until the exact destination bytes are readable.
+    // A leftover source after failed removal cannot replace an existing slot box.
+    if (box.slots.some(Boolean)) return box;
     try {
+      const raw = localStorage.getItem(LEGACY);
+      if (!raw) return box;
       const parsed = JSON.parse(raw);
       const s = (typeof Core !== 'undefined' && Core.migrate) ? Core.migrate(parsed) : parsed;
-      if (s && s.name) {
-        box.slots[0] = { at: Date.now(), sum: summarize(s), data: s };
-        box.active = 0;
-      }
-    } catch (e) {}
-    saveBox(box);
-    try { localStorage.removeItem(LEGACY); } catch (e) {}
+      if (!s || !s.name) return box;
+      box.slots[0] = { at: Date.now(), sum: summarize(s), data: s };
+      box.active = 0;
+      if (!persist || !saveBox(box)) return box;
+      localStorage.removeItem(LEGACY);
+    } catch (e) { /* Keep the original bytes for recovery/retry. */ }
     return box;
   }
 
-  function loadBox() {
+  function loadBox(forWrite = false) {
     let box = null;
-    try { box = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
-    if (!box) {
-      box = emptyBox();
-      adoptLegacy(box);
-      if (!box.slots.some(Boolean)) saveBox(box);
-      return box;
-    }
-    return normalize(box);
+    // An unreadable destination is not permission to migrate over it.
+    try { box = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { if (forWrite) throw e; return emptyBox(); }
+    if (!box) return adoptLegacy(emptyBox(), !forWrite);
+    box = normalize(box);
+    if (!flushEffects(box) && forWrite) throw Error('effect reconciliation unavailable');
+    return box;
   }
 
   function pack(s) { return { at: Date.now(), sum: summarize(s), data: s }; }
@@ -100,18 +105,135 @@ const Slots = (() => {
   }
 
   function write(i, s) {
-    const box = loadBox();
+    let box;
+    try { box = loadBox(true); } catch (e) { return null; }
     i = Math.max(0, Math.min(N - 1, i | 0));
     box.slots[i] = s ? pack(s) : null;
     box.active = i;
-    saveBox(box);
+    if (!saveBox(box)) return null;
     try { localStorage.removeItem(LEGACY); } catch (e) {}
     return box;
   }
 
+  // Current authority plus the last observed compatibility-mirror baseline.
+  // v143 preserves unknown envelope fields, but writes only the two mirror keys.
+  const EFFECT_KEYS = ['moxian.meta', 'moxian.legacy'];
+  function mirrorValues() {
+    const values = {};
+    EFFECT_KEYS.forEach(k => { values[k] = localStorage.getItem(k); });
+    return values;
+  }
+  function effectBox() {
+    const raw = localStorage.getItem(KEY);
+    return raw ? normalize(JSON.parse(raw)) : null;
+  }
+  function metaValue(raw) {
+    try { return JSON.parse(raw) || {}; } catch (e) { return {}; }
+  }
+  function flushEffects(box) {
+    if (!box || !box.creationEffects) return true;
+    try {
+      const observed = mirrorValues();
+      const effects = Object.assign({}, box.creationEffects);
+      const baseline = box.effectMirrors;
+      const oldMeta = metaValue(effects['moxian.meta']);
+      const mirrorMeta = metaValue(observed['moxian.meta']);
+      // A later completed life can produce byte-identical legacy. An open bridge
+      // alone does not prove that an old, failed-removal legacy was replaced.
+      const laterLife = (mirrorMeta.lives | 0) > (oldMeta.lives | 0);
+      const before = oldMeta.bridge, after = mirrorMeta.bridge;
+      const sameLifeClosed = (mirrorMeta.lives | 0) === (oldMeta.lives | 0) &&
+        before && before.open && after && before.lives === after.lives &&
+        after.lives === mirrorMeta.lives;
+      const leg = metaValue(observed['moxian.legacy']);
+      // dismissBridge('ascend') creates no legacy. A choice must match its payload.
+      // Persist the closed bridge with the legacy so this evidence is used once.
+      const freshMeta = !baseline || observed['moxian.meta'] !== baseline['moxian.meta'];
+      const laterChoice = freshMeta && (laterLife || sameLifeClosed) && after && !after.open &&
+        ['none', 'mem', 'page', 'bond'].includes(after.chosen) &&
+        leg.naihe && leg.kind === after.chosen;
+      let changed = false;
+      EFFECT_KEYS.forEach(k => {
+        const value = observed[k];
+        const external = baseline && Object.prototype.hasOwnProperty.call(baseline, k)
+          ? value !== baseline[k] && value !== effects[k]
+          : k === 'moxian.meta' && laterLife;
+        if (external || laterChoice) {
+          effects[k] = value;
+          changed = true;
+        }
+      });
+      // Persist reconciliation before touching mirrors. On failure leave them intact.
+      if (changed || !baseline) {
+        const reconciled = Object.assign({}, box, {creationEffects: effects, effectMirrors: observed});
+        if (!saveBox(reconciled)) return false;
+        box.creationEffects = effects;
+        box.effectMirrors = observed;
+      }
+      const ack = Object.assign({}, box.effectMirrors);
+      EFFECT_KEYS.forEach(k => {
+        try {
+          const value = effects[k];
+          if (observed[k] !== value) {
+            if (value === null) localStorage.removeItem(k);
+            else localStorage.setItem(k, value);
+          }
+          if (localStorage.getItem(k) === value) ack[k] = value;
+        } catch (e) { /* Unacknowledged baseline stays durable across reload. */ }
+      });
+      if (JSON.stringify(ack) !== JSON.stringify(box.effectMirrors)) {
+        // Cleanup acknowledgement is retryable; authority was already reconciled.
+        // A failed ack must not turn a trustworthy effect read into a failure.
+        try {
+          localStorage.setItem(KEY, JSON.stringify(Object.assign({}, box, {effectMirrors: ack})));
+          box.effectMirrors = ack;
+        } catch (e) { /* Keep the durable baseline for the next cleanup attempt. */ }
+      }
+    } catch (e) { return false; /* Retain authority and retry later. */ }
+    return true;
+  }
+  function readEffect(k) {
+    const box = effectBox();
+    if (box && box.creationEffects && Object.prototype.hasOwnProperty.call(box.creationEffects, k)) {
+      if (!flushEffects(box)) throw Error('effect reconciliation unavailable');
+      return box.creationEffects[k];
+    }
+    return localStorage.getItem(k);
+  }
+  function writeEffect(k, value) {
+    const box = effectBox();
+    if (box && box.creationEffects) {
+      if (!flushEffects(box)) throw Error('effect reconciliation unavailable');
+      box.effectMirrors = mirrorValues();
+      box.creationEffects[k] = value;
+      if (!saveBox(box)) throw Error('effect persistence unavailable');
+      flushEffects(box);
+    } else if (value === null) localStorage.removeItem(k);
+    else localStorage.setItem(k, value);
+  }
+
+  // Creation trusts a normal Web Storage setItem return as the commit boundary.
+  // Readback is diagnostic here; verified source cleanup still uses saveBox.
+  function createEmpty(i, s, effects) {
+    try {
+      const raw = localStorage.getItem(KEY);
+      const box = normalize(raw ? JSON.parse(raw) : emptyBox());
+      if (!raw && localStorage.getItem(LEGACY)) return {ok:false,err:'旧卷尚待整理，请先续卷'};
+      if (i == null) i = box.slots.findIndex(slot => !slot);
+      if (!Number.isInteger(i) || i < 0 || i >= N || box.slots[i]) return {ok:false,err:'空卷已变动，请返回卷首重选'};
+      box.slots[i] = pack(s); box.active = i;
+      if (effects) { box.creationEffects = effects; box.effectMirrors = mirrorValues(); }
+      const encoded = JSON.stringify(box);
+      localStorage.setItem(KEY, encoded);
+      let uncertain = false, readUnavailable = false;
+      try { uncertain = localStorage.getItem(KEY) !== encoded; }
+      catch (e) { readUnavailable = true; }
+      return {ok:true,index:i,uncertain,readUnavailable};
+    } catch (e) { return {ok:false,err:'存档未写入，请检查储存空间后重试'}; }
+  }
+
   function writeActive(s) {
-    const box = loadBox();
-    return write(box.active, s);
+    try { return write(loadBox(true).active, s); } catch (e) { return null; }
   }
 
   function read(i) {
@@ -162,7 +284,7 @@ const Slots = (() => {
   }
 
   return {
-    KEY, LEGACY, N,
+    KEY, LEGACY, N, createEmpty, readEffect, writeEffect,
     loadBox, saveBox, summarize, fmtPlayed, fmtDate,
     setActive, write, writeActive, read, readActive, clear,
     firstEmpty, newestIndex, aliveIndex, migrateSlot,
