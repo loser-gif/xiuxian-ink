@@ -45,7 +45,7 @@ function makeJHUI(G) {
     if (typeof MoAudio !== 'undefined') {
       MoAudio.play('paper');
       MoAudio.startAmbient('map');
-      MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
+      MoAudio.setPlace(G.S.loc, (typeof Dali !== 'undefined' ? Dali.today(G.S).season : Math.floor((G.S.months % 12) / 3)));
     }
     $('#map-close').onclick = () => closeMap();
     $('#map-rand').onclick = () => wander();
@@ -73,7 +73,7 @@ function makeJHUI(G) {
     if (typeof MoAudio !== 'undefined') {
       MoAudio.play('paper');
       MoAudio.startAmbient('main');
-      MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
+      MoAudio.setPlace(G.S.loc, (typeof Dali !== 'undefined' ? Dali.today(G.S).season : Math.floor((G.S.months % 12) / 3)));
     }
     await sleep(420);
     // 释放解码后的位图：移除 <img>，避免常驻 GPU 内存
@@ -177,7 +177,7 @@ function makeJHUI(G) {
     });
     const tr = J.travel(G.S, to, pushLog); tr.from = from;
     if (Core.fabaoFeed) Core.fabaoFeed(G.S, 2);
-    if (typeof MoAudio !== 'undefined') MoAudio.setPlace(G.S.loc, Math.floor((G.S.months % 12) / 3));
+    if (typeof MoAudio !== 'undefined') MoAudio.setPlace(G.S.loc, (typeof Dali !== 'undefined' ? Dali.today(G.S).season : Math.floor((G.S.months % 12) / 3)));
     render(); save(); renderWhere();
     await sleep(FX.reduced() ? 0 : 380);
     mapBusy = false;

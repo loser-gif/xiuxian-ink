@@ -166,7 +166,7 @@ const Juan = (() => {
     const year = 3721 + Math.max(0, (s.age | 0) - 16);
     const name = String(title || '').trim() || '一事';
     const extra = who && name.indexOf(who) < 0 ? ' · ' + who : '';
-    return `大衍历${year}年，于${place}，${name}${extra}`;
+    return (typeof Dali !== 'undefined' ? Dali.label(s) : `大衍历${year}年`) + `，于${s.school && !s.school.entered ? '青石村' : place}，${name}${extra}`;
   }
   function placeOf(line) {
     const m = String(line || '').match(/^大衍历\d+年，于(.+)$/);

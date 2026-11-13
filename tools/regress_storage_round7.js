@@ -76,7 +76,7 @@ test('menu return routes through real title guard; pending choice preserved',asy
  const w=setup();await ended(w);w.run('openMenu()');await w.ctx.sheet.onclick({target:{closest:()=>({dataset:{m:'title'}})}});assert.equal(w.ctx.route,'title');assert(w.Samsara.bridgeOpen(true));await w.el('#btn-new').onclick();assert(!w.el('#naihe').hidden);await w.choice().onclick();await tick();await w.create();assert.equal(w.Slots.read(1).flags.naihe,'mem');
 });
 for(const noSamsara of [false,true])test(`closed/no pending fallback=${noSamsara}`,async()=>{
- const w=setup(noSamsara);await w.open();assert.equal(w.ctx.doneCount,1);await w.el('#btn-new').onclick();await tick();assert.equal(w.ctx.village,1);await w.create();assert(w.Slots.read(1));
+ const w=setup(noSamsara);await w.open();assert.equal(w.ctx.doneCount,1);await w.el('#btn-new').onclick();await tick();assert.equal(w.ctx.routes,1);await w.create();assert(w.Slots.read(1));
 });
 test('no Samsara open bridge blocks, actual Slots fallback exposes errors and retries',async()=>{
  const w=setup(true);w.Slots.writeEffect('moxian.meta',JSON.stringify({lives:1,bridge:{open:1}}));

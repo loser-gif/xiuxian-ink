@@ -106,7 +106,7 @@ function loadWorld(localStorage, old = false) {
   };
   sandbox.window = sandbox; sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
+  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','calendar','school','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
   for (const f of files) {
     const src = old && oldSources[f] ? oldSources[f] : fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8');
     vm.runInContext(src, ctx, { filename: f + '.js' });
@@ -303,7 +303,7 @@ for(const key of ['moxian.meta','moxian.legacy']) test('R6 actual title decision
  vm.runInContext(`let newLifeLock=false,shownRealm='';FX.setSeason=()=>{};FX.setGold=()=>{};
  function aliveSave(){return Slots.readActive()} function drawMountains(){} function paintNoticeDot(){} function realmStr(s=S){return Core.realmStr(s)}
  function resetCreate(){window.resetCount=(window.resetCount||0)+1} function trialBrief(){return Promise.resolve(true)} function openNaihe(go){window.bridgeCallback=go}
- function unrollTo(){};VillageUI.open=()=>{window.villageOpens=(window.villageOpens||0)+1;return Promise.resolve({ok:false})};`,x.ctx);
+ function unrollTo(){};const SchoolUI={open:()=>{window.schoolOpens=(window.schoolOpens||0)+1;return Promise.resolve({ok:false})}};`,x.ctx);
  const src=fs.readFileSync(path.join(ROOT,'js/game.js'),'utf8');
  vm.runInContext(src.slice(src.indexOf('function initTitle()'),src.indexOf('/* 一念上山。')),x.ctx);
  vm.runInContext(src.slice(src.indexOf('function paintLunhuiSeal()'),src.indexOf('async function openOrigin()')),x.ctx);
@@ -311,7 +311,7 @@ for(const key of ['moxian.meta','moxian.legacy']) test('R6 actual title decision
  x.ctx.document.querySelector('#btn-new').onclick();for(let i=0;i<12;i++)await Promise.resolve();
  assert(!x.ctx.villageOpens);assert(!x.ctx.resetCount);assert(!vm.runInContext('newLifeLock',x.ctx));assert.deepEqual(Object.fromEntries(w.storage),before);
  fail=false;x.ctx.document.querySelector('#btn-new').onclick();for(let i=0;i<12;i++)await Promise.resolve();
- assert(!x.ctx.villageOpens);assert.equal(x.ctx.resetCount,1);
+ assert(!x.ctx.villageOpens);assert.equal(x.ctx.schoolOpens,1);assert(!x.ctx.resetCount);
 });
 
 (async()=>{
