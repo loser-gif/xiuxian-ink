@@ -2154,6 +2154,11 @@ html,body{background:var(--paper);transition:background-color 2.8s var(--ease-in
     var(--paper-img);
   background-size:auto,auto,auto,256px;
 }
+.map.map-school{
+  background-image:linear-gradient(rgba(242,235,219,.96),rgba(242,235,219,.96)),var(--paper-img);
+  background-size:auto,256px;
+}
+.map-school .me-dot,.map-school .mc-seal{filter:none}
 
 .roller{box-shadow:none !important;filter:none}
 .hroller{box-shadow:none !important;filter:none}
@@ -4930,8 +4935,15 @@ html[data-theme="night"] .mingge .mg-seal::before{color:#f6f0e4;background:#b330
 
 /* 六岁入学：同纸书案，近景袖手与道具；正文始终可以读。 */
 .school-screen{--ink:#26231d;--ink2:#494336;--ink3:#746b5a;position:fixed;inset:0;z-index:420;background:linear-gradient(rgba(239,230,211,.9),rgba(239,230,211,.94)),var(--paper-img);background-size:auto,256px;color:var(--ink);overflow:auto;padding:clamp(28px,6vw,72px);font-family:MoWen,serif;isolation:isolate}
-.title-block,.title-poem,.title-menu,#btn-notice{transition:opacity .5s ease}
-body.school-veil .title-block,body.school-veil .title-poem,body.school-veil .title-menu,body.school-veil #btn-notice{opacity:0;pointer-events:none}
+.title-block,.title-poem{transition:opacity .32s ease}
+body.school-veil .title-menu,body.school-veil #btn-notice{opacity:0;visibility:hidden;pointer-events:none;transition:none;animation:none}
+body.school-veil .title-block{animation:schoolTitleOut .32s ease forwards!important;pointer-events:none}
+body.voyage.school-veil .title-poem,body.school-veil .title-poem{opacity:0!important;animation:none!important;transition:opacity .32s ease;pointer-events:none}
+@keyframes schoolTitleOut{to{opacity:0}}
+@media (prefers-reduced-motion:reduce),(max-height:560px){
+  body.school-veil .title-block,body.voyage.school-veil .title-poem,body.school-veil .title-poem{animation:none!important;transition:none!important;opacity:0!important}
+}
+html[data-motion="lite"] body.school-veil .title-block,html[data-motion="lite"] body.voyage.school-veil .title-poem,html[data-motion="lite"] body.school-veil .title-poem{animation:none!important;transition:none!important;opacity:0!important}
 .school-screen.school-opening{background:transparent;display:flex;align-items:flex-end;justify-content:center;padding:0 4vw 6vh}
 .school-leaf{position:relative;width:min(480px,92vw);margin:0 auto;padding:28px 54px 12px 22px;background:linear-gradient(180deg,rgba(248,242,230,0) 0,rgba(248,242,230,.88) 42px,rgba(239,230,211,.97) 88px);box-shadow:0 28px 50px rgba(40,28,16,.08)}
 .school-opening:not(.is-still) .school-leaf{animation:leafIn 1.15s cubic-bezier(.22,.72,.2,1) both}

@@ -121,7 +121,7 @@ async function enroll(page, name, girl, slow, keys) {
   }
   if (slow) await page.screenshot({ path: path.join(OUT, '02b-sex.png') });
   if (keys) {
-    if (!girl) await page.keyboard.press('Shift+Tab');
+    if (girl) await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => /位子上坐下/.test(document.body.innerText));
     await page.keyboard.press('Enter');
@@ -421,7 +421,7 @@ async function enroll(page, name, girl, slow, keys) {
   await op.evaluate(() => {
     const r = { lg: LINGGEN.find(l => l.id === 'san'), els: ['金', '木', '土'], wx: 5, luck: 2, free: true, origin: 'qingshi' };
     const cult = Core.newState('旧修士', r, null);
-    cult.months = 553.5; cult.xw = 123; cult.flags.legacy = 1;
+    cult.months = 553.5; cult.realm = 1; cult.stage = 0; cult.xw = 123; cult.flags.legacy = 1;
     Core.sync(cult);
     const child = Core.newState('旧村童', r, null);
     child.village = { version: 1, talent: 8, material: 4, basic: 12, goal: true };
@@ -438,7 +438,16 @@ async function enroll(page, name, girl, slow, keys) {
   await op.waitForFunction(() => document.body.dataset.screen === 'main', null, { timeout: 12000 });
   const oldc = await state(op);
   note('old-cult', JSON.stringify({ realm: oldc.realm, age: oldc.age, xw: oldc.xw, school: oldc.school }));
-  if (oldc.school || oldc.age !== 46 || oldc.xw !== 123 || oldc.realm === '村塾') throw new Error('old cultivator changed');
+  if (oldc.school || oldc.age !== 46 || oldc.xw !== 123 || !/筑基/.test(oldc.realm)) throw new Error('old cultivator changed');
+  const beforeBreath = oldc.xw;
+  await op.click('.act[data-act="tuna"]');
+  await op.waitForFunction(before => {
+    const S = window.__moxian && window.__moxian.S;
+    return !!(S && S.xw > before && !window.__moxian.busy);
+  }, beforeBreath, { timeout: 8000 });
+  const breathed = await state(op);
+  note('old-cult-tuna', JSON.stringify({ before: beforeBreath, after: breathed.xw, realm: breathed.realm, busy: false }));
+  if (!(breathed.xw > beforeBreath)) throw new Error('cultivator breath did not raise cultivation after the animation');
   await op.evaluate(() => window.__moxian.JHUI.openMap());
   await op.waitForSelector('#map.ready', { timeout: 12000 });
   await op.waitForTimeout(900);

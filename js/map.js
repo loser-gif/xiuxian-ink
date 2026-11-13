@@ -204,7 +204,6 @@ const InkMap = (() => {
   }
   function toBlobURL(cv) { return new Promise(res => cv.toBlob ? cv.toBlob(b => res(b ? URL.createObjectURL(b) : cv.toDataURL()), 'image/png') : res(cv.toDataURL())); }
   const boards = {};
-  function mist(c, x, y, rx, ry, a) { wash(c, x, y, rx, ry, [236, 230, 216], a); }
   async function paintBoard(kind, opt) {
     opt = opt || {};
     const narrow = !!opt.narrow, road = !!opt.road;
@@ -248,7 +247,6 @@ const InkMap = (() => {
         const w = known ? (narrow ? 200 : 280) : (narrow ? 150 : 200);
         const h = known ? (narrow ? 150 : 200) : (narrow ? 110 : 150);
         massif(40 + i * 17, x, foot, w, h, known ? .82 : .26 + (i % 3) * .02);
-        if (!known) mist(c, x, foot - h * .45, w * .46, h * .32, .5);
         if (known) for (let k = 0; k < 4; k++) roof(c, R, x - 24 + k * 14, foot - 2, 12, .65, .75);
         const labelY = narrow ? (row * H / 3 + 18) / H : (.06 + (i % 2) * .08);
         places.push({ name: name, x: x / W, y: labelY, dot: (foot - 6) / H });
@@ -264,11 +262,9 @@ const InkMap = (() => {
         lane(W * .36, W * .62, foot + 12, 8, false);
         blossomTree(c, R, W * .66, foot, narrow ? 64 : 78, 1);
         blossomTree(c, R, W * .74, foot + 8, narrow ? 48 : 58, 1);
-        mist(c, W * .86, H * .42, narrow ? 110 : 150, 70, .45);
         places.push({ name: '桃花溪', x: .68, y: .28, dot: .68 });
       } else {
         lane(W * .34, W * .52, foot + 12, 5, true);
-        mist(c, W * .68, foot - 20, W * .36, H * .28, .88);
       }
       places.push({ name: '青冥山门', x: .84, y: .08, dot: .48 });
     } else {
@@ -284,7 +280,6 @@ const InkMap = (() => {
         places.push({ name: '桃花溪', x: .86, y: .22, dot: .64 });
       } else {
         lane(W * .52, W * .66, foot + 14, 4, true);
-        mist(c, W * .78, foot - 30, W * .28, H * .34, .9);
       }
     }
     const url = await toBlobURL(cv); cv.width = cv.height = 0;

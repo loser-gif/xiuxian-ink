@@ -227,7 +227,10 @@ const SchoolUI = (() => {
         }else if(view==='province'){
           if(sel==='青冥山门')cardText('青冥山门','雾在更远处。这一龄没有路，名字也不能当成能去。');
           else if(sel==='桃花溪')cardText('桃花溪',v.road<1?'溪还在雾里。镇东的路没走通。':'沿镇东走数日，吃自己的口粮。',v.road<1?null:(s.loc==='taohua'?['走回青石村',()=>{close();if(go)go('qingshi');}]:['沿镇东小路去桃花溪',()=>{close();if(go)go('taohua');}]));
-          else cardText('青石镇',v.road<1?'你在村里。镇东小路还没走通，桃花溪只是名字。':'镇东小路通着桃花溪，要走数日。',v.road<1?['再看镇里',()=>{view='town';sel='青石村';paint();}]:['沿镇东小路去桃花溪',()=>{close();if(go)go('taohua');}]);
+          else {
+            const away=s.loc==='taohua';
+            cardText('青石镇',v.road<1?'你在村里。镇东小路还没走通，桃花溪只是名字。':(away?'人在桃花溪。回头同样要走这些天。':'镇东小路通着桃花溪，要走数日。'),v.road<1?['再看镇里',()=>{view='town';sel='青石村';paint();}]:(away?['走回青石村',()=>{close();if(go)go('qingshi');}]:['沿镇东小路去桃花溪',()=>{close();if(go)go('taohua');}]));
+          }
         }else{
           const away=s.loc==='taohua';
           cardText('青石镇',away?'人在桃花溪。回头同样要走这些天。':(v.road<1?'村在镇西头。往东的路在雾里断了。':'村在西头，镇东小路已经走得通。'),v.road<1?null:(away?['走回青石村',()=>{close();if(go)go('qingshi');}]:['沿镇东小路去桃花溪',()=>{close();if(go)go('taohua');}]));
