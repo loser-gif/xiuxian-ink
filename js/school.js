@@ -17,18 +17,76 @@ const School = (() => {
     const v=s.school;
     const defaults={v:1,entered:false,food:30,copper:12,letters:0,farm:0,craft:0,health:100,family:50,teacher:20,neighbor:20,days:0,seasonAt:0,pending:null,clue:0,proof:0,practice:0,pausedSearch:false,job:'未定',roll:1};
     Object.keys(defaults).forEach(k=>{if(v[k]==null)v[k]=defaults[k];});
-    Dali.ensure(s);return v;
+    if(!v.people||typeof v.people!=='object')v.people={teacher:0,kin:0,mate:0,maker:0};
+    ['teacher','kin','mate','maker'].forEach(k=>{if(typeof v.people[k]!=='number')v.people[k]=0;});
+    if(typeof v.almanac!=='boolean')v.almanac=v.days>0;
+    if(typeof v.chart!=='number')v.chart=v.days>30?1:0;
+    if(v.pace!==3&&v.pace!==7&&v.pace!==30&&v.pace!==90)v.pace=7;
+    if(typeof v.road!=='number')v.road=0;
+    if(typeof v.affair!=='number')v.affair=0;
+    if(v.affairChoice==null)v.affairChoice='';
+    if(!v.place)v.place='school';
+    if(v.intent==null)v.intent='';
+    if(typeof v.homecoming!=='number')v.homecoming=0;
+    if(v.work!=='farm'&&v.work!=='craft'&&v.work!=='work'&&v.work!=='copy'&&v.work!=='repair')v.work='';
+    Dali.ensure(s);
+    if(!v.almanac&&s.calendar)s.calendar.unlocked=false;
+    return v;
   }
   function begin(s,d) {
     s.school={v:1,roll:d.seed||1};ensure(s);
     const shift=72-s.months;
     Object.keys(s.npc||{}).forEach(id=>{const n=s.npc[id];if(n.life){n.life.lastSeen+=shift;n.life.lastBeat+=shift;}});
     if(s.shi && typeof s.shi.next === 'number')s.shi.next+=shift;
-    s.months=72;s.calendar={birthYear:Dali.config.startYear-6,birthMonth:1,birthDay:1,seed:d.seed||1,unlocked:true};
+    s.months=72;s.calendar={birthYear:Dali.config.startYear-6,birthMonth:1,birthDay:1,seed:d.seed||1,unlocked:false};
     s.who={sex:d.sex,mate:'any'};s.origin='village';s.gf=null;
     if(s.gfs.qingming && !s.gfs.qingming.broken)delete s.gfs.qingming;
     s.xw=0;
-    s.flags.guide=0;s.school.seasonAt=Dali.today(s).year*4+Dali.today(s).season;Core.sync(s);
+    s.flags.guide=0;s.loc='qingshi';s.found={qingshi:1};
+    s.school.almanac=false;s.school.chart=0;s.school.pace=7;s.school.road=0;s.school.affair=0;s.school.affairChoice='';s.school.place='school';s.school.intent='';s.school.homecoming=0;s.school.work='';
+    s.school.people={teacher:0,kin:0,mate:0,maker:0};
+    s.school.seasonAt=Dali.today(s).year*4+Dali.today(s).season;Core.sync(s);
+  }
+  const paces=[3,7,30,90];
+  const paceWord=n=>({3:'三日',7:'七日',30:'三十日',90:'九十日'}[n]||'七日');
+  function cyclePace(s){const v=ensure(s);const i=paces.indexOf(v.pace);v.pace=paces[(i+1)%paces.length];return v.pace;}
+  function placeName(s){
+    if(!s||!s.school)return '青石村';
+    if(s.loc==='taohua')return '桃花溪';
+    if(s.school.chart)return '青石村 · 青石镇';
+    return '青石村';
+  }
+  function metCount(v){return ['teacher','kin','mate','maker'].reduce((n,k)=>n+(v.people[k]>0?1:0),0);}
+  function works(s){
+    const v=ensure(s);if(!v)return ['farm'];
+    const list=['farm'];
+    if(s.age>=9&&v.people.maker>0)list.push('craft');
+    if(s.age>=12){list.push('work');list.push('copy');}
+    if(s.age>=16)list.push('repair');
+    return list;
+  }
+  function workNow(s){
+    const v=ensure(s);if(!v)return 'farm';
+    const list=works(s);
+    if(list.indexOf(v.work)>=0)return v.work;
+    if(s.age>=9&&v.people.maker>0&&list.indexOf('craft')>=0)return 'craft';
+    return 'farm';
+  }
+  function cycleWork(s){
+    const list=works(s);const v=ensure(s);
+    if(list.length<2){cyclePace(s);return workNow(s);}
+    const i=list.indexOf(workNow(s));
+    v.work=list[(i+1)%list.length];
+    return v.work;
+  }
+  function workWord(id){return {farm:'田里',craft:'匠棚',work:'帮工',copy:'抄书',repair:'修补'}[id]||'田里';}
+  function beatTitle(kind){return {study:'窗下',farm:'田头',craft:'匠棚',copy:'抄书',work:'帮工',repair:'修补',visit:'走访',rest:'灶前',neighbor:'乡邻',home:'家里'}[kind]||'青石';}
+  function memory(v){
+    if(v.affair!==2)return '';
+    if(v.affairChoice==='teacher')return ' 阿娘还记得你那天没下田。';
+    if(v.affairChoice==='kin')return ' 小禾见了你，说案已经钉好，字也补上了。';
+    if(v.affairChoice==='maker')return ' 周叔提起你抬过的那根木。';
+    return '';
   }
   function random(v){v.roll=(Math.imul(v.roll,1664525)+1013904223)>>>0;return v.roll/4294967296;}
   function job(s){const v=ensure(s);return s.age<16?'村中学童':v.craft>=120?'木匠':v.letters>=120?'抄书人':v.farm>=120?'农人':'镇上帮工';}
@@ -94,7 +152,8 @@ const School = (() => {
       if(!day(s,emit))return {text:'此生光阴至此，笔记留在案头。'};
       v.practice++;
       if(v.practice<3)return {text:'你依照法门静坐，气息仍散。已稳住第'+v.practice+'段呼吸；还需亲自再试。'};
-      v.entered=true;
+      v.entered=true;v.homecoming=0;v.intent='';
+      s.found=s.found||{};s.found.qingshi=1;if(!s.found.taohua)s.found.taohua=1;s.found.shanmen=1;s.found.yunyue=1;
       if(s.gfs.qingming){delete s.gfs.qingming.broken;s.gf='qingming';if(s.flags.brokenPage==='qingming')delete s.flags.brokenPage;}
       else Core.learn(s,'qingming',[],null,false);
       Core.sync(s);
@@ -108,5 +167,112 @@ const School = (() => {
     return {text:[ '', '茶摊有人说，旧山道的碑曾留有吐纳之法。你只记下方向，尚不知是真是假。', '你走到旧山道，找到半块刻碑。回村时抄下刻痕，准备找人核对。', '你把字句与匠棚的旧拓本逐一比过，确认这不是货郎的夸口。缺页还在守山人的旧书中。', '守山人听你说明来意，借出旧书。你把碑文补齐，终于读懂引气的方法；书还回去，笔记留在手里。'][v.clue]};
   }
   function migration(s) {ensure(s);Dali.ensure(s);}
-  return {activities,mortal,ensure,begin,job,quote,available,action,migration};
+  function afterBeat(s,kind,out){
+    const v=ensure(s);let extra='';
+    const hadAlmanac=v.almanac,hadChart=v.chart,hadAffair=v.affair;
+    if(kind==='study'){
+      v.people.teacher+=1;v.place='school';
+      if(!v.almanac&&v.letters>=2){
+        v.almanac=true;if(s.calendar)s.calendar.unlocked=true;
+        extra=' 先生把一本黄历推过来：“先认今天。宜是提醒，忌也不拦你。不必天天来对。”';
+      }else extra=' 沈先生的位子在窗边。'+(v.people.teacher===1?'他只问你认不认自己的名字。':'');
+    }else if(kind==='farm'){
+      v.place='field';v.people.kin+=1;
+      extra=' 阿娘在田头。'+(v.people.kin===1?'她让你把草篮放正，又指了指镇西的炊烟：家在那边。':'');
+    }else if(kind==='craft'||kind==='repair'){
+      v.place='shed';v.people.maker+=1;
+      extra=kind==='repair'?' 邻人来取修好的木器。周叔说铜钱你自己收。':' 周叔在棚里。木尺比你的手长。';
+    }else if(kind==='copy'||kind==='work'){
+      v.place='town';
+      extra=kind==='copy'?' 书铺掌柜点过页数，铜钱按页给你。':' 镇上卸完货，檐下还有一碗茶。';
+    }else if(kind==='visit'){
+      const who=['teacher','kin','maker','mate'][Dali.today(s).day%4];
+      v.people[who]+=1;
+      v.place=who==='teacher'||who==='mate'?'school':who==='maker'?'shed':'home';
+      extra=who==='teacher'?' 沈先生还在塾里，案上有未干的墨。':who==='kin'?' 阿娘在灶前，问你今天认了几个字。':who==='maker'?' 周叔放下刨子，说镇东的路不好走，小孩子别一个人跑。':' 同窗小禾把抄坏的一页给你看，说先生没有骂她。';
+      if(!v.chart&&v.almanac&&v.people.teacher>0&&v.people.kin>0){
+        v.chart=1;
+        extra+=' 你跟到村口。西头是青石村，石板路过去才是青石镇。这张镇图你记下了。远方只是地名。';
+      }
+      if(v.chart&&v.affair===0&&metCount(v)>=3){
+        v.affair=1;
+        extra+=' 塾门新贴一张纸：案腿断了。先生要人扶着，周叔要人抬木，阿娘说田里也等着你。';
+      }
+      extra+=memory(v);
+    }else if(kind==='rest'){
+      v.place='home';
+      extra=' 你在家里歇着。灶火还温。';
+    }
+    if(v.pending!==null&&out&&kind!=='neighbor'&&kind!=='home')extra+='';
+    if(out){
+      out.text=(out.text||'')+extra;
+      if(!out.title)out.title=!hadAlmanac&&v.almanac?'黄历':(!hadChart&&v.chart?'镇图':(hadAffair===0&&v.affair===1?'塾门':beatTitle(kind)));
+    }
+    return out;
+  }
+  function resolveAffair(s,kind,emit){
+    const v=ensure(s);
+    const actId=kind==='study'?'study':kind==='farm'?'farm':kind==='visit'?'visit':'rest';
+    if(kind==='rest'){
+      v.affairChoice='later';
+      const out=action(s,'rest',Math.min(v.pace,3),emit);
+      if(out.err)return out;
+      out.text='你说等一等。案还断着，人也还在。明天再决定，不会因此断了这条路。';
+      out.title='改日';
+      return out;
+    }
+    const out=action(s,actId,Math.min(v.pace,7),emit);
+    if(out.err)return out;
+    v.affair=2;v.road=1;
+    if(kind==='study'){v.affairChoice='teacher';v.people.teacher+=2;out.text='你留在塾里扶住断案。先生点头。小禾把纸铺在完好的半边。阿娘傍晚只说：田里的草，我自己拔了。';}
+    else if(kind==='farm'){v.affairChoice='maker';v.people.maker+=2;out.text='你到棚里帮周叔抬木。案腿当晚钉好，小禾第二天能写字。阿娘知道你没下田，仍把饭留在锅里。';}
+    else {v.affairChoice='kin';v.people.kin+=2;out.text='你回田里帮阿娘。书塾的案，周叔次日自己钉上。小禾抱怨坐得不稳，先生说知道了。';}
+    out.text+=' 镇东小路你走得懂了。去桃花溪要数日，吃自己的口粮，不能一眨眼到。';
+    if(!v.chart)v.chart=1;
+    out.title='塾门';
+    return out;
+  }
+  function play(s,kind,emit){
+    const v=ensure(s);if(!v||s.dead||s.ascended)return {err:'这一卷已收。'};
+    if(kind==='enter'){const out=seek(s,'enter',emit);if(out&&!out.err&&!out.title)out.title=out.entered?'初次引气':'引气';return out;}
+    if(v.pending!==null&&kind!=='visit'&&kind!=='rest')return {err:'门口有人等你。走访是应乡邻，度日是陪家里。'};
+    if(v.pending!==null&&kind==='visit'){const out=action(s,'neighbor',1,emit);if(out&&!out.err)out.title='乡邻';return out;}
+    if(v.pending!==null&&kind==='rest'){const out=action(s,'home',1,emit);if(out&&!out.err)out.title='家里';return out;}
+    if(v.affair===1)return resolveAffair(s,kind,emit);
+    if(kind==='seek'){const out=seek(s,'seek',emit);if(out&&!out.err&&!out.title)out.title='寻访';return out;}
+    if(kind==='visit'&&v.intent==='seek'&&s.loc==='taohua'&&s.age>=12&&v.road>=1&&v.clue<4&&!v.pausedSearch){const out=seek(s,'seek',emit);if(out&&!out.err&&!out.title)out.title='寻访';return out;}
+    const id=kind==='study'?'study':kind==='farm'?workNow(s):kind==='visit'?'visit':'rest';
+    const out=action(s,id,v.pace,emit);
+    if(out.err)return out;
+    return afterBeat(s,id,out);
+  }
+  function travel(s,dest,emit){
+    const v=ensure(s);if(!v||s.dead||s.ascended)return {err:'这一卷已收。'};
+    if(v.road<1)return {err:'镇东的路还没走通。图上的远方只是传闻。'};
+    if(dest!=='taohua'&&dest!=='qingshi')return {err:'知道地名，还不等于能去。'};
+    if(dest==='taohua'&&s.loc==='taohua')return {err:'你已经在溪边。'};
+    if(dest==='qingshi'&&(s.loc==='qingshi'||!s.loc))return {err:'你就在青石。'};
+    const days=s.age<12?6:4;
+    const out=action(s,'rest',days,emit);
+    if(out.err)return out;
+    s.loc=dest;s.found=s.found||{};s.found[dest]=1;
+    v.place=dest==='qingshi'?'village':'creek';
+    out.traveled=dest;out.title='出镇';
+    out.text=dest==='taohua'
+      ?'你沿镇东小路走了'+days+'日，路上吃自己的口粮。桃花溪到了。回头同样要再走这些天。'
+      :'你用了'+days+'日走回青石村，先看见的是村口的老槐。';
+    return out;
+  }
+  const provinces=[
+    {name:'青州',places:['青石镇','桃花溪','青冥山门'],home:true},
+    {name:'云州',places:['云岳坊']},
+    {name:'帝畿',places:['大黎京城']},
+    {name:'岭州',places:['黑风岭']},
+    {name:'幽州',places:['古修洞府']},
+    {name:'雾州',places:['血雾谷']},
+    {name:'荒州',places:['西荒']},
+    {name:'海州',places:['北海']},
+    {name:'天州',places:['云海天阶']}
+  ];
+  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord};
 })();

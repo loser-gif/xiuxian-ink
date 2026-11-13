@@ -38,6 +38,7 @@ const Dali = (() => {
   function omen(s,offset) {const c=ensure(s),n=hash(c.seed+':'+Math.floor(exact(s)+(offset||0)+1e-7));const good=n%3;return {good:kinds[good],bad:kinds[(good+1+(n>>>8)%2)%3]};}
   function probability(s,kind,base) {
     if(base<=0||base>=1)return base;
+    if(s&&s.school&&!s.school.entered&&!s.school.almanac)return base;
     const o=omen(s),delta=Math.min(config.maxShift,config.shift)*(o.good===kind?1:o.bad===kind?-1:0);
     // Never turn a near-certain action into a large clamp-induced change.
     return Math.max(Math.min(base,config.min),Math.min(Math.max(base,config.max),base+delta));

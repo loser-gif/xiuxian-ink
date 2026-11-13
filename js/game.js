@@ -749,7 +749,7 @@ let xiantuGen = 0;
 let xiantuCurrent = null;
 let newLifeLock = false;
 window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
-const XIANTU_URL = 'opening/xiantu.html?v=146';
+const XIANTU_URL = 'opening/xiantu.html?v=147';
 
 function xiantuValid(result) {
   if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
@@ -1213,9 +1213,9 @@ function newGame(name, r, choice, originId) {
     });
   } else {
     const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(candidate) : ('你名' + name + '，青石镇人氏，年方十\u2060六。');
-    appendInitialLog(candidate, { text: schoolDraft ? Dali.label(candidate) + '，六岁。你在村塾报到，先生记下了你的名字，将一本黄历交到你手里。' : Dali.label(candidate) + '。天下开山收徒。' + line, cls: 'sys' });
+    appendInitialLog(candidate, { text: schoolDraft ? Dali.label(candidate) + '，六岁。你在青石村的书塾坐下。先生记下了你的名字。黄历和镇图都还没有。' : Dali.label(candidate) + '。天下开山收徒。' + line, cls: 'sys' });
   }
-  appendInitialLog(candidate, { text: schoolDraft ? '先生：大黎开国时创历，让各地记日有个共同的准头。先认年月日，再慢慢认书上的字。家里还等你回去吃饭。' : sectLine });
+  appendInitialLog(candidate, { text: schoolDraft ? '窗下有位子。今天可以读书、做活、走访，或在家里度日。先生、阿娘、同窗和匠人，会在他们该在的地方。' : sectLine });
   if (!trial && candidate.ming && candidate.ming.on && typeof Mingge !== 'undefined' && Mingge.logs) {
     Mingge.logs(candidate).forEach(row => appendInitialLog(candidate, row));
   }
@@ -1240,7 +1240,7 @@ function newGame(name, r, choice, originId) {
     appendInitialLog(candidate, { text: candidate.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
     delete candidate.flags._legacyJoinText;
   }
-  appendInitialLog(candidate, { text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : schoolDraft ? '窗外炊烟初起。今天的日子，由你亲手过。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
+  appendInitialLog(candidate, { text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : schoolDraft ? '青石村的炊烟很近。这一页从书塾开始。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
   if (!trial && candidate.flags.legacyNote) appendInitialLog(candidate, { title: '轮回札记', text: candidate.flags.legacyNote, cls: 'breath' });
   if (legacy && legacy.thread) appendInitialLog(candidate, { title: '前世绝笔', text: legacy.thread, cls: 'breath' });
   else if (candidate.flags && candidate.flags.threadText) appendInitialLog(candidate, { title: '前世绝笔', text: candidate.flags.threadText, cls: 'breath' });
@@ -1811,9 +1811,41 @@ function maybeInjHint() {
 /* ================= 行动 ================= */
 let busy = false;
 function lock(ms) { busy = true; $$('.act').forEach(b => b.classList.add('busy')); setTimeout(() => { busy = false; $$('.act').forEach(b => b.classList.remove('busy')); }, ms); }
+function actTravel(dest) {
+  if (busy || !S || !S.school) return;
+  const previous = JSON.parse(JSON.stringify(S));
+  const rows = [];
+  const out = School.travel(S, dest, row => rows.push(row));
+  if (out.err) { toast(out.err); return; }
+  rows.forEach(row => pushLog(row));
+  pushLog({ title: '出镇', text: out.text });
+  if (!save()) { S = previous; toast('这一笔未存下，路还没走。'); render(); return; }
+  render();
+  if (S.dead || S.ascended) checkEnd();
+}
+function actVillage(kind) {
+  const map = { tuna: 'study', biguan: 'farm', youli: 'visit', bag: 'rest' };
+  const id = (kind === 'bag' && S.school && S.school.intent === 'enter' && !S.school.entered) ? 'enter' : (map[kind] || 'rest');
+  const previous = JSON.parse(JSON.stringify(S));
+  const rows = [];
+  const out = School.play(S, id, row => rows.push(row));
+  if (out.err) { toast(out.err); return; }
+  rows.forEach(row => pushLog(row));
+  pushLog({ title: out.title || (out.entered ? '初次引气' : '青石'), text: out.text, cls: out.entered ? 'gold' : '' });
+  if (!save()) {
+    S = previous;
+    toast('这一笔未存下，日子未往前走。请腾出存储后重试。');
+    render();
+    const log = $('#log'); if (log) { log.innerHTML = ''; S.log.slice(-30).forEach(e => renderEntry(e, false)); }
+    return;
+  }
+  if (out.entered && typeof Samsara !== 'undefined') { try { Samsara.noteGongfa('qingming'); } catch (e) {} }
+  render();
+  if (S.dead || S.ascended) checkEnd();
+}
 function act(kind) {
   if (busy || !S || S.dead || S.ascended) return;
-  if (School.mortal(S)) return openSchoolLife();
+  if (S.school && (School.mortal(S) || S.school.homecoming)) return actVillage(kind);
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
@@ -4086,9 +4118,19 @@ function openAnnals() {
 }
 
 /* ================= 启动 ================= */
-$$('.act').forEach(b => b.addEventListener('click', () => {
+$$('.act').forEach(b => b.addEventListener('click', (e) => {
   b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 500);
   if (typeof MoAudio !== 'undefined') MoAudio.uiTap();
+  if (S && S.school && (School.mortal(S) || S.school.homecoming) && e.target.closest('small')) {
+    const v = S.school;
+    const canSeek = S.loc === 'taohua' && S.age >= 12 && v.road >= 1 && v.clue < 4 && !v.pausedSearch && !v.entered;
+    if (b.dataset.act === 'bag' && v.clue >= 4 && !v.entered) v.intent = v.intent === 'enter' ? '' : 'enter';
+    else if (b.dataset.act === 'youli' && canSeek) v.intent = v.intent === 'seek' ? '' : 'seek';
+    else if (b.dataset.act === 'biguan' && School.works(S).length > 1) School.cycleWork(S);
+    else School.cyclePace(S);
+    save(); render();
+    return;
+  }
   act(b.dataset.act);
 }));
 $('#btn-break').onclick = openBreak;
@@ -4283,7 +4325,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=146', 'img/open-glyph.png?v=146', 'img/open-seal-logo.png?v=146'];
+  const urls = ['img/open-plate.png?v=147', 'img/open-glyph.png?v=147', 'img/open-seal-logo.png?v=147'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4883,8 +4925,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=146'),
-      loadInk('img/open-glyph.png?v=146')
+      loadInk('img/open-plate.png?v=147'),
+      loadInk('img/open-glyph.png?v=147')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4922,7 +4964,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=146').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=147').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -5018,24 +5060,27 @@ function paintQuiet(sel, v) {
 }
 function renderSchool() {
   const mortal = School.mortal(S);
+  const villageNow = !!(S.school && (mortal || S.school.homecoming));
   document.body.classList.toggle('school-mortal', mortal);
-  const unlocked = !!(S && Dali.ensure(S).unlocked);
+  const showCal = !S.school || !!S.school.almanac;
+  const showMap = !!(S.school && S.school.chart >= 1);
   const title = document.getElementById('journal-title');
   if (title) {
-    title.classList.toggle('dali-title', unlocked);
-    title.onclick = unlocked ? () => SchoolUI.calendar(S) : null;
-    title.onkeydown = unlocked ? (e) => {
+    title.classList.toggle('dali-title', showCal);
+    title.onclick = showCal ? () => SchoolUI.calendar(S) : null;
+    title.onkeydown = showCal ? (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
       SchoolUI.calendar(S);
     } : null;
-    if (unlocked) {
+    if (showCal) {
       title.tabIndex = 0;
       title.setAttribute('role', 'button');
       title.setAttribute('aria-label', '翻开黄历，' + Dali.label(S));
     } else {
       title.removeAttribute('role');
       title.removeAttribute('aria-label');
+      title.onclick = null;
     }
   }
   let cal = document.getElementById('dali-open');
@@ -5047,10 +5092,24 @@ function renderSchool() {
     title.after(cal);
   }
   if (cal) {
-    cal.hidden = !unlocked;
+    cal.hidden = !showCal;
     cal.textContent = '历';
-    cal.setAttribute('aria-label', unlocked ? ('翻开黄历，' + Dali.label(S)) : '黄历');
+    cal.setAttribute('aria-label', showCal ? ('翻开黄历，' + Dali.label(S)) : '黄历');
     cal.onclick = () => SchoolUI.calendar(S);
+  }
+  let chart = document.getElementById('dali-map');
+  if (!chart && cal) {
+    chart = document.createElement('button');
+    chart.id = 'dali-map';
+    chart.type = 'button';
+    chart.className = 'dali-open';
+    cal.after(chart);
+  }
+  if (chart) {
+    chart.hidden = !showMap;
+    chart.textContent = '图';
+    chart.setAttribute('aria-label', '翻开大黎疆域');
+    chart.onclick = () => SchoolUI.atlas(S, dest => actTravel(dest));
   }
   let home = document.getElementById('school-home');
   const status = document.getElementById('status-line');
@@ -5062,31 +5121,44 @@ function renderSchool() {
     status.after(home);
   }
   if (home) {
-    home.hidden = !S.school;
-    home.textContent = mortal ? '推开院门 · 过今天的日子' : '回青石村 · 家与手里的活';
-    home.onclick = openSchoolLife;
+    home.hidden = !(S.school && S.school.entered);
+    home.textContent = S.school && S.school.homecoming ? '回到修行' : '回青石村';
+    home.onclick = () => {
+      if (!S.school || !S.school.entered) return;
+      S.school.homecoming = S.school.homecoming ? 0 : 1;
+      save(); render();
+    };
   }
-  const names = mortal ? ['读书', '做活', '走访', '日子'] : ['吐纳', '闭关', '游历', '行囊'];
-  const subs = ['窗下', '田里', '乡邻', '安排'];
+  const names = villageNow ? ['读书', '做活', '走访', '度日'] : ['吐纳', '闭关', '游历', '行囊'];
+  const pace = S.school ? School.paceWord(S.school.pace) : '';
+  const workList = (villageNow && S.school) ? School.works(S) : [];
+  const canSeek = !!(villageNow && S.school && S.loc === 'taohua' && S.age >= 12 && S.school.road >= 1 && S.school.clue < 4 && !S.school.pausedSearch && !S.school.entered);
   document.querySelectorAll('.actions .act').forEach((btn, i) => {
     const label = btn.querySelector('.act-t');
     if (label && names[i]) label.textContent = names[i];
-    if (mortal) {
+    if (villageNow) {
+      let sub = pace;
+      let hint = '这段日子的长短';
+      if (i === 1 && workList.length > 1) { sub = School.workWord(School.workNow(S)); hint = '手上的活'; }
+      if (i === 2 && canSeek) { sub = S.school.intent === 'seek' ? '寻访' : '闲走'; hint = '要不要打听远路'; }
+      if (i === 3 && S.school.clue >= 4 && !S.school.entered && S.school.intent === 'enter') { sub = '引气'; hint = '要不要引气'; }
       const small = btn.querySelector('small');
-      if (small && subs[i]) small.textContent = subs[i];
-      btn.setAttribute('aria-label', names[i] + '，' + subs[i]);
+      if (small) small.textContent = sub;
+      btn.setAttribute('aria-label', names[i] + '，' + sub + '。小字可改' + hint);
     } else btn.removeAttribute('aria-label');
   });
-  if (!mortal) return;
-  paintQuiet('#h-realm', S.age < 16 ? '村塾' : '人间');
-  paintQuiet('#h-stage', School.job(S));
-  paintQuiet('#h-sub', ((S.who && S.who.sex === 'f') ? '女' : '男') + ' · 青石村人');
+  if (S.school && (mortal || S.school.homecoming)) paintQuiet('#journal-title', Dali.label(S) + ' · ' + School.placeName(S));
+  if (!villageNow) return;
+  paintQuiet('#h-realm', mortal ? (S.age < 16 ? '村塾' : '人间') : '青石村');
+  paintQuiet('#h-stage', mortal ? School.job(S) : '暂归');
+  paintQuiet('#h-sub', ((S.who && S.who.sex === 'f') ? '女' : '男') + ' · ' + (S.school.chart ? '青石村人' : '村中孩子'));
   fitLine($('#h-sub'), document.documentElement.dataset.font === 'lg' ? 13 : 12, 11);
-  paintQuiet('#status-line', '口粮 ' + Math.floor(S.school.food) + ' · 铜钱 ' + Math.floor(S.school.copper) + '文');
-  paintQuiet('#dur-tuna', subs[0]);
-  paintQuiet('#dur-biguan', subs[1]);
-  paintQuiet('#youli-sub', subs[2]);
-  paintQuiet('#bag-count', subs[3]);
+  let msg = '口粮 ' + Math.floor(S.school.food) + ' · 铜钱 ' + Math.floor(S.school.copper) + '文';
+  if (S.school.affair === 1) msg += ' · 塾门有一张新纸';
+  else if (!S.school.almanac) msg += ' · 先生还没给你黄历';
+  else if (!S.school.chart) msg += ' · 村口的路还没认全';
+  else if (S.school.road < 1) msg += ' · 镇东还不能走';
+  paintQuiet('#status-line', msg);
 }
 function openSchoolLife() {
   if (!S || !S.school || S.dead || S.ascended || busy) return;
