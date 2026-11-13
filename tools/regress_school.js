@@ -3,6 +3,20 @@
 'use strict';
 const assert=require('assert'),fs=require('fs');
 const {loadWorld,makeStorage,roll,vm}=require('./storage_test_world');
+const gameSource=fs.readFileSync('js/game.js','utf8');
+function extractFn(name){
+  const start=gameSource.indexOf('function '+name+'(');
+  if(start<0)throw new Error('missing '+name);
+  let i=gameSource.indexOf('{',start),depth=0,quote='',esc=false;
+  for(;i<gameSource.length;i++){
+    const c=gameSource[i];
+    if(quote){if(esc)esc=false;else if(c==='\\')esc=true;else if(c===quote)quote='';continue;}
+    if(c==='"'||c==="'"||c==='`'){quote=c;continue;}
+    if(c==='{')depth++;
+    else if(c==='}'){depth--;if(!depth)return gameSource.slice(start,i+1);}
+  }
+  throw new Error('unclosed '+name);
+}
 const st=makeStorage(),ctx=loadWorld(st.localStorage);
 vm.runInContext("SchoolUI.clear=()=>{window.schoolCleared=true};",ctx);
 const {Core:C,School:H,Dali:D,Slots,Codec}=vm.runInContext('({Core,School,Dali,Slots,Codec})',ctx);
@@ -21,6 +35,17 @@ test('old cultivator identity, root, cultivation, legacy and inventory preserve;
 test('v144 village mid-progress retained and resumable, without repeating opening or rewards',()=>{const s=C.newState('旧村童',roll(ctx),null);s.village={version:1,talent:8,material:4,basic:12,goal:true};const before=JSON.stringify(s.village),ls=s.ls;const t=C.migrate(JSON.parse(JSON.stringify(s)));assert.equal(JSON.stringify(t.village),before);assert.equal(t.ls,ls);assert(!t.school);});
 test('partial date fields recover with stable defaults; migration does not re-age or reroll twice',()=>{const s=fresh();s.calendar={};const t=C.migrate(s);assert.equal(t.age,6);const once=JSON.stringify(t.calendar);C.migrate(t);assert.equal(JSON.stringify(t.calendar),once);});
 test('lifespan ends action with no later reward, no batch rewards past death',()=>{const s=fresh();s.months=80*12-.01;C.sync(s);const old=s.school.copper;const o=act(s,'work',90);assert(s.dead);assert.equal(o.days,0);assert.equal(s.school.copper,old);});
+test('full page render closes over the live save',()=>{
+  const close=gameSource.lastIndexOf('})();');
+  assert(close>0);
+  for(const name of ['function renderSchool(','function openSchoolLife(','function openVillageTasks(']){
+    const at=gameSource.indexOf(name);
+    assert(at>0&&at<close,name+' sits outside the game closure, so the page throws ReferenceError: S is not defined');
+  }
+  assert(gameSource.indexOf('renderSchool();')<gameSource.indexOf('function renderSchool('));
+  assert(extractFn('renderSchool').includes('School.mortal(S)'));
+  assert(extractFn('openSchoolLife').includes('School.action'));
+});
 (async()=>{
  st.storage.clear();ctx.__slotTarget=0;ctx.__schoolDraft={name:'青禾',sex:'f',seed:42};ctx.r=roll(ctx);st.flags.failWrite=true;await vm.runInContext("newGame('青禾',r,{id:'free'},'village')",ctx);assert.equal(vm.runInContext('S',ctx),null);assert(ctx.__schoolDraft);assert(!rCreated());st.flags.failWrite=false;
  await vm.runInContext("newGame('青禾',r,{id:'free'},'village')",ctx);let s=Slots.read(0);assert(s.school&&s.age===6&&!s.gf&&s.who.sex==='f');assert(!ctx.__schoolDraft);assert(ctx.schoolCleared);assert(!s.log.some(x=>/测得|山门之内/.test(x.text)));console.log('PASS actual newGame failed write/retry/atomic school creation and identity');count++;
@@ -28,9 +53,8 @@ test('lifespan ends action with no later reward, no batch rewards past death',()
  for(let i=1;i<3;i++)assert(Slots.createEmpty(i,s).ok);const full=st.storage.get(Slots.KEY);assert(!Slots.createEmpty(0,fresh()).ok);assert.equal(st.storage.get(Slots.KEY),full);assert.equal(Slots.read(0).school.roll,42);console.log('PASS refresh/full slots/duplicate submission preserve all existing slots');count++;
  const trial=C.newState('试炼',Object.assign(roll(ctx),{trial:true}),null);assert(!trial.school&&trial.age===40&&trial.realm===2&&trial.ls===120);assert.equal(C.trialStatus(trial).left,240);console.log('PASS real trial remains forty-year-old cultivator, twenty-year time limit');count++;
  // Actual daily UI transaction body: storage failure cannot advance time, inventory or RNG.
- const source=fs.readFileSync('js/game.js','utf8');
  vm.runInContext("let busy=false;function render(){}function renderEntry(){}function checkEnd(){} SchoolUI.life=(s,fn)=>{window.perform=fn};SchoolUI.closeLife=()=>{};",ctx);
- vm.runInContext(source.slice(source.indexOf('function openSchoolLife()')),ctx);
+ vm.runInContext(extractFn('openSchoolLife'),ctx);
  const stateBefore=vm.runInContext('JSON.stringify(S)',ctx),storedBefore=st.storage.get(Slots.KEY);
  vm.runInContext('openSchoolLife()',ctx);st.flags.failWrite=true;
  const rejected=ctx.perform('farm',7);assert(rejected.err);assert.equal(vm.runInContext('JSON.stringify(S)',ctx),stateBefore);assert.equal(st.storage.get(Slots.KEY),storedBefore);

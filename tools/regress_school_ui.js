@@ -32,14 +32,25 @@ for(const file of ['calendar','school_ui'])vm.runInContext(fs.readFileSync('js/'
 const UI=vm.runInContext('SchoolUI',ctx);
 function host(){return document.body.children[document.body.children.length-1];}
 function click(text){const n=host().querySelectorAll('button').find(n=>n.textContent===text);assert(n,text);return n.click();}
-async function finish(){animations.forEach(a=>a.finish());for(let i=0;i<12;i++)await Promise.resolve();}
+async function settle(){
+  for(let n=0;n<12;n++){
+    const pending=animations.filter(a=>a.playState==='running');
+    pending.forEach(a=>a.finish());
+    for(let i=0;i<8;i++)await Promise.resolve();
+    if(!animations.some(a=>a.playState==='running'))return;
+  }
+}
 (async()=>{
  let p=UI.open();click('返回卷首');assert(!(await p).ok);assert.equal(seedCalls,1);assert.equal(document.body.children.length,0);
  p=UI.open();assert.equal(seedCalls,1);click('沿村路走到学堂');click('报上名字，提笔落在名册上');assert(host().querySelector('input'));host().querySelector('input').value='青禾';click('报上名字，提笔落在名册上');
- assert(!host().querySelectorAll('button').some(n=>n.textContent.includes('儿子')),'name action gates reply');await finish();click('“我是家里的女儿。”');assert(host().querySelector('.school-dialogue').textContent.includes('小姑娘'));click('坐到窗边，听先生讲');click('“先生，我记住了。”');await finish();
- assert(animations.some(a=>a.element.className==='school-book'&&a.frames.some(f=>String(f.transform).includes('110px'))),'book really moves');assert(animations.some(a=>a.element.className==='school-brush-hand'),'brush-hand moves during writing');
- click('翻开今天这一页');click('把历本收好，开始今天的生活');const result=await p;assert(result.ok&&result.draft.name==='青禾'&&result.draft.sex==='f');assert.equal(document.body.children.length,0);
- UI.clear();reduce=true;p=UI.open();click('沿村路走到学堂');host().querySelector('input').value='小石';click('报上名字，提笔落在名册上');await finish();click('“我是家里的儿子。”');click('坐到窗边，听先生讲');click('“先生，我记住了。”');await finish();assert.equal(host().querySelector('.school-book').style.transform,'translate(-25px,110px)');click('翻开今天这一页');click('把历本收好，开始今天的生活');assert((await p).ok);
+ assert(!host().querySelectorAll('button').some(n=>n.textContent.includes('儿子')),'name action gates reply');await settle();click('“我是家里的女儿。”');assert(host().querySelector('.school-dialogue').textContent.includes('小姑娘'));click('坐到窗边，听先生讲');click('“先生，我记住了。”');await settle();
+ const bookMove=animations.filter(a=>a.element.className==='school-book').pop();
+ assert(bookMove&&bookMove.frames.some(f=>/-16px,\s*108px/.test(String(f.transform))),'book travels from the desk into the hand');
+ assert(animations.some(a=>a.element.className==='school-giving'),'teacher hand moves');
+ assert(animations.some(a=>a.element.className==='school-receiving'),'child hand rises');
+ assert(animations.some(a=>a.element.className==='school-brush-hand'),'brush-hand moves during writing');
+ click('翻开今天这一页');await settle();click('把历本收好，开始今天的生活');const result=await p;assert(result.ok&&result.draft.name==='青禾'&&result.draft.sex==='f');assert.equal(document.body.children.length,0);
+ UI.clear();reduce=true;p=UI.open();click('沿村路走到学堂');host().querySelector('input').value='小石';click('报上名字，提笔落在名册上');await settle();click('“我是家里的儿子。”');click('坐到窗边，听先生讲');click('“先生，我记住了。”');await settle();assert.equal(host().querySelector('.school-book').style.transform,'translate(-16px,108px)');click('翻开今天这一页');await settle();click('把历本收好，开始今天的生活');assert((await p).ok);
  const state={name:'青禾',months:72,calendar:{birthYear:95,birthMonth:1,birthDay:1,seed:123,unlocked:true}};UI.calendar(state);const old=state.months;click('后一日');assert(host().querySelector('h2').textContent==='1月2日');click('回今日');assert(host().querySelector('h2').textContent==='1月1日');assert.equal(state.months,old);click('合上历本');assert.equal(document.body.children.length,0);
  console.log('PASS shipped SchoolUI handlers: cancel/retry seed, empty name, writing gate, gender reply, hand/book motion commands, reduced final pose, handover, calendar page navigation; NO rendered visual/audio acceptance');
 })().catch(e=>{console.error(e);process.exitCode=1});
