@@ -749,7 +749,7 @@ let xiantuGen = 0;
 let xiantuCurrent = null;
 let newLifeLock = false;
 window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
-const XIANTU_URL = 'opening/xiantu.html?v=145';
+const XIANTU_URL = 'opening/xiantu.html?v=147';
 
 function xiantuValid(result) {
   if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
@@ -1153,8 +1153,8 @@ function newGame(name, r, choice, originId) {
         if (recovery) { recovery.remove(); recovery = null; }
         window.__resumeCreated = null;
         if (!trial && !schoolDraft) setTimeout(() => { if (S === started && curScreen === 'main' && !(S.life && S.life.goal)) openGoalPicker(); }, 450);
-      }).catch(savedFallback).finally(() => { entering = false; });
-    } catch (e) { entering = false; savedFallback(); }
+      }).catch(err => { console.error(err); savedFallback(); }).finally(() => { entering = false; });
+    } catch (e) { console.error(e); entering = false; savedFallback(); }
   }
   try {
   if (staged) Samsara.beginCreation();
@@ -1213,9 +1213,9 @@ function newGame(name, r, choice, originId) {
     });
   } else {
     const line = (typeof Juan !== 'undefined' && Juan.originLine) ? Juan.originLine(candidate) : ('你名' + name + '，青石镇人氏，年方十\u2060六。');
-    appendInitialLog(candidate, { text: schoolDraft ? Dali.label(candidate) + '，六岁。你在村塾报到，先生记下了你的名字，将一本黄历交到你手里。' : Dali.label(candidate) + '。天下开山收徒。' + line, cls: 'sys' });
+    appendInitialLog(candidate, { text: schoolDraft ? Dali.label(candidate) + '，六岁。你在青石村的书塾坐下。先生记下了你的名字。黄历和镇图都还没有。' : Dali.label(candidate) + '。天下开山收徒。' + line, cls: 'sys' });
   }
-  appendInitialLog(candidate, { text: schoolDraft ? '先生：大黎开国时创历，让各地记日有个共同的准头。先认年月日，再慢慢认书上的字。家里还等你回去吃饭。' : sectLine });
+  appendInitialLog(candidate, { text: schoolDraft ? '窗下有位子。今天可以读书、做活、走访，或在家里度日。先生、阿娘、同窗和匠人，会在他们该在的地方。' : sectLine });
   if (!trial && candidate.ming && candidate.ming.on && typeof Mingge !== 'undefined' && Mingge.logs) {
     Mingge.logs(candidate).forEach(row => appendInitialLog(candidate, row));
   }
@@ -1240,7 +1240,7 @@ function newGame(name, r, choice, originId) {
     appendInitialLog(candidate, { text: candidate.flags._legacyJoinText, tags: [{ t: '门派印记', c: 'gold' }], cls: 'gold' });
     delete candidate.flags._legacyJoinText;
   }
-  appendInitialLog(candidate, { text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : schoolDraft ? '窗外炊烟初起。今天的日子，由你亲手过。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
+  appendInitialLog(candidate, { text: trial ? '试炼钟响。此去不问来世，只问此身能走多远。' : schoolDraft ? '青石村的炊烟很近。这一页从书塾开始。' : '山门之外，云海翻涌。此去长生，不问归期。', cls: 'gold', div: !trial });
   if (!trial && candidate.flags.legacyNote) appendInitialLog(candidate, { title: '轮回札记', text: candidate.flags.legacyNote, cls: 'breath' });
   if (legacy && legacy.thread) appendInitialLog(candidate, { title: '前世绝笔', text: legacy.thread, cls: 'breath' });
   else if (candidate.flags && candidate.flags.threadText) appendInitialLog(candidate, { title: '前世绝笔', text: candidate.flags.threadText, cls: 'breath' });
@@ -1268,6 +1268,7 @@ function newGame(name, r, choice, originId) {
   if (villageDraft) VillageUI.clear();
   return resumeCreated(false);
   } catch (e) {
+    console.error(e);
     if (committed) savedFallback();
     else toast('开卷未成，请稍后重试');
   } finally {
@@ -1542,7 +1543,9 @@ function render() {
   const trialEnd = Core.trialStatus(S);
   if (trialEnd && trialEnd.result) checkEnd();
   const r = R();
-  setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]);
+  const mortalNow = typeof School !== 'undefined' && School.mortal(S);
+  document.body.classList.toggle('school-mortal', mortalNow);
+  if (!mortalNow) { setText('#h-realm', r.name); setText('#h-stage', r.stages[S.stage]); }
   const trialSeal = $('#trial-seal');
   if (trialSeal) trialSeal.hidden = !(S.flags && S.flags.trial);
   const lun = $('#lunhui-hud');
@@ -1554,7 +1557,7 @@ function render() {
   setText('#h-name', S.name);
   const cr = typeof courtRankName === 'function' ? courtRankName(S) : '';
   const sexMark = (typeof Folio !== 'undefined' && S.who && S.who.sex) ? ({ f: '女', n: '不言', m: '男' }[Folio.sex(S)] || '') : '';
-  setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''}${sexMark ? ' · ' + sexMark : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
+  if (!mortalNow) setText('#h-sub', `${Core.rankName(S)}${cr ? ' · ' + cr : ''}${sexMark ? ' · ' + sexMark : ''} · ${S.lg.id === 'wei' ? '' : S.lgEls.join('')}${S.lg.name}`);
   renderPathSeals();
   const so = Core.org(S); $('#sect-seal-t').textContent = so ? so.seal : '游';
   $('#btn-sect').classList.toggle('ready', !!(so && Core.canPromote(S).ok));
@@ -1606,8 +1609,10 @@ function render() {
   const tm = Core.timeMonths(S, 1);
   const bgMonths = Core.biguanTime(S).months;
   const trial = Core.trialStatus(S);
-  setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm)));
-  setText('#dur-biguan', cnDur(Math.round(bgMonths)) + (trial && bgMonths > trial.left ? ' · 越期' : ''));
+  if (!mortalNow) {
+    setText('#dur-tuna', cnDur(Math.round(r.T * K.tunaMonths * tm)));
+    setText('#dur-biguan', cnDur(Math.round(bgMonths)) + (trial && bgMonths > trial.left ? ' · 越期' : ''));
+  }
   stackAside($('#margin-when'), timeLabel());
   const locNow = typeof LOC !== 'undefined' && S.loc && LOC[S.loc] ? LOC[S.loc].name : '山中';
   setText('#journal-title', Dali.label(S) + ' · ' + (School.mortal(S) ? '青石村' : locNow));
@@ -1615,12 +1620,15 @@ function render() {
   stackAside($('#margin-where'), locNow);
   const cnt = Object.values(S.items).reduce((a, b) => a + b, 0);
   const bagLab = S.eq && S.eq.weapon ? (cnt ? `佩·${cn(cnt)}` : '佩') : (cnt ? `${cn(cnt)}物` : '空');
-  setText('#bag-count', bagLab);
-  if (typeof JHUI !== 'undefined') setText('#youli-sub', JHUI.youliSub());
+  if (!mortalNow) {
+    setText('#bag-count', bagLab);
+    if (typeof JHUI !== 'undefined') setText('#youli-sub', JHUI.youliSub());
+  }
   $('#btn-break').hidden = !bottleneck() || S.dead || S.ascended;
   const st = $('#status-line'); st.classList.remove('zhu');
   let msg = '';
-  if (bottleneck()) {
+  if (mortalNow) msg = '';
+  else if (bottleneck()) {
     const pill = r.pill;
     msg = (S.items[pill] > 0) ? (S.realm === 4 ? '瓶颈已至 · 囊中有符，可渡劫' : '瓶颈已至 · 囊中有丹，可破境') : (S.realm === 4 ? '瓶颈已至 · 可渡劫，坊市或有渡厄符' : '瓶颈已至 · 可破境，坊市或有丹药');
     st.classList.add('zhu');
@@ -1803,9 +1811,41 @@ function maybeInjHint() {
 /* ================= 行动 ================= */
 let busy = false;
 function lock(ms) { busy = true; $$('.act').forEach(b => b.classList.add('busy')); setTimeout(() => { busy = false; $$('.act').forEach(b => b.classList.remove('busy')); }, ms); }
+function actTravel(dest) {
+  if (busy || !S || !S.school) return;
+  const previous = JSON.parse(JSON.stringify(S));
+  const rows = [];
+  const out = School.travel(S, dest, row => rows.push(row));
+  if (out.err) { toast(out.err); return; }
+  rows.forEach(row => pushLog(row));
+  pushLog({ title: '出镇', text: out.text });
+  if (!save()) { S = previous; toast('这一笔未存下，路还没走。'); render(); return; }
+  render();
+  if (S.dead || S.ascended) checkEnd();
+}
+function actVillage(kind) {
+  const map = { tuna: 'study', biguan: 'farm', youli: 'visit', bag: 'rest' };
+  const id = (kind === 'bag' && S.school && S.school.intent === 'enter' && !S.school.entered) ? 'enter' : (map[kind] || 'rest');
+  const previous = JSON.parse(JSON.stringify(S));
+  const rows = [];
+  const out = School.play(S, id, row => rows.push(row));
+  if (out.err) { toast(out.err); return; }
+  rows.forEach(row => pushLog(row));
+  pushLog({ title: out.title || (out.entered ? '初次引气' : '青石'), text: out.text, cls: out.entered ? 'gold' : '' });
+  if (!save()) {
+    S = previous;
+    toast('这一笔未存下，日子未往前走。请腾出存储后重试。');
+    render();
+    const log = $('#log'); if (log) { log.innerHTML = ''; S.log.slice(-30).forEach(e => renderEntry(e, false)); }
+    return;
+  }
+  if (out.entered && typeof Samsara !== 'undefined') { try { Samsara.noteGongfa('qingming'); } catch (e) {} }
+  render();
+  if (S.dead || S.ascended) checkEnd();
+}
 function act(kind) {
   if (busy || !S || S.dead || S.ascended) return;
-  if (School.mortal(S)) return openSchoolLife();
+  if (S.school && School.villageMode(S)) return actVillage(kind);
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
@@ -2187,7 +2227,7 @@ if (typeof BtFx !== 'undefined') BtFx.setWriter((el, text) => inkWrite(el, text,
 const btChance = usePill => Core.btChance(S, usePill);
 const chanceWord = p => { const n = Math.round(p * 10); return n <= 1 ? '九死一生' : n >= 9 ? '十拿九稳' : `约莫${cn(n)}成`; };
 function openBreak() {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('尚未引气，没有破境这一关。'); return; }
   if (!bottleneck() || busy) return;
   if (typeof Life !== 'undefined' && Life.xinmoPending(S) && !openBreak._skip) {
     openEvent(Life.xinmoEvent(S));
@@ -2527,7 +2567,7 @@ function tokenSVG(orgId, rank, big) {
 }
 const gradeNames = ['凡', '灵', '地', '天'];
 function openSect(tab) {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('宗门还远。先在村里把日子过明白。'); return; }
   const o = Core.org(S);
   const tabs = o ? [['home', o.id === 'qm' ? '宗门' : '盟中'], ['task', '任务'], ['lib', o.id === 'qm' ? '藏经' : '秘库'], ['npc', '人物']] : [['home', '散修'], ['npc', '人物']];
   tab = tab && tabs.find(t => t[0] === tab) ? tab : tabs[0][0];
@@ -2886,7 +2926,7 @@ function refreshOpenPanel() {
   if (root && typeof root._refresh === 'function') root._refresh();
 }
 function openBag(tab = 'bag') {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('行囊要等引气之后。口粮和铜钱写在卷下。'); return; }
   // 行囊：只装消耗品与佩器；功法／法宝／定型／丹炉改走「修」印 openCult
   if (tab && tab !== 'bag') return openCult(tab);
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
@@ -2910,7 +2950,7 @@ function openBag(tab = 'bag') {
   show();
 }
 function openCult(tab = 'gf') {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('定型要等你自己引气之后。'); return; }
   const wrap = document.createElement('div'); wrap.className = 'cult-wrap';
   const hasDan = typeof JHUI !== 'undefined' && S && S.dan;
   const tabs = [['gf', '功法'], ['fabao', '法宝'], ['path', '定型']];
@@ -3163,15 +3203,16 @@ function openMenu() {
   const ps = (Core.pathSummary(S) || []).map(x => x.name).join(' · ') || '道基未定';
   const ds = (typeof Samsara !== 'undefined') ? Samsara.dailyStatus() : { claimed: true };
   const trialNote = (S.flags && S.flags.trial) ? '<br><span class="menu-trial">试炼境 · 不入轮回簿</span>' : '';
-  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
-    <button class="menu-item" data-m="shop">铺子<small>开铺 · 上货 · 一季一结</small></button>
+  const mortalMenu = typeof School !== 'undefined' && School.mortal(S);
+  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>${mortalMenu ? '尚未引气' : '定型 · ' + ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
+    ${mortalMenu ? '<p class="menu-note">铺子在云岳坊，定型在引气之后。眼前先过村里的日子。</p>' : '<button class="menu-item" data-m="shop">铺子<small>开铺 · 上货 · 一季一结</small></button>'}
     <button class="menu-item" data-m="sex">此身<small>称呼 · 道侣心意</small></button>
     <button class="menu-item" data-m="trace">行迹<small>因果 · 此生印记</small></button>
     <button class="menu-item" data-m="annals">平生<small>逐年 · 所遇 · 所求</small></button>
     <button class="menu-item" data-m="look">纸墨<small>昼夜 · 字号 · 动效</small></button>
-    <button class="menu-item" data-m="resume">继续修行</button>
+    <button class="menu-item" data-m="resume">${mortalMenu ? '回到卷上' : '继续修行'}</button>
     <button class="menu-item" data-m="slots">存档<small>三卷 · 导出 · 导入</small></button>
-    <button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>
+    ${mortalMenu ? '' : '<button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>'}
     <button class="menu-item" data-m="atlas">轮回图鉴<small>墓志 · 道基 · 法相 · 神器 · 结局</small></button>
     ${!ds.claimed ? '<button class="menu-item" data-m="daily">今日机缘<small>晨露一缕</small></button>' : ''}
     <button class="menu-item" data-m="title">回到卷首</button>
@@ -3929,7 +3970,7 @@ function stockName(k) {
   return k;
 }
 function openShop() {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('铺子在云岳坊。入了仙途，走到那里才能开。'); return; }
   if (!S || typeof Redworld === 'undefined') return;
   const w = document.createElement('div'); w.className = 'shop-sheet';
   const button = (a, k, label, sub, disabled) => `<button type="button" class="menu-item${sub === '先回应来人' ? ' is-wait' : ''}" data-a="${a}" data-k="${esc(k || '')}"${disabled ? ' disabled' : ''}>${esc(label)}<small>${esc(sub || '')}</small></button>`;
@@ -4012,7 +4053,7 @@ function openShop() {
 }
 
 function openGoalPicker() {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('所求可以以后再写。眼前先过村里的日子。'); return Promise.resolve(null); }
   if (!S || typeof Life === 'undefined') return Promise.resolve(null);
   const pc = $('#goal-cer'); if (!pc) return Promise.resolve(null);
   return new Promise(resolve => {
@@ -4078,9 +4119,19 @@ function openAnnals() {
 }
 
 /* ================= 启动 ================= */
-$$('.act').forEach(b => b.addEventListener('click', () => {
+$$('.act').forEach(b => b.addEventListener('click', (e) => {
   b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 500);
   if (typeof MoAudio !== 'undefined') MoAudio.uiTap();
+  if (S && S.school && School.villageMode(S) && e.target.closest('small')) {
+    const v = S.school;
+    const canSeek = S.loc === 'taohua' && S.age >= 12 && v.road >= 1 && v.clue < 4 && !v.pausedSearch && !v.entered;
+    if (b.dataset.act === 'bag' && v.clue >= 4 && !v.entered) v.intent = v.intent === 'enter' ? '' : 'enter';
+    else if (b.dataset.act === 'youli' && canSeek) v.intent = v.intent === 'seek' ? '' : 'seek';
+    else if (b.dataset.act === 'biguan' && School.works(S).length > 1) School.cycleWork(S);
+    else School.cyclePace(S);
+    save(); render();
+    return;
+  }
   act(b.dataset.act);
 }));
 $('#btn-break').onclick = openBreak;
@@ -4192,6 +4243,8 @@ const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
 function topLayer() {
   const ask = document.querySelector('.ask'); if (ask) return ask;
+  const papers = document.querySelectorAll('.school-screen');
+  if (papers.length) return papers[papers.length - 1];
   for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'origin-cer', 'baishan', 'goal-cer', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
   return null;
 }
@@ -4220,6 +4273,11 @@ addEventListener('keydown', e => {
     return;
   }
   const digit = /^[1-9]$/.test(k) ? +k : 0;
+  if (L && L.classList && L.classList.contains('school-screen')) {
+    if (digit) { e.preventDefault(); return; }
+    if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON' && L.contains(tgt))) { e.preventDefault(); return; }
+    return;
+  }
   if (!L) {
     if (document.body.dataset.screen !== 'main') { if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON')) click(firstVis(document.querySelector('.screen:not([hidden])') || document.body, '.brush-btn')); return; }
     if (digit >= 1 && digit <= 4) return click($$('.act')[digit - 1]);
@@ -4275,7 +4333,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=145', 'img/open-glyph.png?v=145', 'img/open-seal-logo.png?v=145'];
+  const urls = ['img/open-plate.png?v=147', 'img/open-glyph.png?v=147', 'img/open-seal-logo.png?v=147'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4875,8 +4933,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=145'),
-      loadInk('img/open-glyph.png?v=145')
+      loadInk('img/open-plate.png?v=147'),
+      loadInk('img/open-glyph.png?v=147')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4914,7 +4972,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=145').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=147').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -4982,9 +5040,6 @@ Promise.all([
   });
 })();
 
-window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openShop, openSexSheet, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openNaihe, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, Loop: typeof Loop !== 'undefined' ? Loop : null, openGoalPicker, openAnnals, openLook, applyLook };
-})();
-
 function openVillageTasks() {
   if (!S || !S.village) return;
   const wrap = document.createElement('div'); wrap.className = 'village-tasks';
@@ -5006,29 +5061,113 @@ function openVillageTasks() {
 }
 
 
+function paintQuiet(sel, v) {
+  prev[sel] = String(v);
+  const el = $(sel);
+  if (el) el.textContent = prev[sel];
+}
 function renderSchool() {
   const mortal = School.mortal(S);
+  const villageNow = School.villageMode(S);
   document.body.classList.toggle('school-mortal', mortal);
+  const showCal = !S.school || !!S.school.almanac;
+  const showMap = !!(S.school && S.school.chart >= 1);
+  const title = document.getElementById('journal-title');
+  if (title) {
+    title.classList.toggle('dali-title', showCal);
+    title.onclick = showCal ? () => SchoolUI.calendar(S) : null;
+    title.onkeydown = showCal ? (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      SchoolUI.calendar(S);
+    } : null;
+    if (showCal) {
+      title.tabIndex = 0;
+      title.setAttribute('role', 'button');
+      title.setAttribute('aria-label', '翻开黄历，' + Dali.label(S));
+    } else {
+      title.removeAttribute('role');
+      title.removeAttribute('aria-label');
+      title.onclick = null;
+    }
+  }
   let cal = document.getElementById('dali-open');
-  if (!cal) {
-    cal = document.createElement('button'); cal.id = 'dali-open'; cal.className = 'dali-open';
-    document.getElementById('h-time').appendChild(cal);
+  if (!cal && title) {
+    cal = document.createElement('button');
+    cal.id = 'dali-open';
+    cal.type = 'button';
+    cal.className = 'dali-open';
+    title.after(cal);
   }
-  cal.textContent = '历 · ' + Dali.label(S); cal.hidden = !Dali.ensure(S).unlocked;
-  cal.onclick = () => SchoolUI.calendar(S);
+  if (cal) {
+    cal.hidden = !showCal;
+    cal.textContent = '历';
+    cal.setAttribute('aria-label', showCal ? ('翻开黄历，' + Dali.label(S)) : '黄历');
+    cal.onclick = () => SchoolUI.calendar(S);
+  }
+  let chart = document.getElementById('dali-map');
+  if (!chart && cal) {
+    chart = document.createElement('button');
+    chart.id = 'dali-map';
+    chart.type = 'button';
+    chart.className = 'dali-open';
+    cal.after(chart);
+  }
+  if (chart) {
+    chart.hidden = !showMap;
+    chart.textContent = '图';
+    chart.setAttribute('aria-label', '翻开大黎疆域');
+    chart.onclick = () => SchoolUI.atlas(S, dest => actTravel(dest));
+  }
   let home = document.getElementById('school-home');
-  if (!home) { home = document.createElement('button'); home.id = 'school-home'; home.className = 'school-home'; document.getElementById('status-line').after(home); }
-  home.hidden = !S.school; home.textContent = mortal ? '推开院门 · 过今天的日子' : '回青石村 · 家与手里的活'; home.onclick = openSchoolLife;
-  if (mortal) {
-    setText('#h-realm', S.age < 16 ? '村塾' : '人间');setText('#h-stage', School.job(S));
-    setText('#h-sub', (S.who.sex === 'f' ? '女' : '男') + ' · 青石村人');
-    setText('#status-line', '口粮 ' + Math.floor(S.school.food) + ' · 铜钱 ' + Math.floor(S.school.copper) + '文');
-    const names = ['读书','做活','走访','日常'];
-    document.querySelectorAll('.actions .act-t').forEach((el,i)=>{el.textContent=names[i];});
-    ['dur-tuna','dur-biguan','youli-sub','bag-count'].forEach(id=>setText('#'+id,'村中生活'));
-  } else {
-    ['吐纳','闭关','游历','行囊'].forEach((name,i)=>{const el=document.querySelectorAll('.actions .act-t')[i];if(el)el.textContent=name;});
+  const status = document.getElementById('status-line');
+  if (!home && status) {
+    home = document.createElement('button');
+    home.id = 'school-home';
+    home.type = 'button';
+    home.className = 'school-home';
+    status.after(home);
   }
+  if (home) {
+    const atHome = School.atHome(S);
+    home.hidden = !(S.school && S.school.entered && atHome);
+    home.textContent = S.school && S.school.homecoming ? '回到修行' : '村里的日子';
+    home.onclick = () => {
+      if (!S.school || !S.school.entered || !School.atHome(S)) return;
+      S.school.homecoming = S.school.homecoming ? 0 : 1;
+      save(); render();
+    };
+  }
+  const names = villageNow ? ['读书', '做活', '走访', '度日'] : ['吐纳', '闭关', '游历', '行囊'];
+  const pace = S.school ? School.paceWord(S.school.pace) : '';
+  const workList = (villageNow && S.school) ? School.works(S) : [];
+  const canSeek = !!(villageNow && S.school && S.loc === 'taohua' && S.age >= 12 && S.school.road >= 1 && S.school.clue < 4 && !S.school.pausedSearch && !S.school.entered);
+  document.querySelectorAll('.actions .act').forEach((btn, i) => {
+    const label = btn.querySelector('.act-t');
+    if (label && names[i]) label.textContent = names[i];
+    if (villageNow) {
+      let sub = pace;
+      let hint = '这段日子的长短';
+      if (i === 1 && workList.length > 1) { sub = School.workWord(School.workNow(S)); hint = '手上的活'; }
+      if (i === 2 && canSeek) { sub = S.school.intent === 'seek' ? '寻访' : '闲走'; hint = '要不要打听远路'; }
+      if (i === 3 && S.school.clue >= 4 && !S.school.entered && S.school.intent === 'enter') { sub = '引气'; hint = '要不要引气'; }
+      const small = btn.querySelector('small');
+      if (small) small.textContent = sub;
+      btn.setAttribute('aria-label', names[i] + '，' + sub + '。小字可改' + hint);
+    } else btn.removeAttribute('aria-label');
+  });
+  if (villageNow) paintQuiet('#journal-title', Dali.label(S) + ' · ' + School.placeName(S));
+  if (!villageNow) return;
+  paintQuiet('#h-realm', mortal ? (S.age < 16 ? '村塾' : '人间') : '青石村');
+  paintQuiet('#h-stage', mortal ? School.job(S) : '暂归');
+  paintQuiet('#h-sub', ((S.who && S.who.sex === 'f') ? '女' : '男') + ' · ' + (S.school.chart ? '青石村人' : '村中孩子'));
+  fitLine($('#h-sub'), document.documentElement.dataset.font === 'lg' ? 13 : 12, 11);
+  let msg = '口粮 ' + Math.floor(S.school.food) + ' · 铜钱 ' + Math.floor(S.school.copper) + '文';
+  if (S.school.affair === 1) msg += ' · 塾门有一张新纸';
+  else if (!S.school.almanac) msg += ' · 先生还没给你黄历';
+  else if (!S.school.chart) msg += ' · 村口的路还没认全';
+  else if (S.school.road < 1) msg += ' · 镇东还不能走';
+  paintQuiet('#status-line', msg);
 }
 function openSchoolLife() {
   if (!S || !S.school || S.dead || S.ascended || busy) return;
@@ -5045,3 +5184,6 @@ function openSchoolLife() {
     return Object.assign(out,{state:S});
   });
 }
+
+window.__moxian = { get S() { return S; }, set S(v) { S = v; }, get busy() { return busy; }, set busy(v) { busy = v; }, save, render, pushLog, act, openBreak, openBag, openShop, openSexSheet, openCult, refreshOpenPanel, maybeFabaoCeremony, FabaoArt: typeof FabaoArt !== 'undefined' ? FabaoArt : null, showEnd, openEvent: id => openEvent(EVENTS.find(e => e.id === id)), Core, openSect, runRite, startDabi, dabiInvite, openMission: uid => openEvent(Core.missionEvent(S, uid)), openPathCeremony, ensurePendingPath, pathPage, openBaishan, openOrigin, runBreak, JHUI, BtFx: typeof BtFx !== 'undefined' ? BtFx : null, MoAudio: typeof MoAudio !== 'undefined' ? MoAudio : null, Samsara: typeof Samsara !== 'undefined' ? Samsara : null, openAtlasSheet, openNaihe, openSlots, saveScroll, closeScrollView, maybeGuide, newGame, Slots: typeof Slots !== 'undefined' ? Slots : null, Codec: typeof Codec !== 'undefined' ? Codec : null, ScrollArt: typeof ScrollArt !== 'undefined' ? ScrollArt : null, Life: typeof Life !== 'undefined' ? Life : null, Juan: typeof Juan !== 'undefined' ? Juan : null, InkPortrait: typeof InkPortrait !== 'undefined' ? InkPortrait : null, Loop: typeof Loop !== 'undefined' ? Loop : null, openGoalPicker, openAnnals, openLook, applyLook };
+})();
