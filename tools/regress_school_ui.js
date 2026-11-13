@@ -18,13 +18,23 @@ class Node {
  querySelector(s){return this.querySelectorAll(s)[0]||null;}
  get firstChild(){return this.children[0]||null;}
 }
-const document={body:new Node('body'),documentElement:new Node('html'),createElement:t=>new Node(t),hidden:false,activeElement:null,listeners:{},addEventListener(k,f){this.listeners[k]=f},removeEventListener(k){delete this.listeners[k]},getElementById(){return null;}};
+const mapNode=new Node('div');
+const document={body:new Node('body'),documentElement:new Node('html'),createElement:t=>new Node(t),hidden:false,activeElement:null,listeners:{},addEventListener(k,f){this.listeners[k]=f},removeEventListener(k){delete this.listeners[k]},getElementById(id){return id==='map'?mapNode:null;}};
 document.documentElement.dataset={motion:''};
-const ctx=vm.createContext({console,document,Uint32Array,Math,JSON,Promise,matchMedia:()=>media,crypto:{getRandomValues:a=>{a[0]=123;return a;}},LOCS:[{id:'qingshi',name:'青石镇'},{id:'taohua',name:'桃花溪'}]});
+const LOCS=[{id:'qingshi',name:'青石镇',x:.05},{id:'taohua',name:'桃花溪',x:.15},{id:'shanmen',name:'青冥山门',x:.26},{id:'yunyue',name:'云岳坊',x:.37},{id:'jingcheng',name:'大黎京城',x:.43},{id:'heifeng',name:'黑风岭',x:.52},{id:'gufu',name:'古修洞府',x:.6},{id:'xuewu',name:'血雾谷',x:.68},{id:'xihuang',name:'西荒',x:.77},{id:'beihai',name:'北海',x:.87},{id:'yunhai',name:'云海天阶',x:.96}];
+function paintBoard(kind,opt){
+  opt=opt||{};
+  if(kind==='realm')return {url:'',places:['青州','云州','帝畿','岭州','幽州','雾州','荒州','海州','天州'].map((name,i)=>({name:name,x:.08+i*.09,y:.4}))};
+  if(kind==='province')return {url:'',places:[{name:'青石镇',x:.22,y:.4},{name:'青冥山门',x:.84,y:.3}].concat(opt.road?[{name:'桃花溪',x:.6,y:.4}]:[])};
+  return {url:'',places:[{name:'青石村',x:.3,y:.4}].concat(opt.road?[{name:'桃花溪',x:.8,y:.4}]:[])};
+}
+const ctx=vm.createContext({console,document,Uint32Array,Math,JSON,Promise,matchMedia:()=>media,crypto:{getRandomValues:a=>{a[0]=123;return a;}},LOCS,InkMap:{MW:100,MH:100,paint(){return Promise.resolve({});},paintBoard:paintBoard,roadPath(){return '';}}});
 for(const file of ['calendar','school','school_ui'])vm.runInContext(fs.readFileSync('js/'+file+'.js','utf8'),ctx);
 const UI=vm.runInContext('SchoolUI',ctx);
 function host(){return document.body.children[document.body.children.length-1];}
-function click(text){const n=host().querySelectorAll('button').find(b=>b.textContent===text);assert(n,text);return n.click();}
+function textOf(n){return (n.textContent||'')+(n.children||[]).map(textOf).join('');}
+function click(text){const n=host().querySelectorAll('button').find(b=>textOf(b)===text);assert(n,text);return n.click();}
+function clickMap(text){const n=mapNode.querySelectorAll('button').find(b=>textOf(b)===text);assert(n,text);return n.click();}
 (async()=>{
  let p=UI.open();click('返回卷首');assert(!(await p).ok);assert.equal(document.body.children.length,0);
  p=UI.open();click('略过介绍');click('告诉先生');assert(/想好了/.test(host().querySelector('.school-dialogue').textContent));
@@ -34,16 +44,14 @@ function click(text){const n=host().querySelectorAll('button').find(b=>b.textCon
  assert(/女儿/.test(host().querySelector('.school-dialogue').textContent));
  click('在位子上坐下');
  const result=await p;assert(result.ok&&result.draft.name==='青禾'&&result.draft.sex==='f');
- assert.equal(document.body.children.length,0);
+ assert(!document.body.querySelector('.school-screen'));
  const state={name:'青禾',months:72,school:{almanac:true,chart:0,road:0},calendar:{birthYear:95,birthMonth:1,birthDay:1,seed:123,unlocked:true},found:{qingshi:1},loc:'qingshi'};
- UI.calendar(state);const old=state.months;click('后一日');assert(host().querySelector('h2').textContent==='1月2日');click('回今日');assert(host().querySelector('h2').textContent==='1月1日');assert.equal(state.months,old);click('合上历本');
+ UI.calendar(state);const old=state.months;assert.equal(host().querySelector('h2').textContent,'1月');click('2');assert(/1月2日/.test(textOf(host())));click('回今日');assert(/今日/.test(textOf(host())));assert.equal(state.months,old);click('合上历本');
  state.school.chart=1;let went='';UI.atlas(state,d=>{went=d;});
- assert(!host().querySelectorAll('button').some(b=>/桃花溪/.test(b.textContent)),'locked road has no travel button');
- click('青州');assert.equal(host().querySelector('h2').textContent,'青州');
- click('青石镇');assert(!host().querySelectorAll('button').some(b=>/桃花溪/.test(b.textContent)));
- click('返回青州');click('返回九州');
- click('云州');assert([...host().querySelectorAll('p')].some(n=>/传闻/.test(n.textContent)));
- click('返回九州');click('合上图');
- state.school.road=1;UI.atlas(state,d=>{went=d;});click('青州');click('青石镇');click('沿镇东小路去桃花溪');assert.equal(went,'taohua');
+ assert(!mapNode.querySelectorAll('button').some(b=>/沿镇东小路/.test(textOf(b))),'locked road has no travel button');
+ clickMap('青州');assert([...mapNode.querySelectorAll('p')].some(n=>/镇东小路还没走通/.test(n.textContent)));
+ clickMap('返回九州');clickMap('云州');assert([...mapNode.querySelectorAll('p')].some(n=>/传闻/.test(n.textContent)));
+ clickMap('收');
+ state.school.road=1;UI.atlas(state,d=>{went=d;});clickMap('青州');clickMap('沿镇东小路去桃花溪');assert.equal(went,'taohua');
  console.log('PASS text opening, empty name, gender, calendar, locked and open town road');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -749,7 +749,7 @@ let xiantuGen = 0;
 let xiantuCurrent = null;
 let newLifeLock = false;
 window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
-const XIANTU_URL = 'opening/xiantu.html?v=147';
+const XIANTU_URL = 'opening/xiantu.html?v=151';
 
 function xiantuValid(result) {
   if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
@@ -4278,6 +4278,12 @@ addEventListener('keydown', e => {
     if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON' && L.contains(tgt))) { e.preventDefault(); return; }
     return;
   }
+  if (L && L.id === 'map' && L.classList.contains('map-school')) {
+    if (digit) { e.preventDefault(); return; }
+    if (k === 'Escape') return;
+    if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON' && L.contains(tgt))) { e.preventDefault(); return; }
+    return;
+  }
   if (!L) {
     if (document.body.dataset.screen !== 'main') { if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON')) click(firstVis(document.querySelector('.screen:not([hidden])') || document.body, '.brush-btn')); return; }
     if (digit >= 1 && digit <= 4) return click($$('.act')[digit - 1]);
@@ -4333,7 +4339,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=147', 'img/open-glyph.png?v=147', 'img/open-seal-logo.png?v=147'];
+  const urls = ['img/open-plate.png?v=151', 'img/open-glyph.png?v=151', 'img/open-seal-logo.png?v=151'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4933,8 +4939,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=147'),
-      loadInk('img/open-glyph.png?v=147')
+      loadInk('img/open-plate.png?v=151'),
+      loadInk('img/open-glyph.png?v=151')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4972,7 +4978,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=147').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=151').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -5168,6 +5174,37 @@ function renderSchool() {
   else if (!S.school.chart) msg += ' · 村口的路还没认全';
   else if (S.school.road < 1) msg += ' · 镇东还不能走';
   paintQuiet('#status-line', msg);
+  let slip = document.getElementById('school-guide');
+  if (!slip && title) {
+    slip = document.createElement('p');
+    slip.id = 'school-guide';
+    slip.className = 'school-guide';
+    slip.hidden = true;
+    title.parentNode.appendChild(slip);
+  }
+  const hint = School.guideHint(S);
+  const showHint = !!(hint && S.school.guideMute !== hint.id);
+  document.querySelectorAll('.actions .act').forEach(btn => {
+    btn.classList.toggle('is-next', !!(showHint && hint.act && btn.dataset.act === hint.act));
+  });
+  if (cal) cal.classList.toggle('is-next', !!(showHint && hint.mark === 'cal'));
+  if (chart) chart.classList.toggle('is-next', !!(showHint && hint.mark === 'map'));
+  if (slip) {
+    if (villageNow && showHint) {
+      slip.hidden = false;
+      slip.textContent = '';
+      const span = document.createElement('span'); span.textContent = hint.text; slip.appendChild(span);
+      const hush = document.createElement('button'); hush.type = 'button'; hush.textContent = '收起';
+      hush.onclick = () => { if (!S.school) return; S.school.guideMute = hint.id; save(); render(); };
+      slip.appendChild(hush);
+    } else if (villageNow && hint) {
+      slip.hidden = false;
+      slip.textContent = '';
+      const back = document.createElement('button'); back.type = 'button'; back.textContent = '提示';
+      back.onclick = () => { if (!S.school) return; S.school.guideMute = -1; save(); render(); };
+      slip.appendChild(back);
+    } else slip.hidden = true;
+  }
 }
 function openSchoolLife() {
   if (!S || !S.school || S.dead || S.ascended || busy) return;

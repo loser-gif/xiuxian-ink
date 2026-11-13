@@ -29,6 +29,9 @@ const School = (() => {
     if(v.intent==null)v.intent='';
     if(typeof v.homecoming!=='number')v.homecoming=0;
     if(v.work!=='farm'&&v.work!=='craft'&&v.work!=='work'&&v.work!=='copy'&&v.work!=='repair')v.work='';
+    if(typeof v.guideMute!=='number')v.guideMute=-1;
+    if(typeof v.sawCal!=='number')v.sawCal=0;
+    if(typeof v.sawMap!=='number')v.sawMap=0;
     Dali.ensure(s);
     if(!v.almanac&&s.calendar)s.calendar.unlocked=false;
     return v;
@@ -251,6 +254,25 @@ const School = (() => {
     if(out.err)return out;
     return afterBeat(s,id,out);
   }
+  function guideStep(s){
+    const v=s&&s.school;if(!v||v.entered)return 4;
+    if(!v.almanac)return 0;
+    if(!(v.people&&v.people.kin>0))return 1;
+    if(!v.chart)return 2;
+    if(v.affair===1)return 3;
+    return 4;
+  }
+  function guideHint(s){
+    const v=s&&s.school;if(!v||v.entered)return null;
+    if(!v.almanac)return {id:0,text:'先到窗下读书。读完，先生把黄历给你。',act:'tuna'};
+    if(!v.sawCal)return {id:10,text:'黄历在日期旁。点「历」，再点某一日。',mark:'cal'};
+    if(!(v.people&&v.people.kin>0))return {id:1,text:'去做活，到田头见阿娘。',act:'biguan'};
+    if(!v.chart)return {id:2,text:'去走访，跟到村口，把镇图认下来。',act:'youli'};
+    if(!v.sawMap)return {id:11,text:'镇图在「图」。先看九州，再点青州。',mark:'map'};
+    if(v.affair===1)return {id:3,text:'塾门的新纸：读书、做活、走访，是三种帮忙。',act:''};
+    return null;
+  }
+  function guideLine(s){const h=guideHint(s);return h?h.text:'';}
   function roadDays(s){return s.age<12?6:4;}
   function travel(s,dest,emit){
     const v=ensure(s);if(!v||s.dead||s.ascended)return {err:'这一卷已收。'};
@@ -283,5 +305,5 @@ const School = (() => {
     {name:'海州',places:['北海']},
     {name:'天州',places:['云海天阶']}
   ];
-  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord,atHome,villageMode,roadDays};
+  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord,atHome,villageMode,roadDays,guideStep,guideLine,guideHint};
 })();
