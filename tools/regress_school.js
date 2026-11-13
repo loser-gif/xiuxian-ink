@@ -63,6 +63,27 @@ test('adult livelihood stays on the work action, and the creek is not an automat
   s.school.intent='seek';const asked=H.play(s,'visit',()=>{});
   assert(s.school.clue>clue&&asked.title==='寻访');
 });
+test('road food is paid up front and home relief does not travel',()=>{
+  const s=fresh();s.school.road=1;s.school.food=23;s.school.pending=null;
+  const go=H.travel(s,'taohua',()=>{});
+  assert(!go.err&&s.loc==='taohua'&&s.school.food===17&&go.days===6);
+  const backFood=s.school.food;const back=H.travel(s,'qingshi',()=>{});
+  assert(!back.err&&s.loc==='qingshi'&&s.school.food===backFood-6);
+  s.loc='taohua';s.school.food=2;const stuck=H.travel(s,'qingshi',()=>{});
+  assert(stuck.err&&s.loc==='taohua'&&s.school.food===2);
+  s.loc='qingshi';s.school.food=5;const poor=H.travel(s,'taohua',()=>{});
+  assert(poor.err&&s.loc==='qingshi'&&s.school.food===5);
+  s.school.food=6;const exact=H.travel(s,'taohua',()=>{});
+  assert(!exact.err&&s.loc==='taohua'&&s.school.food===0&&exact.days===6);
+  s.loc='qingshi';s.school.food=0;s.school.pending=null;s.school.seasonAt=D.today(s).year*4+D.today(s).season;
+  const fed=H.action(s,'study',1,()=>{});assert(!fed.err&&s.school.food===7&&/家里补过/.test(fed.text));
+  s.school.food=2;s.school.pending=null;s.school.seasonAt=D.today(s).year*4+D.today(s).season;
+  const long=H.action(s,'study',90,()=>{});
+  assert(!long.err&&s.school.food>=4&&s.school.food<=11&&long.relief>0&&long.relief<40);
+  s.loc='taohua';s.school.food=3;s.school.pending=null;s.school.seasonAt=D.today(s).year*4+D.today(s).season;
+  const away=H.action(s,'rest',6,()=>{});
+  assert(!away.err&&s.school.food===0&&!/家里补过/.test(away.text));
+});
 test('full page render closes over the live save',()=>{
   const close=gameSource.lastIndexOf('})();');
   assert(close>0);

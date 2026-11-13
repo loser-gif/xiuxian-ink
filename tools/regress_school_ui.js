@@ -39,9 +39,11 @@ function click(text){const n=host().querySelectorAll('button').find(b=>b.textCon
  UI.calendar(state);const old=state.months;click('后一日');assert(host().querySelector('h2').textContent==='1月2日');click('回今日');assert(host().querySelector('h2').textContent==='1月1日');assert.equal(state.months,old);click('合上历本');
  state.school.chart=1;let went='';UI.atlas(state,d=>{went=d;});
  assert(!host().querySelectorAll('button').some(b=>/桃花溪/.test(b.textContent)),'locked road has no travel button');
- assert(host().querySelectorAll('p').some(n=>/青州/.test(n.textContent)));
- assert(host().querySelectorAll('p').some(n=>/传闻/.test(n.textContent)));
- click('合上图');
- state.school.road=1;UI.atlas(state,d=>{went=d;});click('沿镇东小路去桃花溪');assert.equal(went,'taohua');
+ click('青州');assert.equal(host().querySelector('h2').textContent,'青州');
+ click('青石镇');assert(!host().querySelectorAll('button').some(b=>/桃花溪/.test(b.textContent)));
+ click('返回青州');click('返回九州');
+ click('云州');assert([...host().querySelectorAll('p')].some(n=>/传闻/.test(n.textContent)));
+ click('返回九州');click('合上图');
+ state.school.road=1;UI.atlas(state,d=>{went=d;});click('青州');click('青石镇');click('沿镇东小路去桃花溪');assert.equal(went,'taohua');
  console.log('PASS text opening, empty name, gender, calendar, locked and open town road');
 })().catch(e=>{console.error(e);process.exitCode=1;});

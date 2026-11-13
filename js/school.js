@@ -92,13 +92,16 @@ const School = (() => {
   function job(s){const v=ensure(s);return s.age<16?'村中学童':v.craft>=120?'木匠':v.letters>=120?'抄书人':v.farm>=120?'农人':'镇上帮工';}
   function quote(s,id){const a=activities[id];if(!a||!a.kind)return null;const v=ensure(s),base=Math.min(.9,a.base+Math.min(200,v[a.skill])*.001);return {base,p:Dali.probability(s,a.kind,base),kind:a.kind};}
   function available(s,id){const a=activities[id];return !!(a&&s.age>=a.age);}
-  function day(s,emit) {
+  function atHome(s){return !s||!s.loc||s.loc==='qingshi';}
+  function villageMode(s){return !!(s&&s.school&&(!s.school.entered||(s.school.homecoming&&atHome(s))));}
+  function day(s,emit,opt) {
     const v=ensure(s),before=s.age;
     Core.passTime(s,Dali.span(s,1)/Core.timeMonths(s,1),emit);
     if(s.dead||s.ascended)return false;
     v.days++;v.food=Math.max(0,v.food-1);
-    if(s.age<16&&v.food<5)v.food+=7;
-    if(s.age>=16&&v.food<1){if(v.copper>=2){v.copper-=2;v.food+=3;}else v.health=Math.max(15,v.health-2);}
+    const away=(opt&&opt.away)||!atHome(s);
+    if(!away&&s.age<16&&v.food<5){v.food+=7;if(opt&&opt.note)opt.note.relief=(opt.note.relief||0)+1;}
+    if(!away&&s.age>=16&&v.food<1){if(v.copper>=2){v.copper-=2;v.food+=3;}else v.health=Math.max(15,v.health-2);}
     if(s.age!==before&&emit)emit({title:'生辰',text:'今日满'+s.age+'岁。家里的旧书与手边本事，都跟着你走到了这一天。'});
     const q=Dali.today(s),season=q.year*4+q.season;
     if(v.seasonAt!==season){v.seasonAt=season;v.pending=q.season;}
@@ -118,6 +121,7 @@ const School = (() => {
     if(id==='seek'||id==='enter')return seek(s,id,emit);
     if(!available(s,id))return {err:'年岁还小，先做眼前能做的事。'};
     const a=activities[id];count=Math.max(1,Math.min(90,Math.floor(count)||1));let done=0,ok=0,first=quote(s,id),last=first;
+    const note={relief:0};
     let scene=a.scene;
     if(id==='study'&&v.letters>=40)scene='你翻过已读熟的几页，自己把新句读完。先生听到疑难处，才与你一道细讲。';
     if(id==='craft'){
@@ -127,7 +131,7 @@ const School = (() => {
     if(id==='work'&&v.farm>=40)scene='你搬起货来手脚稳当，不必再等乡邻指点。清点时，你报过一件，对方便在单上记下一件。';
     for(let i=0;i<count;i++){
       const q=quote(s,id),success=!q||random(v)<q.p;last=q;
-      if(!day(s,emit))break;
+      if(!day(s,emit,{note:note}))break;
       done++;if(a.skill)v[a.skill]=Math.min(1000,v[a.skill]+a.gain);
       if(id==='study')v.teacher=Math.min(100,v.teacher+.1);
       if(id==='farm'){v.food+=3;v.copper+=s.age>=16?1:0;}
@@ -140,7 +144,8 @@ const School = (() => {
     v.job=job(s);
     if(s.age>=16&&(a.kind||id==='farm'||id==='craft'))scene='你如今是'+v.job+'。'+scene;
     const invitation=s.age>=16?'换季时，乡邻在门外唤你，说村里正有活想请你这位'+v.job+'搭把手。':v.neighbor>=50?'换季时，熟识的乡邻在门外唤你，隔着院子便说起近况。':'换季时，乡邻在门外唤你。';
-    return {days:done,success:ok,first,last,text:scene+' 共过'+done+'日。'+(first?'成事'+ok+'回；首日原胜算'+Math.round(first.base*100)+'%，历象后'+Math.round(first.p*100)+'%。逐日按当天历象结算，未成也有一文辛苦钱。':'')+(v.pending!==null?invitation:'')};
+    const relief=note.relief?(' 人在家里，口粮见底时家里补过'+note.relief+'次，每次七份。人在路上没有这碗饭。'):'';
+    return {days:done,success:ok,first,last,relief:note.relief,text:scene+' 共过'+done+'日。'+(first?'成事'+ok+'回；首日原胜算'+Math.round(first.base*100)+'%，历象后'+Math.round(first.p*100)+'%。逐日按当天历象结算，未成也有一文辛苦钱。':'')+relief+(v.pending!==null?invitation:'')};
   }
   function seek(s,id,emit) {
     const v=ensure(s);if(s.age<12)return {err:'先在村里读书做事；十二岁后可独自打听远路。'};
@@ -246,22 +251,26 @@ const School = (() => {
     if(out.err)return out;
     return afterBeat(s,id,out);
   }
+  function roadDays(s){return s.age<12?6:4;}
   function travel(s,dest,emit){
     const v=ensure(s);if(!v||s.dead||s.ascended)return {err:'这一卷已收。'};
     if(v.road<1)return {err:'镇东的路还没走通。图上的远方只是传闻。'};
     if(dest!=='taohua'&&dest!=='qingshi')return {err:'知道地名，还不等于能去。'};
     if(dest==='taohua'&&s.loc==='taohua')return {err:'你已经在溪边。'};
     if(dest==='qingshi'&&(s.loc==='qingshi'||!s.loc))return {err:'你就在青石。'};
-    const days=s.age<12?6:4;
-    const out=action(s,'rest',days,emit);
-    if(out.err)return out;
+    if(v.pending!==null)return {err:'门口有人等你。先应了再上路。'};
+    const days=roadDays(s);
+    if(v.food<days)return {err:'这段路要走'+days+'日，口粮只够'+Math.floor(v.food)+'日。先备足再上路。'};
+    const foodBefore=v.food;
+    for(let i=0;i<days;i++){if(!day(s,emit,{away:true}))return {text:'路走到一半，光阴到了头。',days:i};}
+    if(v.food!==foodBefore-days)v.food=foodBefore-days;
     s.loc=dest;s.found=s.found||{};s.found[dest]=1;
     v.place=dest==='qingshi'?'village':'creek';
-    out.traveled=dest;out.title='出镇';
-    out.text=dest==='taohua'
-      ?'你沿镇东小路走了'+days+'日，路上吃自己的口粮。桃花溪到了。回头同样要再走这些天。'
-      :'你用了'+days+'日走回青石村，先看见的是村口的老槐。';
-    return out;
+    v.homecoming=0;
+    const left=Math.floor(v.food);
+    return {traveled:dest,title:'出镇',days:days,text:dest==='taohua'
+      ?'你沿镇东小路走了'+days+'日，吃掉'+days+'份口粮，还剩'+left+'份。桃花溪到了。回头同样要再走这些天。'
+      :'你用了'+days+'日走回青石村，吃掉'+days+'份口粮，还剩'+left+'份。先看见的是村口的老槐。'};
   }
   const provinces=[
     {name:'青州',places:['青石镇','桃花溪','青冥山门'],home:true},
@@ -274,5 +283,5 @@ const School = (() => {
     {name:'海州',places:['北海']},
     {name:'天州',places:['云海天阶']}
   ];
-  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord};
+  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord,atHome,villageMode,roadDays};
 })();

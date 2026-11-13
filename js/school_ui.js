@@ -83,29 +83,66 @@ const SchoolUI = (() => {
     const o=overlay('大黎疆域'),h=o.host;h.classList.add('almanac-screen');
     const book=node('div','almanac-book'),left=node('div','almanac-binding'),page=node('div','almanac-page'),nav=node('nav','school-controls');
     left.textContent='疆域';book.append(left,page);h.append(book,nav);
-    page.append(node('p','almanac-year','大黎疆域'));
-    page.append(node('h2','','九州'));
-    page.append(node('p','','青石村在青石镇西头，同属青州。认得地名，还不是能去。'));
-    School.provinces.forEach(p=>{
-      const line=node('p',p.home?'almanac-good':'');
-      if(p.home){
-        line.textContent=p.name+' · '+p.places[0]+'（含青石村）'+(s.loc==='taohua'?' · 人在桃花溪':' · 你在这里');
-        page.append(line);
-        if(v.road>=1&&s.loc!=='taohua')button(page,'沿镇东小路去桃花溪',()=>{o.close();if(go)go('taohua');});
-        else if(s.loc==='taohua')button(page,'走回青石村',()=>{o.close();if(go)go('qingshi');});
-        else page.append(node('p','','镇东小路还没走通。桃花溪、青冥山门只是名字。'));
-        page.append(node('p','','青冥山门在州内更远处。这一龄，没有非去不可的理由。'));
-      }else{
-        const known=p.places.some(name=>{
-          if(typeof LOCS==='undefined')return false;
-          const loc=LOCS.find(l=>l.name===name);
-          return loc&&s.found&&s.found[loc.id];
+    let view='realm',province=null;
+    function wipe(el){if(el.replaceChildren)el.replaceChildren();else while(el.firstChild)el.firstChild.remove();}
+    function knownPlace(name){
+      if(typeof LOCS==='undefined')return false;
+      const loc=LOCS.find(l=>l.name===name);
+      return !!(loc&&s.found&&s.found[loc.id]);
+    }
+    function placeBtn(parent,name,here,fn){
+      const b=button(parent,name,fn);
+      b.classList.add('school-place');
+      if(here)b.classList.add('here');
+      return b;
+    }
+    function draw(){
+      wipe(page);wipe(nav);
+      if(view==='realm'){
+        page.append(node('p','almanac-year','大黎疆域'));
+        page.append(node('h2','','九州'));
+        page.append(node('p','','点开一州。认得地名，还不是能去。'));
+        const list=node('div','school-places');
+        page.append(list);
+        School.provinces.forEach(p=>{
+          placeBtn(list,p.name,!!p.home,()=>{province=p;view=p.home?'province':'rumor';draw();});
         });
-        line.textContent=p.name+' · '+(known?p.places.join('、'):'未踏足 · 传闻');
-        page.append(line);
+        page.append(node('p','school-place-note','青州写着你的镇子。其余是未踏足的传闻，翻开只能读，不能上路。'));
+        button(nav,'合上图',o.close).focus();
+        return;
       }
-    });
-    button(nav,'合上图',o.close).focus();
+      if(view==='rumor'){
+        page.append(node('p','almanac-year','九州'));
+        page.append(node('h2','',province.name));
+        const heard=province.places.filter(knownPlace);
+        page.append(node('p','',heard.length?('听说过：'+heard.join('、')+'。这一龄还没有去的路。'):'未踏足 · 传闻。名字在这里，路不在。'));
+        button(nav,'返回九州',()=>{view='realm';province=null;draw();}).focus();
+        button(nav,'合上图',o.close);
+        return;
+      }
+      if(view==='province'){
+        page.append(node('p','almanac-year','九州 · 青州'));
+        page.append(node('h2','','青州'));
+        page.append(node('p','','青石村在青石镇西头。点开镇子，才看见脚下的路。'));
+        const list=node('div','school-places');
+        page.append(list);
+        placeBtn(list,'青石镇',School.atHome(s),()=>{view='town';draw();});
+        page.append(node('p','school-place-note',s.loc==='taohua'?'人在桃花溪。':'桃花溪在镇东。青冥山门更远，这一龄只是名字。'));
+        button(nav,'返回九州',()=>{view='realm';draw();}).focus();
+        button(nav,'合上图',o.close);
+        return;
+      }
+      page.append(node('p','almanac-year','青州 · 城镇'));
+      page.append(node('h2','','青石镇'));
+      page.append(node('p','','青石村在西头。'+(School.atHome(s)?'你在村里。':'你不在村里。')));
+      if(v.road<1)page.append(node('p','','镇东小路还没走通。桃花溪、青冥山门只是名字。'));
+      else if(s.loc==='taohua')button(page,'走回青石村',()=>{o.close();if(go)go('qingshi');});
+      else button(page,'沿镇东小路去桃花溪',()=>{o.close();if(go)go('taohua');});
+      page.append(node('p','school-place-note','青冥山门在州内更远处。知道名字，还不等于今天能去。'));
+      button(nav,'返回青州',()=>{view='province';draw();}).focus();
+      button(nav,'合上图',o.close);
+    }
+    draw();
   }
   function closeLife(){}
   function life(state,perform){

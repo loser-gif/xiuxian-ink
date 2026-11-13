@@ -1845,7 +1845,7 @@ function actVillage(kind) {
 }
 function act(kind) {
   if (busy || !S || S.dead || S.ascended) return;
-  if (S.school && (School.mortal(S) || S.school.homecoming)) return actVillage(kind);
+  if (S.school && School.villageMode(S)) return actVillage(kind);
   if (kind === 'bag') return openBag();
   const r = R();
   if (kind === 'tuna') {
@@ -2227,7 +2227,7 @@ if (typeof BtFx !== 'undefined') BtFx.setWriter((el, text) => inkWrite(el, text,
 const btChance = usePill => Core.btChance(S, usePill);
 const chanceWord = p => { const n = Math.round(p * 10); return n <= 1 ? '九死一生' : n >= 9 ? '十拿九稳' : `约莫${cn(n)}成`; };
 function openBreak() {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('尚未引气，没有破境这一关。'); return; }
   if (!bottleneck() || busy) return;
   if (typeof Life !== 'undefined' && Life.xinmoPending(S) && !openBreak._skip) {
     openEvent(Life.xinmoEvent(S));
@@ -2567,7 +2567,7 @@ function tokenSVG(orgId, rank, big) {
 }
 const gradeNames = ['凡', '灵', '地', '天'];
 function openSect(tab) {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('宗门还远。先在村里把日子过明白。'); return; }
   const o = Core.org(S);
   const tabs = o ? [['home', o.id === 'qm' ? '宗门' : '盟中'], ['task', '任务'], ['lib', o.id === 'qm' ? '藏经' : '秘库'], ['npc', '人物']] : [['home', '散修'], ['npc', '人物']];
   tab = tab && tabs.find(t => t[0] === tab) ? tab : tabs[0][0];
@@ -2926,7 +2926,7 @@ function refreshOpenPanel() {
   if (root && typeof root._refresh === 'function') root._refresh();
 }
 function openBag(tab = 'bag') {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('行囊要等引气之后。口粮和铜钱写在卷下。'); return; }
   // 行囊：只装消耗品与佩器；功法／法宝／定型／丹炉改走「修」印 openCult
   if (tab && tab !== 'bag') return openCult(tab);
   const wrap = document.createElement('div'); wrap.className = 'bag-wrap';
@@ -2950,7 +2950,7 @@ function openBag(tab = 'bag') {
   show();
 }
 function openCult(tab = 'gf') {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('定型要等你自己引气之后。'); return; }
   const wrap = document.createElement('div'); wrap.className = 'cult-wrap';
   const hasDan = typeof JHUI !== 'undefined' && S && S.dan;
   const tabs = [['gf', '功法'], ['fabao', '法宝'], ['path', '定型']];
@@ -3203,15 +3203,16 @@ function openMenu() {
   const ps = (Core.pathSummary(S) || []).map(x => x.name).join(' · ') || '道基未定';
   const ds = (typeof Samsara !== 'undefined') ? Samsara.dailyStatus() : { claimed: true };
   const trialNote = (S.flags && S.flags.trial) ? '<br><span class="menu-trial">试炼境 · 不入轮回簿</span>' : '';
-  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>定型 · ${ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
-    <button class="menu-item" data-m="shop">铺子<small>开铺 · 上货 · 一季一结</small></button>
+  const mortalMenu = typeof School !== 'undefined' && School.mortal(S);
+  w.innerHTML = `<div class="menu-note">${S.name} · ${realmStr()} · ${cn(S.age)}岁<br>${mortalMenu ? '尚未引气' : '定型 · ' + ps}${trialNote}<br>此卷随笔随存，合上亦不失。</div>
+    ${mortalMenu ? '<p class="menu-note">铺子在云岳坊，定型在引气之后。眼前先过村里的日子。</p>' : '<button class="menu-item" data-m="shop">铺子<small>开铺 · 上货 · 一季一结</small></button>'}
     <button class="menu-item" data-m="sex">此身<small>称呼 · 道侣心意</small></button>
     <button class="menu-item" data-m="trace">行迹<small>因果 · 此生印记</small></button>
     <button class="menu-item" data-m="annals">平生<small>逐年 · 所遇 · 所求</small></button>
     <button class="menu-item" data-m="look">纸墨<small>昼夜 · 字号 · 动效</small></button>
-    <button class="menu-item" data-m="resume">继续修行</button>
+    <button class="menu-item" data-m="resume">${mortalMenu ? '回到卷上' : '继续修行'}</button>
     <button class="menu-item" data-m="slots">存档<small>三卷 · 导出 · 导入</small></button>
-    <button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>
+    ${mortalMenu ? '' : '<button class="menu-item" data-m="path">定型小记<small>道基 · 丹纹 · 法相</small></button>'}
     <button class="menu-item" data-m="atlas">轮回图鉴<small>墓志 · 道基 · 法相 · 神器 · 结局</small></button>
     ${!ds.claimed ? '<button class="menu-item" data-m="daily">今日机缘<small>晨露一缕</small></button>' : ''}
     <button class="menu-item" data-m="title">回到卷首</button>
@@ -3969,7 +3970,7 @@ function stockName(k) {
   return k;
 }
 function openShop() {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('铺子在云岳坊。入了仙途，走到那里才能开。'); return; }
   if (!S || typeof Redworld === 'undefined') return;
   const w = document.createElement('div'); w.className = 'shop-sheet';
   const button = (a, k, label, sub, disabled) => `<button type="button" class="menu-item${sub === '先回应来人' ? ' is-wait' : ''}" data-a="${a}" data-k="${esc(k || '')}"${disabled ? ' disabled' : ''}>${esc(label)}<small>${esc(sub || '')}</small></button>`;
@@ -4052,7 +4053,7 @@ function openShop() {
 }
 
 function openGoalPicker() {
-  if (typeof School !== 'undefined' && School.mortal(S)) return openSchoolLife();
+  if (typeof School !== 'undefined' && School.mortal(S)) { toast('所求可以以后再写。眼前先过村里的日子。'); return Promise.resolve(null); }
   if (!S || typeof Life === 'undefined') return Promise.resolve(null);
   const pc = $('#goal-cer'); if (!pc) return Promise.resolve(null);
   return new Promise(resolve => {
@@ -4121,7 +4122,7 @@ function openAnnals() {
 $$('.act').forEach(b => b.addEventListener('click', (e) => {
   b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 500);
   if (typeof MoAudio !== 'undefined') MoAudio.uiTap();
-  if (S && S.school && (School.mortal(S) || S.school.homecoming) && e.target.closest('small')) {
+  if (S && S.school && School.villageMode(S) && e.target.closest('small')) {
     const v = S.school;
     const canSeek = S.loc === 'taohua' && S.age >= 12 && v.road >= 1 && v.clue < 4 && !v.pausedSearch && !v.entered;
     if (b.dataset.act === 'bag' && v.clue >= 4 && !v.entered) v.intent = v.intent === 'enter' ? '' : 'enter';
@@ -4242,6 +4243,8 @@ const vis = el => !!el && !el.hidden && el.offsetParent !== null && !el.disabled
 const firstVis = (root, sel) => [...root.querySelectorAll(sel)].find(vis);
 function topLayer() {
   const ask = document.querySelector('.ask'); if (ask) return ask;
+  const papers = document.querySelectorAll('.school-screen');
+  if (papers.length) return papers[papers.length - 1];
   for (const id of ['scroll-view', 'end', 'rite', 'dan', 'auc', 'duel', 'bt', 'path-cer', 'origin-cer', 'baishan', 'goal-cer', 'modal', 'sheet', 'mj', 'map']) { const el = $('#' + id); if (el && !el.hidden) return el; }
   return null;
 }
@@ -4270,6 +4273,11 @@ addEventListener('keydown', e => {
     return;
   }
   const digit = /^[1-9]$/.test(k) ? +k : 0;
+  if (L && L.classList && L.classList.contains('school-screen')) {
+    if (digit) { e.preventDefault(); return; }
+    if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON' && L.contains(tgt))) { e.preventDefault(); return; }
+    return;
+  }
   if (!L) {
     if (document.body.dataset.screen !== 'main') { if (k === 'Enter' && !(tgt && tgt.tagName === 'BUTTON')) click(firstVis(document.querySelector('.screen:not([hidden])') || document.body, '.brush-btn')); return; }
     if (digit >= 1 && digit <= 4) return click($$('.act')[digit - 1]);
@@ -5060,7 +5068,7 @@ function paintQuiet(sel, v) {
 }
 function renderSchool() {
   const mortal = School.mortal(S);
-  const villageNow = !!(S.school && (mortal || S.school.homecoming));
+  const villageNow = School.villageMode(S);
   document.body.classList.toggle('school-mortal', mortal);
   const showCal = !S.school || !!S.school.almanac;
   const showMap = !!(S.school && S.school.chart >= 1);
@@ -5121,10 +5129,11 @@ function renderSchool() {
     status.after(home);
   }
   if (home) {
-    home.hidden = !(S.school && S.school.entered);
-    home.textContent = S.school && S.school.homecoming ? '回到修行' : '回青石村';
+    const atHome = School.atHome(S);
+    home.hidden = !(S.school && S.school.entered && atHome);
+    home.textContent = S.school && S.school.homecoming ? '回到修行' : '村里的日子';
     home.onclick = () => {
-      if (!S.school || !S.school.entered) return;
+      if (!S.school || !S.school.entered || !School.atHome(S)) return;
       S.school.homecoming = S.school.homecoming ? 0 : 1;
       save(); render();
     };
@@ -5147,7 +5156,7 @@ function renderSchool() {
       btn.setAttribute('aria-label', names[i] + '，' + sub + '。小字可改' + hint);
     } else btn.removeAttribute('aria-label');
   });
-  if (S.school && (mortal || S.school.homecoming)) paintQuiet('#journal-title', Dali.label(S) + ' · ' + School.placeName(S));
+  if (villageNow) paintQuiet('#journal-title', Dali.label(S) + ' · ' + School.placeName(S));
   if (!villageNow) return;
   paintQuiet('#h-realm', mortal ? (S.age < 16 ? '村塾' : '人间') : '青石村');
   paintQuiet('#h-stage', mortal ? School.job(S) : '暂归');
