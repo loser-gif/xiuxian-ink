@@ -73,7 +73,7 @@ function loadWorld(localStorage, old = false) {
   };
   sandbox.window = sandbox; sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
+  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','calendar','school','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
   for (const f of files) {
     const src = old && oldSources[f] ? oldSources[f] : fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8');
     vm.runInContext(src, ctx, { filename: f + '.js' });
@@ -614,7 +614,7 @@ for(const fail of [false,true])test('explicit v1 fallback reset remains destruct
  const src=fs.readFileSync(path.join(ROOT,'js/game.js'),'utf8');ctx.input=JSON.parse(raw);
  vm.runInContext(`const SAVE_KEY='moxian.v1';var sheet;S=input;
  function realmStr(){return ''};function closeSheet(){return Promise.resolve()};
- function inkConfirm(){return Promise.resolve(true)};function resetCreate(){};
+ function inkConfirm(){return Promise.resolve(true)};function resetCreate(){};function initTitle(){};
  function unrollTo(){};function openSheet(title,w){sheet=w};
  `+src.slice(src.indexOf('function openMenu()'),src.indexOf('/* ================= 三卷存档')),ctx);
  vm.runInContext('openMenu()',ctx);const click=()=>vm.runInContext('sheet',ctx).onclick({target:{closest:()=>({dataset:{m:'reset'}})}});

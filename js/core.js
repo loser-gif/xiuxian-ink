@@ -95,19 +95,19 @@ const Core = (() => {
     return any ? sum : dflt;
   }
   function sync(s) {
-    s.age = Math.floor(s.months / 12);
+    s.age = typeof Dali !== 'undefined' ? Dali.age(s) : Math.floor(s.months / 12);
     const m = s.ming;
     if (m && m.on && m.dust && !m.dustLifted && ((s.realm | 0) >= 1 || (s.fabao && (s.fabao.stage | 0) >= 2))) m.dustLifted = 1;
     let life = Math.round(REALMS[s.realm].life * K.lifeMul[s.realm] * (K.rootLife[s.lg.id] || 1) * (1 + gt(s, 'life', 0)) + s.lifeBonus);
     if (m && m.on && m.dust && !m.dustLifted && (s.realm | 0) === 0 && (m.dustDue | 0) > 0) life = Math.min(life, m.dustDue | 0);
-    s.lifespan = life;
+    s.lifespan = typeof School !== 'undefined' && School.mortal(s) ? 80 + (s.lifeBonus || 0) : life;
   }
   const req = s => Math.round(REALMS[s.realm].scale * REALMS[s.realm].reqBase * K.reqMul[s.realm] * (1 + REALMS[s.realm].reqGrow * s.stage));
   const unit = s => 100 * REALMS[s.realm].scale * s.lg.mult * (1 + (s.wx - 5) * 0.06);
   const isLast = s => s.stage === REALMS[s.realm].stages.length - 1;
   const bottleneck = s => isLast(s) && s.xw >= req(s);
-  const realmStr = s => REALMS[s.realm].name + REALMS[s.realm].stages[s.stage];
-  const timeLabel = s => `${cn(s.age)}岁 · ${['春', '夏', '秋', '冬'][Math.floor((s.months % 12) / 3)]}`;
+  const realmStr = s => typeof School !== 'undefined' && School.mortal(s) ? School.job(s) : REALMS[s.realm].name + REALMS[s.realm].stages[s.stage];
+  const timeLabel = s => typeof Dali !== 'undefined' ? Dali.label(s) + ' · ' + cn(s.age) + '岁' : `${cn(s.age)}岁 · ${['春', '夏', '秋', '冬'][Math.floor((s.months % 12) / 3)]}`;
   const fmtNum = n => n >= 100000 ? (n / 10000).toFixed(1) + '万' : String(Math.floor(n));
 
   /* ---------- 功法 ---------- */
@@ -208,7 +208,7 @@ const Core = (() => {
     const g = GONGFA[id];
     return { text: `坊市掌柜翻了翻《${g.name}》，${GF_GRADE[g.grade]}品的路数他认得，称出灵石${cn(p)}，当场递到你手里。`, tags: [{ t: `灵石 +${p}`, c: 'up' }], ls: p };
   }
-  function learn(s, id, tags, emit) {
+  function learn(s, id, tags, emit, recordAtlas = true) {
     if (!GONGFA[id]) return false;
     if (s.gfs[id]) { giveManual(s, id, tags); return 'dup'; }
     let lv0 = 1;
@@ -217,7 +217,7 @@ const Core = (() => {
       tags && tags.push({ t: '残页应验 · 起手二层', c: 'gold' });
     }
     s.gfs[id] = { lv: lv0, xp: 0 };
-    if (typeof Samsara !== 'undefined' && Samsara.noteGongfa) Samsara.noteGongfa(id);
+    if (recordAtlas && typeof Samsara !== 'undefined' && Samsara.noteGongfa) Samsara.noteGongfa(id);
     tags && tags.push({ t: `得功法《${GONGFA[id].name}》`, c: 'up' });
     if (!s.gf) { s.gf = id; emit && emit({ text: `你开始修习《${GONGFA[id].name}》。从此吐纳有法，不再是盲人摸象。`, cls: 'sys' }); }
     return true;
@@ -421,6 +421,10 @@ const Core = (() => {
     if (trial && trial.left > 0 && months > trial.left && emit)
       emit({ title: '试炼期限', text: '此行越过二十载之期。行动完整结算，超过期限才达标不计成功。', cls: 'warn' });
     s.months += months; sync(s);
+    if (typeof School !== 'undefined' && School.mortal(s)) {
+      if (s.age >= s.lifespan) { s.dead = true; s.ending = 'zuohua'; }
+      return;
+    }
     if (!s.dead && typeof People !== 'undefined') People.tick(s, emit);
     const left = s.lifespan - s.age, span = s.lifespan - 16;
     const k = s.realm + ':' + s.lifeBonus;
@@ -482,7 +486,7 @@ const Core = (() => {
 
   /* ---------- 行动 ---------- */
   // 物候只轻推原有行动，不另设一套修行刻度。
-  const seasonOf = s => Math.floor((s.months % 12) / 3);
+  const seasonOf = s => typeof Dali !== 'undefined' ? Dali.today(s).season : Math.floor((s.months % 12) / 3);
   function seasonPlay(s) {
     const n = seasonOf(s);
     return { n, spread: n === 0 ? 0.1 : 0.2, retreat: n === 2 ? 1.03 : 1 };
@@ -1069,9 +1073,9 @@ const Core = (() => {
       court: typeof emptyCourt === 'function' ? emptyCourt() : { rank: -1, entry: null, bing: 0, min: 40, dao: 55, examAt: 0, n: 0, txAt: 0 },
       karma: typeof emptyKarma === 'function' ? emptyKarma() : { mate: null, foe: null, seeds: [] },
       life: typeof Life !== 'undefined' && Life.empty ? Life.empty() : { goal: null, goalChanges: 0, heart: 0, scars: [], deeds: [], seenV: [], xinmo: {}, annals: [], people: [], thread: '', variant: '', vendetta: 0, bg: 0 } };
-    const startGf = (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
+    const startGf = r.school ? null : (r.org && ORGS[r.org] && ORGS[r.org].startGf) || (r.lg.id !== 'wei' ? 'qingming' : null);
     if (startGf && GONGFA[startGf]) { s.gf = startGf; s.gfs[startGf] = { lv: 1, xp: 0 }; }
-    else if (r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
+    else if (!r.school && r.lg.id !== 'wei') { s.gf = 'qingming'; s.gfs.qingming = { lv: 1, xp: 0 }; }
     if (r && r.trial) { s.flags.trial = 1; s.realm = 2; s.stage = 0; s.months = 40 * 12; s.ls = 120; s.xw = 0; }
     let legacyTags = [];
     if (legacy && typeof Samsara !== 'undefined' && Samsara.applyLegacy) {
@@ -1219,6 +1223,7 @@ const Core = (() => {
       for (const id in NPCS) if (!s.npc[id]) s.npc[id] = { a: NPCS[id].a0, met: false };
     }
     if (typeof Jianghu !== 'undefined' && Jianghu.recoverAuction) Jianghu.recoverAuction(s);
+    if (typeof School !== 'undefined') School.migration(s);
     sync(s);
     if (oldLife15 > s.lifespan) { s.lifeBonus += oldLife15 - s.lifespan; sync(s); }
     return s;

@@ -104,7 +104,7 @@ function loadWorld(localStorage, old = false, noSamsara = false) {
   };
   sandbox.window = sandbox; sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
+  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','calendar','school','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
   for (const f of files) {
     if (noSamsara && f === "samsara") continue;
     const src = old && oldSources[f] ? oldSources[f] : fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8');
@@ -118,7 +118,7 @@ function loadWorld(localStorage, old = false, noSamsara = false) {
     let S=null, testing=false, playTick=0, curScreen='create';
     const $=q=>document.querySelector(q), $$=q=>document.querySelectorAll(q);
     const FX={requestTilt(){}};
-    const VillageUI={clear(){}};
+    const VillageUI={clear(){}}; const SchoolUI={clear(){},open:async()=>{window.routes=(window.routes||0)+1;return {ok:false}}};
     const LEGACY_KEY='moxian.legacy';
     function pushLog(row){ if(S) S.log.push(row); }
     function toast(s){ window.lastToast=s; }

@@ -70,7 +70,7 @@ function loadWorld(localStorage, old = false) {
   };
   sandbox.window = sandbox; sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
+  const files = ['data','gongfa','gear','path','story','sect','baijia','world','tianxia','karma','life','juan','calendar','school','core','loops','jianghu','redworld','folio','people','mingge','village','slots','codec','samsara'];
   for (const f of files) {
     vm.runInContext(old && oldSources[f] || fs.readFileSync(path.join(ROOT, 'js', f + '.js'), 'utf8'), ctx, { filename: f + '.js' });
   }

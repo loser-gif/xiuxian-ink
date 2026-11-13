@@ -14,13 +14,13 @@ const Slots = (() => {
       name: s.name || '无名',
       realm: s.realm | 0,
       stage: s.stage | 0,
-      realmName: R ? (R.name + (R.stages[s.stage] || '')) : '',
+      realmName: s.school && !s.school.entered ? (s.age < 16 ? '村中学童' : s.school.job || '村中人') : R ? (R.name + (R.stages[s.stage] || '')) : '',
       age: s.age | 0,
       played: s.played | 0,
       dead: !!s.dead,
       ascended: !!s.ascended,
       ending: s.ending || null,
-      lg: s.lg && s.lg.name ? s.lg.name : '',
+      lg: s.school && !s.school.entered ? '尚未引气' : s.lg && s.lg.name ? s.lg.name : '',
     };
   }
 
