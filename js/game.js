@@ -749,7 +749,7 @@ let xiantuGen = 0;
 let xiantuCurrent = null;
 let newLifeLock = false;
 window.__xiantuStats = { arrivals: 0, dismisses: 0, fails: 0, ignored: 0 };
-const XIANTU_URL = 'opening/xiantu.html?v=148';
+const XIANTU_URL = 'opening/xiantu.html?v=149';
 
 function xiantuValid(result) {
   if (!result || result.type !== 'xiantu-opening:complete' || result.version !== 1) return false;
@@ -4339,7 +4339,7 @@ const scrollShade = document.querySelector('#scroll-view .scroll-shade');
 if (scrollShade) scrollShade.onclick = () => closeScrollView();
 
 function preloadSplash() {
-  const urls = ['img/open-plate.png?v=148', 'img/open-glyph.png?v=148', 'img/open-seal-logo.png?v=148'];
+  const urls = ['img/open-plate.png?v=149', 'img/open-glyph.png?v=149', 'img/open-seal-logo.png?v=149'];
   const jobs = urls.map(u => new Promise(res => {
     const im = new Image();
     im.onload = im.onerror = () => res();
@@ -4939,8 +4939,8 @@ function splashWait() {
     };
     let inkReady = false;
     Promise.all([
-      loadInk('img/open-plate.png?v=148'),
-      loadInk('img/open-glyph.png?v=148')
+      loadInk('img/open-plate.png?v=149'),
+      loadInk('img/open-glyph.png?v=149')
     ]).then(pair => {
       sourcePlate = plateImg = pair[0];
       sourceGlyph = glyphImg = pair[1];
@@ -4978,7 +4978,7 @@ function mountSW() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
   const had = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('./sw.js?v=148').then(reg => {
+  navigator.serviceWorker.register('./sw.js?v=149').then(reg => {
     const ask = w => {
       const bar = document.getElementById('sw-refresh'); if (bar) bar.hidden = false;
       if (w && had) { try { w.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {} }
@@ -5182,16 +5182,27 @@ function renderSchool() {
     slip.hidden = true;
     title.parentNode.appendChild(slip);
   }
-  const step = School.guideStep(S);
-  const line = School.guideLine(S);
+  const hint = School.guideHint(S);
+  const showHint = !!(hint && S.school.guideMute !== hint.id);
+  document.querySelectorAll('.actions .act').forEach(btn => {
+    btn.classList.toggle('is-next', !!(showHint && hint.act && btn.dataset.act === hint.act));
+  });
+  if (cal) cal.classList.toggle('is-next', !!(showHint && hint.mark === 'cal'));
+  if (chart) chart.classList.toggle('is-next', !!(showHint && hint.mark === 'map'));
   if (slip) {
-    if (villageNow && line && S.school.guideMute !== step) {
+    if (villageNow && showHint) {
       slip.hidden = false;
       slip.textContent = '';
-      const span = document.createElement('span'); span.textContent = line; slip.appendChild(span);
+      const span = document.createElement('span'); span.textContent = hint.text; slip.appendChild(span);
       const hush = document.createElement('button'); hush.type = 'button'; hush.textContent = '收起';
-      hush.onclick = () => { if (!S.school) return; S.school.guideMute = step; save(); render(); };
+      hush.onclick = () => { if (!S.school) return; S.school.guideMute = hint.id; save(); render(); };
       slip.appendChild(hush);
+    } else if (villageNow && hint) {
+      slip.hidden = false;
+      slip.textContent = '';
+      const back = document.createElement('button'); back.type = 'button'; back.textContent = '提示';
+      back.onclick = () => { if (!S.school) return; S.school.guideMute = -1; save(); render(); };
+      slip.appendChild(back);
     } else slip.hidden = true;
   }
 }

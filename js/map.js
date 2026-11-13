@@ -203,5 +203,93 @@ const InkMap = (() => {
     return cache;
   }
   function toBlobURL(cv) { return new Promise(res => cv.toBlob ? cv.toBlob(b => res(b ? URL.createObjectURL(b) : cv.toDataURL()), 'image/png') : res(cv.toDataURL())); }
-  return { MW, MH, paint, roadPath, pts, GY, LY, get cached() { return !!cache; } };
+  const boards = {};
+  function mist(c, x, y, rx, ry, a) { wash(c, x, y, rx, ry, [236, 230, 216], a); }
+  async function paintBoard(kind, opt) {
+    opt = opt || {};
+    const narrow = !!opt.narrow, road = !!opt.road;
+    const key = kind + (narrow ? 'n' : 'w') + (road ? '1' : '0');
+    if (boards[key]) return boards[key];
+    const W = narrow ? 780 : 1680, H = narrow ? 1040 : 720;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d'), R = Ink.mulberry(kind === 'realm' ? 19 : kind === 'province' ? 29 : 41);
+    const places = [];
+    function horizon(seed, y, h, alpha, peaks) {
+      const cvh = document.createElement('canvas'), Hn = Math.max(90, Math.round(h));
+      Ink.mountainLayer(cvh, { W: W, H: Hn, seed: seed, rgb: BLUE, alpha: alpha, base: .74, amp: .46, peaks: peaks, width: peaks > 12 ? .045 : .1, sharp: 1.8, fade: .9, wash: .32, cun: .07, cunLen: 1, folds: 1, line: .75, dots: .02, trees: 0, bottomFade: true });
+      c.drawImage(cvh, 0, y); cvh.width = cvh.height = 0;
+    }
+    function massif(seed, x, foot, w, h, alpha) {
+      const cvm = document.createElement('canvas');
+      Ink.mountainLayer(cvm, { W: Math.round(w), H: Math.round(h), seed: seed, rgb: alpha > .42 ? INK : BLUE, alpha: alpha, base: .72, amp: .58, peaks: 3, width: .18, sharp: 2, fade: .92, wash: .4, cun: .16, cunLen: 1, folds: 2, line: 1.1, dots: .05, trees: alpha > .5 ? 2 : 0, bottomFade: true });
+      c.drawImage(cvm, x - w / 2, foot - h * .8); cvm.width = cvm.height = 0;
+    }
+    function lane(x0, x1, y, n, dying) {
+      for (let t = 0; t < n; t++) {
+        const p = n < 2 ? 0 : t / (n - 1);
+        const x = x0 + (x1 - x0) * (t / n);
+        const a = dying ? Math.max(.06, .78 * (1 - p)) : .55;
+        stroke(c, R, x, y + Math.sin(t * 1.4) * 5, x + (x1 - x0) / n * .55, y + Math.sin(t * 1.4 + .8) * 5, 2.2, INK, a);
+      }
+    }
+    if (kind === 'realm') {
+      const names = ['青州', '云州', '帝畿', '岭州', '幽州', '雾州', '荒州', '海州', '天州'];
+      if (narrow) {
+        for (let row = 0; row < 3; row++) horizon(7 + row * 5, row * H / 3 + H * .1, H * .24, .22, 7);
+      } else {
+        horizon(7, H * .36, H * .5, .24, 16);
+        horizon(13, H * .46, H * .48, .14, 10);
+      }
+      names.forEach((name, i) => {
+        const known = name === '青州';
+        const col = i % 3, row = Math.floor(i / 3);
+        const x = narrow ? (.2 + col * .3) * W : (.08 + i * .105) * W;
+        const foot = narrow ? ((row + .9) * H / 3) : (H * (.8 + (i % 3 - 1) * .015));
+        const w = known ? (narrow ? 200 : 280) : (narrow ? 150 : 200);
+        const h = known ? (narrow ? 150 : 200) : (narrow ? 110 : 150);
+        massif(40 + i * 17, x, foot, w, h, known ? .82 : .26 + (i % 3) * .02);
+        if (!known) mist(c, x, foot - h * .45, w * .46, h * .32, .5);
+        if (known) for (let k = 0; k < 4; k++) roof(c, R, x - 24 + k * 14, foot - 2, 12, .65, .75);
+        const labelY = narrow ? (row * H / 3 + 18) / H : (.06 + (i % 2) * .08);
+        places.push({ name: name, x: x / W, y: labelY, dot: (foot - 6) / H });
+      });
+    } else if (kind === 'province') {
+      const foot = H * .74;
+      massif(23, W * .34, foot + 10, narrow ? 560 : 900, narrow ? 460 : 520, .72);
+      massif(31, W * .84, foot - 10, narrow ? 260 : 380, narrow ? 280 : 340, .18);
+      for (let k = 0; k < 6; k++) roof(c, R, W * .14 + k * (narrow ? 26 : 34), foot - (k % 2) * 8, narrow ? 26 : 34, 1, .86);
+      willow(c, R, W * .06, foot + 4, narrow ? 64 : 80, 1);
+      places.push({ name: '青石镇', x: .18, y: .14, dot: .68 });
+      if (road) {
+        lane(W * .36, W * .62, foot + 12, 8, false);
+        blossomTree(c, R, W * .66, foot, narrow ? 64 : 78, 1);
+        blossomTree(c, R, W * .74, foot + 8, narrow ? 48 : 58, 1);
+        mist(c, W * .86, H * .42, narrow ? 110 : 150, 70, .45);
+        places.push({ name: '桃花溪', x: .68, y: .28, dot: .68 });
+      } else {
+        lane(W * .34, W * .52, foot + 12, 5, true);
+        mist(c, W * .68, foot - 20, W * .36, H * .28, .88);
+      }
+      places.push({ name: '青冥山门', x: .84, y: .08, dot: .48 });
+    } else {
+      const foot = H * .7;
+      massif(17, W * .4, foot + 16, narrow ? 680 : 1080, narrow ? 500 : 540, .66);
+      for (let k = 0; k < 8; k++) roof(c, R, W * .1 + k * (narrow ? 32 : 42), foot - (k % 3) * 8, k === 3 ? 48 : 36, 1, .9);
+      willow(c, R, W * .05, foot + 2, narrow ? 90 : 110, 1);
+      pine(c, R, W * .5, foot, narrow ? 72 : 92, 1, .8);
+      places.push({ name: '青石村', x: .22, y: .08, dot: .62 });
+      if (road) {
+        lane(W * .55, W * .8, foot + 14, 7, false);
+        blossomTree(c, R, W * .86, foot, narrow ? 70 : 88, 1);
+        places.push({ name: '桃花溪', x: .86, y: .22, dot: .64 });
+      } else {
+        lane(W * .52, W * .66, foot + 14, 4, true);
+        mist(c, W * .78, foot - 30, W * .28, H * .34, .9);
+      }
+    }
+    const url = await toBlobURL(cv); cv.width = cv.height = 0;
+    boards[key] = { url: url, W: W, H: H, places: places };
+    return boards[key];
+  }
+  return { MW, MH, paint, paintBoard, roadPath, pts, GY, LY, get cached() { return !!cache; } };
 })();
