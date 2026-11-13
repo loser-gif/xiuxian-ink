@@ -40,6 +40,11 @@ async function skipSplash(page) {
   }, null, { timeout: 25000 });
   await page.waitForTimeout(500);
 }
+async function clickMap(page, re) {
+  const loc = page.locator('#map button').filter({ hasText: re }).first();
+  await loc.waitFor({ state: 'visible', timeout: 10000 });
+  await loc.click();
+}
 async function clickText(page, re) {
   const loc = page.locator('.school-screen').last().locator('button', { hasText: re }).first();
   await loc.waitFor({ state: 'visible', timeout: 10000 });
@@ -69,7 +74,7 @@ async function quietKeys(page, label) {
   for (const key of ['1', '2', '3', '4']) await page.keyboard.press(key);
   await page.waitForTimeout(200);
   const after = await state(page);
-  const still = await page.locator('.school-screen, #sheet.open, #sheet:not([hidden])').count();
+  const still = await page.locator('.school-screen, #map.map-school.open, #sheet.open, #sheet:not([hidden])').count();
   note(label, JSON.stringify({
     days: [before.school && before.school.days, after.school && after.school.days],
     food: [before.school && before.school.food, after.school && after.school.food],
@@ -96,7 +101,7 @@ async function enroll(page, name, girl, slow, keys) {
   await skipSplash(page);
   await page.click('#btn-new');
   await page.waitForSelector('.school-screen');
-  if (slow) { await page.screenshot({ path: path.join(OUT, '01-town-intro.png') }); await page.waitForTimeout(900); }
+  if (slow) { await page.waitForTimeout(900); await page.screenshot({ path: path.join(OUT, '01-town-intro.png') }); }
   await clickText(page, /继续/);
   if (slow) await page.waitForTimeout(700);
   await clickText(page, /继续/);
@@ -158,15 +163,21 @@ async function enroll(page, name, girl, slow, keys) {
   await page.screenshot({ path: path.join(OUT, '04-almanac.png') });
   await quietKeys(page, 'almanac-keys');
   const today = await page.locator('.almanac-page h2').innerText();
-  await clickText(page, /后一日/);
+  if (today !== '1月') throw new Error('almanac is not a month: ' + today);
+  const lookDays = (await state(page)).school.days;
+  await page.locator('.almanac-day', { hasText: /^2$/ }).click();
+  await page.screenshot({ path: path.join(OUT, '04b-almanac-day.png') });
+  const detail = await page.locator('.almanac-detail').innerText();
+  await clickText(page, /下一月/);
   const next = await page.locator('.almanac-page h2').innerText();
   await clickText(page, /回今日/);
   const back = await page.locator('.almanac-page h2').innerText();
-  note('almanac', today + ' -> ' + next + ' -> ' + back);
-  if (next === today || back !== today) throw new Error('almanac did not turn');
+  const afterLook = (await state(page)).school.days;
+  note('almanac', today + ' -> ' + next + ' -> ' + back + ' ' + detail.replace(/\s+/g, ' '));
+  if (!/1月2日/.test(detail) || next === today || back !== today || afterLook !== lookDays) throw new Error('month calendar changed the day or the save');
   await page.keyboard.press('Tab');
   const focused = await page.evaluate(() => document.activeElement && document.activeElement.textContent);
-  if (!focused || !/前一日|后一日|回今日|合上历本/.test(focused)) throw new Error('tab left the almanac: ' + focused);
+  if (!focused || !/上一月|下一月|回今日|合上历本/.test(focused)) throw new Error('tab left the almanac: ' + focused);
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => !document.querySelector('.school-screen'));
   const held = await state(page);
@@ -188,29 +199,26 @@ async function enroll(page, name, girl, slow, keys) {
   note('before-choice', JSON.stringify(s.school));
   if (!s.map || s.school.affair !== 1) throw new Error('town map or the desk affair did not appear');
   await page.click('#dali-map');
-  await page.waitForSelector('.almanac-screen');
+  await page.waitForSelector('#map.map-school .map-tag');
+  await page.waitForFunction(() => document.getElementById('map').classList.contains('ready'), null, { timeout: 8000 });
+  await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(OUT, '05-realm-map.png') });
-  const mapText = await page.locator('.almanac-page').innerText();
-  if (!/九州/.test(mapText) || !/青州/.test(mapText) || !/传闻/.test(mapText)) throw new Error('realm map is missing');
+  const mapText = await page.locator('#map').innerText();
+  if (!/九州/.test(mapText) || !/青州/.test(mapText)) throw new Error('realm map is missing');
   if (/沿镇东小路/.test(mapText)) throw new Error('the east road opened before the choice');
   await quietKeys(page, 'map-keys');
-  const h2 = await page.locator('.almanac-page h2').innerText();
-  if (h2 !== '九州') throw new Error('digits drilled the map');
-  await clickText(page, /^青州$/);
+  if (!/九州/.test(await page.locator('#map-where, .map-ttl').first().innerText()) && !/九州/.test(await page.locator('#map').innerText())) throw new Error('digits drilled the map');
+  await clickMap(page, /^青州$/);
   await page.screenshot({ path: path.join(OUT, '05b-province.png') });
-  const province = await page.locator('.almanac-page').innerText();
-  if (!/青州/.test(province) || !/青石镇/.test(province) || /沿镇东小路/.test(province)) throw new Error('province page is not the town list');
-  await clickText(page, /^青石镇$/);
+  const province = await page.locator('#map-card').innerText();
+  if (!/青石镇/.test(province) || /沿镇东小路/.test(province)) throw new Error('town scroll offered a closed road');
   await page.screenshot({ path: path.join(OUT, '05c-town.png') });
-  const town = await page.locator('.almanac-page').innerText();
-  if (!/青石镇/.test(town) || /沿镇东小路/.test(town)) throw new Error('town page offered a closed road');
-  await clickText(page, /返回青州/);
-  await clickText(page, /返回九州/);
-  await clickText(page, /^云州$/);
-  const rumor = await page.locator('.almanac-page').innerText();
-  if (!/传闻/.test(rumor) || /沿镇东小路|走回青石/.test(rumor)) throw new Error('a rumor page offered travel');
+  await clickMap(page, /返回九州/);
+  await clickMap(page, /^云州$/);
+  const rumor = await page.locator('#map-card').innerText();
+  if (!/传闻/.test(rumor) || /沿镇东小路|走回青石/.test(rumor)) throw new Error('a rumor offered travel');
   await page.keyboard.press('Escape');
-  await page.waitForFunction(() => !document.querySelector('.school-screen'));
+  await page.waitForFunction(() => document.getElementById('map').hidden);
   await page.click('.act[data-act="biguan"]');
   await settle(page);
   s = await state(page);
@@ -221,9 +229,9 @@ async function enroll(page, name, girl, slow, keys) {
   const foodBeforeTrip = s.school.food;
   const daysBeforeTrip = s.school.days;
   await page.click('#dali-map');
-  await clickText(page, /^青州$/);
-  await clickText(page, /^青石镇$/);
-  await clickText(page, /桃花溪/);
+  await page.waitForSelector('#map.map-school .map-tag');
+  await clickMap(page, /^青州$/);
+  await clickMap(page, /沿镇东小路/);
   await settle(page);
   s = await state(page);
   note('left-town', JSON.stringify({ loc: s.loc, journal: s.journal, days: s.school.days, food: [foodBeforeTrip, s.school.food] }));
@@ -241,18 +249,18 @@ async function enroll(page, name, girl, slow, keys) {
   if (s.loc !== 'taohua' || s.school.days !== days || s.school.choice !== 'maker') throw new Error('reload reset the road');
   const returnFood = s.school.food;
   await page.click('#dali-map');
-  await clickText(page, /^青州$/);
-  await clickText(page, /^青石镇$/);
-  await clickText(page, /走回青石村/);
+  await page.waitForSelector('#map.map-school .map-tag');
+  await clickMap(page, /^青州$/);
+  await clickMap(page, /走回青石村/);
   await settle(page);
   s = await state(page);
   note('return-town', JSON.stringify({ loc: s.loc, food: s.school.food, was: returnFood }));
   if (s.loc !== 'qingshi' || s.school.food !== returnFood - 6) throw new Error('the walk home did not cost the same road');
   await page.evaluate(() => { window.__moxian.S.school.food = 2; window.__moxian.save(); window.__moxian.render(); });
   await page.click('#dali-map');
-  await clickText(page, /^青州$/);
-  await clickText(page, /^青石镇$/);
-  await clickText(page, /桃花溪/);
+  await page.waitForSelector('#map.map-school .map-tag');
+  await clickMap(page, /^青州$/);
+  await clickMap(page, /沿镇东小路/);
   await page.waitForTimeout(300);
   s = await state(page);
   const toast = await page.locator('#toast').innerText();
@@ -352,9 +360,9 @@ async function enroll(page, name, girl, slow, keys) {
   note('adult-copy', JSON.stringify({ sub: copied.subs[1], moneyBefore, moneyAfter, days: copied.school.days }));
   if (copied.subs[1] !== '抄书' || moneyAfter <= moneyBefore || copied.school.days <= daysBefore) throw new Error('adult copy work did not pay');
   await op.click('#dali-map');
-  await clickText(op, /^青州$/);
-  await clickText(op, /^青石镇$/);
-  await clickText(op, /桃花溪/);
+  await op.waitForSelector('#map.map-school .map-tag');
+  await clickMap(op, /^青州$/);
+  await clickMap(op, /沿镇东小路/);
   await settle(op);
   await op.locator('.act[data-act="youli"] small').click();
   let seeks = 0;
@@ -383,9 +391,9 @@ async function enroll(page, name, girl, slow, keys) {
   if (await op.locator('#school-home').isVisible()) throw new Error('the creek offers a free return home');
   const creekFood = cultivator.school.food;
   await op.click('#dali-map');
-  await clickText(op, /^青州$/);
-  await clickText(op, /^青石镇$/);
-  await clickText(op, /走回青石村/);
+  await op.waitForSelector('#map.map-school .map-tag');
+  await clickMap(op, /^青州$/);
+  await clickMap(op, /走回青石村/);
   await settle(op);
   const walked = await state(op);
   if (walked.loc !== 'qingshi' || walked.school.food !== creekFood - 4 || walked.acts.includes('读书')) throw new Error('walking home did not restore the place');
@@ -431,6 +439,11 @@ async function enroll(page, name, girl, slow, keys) {
   const oldc = await state(op);
   note('old-cult', JSON.stringify({ realm: oldc.realm, age: oldc.age, xw: oldc.xw, school: oldc.school }));
   if (oldc.school || oldc.age !== 46 || oldc.xw !== 123 || oldc.realm === '村塾') throw new Error('old cultivator changed');
+  await op.evaluate(() => window.__moxian.JHUI.openMap());
+  await op.waitForSelector('#map.ready', { timeout: 12000 });
+  await op.waitForTimeout(900);
+  await op.screenshot({ path: path.join(OUT, '09-cult-map.png') });
+  await op.keyboard.press('Escape');
   await other.close();
 
   const legacy = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'zh-CN' });
@@ -484,7 +497,7 @@ async function enroll(page, name, girl, slow, keys) {
   if (clips[0]) fs.copyFileSync(path.join(videoDir, clips[0].n), path.join(OUT, 'opening.webm'));
   fs.writeFileSync(path.join(OUT, 'log.txt'), lines.join('\n'));
   fs.writeFileSync(path.join(OUT, 'errors.json'), JSON.stringify({ desk: bag.errors, kin: kinBag.errors, v145: oldBag.errors, net: bag.failed.concat(kinBag.failed, oldBag.failed) }, null, 2));
-  const store = '/cursor/stores/self/artifacts/v147-fix';
+  const store = '/cursor/stores/self/artifacts/v148-ink';
   fs.mkdirSync(store, { recursive: true });
   for (const name of fs.readdirSync(OUT)) {
     const from = path.join(OUT, name);

@@ -29,6 +29,7 @@ const School = (() => {
     if(v.intent==null)v.intent='';
     if(typeof v.homecoming!=='number')v.homecoming=0;
     if(v.work!=='farm'&&v.work!=='craft'&&v.work!=='work'&&v.work!=='copy'&&v.work!=='repair')v.work='';
+    if(typeof v.guideMute!=='number')v.guideMute=-1;
     Dali.ensure(s);
     if(!v.almanac&&s.calendar)s.calendar.unlocked=false;
     return v;
@@ -251,6 +252,18 @@ const School = (() => {
     if(out.err)return out;
     return afterBeat(s,id,out);
   }
+  function guideStep(s){
+    const v=s&&s.school;if(!v||v.entered)return 4;
+    if(!v.almanac)return 0;
+    if(!(v.people&&v.people.kin>0))return 1;
+    if(!v.chart)return 2;
+    if(v.affair===1)return 3;
+    return 4;
+  }
+  function guideLine(s){
+    const step=guideStep(s);
+    return ['先到窗下读书。先生会把黄历放在你手边。','黄历有了。去做活，到田头见阿娘。','走到村口。镇图要你自己认下来。','塾门贴了新纸。读书、做活、走访，是三种不同的帮忙。',''][step]||'';
+  }
   function roadDays(s){return s.age<12?6:4;}
   function travel(s,dest,emit){
     const v=ensure(s);if(!v||s.dead||s.ascended)return {err:'这一卷已收。'};
@@ -283,5 +296,5 @@ const School = (() => {
     {name:'海州',places:['北海']},
     {name:'天州',places:['云海天阶']}
   ];
-  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord,atHome,villageMode,roadDays};
+  return {activities,mortal,ensure,begin,job,quote,available,action,migration,play,travel,cyclePace,paceWord,placeName,provinces,works,workNow,cycleWork,workWord,atHome,villageMode,roadDays,guideStep,guideLine};
 })();
