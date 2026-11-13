@@ -166,7 +166,7 @@ const SchoolUI = (() => {
     let view='realm',sel='青州';
     function wipe(el){while(el.firstChild)el.firstChild.remove();}
     function vname(text){const slip=node('span','tag-slip'),vt=node('span','vt'),col=node('span','vcol');[...text].forEach(ch=>col.append(node('i',null,ch)));vt.append(col);slip.append(vt);return slip;}
-    function close(){map.classList.remove('open','ready','map-school','map-realm','map-province','map-town');wipe(map);map.hidden=true;if(s.school)s.school.sawMap=1;if(typeof window!=='undefined'&&window.__moxian){if(window.__moxian.save)window.__moxian.save();if(window.__moxian.render)window.__moxian.render();}}
+    function close(){document.body.classList.remove('school-map');map.classList.remove('open','ready','map-school','map-realm','map-province','map-town');wipe(map);map.hidden=true;if(s.school)s.school.sawMap=1;if(typeof window!=='undefined'&&window.__moxian){if(window.__moxian.save)window.__moxian.save();if(window.__moxian.render)window.__moxian.render();}}
     wipe(map);
     const head=node('div','map-head'),ttl=node('div','map-ttl'),where=node('span');
     ttl.append(node('b',null,'大黎'),where,node('span',null,'淡墨为足迹，朱砂为此身'));
@@ -181,6 +181,7 @@ const SchoolUI = (() => {
     canvas.append(img,marks);scroll.append(canvas);wrap.append(node('div','map-roller l'),scroll,node('div','map-roller r'));
     const card=node('div','map-card');card.id='map-card';
     map.append(head,wrap,card);
+    document.body.classList.add('school-map');
     map.hidden=false;map.classList.add('open','map-school');
     function tagAt(place,fn){
       const b=node('button','map-tag');b.type='button';

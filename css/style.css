@@ -2154,11 +2154,23 @@ html,body{background:var(--paper);transition:background-color 2.8s var(--ease-in
     var(--paper-img);
   background-size:auto,auto,auto,256px;
 }
-.map.map-school{
-  background-image:linear-gradient(rgba(242,235,219,.96),rgba(242,235,219,.96)),var(--paper-img);
-  background-size:auto,256px;
+.map.map-school,
+.map.map-school.open{
+  z-index:90!important;
+  opacity:1!important;transform:none!important;transition:none!important;
+  background-color:#f4efe2!important;
+  background-image:linear-gradient(#f4efe2,#f4efe2),var(--paper-img)!important;
+  background-size:auto,256px!important;
 }
+.map.map-school .map-canvas,
+.map.map-school.ready .map-canvas{opacity:1;transition:none}
 .map-school .me-dot,.map-school .mc-seal{filter:none}
+/* 册页边墨在镇图淡入时会从纸里透出一团灰。学堂开卷时先把那层收起，不改修士长卷。 */
+body.school-map #album,
+body.school-map #scenery,
+body.school-map #sky,
+body.school-map #weather,
+body.school-map #vignette{visibility:hidden!important}
 
 .roller{box-shadow:none !important;filter:none}
 .hroller{box-shadow:none !important;filter:none}
